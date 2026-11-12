@@ -1495,7 +1495,7 @@ class LessonJobTest(GenerationTestBase):
         ]
         self.assertTrue(generation_requests)
         for request in generation_requests:
-            self.assertEqual(request.prompt_version, "lesson-prompt.v13")
+            self.assertEqual(request.prompt_version, "lesson-prompt.v14")
             self.assertIn("Capability policy", request.instructions)
             payload = json.loads(request.input_text)
             self.assertIn("capability_policy", payload)
@@ -1573,7 +1573,7 @@ class LessonJobTest(GenerationTestBase):
         text = gen._lesson_instructions(recipe="parent", locale=None, scaffold_note="")
         self.assertIn("3-6", text)
         self.assertIn("distinct observable", text)
-        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v13")
+        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v14")
 
     def test_a_lesson_with_fewer_than_three_rubric_criteria_is_retried_then_parked(self) -> None:
         plan_result = self.approved_plan()

@@ -30,7 +30,7 @@ CONTRACT_DIR = Path(__file__).resolve().parent.parent / "contracts"
 CONTRACT_FILES: dict[str, str] = {
     "cb.vocabulary": "vocabulary.v1.json",
     "cb.errors": "errors.v4.json",
-    "cb.rpc": "rpc.v26.json",
+    "cb.rpc": "rpc.v27.json",
     "cb.db": "db.v14.json",
     "cb.jobs": "jobs.v5.json",
     # H-137 (H-73 §4): ``cb.pack`` is the one contract that accepts more than one document
@@ -48,7 +48,7 @@ CONTRACT_FILES: dict[str, str] = {
 
 #: The contract whose version the plugin speaks on the wire.
 WIRE_CONTRACT_ID = "cb.rpc"
-WIRE_CONTRACT_VERSION = 26
+WIRE_CONTRACT_VERSION = 27
 
 
 #: Version -> file name for every contract that accepts more than one document version.
@@ -69,8 +69,11 @@ CONTRACT_VERSION_FILES: dict[str, dict[int, str]] = {
     # CP-052: v26 is additive over v25 — `world_brief.route_anchors`, the plate's own normalised
     # route geometry, optional and absent by default. v25 stays readable so a client that pinned
     # the shelf wire can still validate.
+    # Item 28b: v27 is additive over v26 — `lesson_document_media.labels`, the text the product UI
+    # draws over a textless figure, optional and absent by default. v26 stays readable so a client
+    # that pinned the plate-geometry wire can still validate.
     "cb.rpc": {22: "rpc.v22.json", 23: "rpc.v23.json", 24: "rpc.v24.json", 25: "rpc.v25.json",
-               26: "rpc.v26.json"},
+               26: "rpc.v26.json", 27: "rpc.v27.json"},
 }
 
 

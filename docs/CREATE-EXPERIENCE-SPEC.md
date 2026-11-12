@@ -75,14 +75,17 @@ This is not a workaround dressed up as a design: `goal` is already the field the
 one authority is better than two that can disagree. It also means an older client that never asks the
 question still produces a valid brief.
 
-**Phase 2 — a typed field (v27).** `course.create` gains `outcome` (string, ≤ 600 chars, optional) so
+**Phase 2 — a typed field (the next bump, not v27).** `course.create` gains `outcome` (string,
+≤ 600 chars, optional) so
 rules can be written against it without parsing prose, and so the review step can show the outcome
-without reconstructing it from the goal. This is a contract amendment: a new `contracts/rpc.v27.json`
-with the delta described in its header, a registry entry beside `26:` in `coursebook/contracts.py:72`,
-and `WIRE_CONTRACT_VERSION = 27`. **It is a spike first and a change second** — the last attempt at a
-v27 was reverted at the deadline, and the first task is a 20-minute probe that adds only this field
-and runs `tests.test_contracts` to prove the version machinery accepts an additive request field
-before any product code depends on it.
+without reconstructing it from the goal. This is a contract amendment: a new `contracts/rpc.v28.json`
+with the delta described in its header, a registry entry beside `27:` in `coursebook/contracts.py`,
+and `WIRE_CONTRACT_VERSION = 28`. **The v27 slot is spent**: item 28b (the figure's own drawn labels)
+took it, because an overlay needs a field on the media child and `course.create.outcome` would be an
+accepted request field no handler reads — a declared field the backend then silently drops. `outcome`
+takes the next bump, and it is still **a spike first and a change second**: the first task is a
+20-minute probe that adds only this field and runs `tests.test_contracts` to prove the version
+machinery accepts an additive request field before any product code depends on it.
 
 ### What the plan must then do with it
 
@@ -389,11 +392,12 @@ Two corrections found while integrating, both kept:
 | 25 demand from the lesson's shape | landed | one-off and parent lessons are exempt on purpose: a one-off gets no decorative media, and in a parent lesson the observation is the evidence |
 | 26 language lessons are not silent | landed | the schema has one audio role (`narration`), so a pronunciation reference and its narration are two *items* of that role, not a role string the store would reject |
 | 27 the illustration prompt is built | landed | subject scrubbed of any request for labels, then composition, house medium and palette, a textless block and nine negatives; the prompt hash and version are in provenance |
-| 28 text is drawn after the raster | **half landed** | the prompt contract ships; the UI overlay that draws labels over a label-free base needs a label field on the media block and is a card of its own |
+| 28 text is drawn after the raster | landed | `media.lesson_illustration_prompt` sends a textless request with nine negatives; `cb.rpc` v27 adds the optional media `labels` array and `desktop/src/80-components.js` draws those labels as a clamped overlay on a legible plate, so the raster stays textless and the reader still gets the words |
 | 29 the image model is known and pinnable | **not landed** | `image_generate` still takes no model parameter, so GPT-2.5 Sunburst is a host setting; provenance records the resolved name only when the host returns it |
 | 30 geometry fits the job | landed | 4:3 illustration, 3:4 person-facing, 4:3 schematic, a 1024 px floor recorded on the artifact |
 
 A prompt changed without a version bump is a provenance lie, so `LESSON_PROMPT_VERSION` moved to
 `lesson-prompt.v13` with its five pins and its comment block updated. The media lane had left it at
 v12 because five tests pinned the value; that is a reason to update five tests, not to ship a
-different prompt under the same name.
+different prompt under the same name. Item 28b then moved the same label to `lesson-prompt.v14`
+when the media line grew the figure's `labels` contract, and its pins moved with it.

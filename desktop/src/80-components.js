@@ -1008,8 +1008,128 @@ function MediaFrame({ artifactId, kind, label, caption, provenance, textEquivale
   })
 }
 
+/**
+ * The drawn-label overlay (cb.rpc v27, item 28b).
+ *
+ * The picture is generated textless — a model that paints a label garbles it into a false fact —
+ * and every word a learner reads over the figure is page text the product UI draws here. The
+ * labels ride the media child as `{text, x, y, anchor}` with `x`/`y` normalised 0–1 of the figure
+ * box and `anchor` naming which point of the label sits at that point.
+ *
+ * `mediaLabelPlacement` is the whole geometry in one pure function so it can be proved without a
+ * layout engine: it takes the frame's measured pixel box and returns each label's plate position,
+ * clamped so a label at the very edge of a figure still reads inside the frame instead of hanging
+ * off it. The plate's width is estimated from its text (the UI does not measure glyphs here); the
+ * clamp uses that estimate, which is why it is generous rather than exact.
+ */
+const MEDIA_LABEL_HEIGHT = 22
+const MEDIA_LABEL_PAD = 6
+const MEDIA_LABEL_CHAR_WIDTH = 6.6
+const MEDIA_LABEL_MAX_WIDTH = 240
+
+function mediaLabelPlateWidth(text) {
+  const characters = String(text == null ? '' : text).length
+  return Math.min(MEDIA_LABEL_MAX_WIDTH, Math.max(28, Math.round(characters * MEDIA_LABEL_CHAR_WIDTH + 12)))
+}
+
+function clampToFrame(value, low, high) {
+  if (high < low) return low
+  return Math.min(Math.max(value, low), high)
+}
+
+function mediaLabelPlacement(labels, frame) {
+  const width = Number(frame && frame.width) || 0
+  const height = Number(frame && frame.height) || 0
+  if (!Array.isArray(labels) || !labels.length || width <= 0 || height <= 0) return []
+  return labels.map((label, index) => {
+    const text = String((label && label.text) || '')
+    const anchor = label && (label.anchor === 'center' || label.anchor === 'end') ? label.anchor : 'start'
+    const plateWidth = mediaLabelPlateWidth(text)
+    const plateHeight = MEDIA_LABEL_HEIGHT
+    const x = clampToFrame(Number(label && label.x) || 0, 0, 1) * width
+    const y = clampToFrame(Number(label && label.y) || 0, 0, 1) * height
+    const anchored = anchor === 'center' ? x - plateWidth / 2 : anchor === 'end' ? x - plateWidth : x
+    return {
+      index,
+      text,
+      anchor,
+      plateWidth,
+      plateHeight,
+      left: Math.round(clampToFrame(anchored, MEDIA_LABEL_PAD, width - plateWidth - MEDIA_LABEL_PAD)),
+      top: Math.round(clampToFrame(y - plateHeight / 2, MEDIA_LABEL_PAD, height - plateHeight - MEDIA_LABEL_PAD))
+    }
+  })
+}
+
+function MediaLabelOverlay({ labels, frame }) {
+  const placed = mediaLabelPlacement(labels, frame)
+  if (!placed.length) return null
+  return jsx('div', {
+    'data-cb-media-labels': String(placed.length),
+    style: { position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' },
+    children: placed.map((label) =>
+      jsx(
+        'span',
+        {
+          'data-cb-media-label-text': '',
+          'data-cb-media-label-anchor': label.anchor,
+          'data-cb-media-label-x': String(labels[label.index].x),
+          'data-cb-media-label-y': String(labels[label.index].y),
+          style: {
+            position: 'absolute',
+            left: `${label.left}px`,
+            top: `${label.top}px`,
+            maxWidth: `${label.plateWidth}px`,
+            minHeight: `${label.plateHeight}px`,
+            boxSizing: 'border-box',
+            padding: '0.1rem 0.35rem',
+            // A legible backing plate: the label is page text, not a printed caption, so it never
+            // relies on the artwork behind it for contrast.
+            background: 'color-mix(in srgb, var(--cb-paper-raised) 92%, transparent)',
+            border: '1px solid var(--cb-rule)',
+            borderRadius: '0.2rem',
+            color: 'var(--cb-ink)',
+            fontFamily: 'inherit',
+            fontSize: CB_TYPE.caption,
+            lineHeight: '1.25',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          },
+          children: label.text
+        },
+        `label-${label.index}`
+      )
+    )
+  })
+}
+
 function MediaSegment({ segment }) {
   const preview = useArtifactPreview(segment.artifact_id)
+  // The figure's measured box, in CSS pixels. The overlay's geometry is expressed against it, so
+  // a label at `x=1` is clamped inside the frame at any width the lesson is read at. Measuring is
+  // observation, not a claim: before the first measurement the overlay renders nothing rather
+  // than guessing a frame size and painting a label in the wrong place.
+  const frameRef = useRef(null)
+  const [frame, setFrame] = useState(null)
+  useEffect(() => {
+    const node = frameRef.current
+    if (!node) return undefined
+    const measure = () => {
+      const width = Number(node.clientWidth) || 0
+      const height = Number(node.clientHeight) || 0
+      setFrame((previous) =>
+        previous && previous.width === width && previous.height === height ? previous : { width, height }
+      )
+    }
+    measure()
+    if (typeof ResizeObserver === 'function') {
+      const observer = new ResizeObserver(measure)
+      observer.observe(node)
+      return () => observer.disconnect()
+    }
+    return undefined
+  }, [preview.state, segment.artifact_id])
 
   // The authored kind is the description of the item; a served MIME is the observation. The
   // observation wins once the preview is ready, but a route that refuses or is unreachable must
@@ -1078,7 +1198,20 @@ function MediaSegment({ segment }) {
     children: jsxs('div', {
       style: { display: 'flex', flexDirection: 'column', gap: '0.35rem' },
       children: [
-        element,
+        kind === 'visual'
+          ? jsxs('div', {
+              // The figure and its drawn labels share one positioned box, so the overlay is
+              // measured against the picture the learner actually sees — 380px tall in a narrow
+              // column, 70vh or more in a wide one — and never against an assumed size.
+              ref: frameRef,
+              'data-cb-media-frame': '',
+              style: { position: 'relative', display: 'block', lineHeight: 0, maxWidth: '100%' },
+              children: [
+                element,
+                jsx(MediaLabelOverlay, { labels: segment.labels, frame })
+              ]
+            })
+          : element,
         segment.artifact_id && supportsArtifactGet()
           ? jsx(sdk.Button, {
               variant: 'text',
@@ -1875,7 +2008,10 @@ function BlockMedia({ media, blockId, ordinal }) {
     // author wrote narration or an illustration, so it cannot relabel audio as visual.
     kind: media.kind,
     text: media.text_equivalent || media.purpose,
-    label: media.label
+    label: media.label,
+    // The drawn labels ride the media child: they are the words the UI paints over a textless
+    // figure, and they are page text, so the block frame draws them rather than the raster.
+    labels: media.labels
   }
   return jsx(
     'div',

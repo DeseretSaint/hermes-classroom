@@ -252,7 +252,12 @@ UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v3"
 #: medium and composition only and that anything a learner reads is authored as text on the block
 #: and drawn by the UI; a granted pronunciation reference may be accompanied by a narration reading
 #: the same line. Both are text changes to the same prompt, so the version moves with them.
-LESSON_PROMPT_VERSION = "lesson-prompt.v13"
+#: v14 (CREATE-EXPERIENCE item 28b): the same media line now states the two halves as one
+#: contract — the picture carries the scene, the media item's `labels` array carries the words
+#: (eight at most, 1-40 characters, normalised 0-1 coordinates, start/center/end anchor), and the
+#: product UI draws them. The JSON schema gained the optional `labels` property in the same change,
+#: and the prompt must name a field the model is asked to emit.
+LESSON_PROMPT_VERSION = "lesson-prompt.v14"
 #: The validator instruction text. H-191 §5: a validator answer was discarded because one
 #: ``item`` label was 81 characters against a ``maxLength`` of 80 the prompt never stated. The
 #: text now states the locator rule and the bound (read from :data:`ITEM_REFERENCE_MAX_CHARS`),
@@ -2707,6 +2712,30 @@ PROCEDURE_SCHEMA: dict[str, Any] = {
     },
 }
 
+#: The drawn-label overlay on a lesson figure (cb.rpc v27, item 28b). The picture carries the
+#: scene and is textless by contract; these labels are the page text the product UI draws over it.
+#: The bounds mirror ``lesson_document`` and the wire exactly: eight labels, 40 characters of text,
+#: normalised 0–1 coordinates and a stated anchor.
+MEDIA_LABELS_SCHEMA: dict[str, Any] = {
+    "type": "array",
+    "maxItems": lesson_document.MAX_MEDIA_LABELS,
+    "items": {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["text", "x", "y", "anchor"],
+        "properties": {
+            "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": lesson_document.MAX_MEDIA_LABEL_TEXT,
+            },
+            "x": {"type": "number", "minimum": 0, "maximum": 1},
+            "y": {"type": "number", "minimum": 0, "maximum": 1},
+            "anchor": {"type": "string", "enum": list(lesson_document.MEDIA_LABEL_ANCHORS)},
+        },
+    },
+}
+
 LESSON_SCHEMA: dict[str, Any] = {
     "type": "object",
     "additionalProperties": False,
@@ -3006,6 +3035,10 @@ LESSON_SCHEMA: dict[str, Any] = {
                     "transcript": {"type": "string", "minLength": 1, "maxLength": 1200},
                     "technical": {"type": "boolean"},
                     "facts": {"type": "object", "maxProperties": 20},
+                    # Item 28b: the words the UI draws over a textless figure. Optional, so every
+                    # lesson authored before v27 is byte-identical; the picture itself is asked
+                    # for textless in the same prompt.
+                    "labels": MEDIA_LABELS_SCHEMA,
                 },
             },
         },
@@ -4227,8 +4260,14 @@ def _capability_prompt_lines(capability: capability_policy.LessonCapabilityPlan)
     lines.append(
         "Media spec contract: a visual 'spec' names subject, medium and composition only — it is "
         "the picture, not the page. Anything a learner must read (a label, a number, a callout, a "
-        "step name) is authored as text on the block and drawn by the UI; never ask the image "
-        "model to paint text, labels, numbers or arrows."
+        "step name) is authored as text, never asked of the image model: never ask it to paint "
+        "text, labels, numbers or arrows. The two halves are one contract for a figure that needs "
+        "annotating — the picture carries the scene, and the media item's 'labels' array carries "
+        "the words: at most eight entries of {'text' (1-40 characters), 'x' and 'y' (fractions "
+        "0-1 of the figure box, origin top-left), 'anchor' ('start', 'center' or 'end', the point "
+        "of the label that sits at x/y)}. The product UI draws those labels over the textless "
+        "image, so a label is short page text and never the check's reference answer or an "
+        "accepted answer."
     )
     return lines
 
@@ -6983,6 +7022,11 @@ def _narrative_text(page: dict[str, Any]) -> str:
             continue
         parts.append(str(item.get("purpose") or ""))
         parts.append(str(item.get("text_equivalent") or ""))
+        # A drawn label is page text over the figure, in the same line of sight as the caption: a
+        # label that restates the key announces it just as plainly as a body would.
+        for drawn in item.get("labels") or []:
+            if isinstance(drawn, Mapping):
+                parts.append(str(drawn.get("text") or ""))
     # The v8 block document is another rendering of the same page. If a projection ever put an
     # answer into a block headline or media label, the learner-facing surface would announce it
     # just as surely as a segment body would. The model segment's block keeps the same exemption
@@ -11857,6 +11901,39 @@ def _page_procedure(lesson: dict[str, Any]) -> dict[str, Any] | None:
     }
 
 
+def _page_media_item(item: dict[str, Any]) -> dict[str, Any]:
+    """One media child on the learner page, from an allowlist.
+
+    The allowlist is the point: a field the author invents never reaches the learner. ``labels`` is
+    copied only when the item actually draws one, so a figure with no drawn label keeps its exact
+    pre-v27 page bytes (and therefore its document id and hash).
+    """
+    page_item = {
+        "kind": item["kind"],
+        "role": item.get("role"),
+        "purpose": item["purpose"],
+        "text_equivalent": item["text_equivalent"],
+        "artifact_id": item.get("artifact_id"),
+        "mime": item.get("mime"),
+        "label": item.get("label"),
+        "degraded": bool(item.get("degraded")),
+        "reason": item.get("reason"),
+    }
+    labels = item.get("labels")
+    if isinstance(labels, list) and labels:
+        page_item["labels"] = [
+            {
+                "text": label.get("text"),
+                "x": label.get("x"),
+                "y": label.get("y"),
+                "anchor": label.get("anchor"),
+            }
+            for label in labels
+            if isinstance(label, dict)
+        ]
+    return page_item
+
+
 def _build_learner_page(
     lesson: dict[str, Any],
     section: dict[str, Any],
@@ -11923,20 +12000,7 @@ def _build_learner_page(
             for sid in lesson.get("sources") or []
             if sid in source_index
         ],
-        "media": [
-            {
-                "kind": item["kind"],
-                "role": item.get("role"),
-                "purpose": item["purpose"],
-                "text_equivalent": item["text_equivalent"],
-                "artifact_id": item.get("artifact_id"),
-                "mime": item.get("mime"),
-                "label": item.get("label"),
-                "degraded": bool(item.get("degraded")),
-                "reason": item.get("reason"),
-            }
-            for item in lesson.get("media") or []
-        ],
+        "media": [_page_media_item(item) for item in lesson.get("media") or []],
         "parent_notes": lesson.get("parent_notes"),
         "supervision_notes": list(lesson.get("supervision_notes") or []),
     }
@@ -13105,11 +13169,10 @@ def _stored_lesson_media(row: dict[str, Any]) -> list[dict[str, Any]]:
         return []
     if not isinstance(items, list):
         return []
-    return [
-        {field: item.get(field) for field in _LESSON_MEDIA_FIELDS}
-        for item in items
-        if isinstance(item, Mapping)
-    ]
+    # The allowlist is shared with the learner page, so the drawn labels travel through the same
+    # projection: a field kept by one and dropped by the other is how a label reaches the document
+    # in tests and never reaches the learner.
+    return [_page_media_item(dict(item)) for item in items if isinstance(item, Mapping)]
 
 
 def _leaks(value: Any) -> bool:

@@ -95,6 +95,15 @@ MAX_LANG = 35
 BLOCK_FIELDS = ("id", "role", "headline", "short", "deep", "check_id", "media", "source_ids")
 MEDIA_FIELDS = ("kind", "role", "artifact_id", "purpose", "text_equivalent", "label", "degraded", "reason")
 
+#: The drawn-label overlay (cb.rpc v27, item 28b). A lesson figure is a textless raster: the
+#: picture carries the scene, and every word a learner reads over it is page text the product UI
+#: draws. These constants mirror the contract's bounds exactly, so a label that the wire accepts is
+#: never refused here and a label this module accepts can never fail `lesson.page` validation.
+MAX_MEDIA_LABELS = 8
+MAX_MEDIA_LABEL_TEXT = 40
+MEDIA_LABEL_ANCHORS = ("start", "center", "end")
+MEDIA_LABEL_FIELDS = ("text", "x", "y", "anchor")
+
 #: Optional, additive document field (docs/VISUAL_MEDIA_PLAN.md §8). A procedure is a *layout*
 #: over the same blocks: it adds a header and an ordered step list that references block ids, so
 #: it can never become a second copy of the teaching text or a second check.
@@ -216,6 +225,84 @@ def _unique(values: Iterable[Any], *, limit: int = MAX_DOCUMENT_SOURCE_IDS) -> l
     return seen
 
 
+def _fraction(value: Any) -> float | None:
+    """A normalised 0–1 coordinate, or ``None``.
+
+    ``bool`` is an ``int`` in Python, so ``True`` would otherwise read as ``1.0`` and place a label
+    at the far edge of the figure. Only a real number inside the box is geometry.
+    """
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    number = float(value)
+    if number < 0.0 or number > 1.0:
+        return None
+    return number
+
+
+def _media_label_problems(value: Any, where: str) -> list[str]:
+    """Every reason a media child's ``labels`` array is not the contract's shape."""
+    if value is None:
+        return []
+    if not isinstance(value, list):
+        return [f"{where}.labels is not an array"]
+    problems: list[str] = []
+    if len(value) > MAX_MEDIA_LABELS:
+        problems.append(f"{where}.labels exceeds {MAX_MEDIA_LABELS} labels")
+    for index, entry in enumerate(value[:MAX_MEDIA_LABELS]):
+        at = f"{where}.labels[{index}]"
+        if not isinstance(entry, Mapping):
+            problems.append(f"{at} is not an object")
+            continue
+        unknown = set(entry) - set(MEDIA_LABEL_FIELDS)
+        if unknown:
+            problems.append(f"{at} has unknown field(s): {', '.join(sorted(unknown))}")
+        missing = [field for field in MEDIA_LABEL_FIELDS if field not in entry]
+        if missing:
+            problems.append(f"{at} is missing {', '.join(missing)}")
+            continue
+        text = entry.get("text")
+        if not isinstance(text, str) or not _clean(text):
+            problems.append(f"{at}.text must be non-empty text")
+        elif len(_clean(text)) > MAX_MEDIA_LABEL_TEXT:
+            problems.append(f"{at}.text exceeds {MAX_MEDIA_LABEL_TEXT} characters")
+        for axis in ("x", "y"):
+            if _fraction(entry.get(axis)) is None:
+                problems.append(f"{at}.{axis} is not a number between 0 and 1")
+        if entry.get("anchor") not in MEDIA_LABEL_ANCHORS:
+            problems.append(
+                f"{at}.anchor {entry.get('anchor')!r} is not one of {', '.join(MEDIA_LABEL_ANCHORS)}"
+            )
+    return problems
+
+
+def _media_labels(value: Any, where: str = "media") -> list[dict[str, Any]] | None:
+    """The labels a media child carries, normalised; ``None`` when it carries none.
+
+    Absent stays absent: a figure with no drawn label must keep its exact pre-v27 shape, so the
+    key is neither manufactured nor rewritten to an empty array. A malformed array is refused
+    rather than repaired — a label is text a learner reads, and a silently dropped or truncated one
+    is a false figure.
+    """
+    if value is None:
+        return None
+    problems = _media_label_problems(value, where)
+    if problems:
+        raise LessonDocumentError(problems)
+    if not isinstance(value, list) or not value:
+        return None
+    labels: list[dict[str, Any]] = []
+    for entry in value:
+        labels.append(
+            {
+                "text": _clean(entry.get("text")),
+                "x": _fraction(entry.get("x")),
+                "y": _fraction(entry.get("y")),
+                "anchor": str(entry.get("anchor")),
+            }
+        )
+    return labels
+
+
 def _media_child(
     *,
     kind: Any,
@@ -226,8 +313,10 @@ def _media_child(
     label: Any = None,
     degraded: Any = False,
     reason: Any = None,
+    labels: Any = None,
+    where: str = "media",
 ) -> dict[str, Any]:
-    return {
+    child = {
         "kind": kind if kind in MEDIA_KINDS else None,
         "role": role if role in MEDIA_ROLES else None,
         "artifact_id": artifact_id if _identifier(artifact_id) else None,
@@ -237,6 +326,12 @@ def _media_child(
         "degraded": bool(degraded),
         "reason": (_clean(reason) or None),
     }
+    drawn = _media_labels(labels, where)
+    if drawn:
+        # Only a figure that actually draws a label carries the key, so every stored document
+        # written before v27 keeps its exact bytes, id and content hash.
+        child["labels"] = drawn
+    return child
 
 
 def _block(
@@ -418,6 +513,9 @@ def _page_media_child(item: Mapping[str, Any]) -> dict[str, Any]:
         label=item.get("label"),
         degraded=item.get("degraded"),
         reason=item.get("reason"),
+        # The drawn labels travel with the media record: they are page text over a textless
+        # raster, so the projection carries them verbatim rather than re-deriving or dropping them.
+        labels=item.get("labels"),
     )
 
 
@@ -465,6 +563,8 @@ def _authored_media_child(item: Mapping[str, Any], index: int) -> dict[str, Any]
         label=item.get("label"),
         degraded=item.get("degraded"),
         reason=item.get("reason"),
+        labels=item.get("labels"),
+        where=f"blocks[{index}].media",
     )
 
 
@@ -1021,6 +1121,11 @@ def narrative_text(
                 parts.append(str(item.get("purpose") or ""))
                 parts.append(str(item.get("text_equivalent") or ""))
                 parts.append(str(item.get("label") or ""))
+                # A drawn label sits on the figure, in the learner's line of sight: it is the
+                # same surface as the caption and is scanned for the key by the same scan.
+                for drawn in item.get("labels") or []:
+                    if isinstance(drawn, Mapping):
+                        parts.append(str(drawn.get("text") or ""))
     procedure = document.get("procedure")
     if isinstance(procedure, Mapping):
         # Every typed procedure string is learner-facing, so answer leakage is checked against it
@@ -1142,13 +1247,15 @@ def _media_problems(item: Any, where: str) -> list[str]:
     if not isinstance(item, Mapping):
         return [f"{where} is not an object"]
     problems: list[str] = []
-    unknown = set(item) - set(MEDIA_FIELDS)
+    # ``labels`` is the one optional media field (cb.rpc v27): present or absent, never required.
+    unknown = set(item) - set(MEDIA_FIELDS) - {"labels"}
     if unknown:
         problems.append(f"{where} has unknown field(s): {', '.join(sorted(unknown))}")
     missing = [field for field in MEDIA_FIELDS if field not in item]
     if missing:
         problems.append(f"{where} is missing {', '.join(missing)}")
         return problems
+    problems.extend(_media_label_problems(item.get("labels"), where))
     if item.get("kind") not in MEDIA_KINDS:
         problems.append(f"{where}.kind {item.get('kind')!r} is not one of {', '.join(MEDIA_KINDS)}")
     if item.get("role") is not None and item.get("role") not in MEDIA_ROLES:
