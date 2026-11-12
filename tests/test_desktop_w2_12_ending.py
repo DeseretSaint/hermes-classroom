@@ -69,7 +69,13 @@ const calls = []
 const responses = payload.responses || {}
 const runtime = { wire_version: 6, implemented_methods: payload.implemented || [], single_home_host: false }
 const generic = { items: [], entries: [], objectives: [], total: 0 }
+let submitted = false
 const reply = (method) => {
+  // The page a real backend serves after the commit: the check is closed and the attempt is the
+  // recorded one. The ending must still wait for the learner's own press.
+  if (method === 'lesson.page' && submitted && payload.afterPage) {
+    return { ok: true, result: payload.afterPage }
+  }
   const entry = responses[method]
   if (entry === undefined) return { ok: true, result: generic }
   return { ok: true, result: entry }
@@ -79,7 +85,11 @@ const fakeRest = async (path, options) => {
   const body = options && options.body
   const method = body && body.method
   if (base === '/rpc') calls.push({ method, payload: body && body.payload })
-  if (base === '/rpc') return { ...reply(method), contract_version: 6, operation_id: 'test' }
+  if (base === '/rpc') {
+    const answer = reply(method)
+    if (method === 'attempt.submit') submitted = true
+    return { ...answer, contract_version: 6, operation_id: 'test' }
+  }
   if (base === '/runtime') return runtime
   if (base === '/health') {
     return { ok: true, contract_version: 6, result: { db: { ready: true }, plugin_version: 'test', contract_version: 6 } }
@@ -312,6 +322,13 @@ def described(evidence_class: str) -> dict:
         "responses": responses,
         "implemented": implemented,
         "revisitPage": _page_with_recorded_pass(page),
+        "afterPage": _page_with_recorded_pass(
+            page,
+            attempts=[
+                {"attempt_id": "att_0123456789abcdef", "check_id": check["check_id"],
+                 "verdict": "pass", "evidence_class": evidence_class, "state": "committed"}
+            ],
+        ),
         "revisitOverridePage": _page_with_recorded_pass(page, attempts=[
             {"attempt_id": "att_3", "check_id": check["check_id"], "verdict": "overridden",
              "evidence_class": "override", "state": "committed"},

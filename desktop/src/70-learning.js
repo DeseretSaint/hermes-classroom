@@ -4793,7 +4793,16 @@ function ClassroomV3Surface({
   const scene = classroomSceneFromWorld(world.data, sectionId, (row && row.title) || '')
   const lastSection = classroomLastSection(outline.data, page.data)
   const canEnd = Boolean(lastSection && pass && classroomCompletion(page.data, pass))
-  const finished = lastSection ? classroomCompletion(page.data, ended ? pass : null) : null
+  // A pass in this session waits for the learner's own press: the page re-read after the commit
+  // already shows the check closed, and that must not snatch the verdict away. A revisit (no pass
+  // in this session) reads the ending straight back from the recorded rows.
+  const finished = lastSection
+    ? pass
+      ? ended
+        ? classroomCompletion(page.data, pass)
+        : null
+      : classroomCompletion(page.data, null)
+    : null
   // The card's post-pass primary is the ending's door on the last check. Everywhere else it is
   // exactly what it always was: the next section, or the course path. Once the ending is open, the
   // same handler is the panel's "Back to the path", so it may not re-open the ending.
