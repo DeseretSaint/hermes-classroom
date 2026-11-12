@@ -134,7 +134,10 @@ dispatching on its tick. No `dispatch` from this session.*
 ## Non-goals for this wave
 
 - No new visual direction, no new screens beyond the two the trust pass touches.
-- No contract version bump: everything here fits the v26 surface.
+- **One** contract version bump, and only item 28b's: `cb.rpc` v27 adds the optional
+  `lesson_document_media.labels` array so a textless figure can carry readable annotations drawn by
+  the UI. Everything else in this wave fits the v26 surface, and `course.create.outcome` is not
+  folded in — an accepted request field no handler reads is a silent drop. It takes the next bump.
 - No rewrite of the recorded harness scenarios beyond re-recording what exists.
 - No image-model pin (item 29) — that is a host setting, not plugin code, and it stays an owner
   action until the fork takes a `model` parameter.

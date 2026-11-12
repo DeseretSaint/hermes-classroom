@@ -83,7 +83,7 @@ class AnswerLeakPromptRuleTest(unittest.TestCase):
         )
 
     def test_the_version_advanced_for_the_new_instruction_text(self) -> None:
-        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v13")
+        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v14")
 
     def test_the_prompt_names_the_scanned_surfaces_and_the_one_presentation_surface(self) -> None:
         text = self.instructions()

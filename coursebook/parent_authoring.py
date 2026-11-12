@@ -219,11 +219,23 @@ def _stored_media(row: Any) -> list[dict[str, Any]]:
         return []
     fields = ("kind", "role", "purpose", "text_equivalent", "artifact_id", "mime",
               "label", "degraded", "reason")
-    return [
-        {field: item.get(field) for field in fields}
-        for item in items
-        if isinstance(item, Mapping)
-    ]
+    projected: list[dict[str, Any]] = []
+    for item in items:
+        if not isinstance(item, Mapping):
+            continue
+        media = {field: item.get(field) for field in fields}
+        # cb.rpc v27: the drawn labels are learner-facing page text, so this projection carries
+        # them too. A second allowlist that dropped them would render the words on the lesson page
+        # and lose them on every parent-facing read of the same figure.
+        labels = item.get("labels")
+        if isinstance(labels, list) and labels:
+            media["labels"] = [
+                {key: label.get(key) for key in ("text", "x", "y", "anchor")}
+                for label in labels
+                if isinstance(label, Mapping)
+            ]
+        projected.append(media)
+    return projected
 
 
 def generation_plan_hash(connection, plan_id: str, fallback: str = "") -> str:
