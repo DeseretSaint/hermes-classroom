@@ -16,6 +16,7 @@ import unittest
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest import mock
 
 from coursebook import api, archive, db, domain, pack_flow, packs
 from coursebook.archive import PackRejected
@@ -291,6 +292,13 @@ class ParentGuardTest(PackFlowCase):
 class ExportTest(PackFlowCase):
     def test_export_is_the_reviewed_hash_and_reimports_byte_identically(self) -> None:
         staged_id, manifest = self.grant()
+        # CP-015g residual: the no-revisions path must stay byte-identical to today. This literal
+        # is the bundled pack's published identity; if the pack itself changes, update it
+        # deliberately, never as a side effect of this fence.
+        self.assertEqual(
+            manifest["content_hash"],
+            "sha256:3e4fc6459aa1319e926267793d315f6cddcb5e62f133192a9632c4e1a21e8116",
+        )
         imported = self.import_pack(staged_id)["result"]
         result = self.ok(
             "pack.export",
@@ -479,6 +487,35 @@ class ExportTest(PackFlowCase):
         self.assertIn("plan.undo", error["message"])
 
         # A refusal adopts nothing: no artifact row, no archive on disk.
+        self.assertEqual(int(str(self.scalar("SELECT COUNT(*) FROM artifacts WHERE kind = 'export'"))), 0)
+        archives = list(pack_flow.export_root().glob("*.zip")) if pack_flow.export_root().exists() else []
+        self.assertEqual(archives, [])
+
+    def test_an_edit_that_lands_while_the_archive_is_written_adopts_nothing(self) -> None:
+        """The fence is asked twice: a mid-export fine-tune discards the staged archive.
+
+        The first check runs before a byte is written; the second runs inside the adopt
+        transaction against storage, so an edit that lands while the zip is being built cannot
+        leave an artifact describing the pre-edit course.
+        """
+        imported, plan, objective, _manifest = self.pack_course()
+        real_build = pack_flow.packs.build_export
+
+        def edit_then_build(manifest: dict, files: dict) -> tuple[dict, dict]:
+            document, exported = real_build(manifest, files)
+            with db.transaction() as connection:
+                connection.execute(
+                    "UPDATE objectives SET title = ? WHERE id = ?",
+                    ("MID-EXPORT EDIT", objective["id"]),
+                )
+            return document, exported
+
+        with mock.patch.object(pack_flow.packs, "build_export", side_effect=edit_then_build):
+            error = self.err("pack.export", {"enrollment_id": imported["enrollment_id"]})
+        self.assertEqual(error["code"], "POLICY_VIOLATION")
+        self.assertEqual(error["details"]["reason"], "course_has_revisions")
+        self.assertIn("objective 1 title", error["details"]["changed"])
+        # The staged archive is gone and no artifact row points at stale bytes.
         self.assertEqual(int(str(self.scalar("SELECT COUNT(*) FROM artifacts WHERE kind = 'export'"))), 0)
         archives = list(pack_flow.export_root().glob("*.zip")) if pack_flow.export_root().exists() else []
         self.assertEqual(archives, [])
