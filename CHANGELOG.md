@@ -3,6 +3,25 @@
 Coursebook is a Hermes Desktop plugin. Versions below are plugin versions; the `cb.rpc` and `cb.db`
 contract versions move independently and are named wherever they changed.
 
+## 0.2.0 — the aiming and trust pass (unreleased)
+
+- **The end goal is asked, not inferred.** The create flow asks what the learner wants to be able
+  to do; the answer is composed into the brief and shapes the plan.
+- **The plan aims where they pointed.** Capability and exit performance are derived from the
+  performance requirement, and a plan with no coverage for the stated capability is refused.
+- **Media is decided by what the lesson has to teach**: need-based demand, pronunciation reference
+  plus narration for language lessons, a textless illustration prompt built (not forwarded), and
+  role geometry (4:3 illustration, 3:4 portrait).
+- **The plan screen tells the truth** — stage, clock, cost band — and a learner can adjust a plan
+  rather than only approve or abandon it.
+- **The tutor is beside the check**, and "I used a hint" now answers.
+- **Labels are drawn by the UI over a label-free figure** (`cb.rpc` v27).
+- **A required cited reference is flagged, never silently replaced by text.**
+- **The validator is told what each criterion means**; an honest unknown is a recorded waiver.
+- **A truncated lesson is re-asked**, and attempt 2 repairs the draft instead of rewriting it.
+
+Still unreleased: no tag, no catalog merge, no announcement.
+
 ## 0.1.0 — contest candidate (unreleased)
 
 Not tagged, not merged into the catalog and not announced. A draft catalog pull request is open
