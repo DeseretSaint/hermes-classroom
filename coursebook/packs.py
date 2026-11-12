@@ -899,15 +899,28 @@ def trust_labels(
     *,
     integrity_verified: bool,
     automated_checks_passed: bool,
+    store_review_recorded: bool | None = None,
 ) -> list[str]:
-    """Four independent dimensions. No label implies the others and none means "safe"."""
+    """Four independent dimensions. No label implies the others and none means "safe".
+
+    ``human_review_recorded`` is the one label whose evidence can never come from the pack.
+    ``manifest["trust"]["reviewed_by"]`` / ``["reviewed_at"]`` are author-supplied provenance:
+    anyone can type them into their own ``pack.json`` before shipping it. A caller that presents
+    the label as a trust fact — the store card does — must pass ``store_review_recorded`` from
+    evidence it holds itself (see ``workshop._store_review_recorded``). A passed verdict is
+    authoritative: the manifest's claim is not consulted, so ``False`` strips a forged label and
+    ``True`` reports a review the store can point at. ``None`` is the preview/inspect reading,
+    where the pack reports its own declared provenance rather than a verified fact.
+    """
     labels: list[str] = []
     if integrity_verified:
         labels.append("integrity_verified")
     if automated_checks_passed:
         labels.append("automated_checks_passed")
-    recorded = manifest.get("trust") or {}
-    if recorded.get("reviewed_by") and recorded.get("reviewed_at"):
+    if store_review_recorded is None:
+        recorded = manifest.get("trust") or {}
+        store_review_recorded = bool(recorded.get("reviewed_by") and recorded.get("reviewed_at"))
+    if store_review_recorded:
         labels.append("human_review_recorded")
     if any(str(source.get("support_status")) == "model_assessed" for source in manifest.get("sources") or []):
         labels.append("model_assessed_support")
@@ -919,12 +932,16 @@ def preview(
     *,
     integrity: Mapping[str, Any] | None = None,
     automated_checks_passed: bool = True,
+    store_review_recorded: bool | None = None,
 ) -> dict[str, Any]:
     """Build the contract-shaped ``pack.preview`` response.
 
     ``cb.rpc`` permits exactly ``manifest``, ``integrity`` and ``trust``. Author, outcomes,
     sources/support, licences, notes and media size are all carried by those three objects —
     the manifest itself plus ``integrity.expanded_bytes``. Nothing is summarised away.
+
+    ``store_review_recorded`` is threaded to :func:`trust_labels` unchanged: the store passes its
+    own review evidence, and every other caller leaves it ``None``.
     """
     integrity_block = {
         "hashes_match": bool((integrity or {}).get("hashes_match", False)),
@@ -937,6 +954,7 @@ def preview(
         manifest,
         integrity_verified=integrity_block["hashes_match"],
         automated_checks_passed=automated_checks_passed,
+        store_review_recorded=store_review_recorded,
     )
     # cb.rpc v2 narrowed `trust` to labels only; reviewer identity stays in the manifest's own
     # `trust` block, where it is provenance rather than a response field.
