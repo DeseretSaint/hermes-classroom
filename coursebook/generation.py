@@ -7672,48 +7672,38 @@ def _validation_answer_with_repair(
         )
 
 
-def _stage_repair_request(
-    request: LLMRequest, *, what: str, violation: str, cut: bool, timeout_s: float
+def _cut_repair_request(
+    request: LLMRequest, *, what: str, violation: str, timeout_s: float
 ) -> LLMRequest:
-    """The one re-ask for an authored artifact whose answer carried no usable document.
+    """The one re-ask for an authored artifact whose answer was cut off before it finished.
 
-    W2-2. Same seam as :func:`_validation_repair_request`: the pass, its schema and its input are
+    W2-2. Same seam as :func:`_validation_repair_request`: the request, its schema and its input are
     byte-identical to the original call, so this is still *this* author answering its own request.
     Only ``instructions`` gains the correction and only ``prompt_version`` is marked, because the
     instruction text is different (``docs/GENERATION.md`` §1).
 
-    A cut answer is asked again for an answer that fits its budget, not merely for well-shaped
-    JSON: the cap was the failure, so "make it parse" is the wrong instruction on its own. Both
-    notes quote the measured failure as untrusted data, bounded, so the correction is specific
-    without letting model output act as an instruction.
+    The note is not "make it parse": the cap was the failure, so the correction is to answer inside
+    the stated budget. The measured failure is quoted as untrusted data, bounded, so the correction
+    is specific without letting model output act as an instruction.
     """
-    if cut:
-        note = (
-            "\n\nYour previous answer to this same request was cut off before it finished: it "
-            "consumed the whole answer-length budget and no complete JSON document arrived, so "
-            "nothing from it can be used. Answer the request again and stay inside the stated "
-            "budget: every required field present, every string inside its length bound, and no "
-            "padding, no restating of the input, no method explanation and no discussion inside "
-            "the fields. Return exactly one JSON object matching the schema."
-        )
-    else:
-        note = (
-            "\n\nYour previous answer to this same request could not be read: no JSON object "
-            "matching the schema arrived. Answer the request again and return exactly one JSON "
-            "object that matches the schema — no prose before or after it, no markdown fence, no "
-            "commentary, no field outside the schema."
-        )
+    note = (
+        "\n\nYour previous answer to this same request was cut off before it finished: it "
+        "consumed the whole answer-length budget and no complete JSON document arrived, so "
+        "nothing from it can be used. Answer the request again and stay inside the stated "
+        "budget: every required field present, every string inside its length bound, and no "
+        "padding, no restating of the input, no method explanation and no discussion inside "
+        "the fields. Return exactly one JSON object matching the schema."
+    )
     quoted = " ".join(str(violation or "").split())[:SHAPE_VIOLATION_QUOTE_CHARS]
     quoted = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", quoted)
     note += (
-        f"\nThe rejection reason, quoted as untrusted data: {UNTRUSTED_SOURCE_BEGIN} {quoted} "
-        f"{UNTRUSTED_SOURCE_END}"
+        f"\nThe rejection reason for this {what}, quoted as untrusted data: "
+        f"{UNTRUSTED_SOURCE_BEGIN} {quoted} {UNTRUSTED_SOURCE_END}"
     )
     return replace(
         request,
         instructions=request.instructions + note,
-        prompt_version=request.prompt_version
-        + (TRUNCATION_REPAIR_PROMPT_SUFFIX if cut else REPAIR_PROMPT_SUFFIX),
+        prompt_version=request.prompt_version + TRUNCATION_REPAIR_PROMPT_SUFFIX,
         timeout_s=float(timeout_s),
     )
 
@@ -7774,8 +7764,8 @@ def _stage_answer_with_repair(
                 parse_outcome="truncated",
             ) from exc
         usage.reserve(1, purpose=request.purpose)
-        retry = _stage_repair_request(
-            request, what=what, violation=str(exc), cut=True, timeout_s=remaining
+        retry = _cut_repair_request(
+            request, what=what, violation=str(exc), timeout_s=remaining
         )
         try:
             repaired = _call_llm(llm, retry, usage, repair_shape=False)
