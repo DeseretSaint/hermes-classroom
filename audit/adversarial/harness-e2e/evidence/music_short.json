@@ -564,7 +564,7 @@
         },
         "stimulus_format": null,
         "submit": {
-          "contract_version": 26,
+          "contract_version": 27,
           "ok": true,
           "operation_id": "op-h40-attempt-submit-000044",
           "result": {
@@ -594,7 +594,7 @@
         },
         "stimulus_format": null,
         "submit": {
-          "contract_version": 26,
+          "contract_version": 27,
           "ok": true,
           "operation_id": "op-h40-attempt-submit-00004a",
           "result": {
@@ -755,7 +755,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v13",
+                "prompt_version": "lesson-prompt.v14",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000002b",
@@ -782,6 +782,7 @@
                 },
                 "verdict": "pass",
                 "waived_unknown": [],
+                "waived_unknown_reasons": {},
                 "warning": null
               },
               "validation_id": "000000000000002d",
@@ -796,7 +797,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v13",
+                "prompt_version": "lesson-prompt.v14",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000002e",
@@ -823,6 +824,7 @@
                 },
                 "verdict": "pass",
                 "waived_unknown": [],
+                "waived_unknown_reasons": {},
                 "warning": null
               },
               "validation_id": "0000000000000030",
@@ -901,7 +903,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v13",
+                "prompt_version": "lesson-prompt.v14",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000037",
@@ -928,6 +930,7 @@
                 },
                 "verdict": "pass",
                 "waived_unknown": [],
+                "waived_unknown_reasons": {},
                 "warning": null
               },
               "validation_id": "0000000000000039",
@@ -942,7 +945,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v13",
+                "prompt_version": "lesson-prompt.v14",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000003a",
@@ -969,6 +972,7 @@
                 },
                 "verdict": "pass",
                 "waived_unknown": [],
+                "waived_unknown_reasons": {},
                 "warning": null
               },
               "validation_id": "000000000000003c",
@@ -1314,6 +1318,7 @@
           },
           "verdict": "pass",
           "waived_unknown": [],
+          "waived_unknown_reasons": {},
           "warning": null
         },
         "validation_id": "0000000000000010",
