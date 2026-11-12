@@ -52,25 +52,26 @@ def _cut_validation_answer(request: gen.LLMRequest) -> gen.LLMResponse:
 
 class LessonBudgetArithmeticTest(unittest.TestCase):
     def test_the_budget_is_sized_from_the_calls_the_stage_spends(self) -> None:
+        # W2-2: each attempt may spend one re-ask on its own cut answer and one on the validator's.
         per_section = gen.LESSON_ATTEMPTS * (
-            gen.CALLS_PER_LESSON_ATTEMPT + gen.TRUNCATION_REPAIR_CALLS
+            gen.CALLS_PER_LESSON_ATTEMPT + 2 * gen.TRUNCATION_REPAIR_CALLS
         )
-        self.assertEqual(per_section, 6)
-        self.assertEqual(gen.lesson_calls(1), (2, 6))
-        self.assertEqual(gen.lesson_calls(5), (10, 30))
-        self.assertEqual(gen.lesson_cost_budget(5).max_calls, 30)
-        self.assertEqual(gen.lesson_cost_budget(8).max_calls, 48)
+        self.assertEqual(per_section, 8)
+        self.assertEqual(gen.lesson_calls(1), (2, 8))
+        self.assertEqual(gen.lesson_calls(5), (10, 40))
+        self.assertEqual(gen.lesson_cost_budget(5).max_calls, 40)
+        self.assertEqual(gen.lesson_cost_budget(8).max_calls, 64)
 
     def test_the_dollar_floor_follows_the_same_count(self) -> None:
         five = gen.lesson_cost_budget(5)
         five_cost = five.max_cost_usd
         assert five_cost is not None
-        self.assertAlmostEqual(five_cost, 30 * gen.DECLARED_CALL_COST_USD)
-        self.assertAlmostEqual(five_cost, 1.20)
+        self.assertAlmostEqual(five_cost, 40 * gen.DECLARED_CALL_COST_USD)
+        self.assertAlmostEqual(five_cost, 1.60)
         eight = gen.lesson_cost_budget(8)
         eight_cost = eight.max_cost_usd
         assert eight_cost is not None
-        self.assertAlmostEqual(eight_cost, 48 * gen.DECLARED_CALL_COST_USD)
+        self.assertAlmostEqual(eight_cost, 64 * gen.DECLARED_CALL_COST_USD)
         self.assertEqual(five.source, "declared")
         # A two-section plan still sits on the historic flat floor.
         self.assertEqual(gen.lesson_cost_budget(2).max_cost_usd, gen.DEFAULT_MAX_COST_USD)
@@ -83,10 +84,10 @@ class LessonBudgetArithmeticTest(unittest.TestCase):
     def test_the_preflight_maximum_is_the_worst_legal_path(self) -> None:
         preflight = gen.preflight_lesson_cost(8)
         self.assertEqual(preflight.minimum_calls, 16)
-        self.assertEqual(preflight.maximum_calls, 48)
+        self.assertEqual(preflight.maximum_calls, 64)
         self.assertTrue(preflight.fits_minimum)
         self.assertTrue(preflight.fits_maximum)
-        self.assertAlmostEqual(preflight.maximum_cost_usd, 48 * gen.DECLARED_CALL_COST_USD)
+        self.assertAlmostEqual(preflight.maximum_cost_usd, 64 * gen.DECLARED_CALL_COST_USD)
 
 
 class LessonBudgetStageTest(GenerationTestBase):

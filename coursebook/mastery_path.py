@@ -423,7 +423,8 @@ def plan_policy_lines() -> list[str]:
         "Every node creates a review obligation from its evidence_target. Do not promise "
         "mastery percentages, XP, streaks, levels or adaptive difficulty: the backend records "
         "evidence states, not a score.",
-        "A gate check writes independent_evidence and a delayed cold check writes "
-        "delayed_evidence. A cumulative checkpoint may not be drawn or claimed: the backend "
-        "has no unit-scoped check.",
+        "A gate check's evidence is recorded by the harness as independent evidence and a delayed "
+        "cold check's as delayed evidence. Do not author either field: a check_plan entry carries "
+        "objective_ref, kind and evidence_target only. A cumulative checkpoint may not be drawn "
+        "or claimed: the backend has no unit-scoped check.",
     ]

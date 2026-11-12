@@ -1014,6 +1014,33 @@ A validator answer that violates its own narrowed schema is `ModelOutputInvalid`
 validator *content* rejection (`GenerationRejected`) carries `code = "VALIDATION_FAILED"` too — a
 refusal that repeats on every retry is not an `INTERNAL_ERROR` and not retryable.
 
+### 7.3 Attempt 2 repairs the refused draft, and a cut answer is re-asked once (W2-2)
+
+**A cut answer is not a malformed answer.** The validators had a truncation signal
+(`_answer_was_cut` + `TRUNCATION_REPAIR_PROMPT_SUFFIX`) and the *authoring* stages did not:
+`_parse_structured` turned a lesson answer cut at the completion cap into
+`GenerationRejected("lesson is not valid JSON")`, which failed the whole unit job after the unit's
+earlier sections had been authored and paid for. The lesson stage now parses through
+`_stage_answer_with_repair`, which spends **one** `.cut` re-ask on the identical request when the
+answer consumed its cap, and raises `ModelOutputInvalid` with `parse_outcome: "truncated"` and
+`repair_attempted: true` when the second answer is cut too. An answer that did *not* consume its
+cap is unchanged: a short malformed answer is a different defect, and the host's schema gate has
+already spent its own re-ask on it.
+
+**The cap matches the prompt.** `LESSON_OUTPUT_TOKENS = 24000` replaces the 4 000-token cap the
+lesson prompt contradicted: 2-6 segments of up to 2 000 characters plus their shorts is 16 800
+characters of prose before the worked example, the check and the media text, and the configured
+route tokenises Japanese at roughly one token per character.
+
+**Attempt 2 is a repair, not a rewrite.** The refused document travels in the request payload as
+`previous_draft`, the full reason list travels in `revision_instructions` (`_feedback` no longer
+truncates it at eight lines), and the request carries `REVISION_PROMPT_SUFFIX` (`.revision`) so a
+repaired draft is never recorded under the first-pass label. The request bound grows by the size of
+the draft it was handed (`_draft_payload_bound`): the draft is authored material bounded by the
+stage's own schema, and fitting it into the existing bound would either cut the document mid-token
+or drop the part the repair exists to keep. Because the lesson stage can now spend a second re-ask
+per attempt, `lesson_calls` is `2n` minimum and `8n` worst legal (§9).
+
 ## 8. The lesson document: one validated document, many views
 
 `docs/VISUAL_MEDIA_PLAN.md` §5 replaces the linear segment contract with a block document. The
@@ -1135,19 +1162,19 @@ who typed a ceiling must be told it was not applied.
 
 `CostBudget.max_calls` defaults to 32, which is a *fallback* ceiling for a job that was not sized,
 not a bound on the pipeline. A lesson job is budgeted to its own plan (`lesson_cost_budget`,
-6 calls per section) rather than to a constant: a fixed ceiling below the pipeline floor failed jobs
+8 calls per section) rather than to a constant: a fixed ceiling below the pipeline floor failed jobs
 that were behaving exactly as designed (a five-section plan needs 10 calls before any retry, the old
 default was 8). Every stage sizes the truncation re-ask — see *The truncation repair is a legal
 call* below.
 
 The **dollar** ceiling is sized the same way. `lesson_cost_budget(n)` returns
 
-    max_calls     = n * LESSON_ATTEMPTS * (CALLS_PER_LESSON_ATTEMPT + TRUNCATION_REPAIR_CALLS)  (6n)
+    max_calls     = n * LESSON_ATTEMPTS * (CALLS_PER_LESSON_ATTEMPT + 2 x TRUNCATION_REPAIR_CALLS)  (8n)
     max_cost_usd  = max(DEFAULT_MAX_COST_USD, max_calls * DECLARED_CALL_COST_USD)
 
 with `DEFAULT_MAX_COST_USD = 0.75` (the old flat ceiling, kept as a floor) and
 `DECLARED_CALL_COST_USD = 0.04` (the audit's measured $0.032 per structured call, rounded up so a
-legitimate job is not refused by a rounding error). Eight sections therefore get $1.92, not $0.75:
+legitimate job is not refused by a rounding error). Eight sections therefore get $2.56, not $0.75:
 the audit's P1-6 abort at call 24 — with sections left unauthored — was the flat ceiling binding
 while the call ceiling scaled. The operator override still wins, and the value actually used is
 recorded (`CostBudget.source` = `declared` / `operator_env` / `operator_brief` / `caller`).
@@ -1183,14 +1210,28 @@ parse used 1 964–2 749 tokens — the cap holds the 10-criterion + claim answe
 it on reasoning.
 
 The **lesson** stage uses the same arithmetic per section (CP-015e follow-up): two attempts, each
-generate + validate + one repair, so `lesson_calls` is `2n` minimum and `6n` worst legal, and
-`lesson_cost_budget(n)` sizes both ceilings from that 6. The previous `4n` was not a different
+generate + validate + one repair on the validator's answer — and, since W2-2, one on the lesson's
+own cut answer — so `lesson_calls` is `2n` minimum and `8n` worst legal, and
+`lesson_cost_budget(n)` sizes both ceilings from that 8. The previous `4n` was not a different
 policy, it was the H-17 / audit P1-6 "size to the worst legal path" rule applied to an undercounted
 path: CP-015b's Sourdough run recorded five `coursebook.lesson.validate` answers cut at the
 8 000-token cap for a four-lesson job, each repaired. A lesson row is durable before the next
 section starts, so the old abort wasted a run and a resume rather than losing data — a smaller
-failure than the unit stage's, not a safe one. Five sections now size to $1.20 (6 x 5 x $0.04)
-instead of $0.75, and eight to $1.92; an operator ceiling still wins.
+failure than the unit stage's, not a safe one. Five sections now size to $1.60 (8 x 5 x $0.04)
+instead of $0.75, and eight to $2.56; an operator ceiling still wins.
+
+W2-2 added a second re-ask to that path and re-sized the ceiling with it. The lesson stage now
+re-asks **its own** answer once when the completion cap cut it (`_stage_answer_with_repair`, marked
+`.cut`), in addition to the validator's repair, so the true worst legal path is
+`2 attempts x (generate + validate + 2 re-asks)` = `8n`, not `6n`:
+
+    lesson_calls(n)          = (2n minimum, 8n worst legal)
+    max_calls                = 8n
+    max_cost_usd             = max(0.75, 8n x $0.04)
+
+Five sections therefore size to $1.60 and eight to $2.56. A ceiling that still said `6n` would
+refuse a run that behaved exactly as designed on a route that truncates — the same defect CP-015e
+fixed for the validators, so the number moved with the call.
 
 #### A budget stop is not a verdict (`CP-015e`)
 

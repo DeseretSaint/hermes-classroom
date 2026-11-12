@@ -571,14 +571,14 @@ class ScaleTest(unittest.TestCase):
     def test_cost_and_call_ceilings_both_scale_with_the_plan(self) -> None:
         small = gen.lesson_cost_budget(4)
         large = gen.lesson_cost_budget(8)
-        # 2 attempts x (generate + validate + one truncation re-ask) = 6 calls per section.
-        self.assertEqual((small.max_calls, large.max_calls), (24, 48))
+        # 2 attempts x (generate + validate + one re-ask on each answer) = 8 calls per section.
+        self.assertEqual((small.max_calls, large.max_calls), (32, 64))
         # H-17: the dollar ceiling is sized from the plan, with the old flat 0.75 as the floor.
         small_cost = small.max_cost_usd
         large_cost = large.max_cost_usd
         assert small_cost is not None and large_cost is not None
-        self.assertAlmostEqual(small_cost, 24 * gen.DECLARED_CALL_COST_USD)
-        self.assertAlmostEqual(large_cost, 48 * gen.DECLARED_CALL_COST_USD)
+        self.assertAlmostEqual(small_cost, 32 * gen.DECLARED_CALL_COST_USD)
+        self.assertAlmostEqual(large_cost, 64 * gen.DECLARED_CALL_COST_USD)
         self.assertGreater(large_cost, small_cost)
 
         request = gen.LLMRequest(purpose="coursebook.lesson.generate", prompt_version="v",
@@ -598,8 +598,8 @@ class ScaleTest(unittest.TestCase):
             usage.record(request, costed(), 1)
         self.assertAlmostEqual(usage.known_cost, 24 * 0.032)
 
-        # The call ceiling still bounds the job: the 49th call is refused, not the 24th.
-        for _ in range(24):
+        # The call ceiling still bounds the job: the 65th call is refused, not the 24th.
+        for _ in range(40):
             usage.before_call(request)
             usage.record(request, costed(), 1)
         self.assertEqual(len(usage.calls), large.max_calls)
