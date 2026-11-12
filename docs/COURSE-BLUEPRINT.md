@@ -263,7 +263,7 @@ Budget is per stage, not per course:
 |---|---:|---|
 | blueprint (`plan`) | 4 | one generate and one validate, two attempts |
 | unit sections (`unit_sections`, one unit) | 6 | one generate, one validate and one truncation re-ask, two attempts (CP-015e) |
-| unit lessons (`lessons`, one unit) | 6 per section: one generate, one validate and one truncation re-ask, two attempts | same lesson pipeline as before; CP-015e follow-up counted the repair |
+| unit lessons (`lessons`, one unit) | 12 per section: one generate, one validate and two truncation re-asks, three attempts | CP-015g gave an item-level fix hint a second retry; W2-2 counted the lesson's own re-ask |
 
 A unit job uses `lesson_cost_budget` sized to that unit's section count, not the whole course.
 The unit-sections stage budgets six calls because the validator's answer is re-asked once when it

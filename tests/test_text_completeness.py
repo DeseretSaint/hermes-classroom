@@ -331,17 +331,18 @@ class LessonPageReadinessTest(GenerationTestBase):
     def test_one_regeneration_is_spent_and_the_complete_draft_is_stored(self) -> None:
         plan_result = self.approved_plan()
         complete = lesson_fixture("lesson_ja")
-        calls = {"n": 0}
+        attempts: dict[str, int] = {}
 
         def author(request):
-            calls["n"] += 1
-            document = copy.deepcopy(complete)
             payload = json.loads(request.input_text)
+            section_id = str((payload.get("section") or {}).get("section_id") or "")
+            attempts[section_id] = attempts.get(section_id, 0) + 1
+            document = copy.deepcopy(complete)
             document["section_title"] = (payload.get("section") or {}).get("title") or document[
                 "section_title"
             ]
-            # First draft for each section is truncated; the regeneration is complete.
-            if calls["n"] % 2 == 1:
+            # First draft for each section is truncated; every regeneration is complete.
+            if attempts[section_id] == 1:
                 short = str(document["segments"][0]["short"])
                 document["segments"][0]["short"] = short.rstrip(".").rsplit(" ", 1)[0] + ", not."
             return response(document, model="fake-author")
@@ -356,7 +357,15 @@ class LessonPageReadinessTest(GenerationTestBase):
         generated = [
             request for request in llm.requests if request.purpose == "coursebook.lesson.generate"
         ]
-        self.assertEqual(len(generated), 8)  # 4 sections x (rejected draft + regeneration)
+        # CP-015g raised LESSON_ATTEMPTS to three; a section whose only defect is the truncation
+        # still spends exactly one regeneration (the first section's rubric matches its objective).
+        by_section: dict[str, int] = {}
+        for request in generated:
+            section_id = str((json.loads(request.input_text).get("section") or {}).get("section_id"))
+            by_section[section_id] = by_section.get(section_id, 0) + 1
+        first_section = str(result["lessons"][0]["section_id"])
+        self.assertEqual(by_section[first_section], 2)
+        self.assertTrue(all(1 <= count <= 3 for count in by_section.values()), by_section)
         # The regeneration carries the check's reasons in its revision instructions, so the retry
         # is targeted, not blind.
         revision = json.loads(generated[1].input_text).get("revision_instructions") or ""
@@ -400,7 +409,9 @@ class LessonPageReadinessTest(GenerationTestBase):
             }
         )
         result = self.run_lessons(plan_result, llm)
-        self.assertEqual(llm.calls_for("coursebook.lesson.generate"), 8)
+        # Three attempts per section (LESSON_ATTEMPTS) and no validator was ever handed a
+        # truncated draft.
+        self.assertEqual(llm.calls_for("coursebook.lesson.generate"), 12)
         self.assertEqual(llm.calls_for("coursebook.lesson.validate"), 0)
         self.assertEqual(len(result["lessons"]), 4)
         self.assertEqual(result["needs_review"], [item["section_id"] for item in result["lessons"]])

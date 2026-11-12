@@ -229,7 +229,7 @@ The harness overwrites whatever the model echoed with the computed plan, stores 
 
 Neither gate is advisory and neither can be satisfied by the validator's silence: a failure is a
 `_RuleViolation` before the independent validator is called, so attempt 1 retries with the itemised
-reasons and attempt 2 parks the lesson `needs_review`.
+reasons and the final attempt (`LESSON_ATTEMPTS`, 3) parks the lesson `needs_review`.
 
 **Rubric angle.** The profile is resolved with `rubrics.resolve_profile(plan.rubric_profile,
 declared_target)` so the check's declared evidence target stays authoritative; the profile's

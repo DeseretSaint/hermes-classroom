@@ -268,7 +268,18 @@ UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v3"
 #: (eight at most, 1-40 characters, normalised 0-1 coordinates, start/center/end anchor), and the
 #: product UI draws them. The JSON schema gained the optional `labels` property in the same change,
 #: and the prompt must name a field the model is asked to emit.
-LESSON_PROMPT_VERSION = "lesson-prompt.v14"
+#:
+#: v15 (CP-015g, ``t_d4b36437``, rebased onto W2-2/W2-9): the instruction text gains two rules and
+#: a third attempt. The answer-leak rule names ``learner_explanation`` as a coaching surface that
+#: must not state, quote, paraphrase or summarise the key — CP-015g measured attempt 1 refused for
+#: a claim neither cited page states (with a fix hint on ``lesson.segments[0].body``) and attempt 2
+#: refusing under ``answer_leakage`` because the explanation restated the key in different words
+#: ("heavy reset after cold danger; light tidying") even though the verbatim scan saw nothing. The
+#: repair pass states that ``revision_instructions`` *is* the independent validator's refusal, that
+#: every item path and ``fix`` hint is a binding repair, and that a rejected claim is removed or
+#: supported by a supplied excerpt rather than resubmitted. Instruction text changed on top of
+#: v14, so v15. See ``docs/GENERATION.md`` §5 for what v15 adds over v14.
+LESSON_PROMPT_VERSION = "lesson-prompt.v15"
 #: The validator instruction text. H-191 §5: a validator answer was discarded because one
 #: ``item`` label was 81 characters against a ``maxLength`` of 80 the prompt never stated. The
 #: text now states the locator rule and the bound (read from :data:`ITEM_REFERENCE_MAX_CHARS`),
@@ -1093,7 +1104,7 @@ class CostBudget:
     """Honest ceilings for one job. Unknown cost is charged at a declared estimate, never zero.
 
     The dataclass default is a *fallback*, not a bound on the pipeline: a plan job starts it, and
-    every lesson job is re-sized to its own plan (:func:`lesson_cost_budget`, 6 calls per section
+    every lesson job is re-sized to its own plan (:func:`lesson_cost_budget`, 9 calls per section
     including the truncation re-ask) and every unit-sections job to its unit
     (:func:`unit_sections_cost_budget`, 6). The old default of 8 was below the floor for any plan
     larger than four sections (CB-011-D1: a five-section plan needs 10 calls before a single retry,
@@ -1180,7 +1191,18 @@ JOB_MAX_COST_ENV = "COURSEBOOK_JOB_MAX_COST_USD"
 CALLS_PER_LESSON_ATTEMPT = 2
 
 #: Attempts per section before the lesson is parked for review with its reasons.
-LESSON_ATTEMPTS = 2
+#:
+#: CP-015g measured the defect that fixed the value at 3. A live single-scope run for an unseen
+#: topic ("prune a fig tree") produced two validation records: attempt 1 was refused for a claim
+#: neither cited source states (with a fix hint on ``lesson.segments[0].body``), and attempt 2
+#: applied that hint and dropped the claim — but restated the check's key in
+#: ``learner_explanation``, so it was refused under ``answer_leakage`` instead. At two attempts
+#: the section parked ``needs_review`` although each refusal was repairable and the second named
+#: a *different* defect. A third attempt gives a second, different mistake room to be repaired;
+#: both retries carry the immediately preceding refusal, so a generator that repeats one mistake
+#: three times still parks the section — the honest ceiling is unchanged, only the number of
+#: repairs offered.
+LESSON_ATTEMPTS = 3
 
 #: Attempts per unit-sections stage before the unit fails. The batch is transactional, so the
 #: second attempt re-authors from the first attempt's refusal reasons rather than patching rows.
@@ -1300,12 +1322,17 @@ def lesson_calls(section_count: int, *, attempts: int = LESSON_ATTEMPTS) -> tupl
 
         sections x CALLS_PER_LESSON_ATTEMPT                                    (2n)
 
-    The worst legal case adds the second attempt the validator is allowed to ask for **and** the
-    two truncation re-asks (:data:`TRUNCATION_REPAIR_CALLS`) one attempt may legally spend: one on
-    the authored lesson's own answer (W2-2, ``_stage_answer_with_repair``) and one on the
-    validator's answer (``_validation_answer_with_repair``):
+    The worst legal case adds the attempts the validator is allowed to ask for **and** the two
+    truncation re-asks (:data:`TRUNCATION_REPAIR_CALLS`) one attempt may legally spend: one on the
+    authored lesson's own answer (W2-2, ``_stage_answer_with_repair``) and one on the validator's
+    answer (``_validation_answer_with_repair``):
 
-        sections x attempts x (generate + validate + 2 re-asks)               (8n)
+        sections x attempts x (generate + validate + 2 re-asks)               (12n)
+
+    CP-015g raised :data:`LESSON_ATTEMPTS` from 2 to 3 on top of W2-2's two re-asks, so the
+    ceiling moves 8n -> 12n with it. The old base counted one re-ask and 9n; that arithmetic does
+    not survive the rebase, and an undercount here is exactly the CP-015e defect (a ceiling that
+    aborts a run behaving as designed), so the three-attempt ceiling is 12n, not 9n.
 
     A repair is counted because it is a designed call, not an exception. CP-015b's Sourdough run
     recorded five ``coursebook.lesson.validate`` answers cut at the 8 000-token cap for a four-lesson
@@ -1332,10 +1359,10 @@ def lesson_cost_budget(section_count: int, *, brief_budget_usd: Any = None) -> C
 
     Every section gets :data:`LESSON_ATTEMPTS` attempts of one generation plus one independent
     validation, plus the two truncation re-asks each attempt may spend, so the call ceiling is
-    ``8 x sections`` (:func:`lesson_calls`). The *dollar* ceiling is sized the same way from
+    ``12 x sections`` (:func:`lesson_calls`). The *dollar* ceiling is sized the same way from
     :data:`DECLARED_CALL_COST_USD`, which is the half of the audit's P1-6 defect that a flat $0.75
-    left binding: 8 sections need 64 calls, and a $0.75 ceiling aborted the audit's run at call 24
-    with sections unauthored. Five sections therefore get $1.60, not $0.75. A caller/operator value
+    left binding: 8 sections need 96 calls, and a $0.75 ceiling aborted the audit's run at call 24
+    with sections unauthored. Five sections therefore get $2.40, not $0.75. A caller/operator value
     still wins (``COURSEBOOK_JOB_MAX_COST_USD`` or ``brief.budget_usd``), so an operator who wants a
     tighter ceiling can declare one, but the default never refuses a call the pipeline itself makes.
     """
@@ -4940,6 +4967,7 @@ def _lesson_instructions(
     scaffold_note: str,
     rubric_profile: str | None = None,
     capability: capability_policy.LessonCapabilityPlan | None = None,
+    revision: str | None = None,
 ) -> str:
     if capability is None:
         # A direct caller still gets a real policy decision rather than a hand-written wish list.
@@ -5011,6 +5039,17 @@ def _lesson_instructions(
         "learner_instructions, and it must not restate the reference answer either: ask the "
         "question without shipping its key. A check whose stimulus prompt or learner_instructions "
         "contains the reference answer is refused as 'lesson.check.reference_answer'.",
+        # CP-015g: measured live, attempt 2 dropped the refused claim but its learner_explanation
+        # restated the answer in different words ("heavy reset after cold danger; light
+        # tidying"), so the independent validator refused it under answer_leakage even though the
+        # deterministic scan saw no verbatim key. The explanation is a coaching surface: it may
+        # say how to reach the answer, never what the answer is.
+        "learner_explanation is a coaching surface, not a key echo: describe how the learner "
+        "reaches the answer (what to notice, what to set aside, which step to take) and never "
+        "state, quote, paraphrase or summarise the reference answer or an accepted answer. "
+        "Restating the key in different words still ships it; a live second draft was refused "
+        "under answer_leakage for exactly that. Write 'compare the choices and keep the one that "
+        "opens the interaction', not 'the greeting is the one to say'.",
         "Write 3-6 rubric criteria in check.rubric, each a distinct observable aspect of the "
         "response; never restate one aspect in two criteria.",
         "If check.stimulus.format is 'verification', enumerate the steps it asks the learner to "
@@ -5030,6 +5069,19 @@ def _lesson_instructions(
         lines.append(f"Content locale: {locale}.")
     if scaffold_note:
         lines.append(scaffold_note)
+    if revision:
+        # CP-015g: the measured second draft did apply the first fix hint, then failed on a
+        # different criterion (its explanation restated the key). Each retry must carry the
+        # refusal that applies to it, so a different second mistake is repairable rather than
+        # spending the ceiling on a drift the author was never told about.
+        lines.append(
+            "This is a repair pass. 'revision_instructions' in the input is the independent "
+            "validator's refusal of your previous draft: fix every item it names, at the path it "
+            "names, and apply each 'fix' hint literally. A rejected claim must either be removed "
+            "from that field or be supported by an exact excerpt of a source supplied in this "
+            "request. Do not resubmit the rejected text unchanged; keep everything the validator "
+            "did not object to."
+        )
     if recipe == "one_off":
         lines.append(
             "The check is a verification checklist (kind 'verification', format 'verification'); "
@@ -8289,39 +8341,58 @@ def _feedback(verdict: Mapping[str, Any]) -> str:
     own ``reason``. Both are the author's repair list, so a refusal that failed a criterion without
     itemising a rejection is still repairable instead of falling back to the generic
     "fix the objective/source alignment" sentence (which names no rule and repairs nothing).
+
+    CP-015g: one item is one *block*, not one line per field. Counting the ``fix:`` line separately
+    silently dropped the tail of the repair list whenever a validator itemised several rejections —
+    and the dropped tail was the actionable half (the hint) while the reason stayed. A block keeps
+    an item path and its hint together, so the repair list can never hand back a path with no fix.
+    W2-2 later removed the eight-slot truncation entirely (every reason travels), so the block shape
+    is the part of this fix that survives; the list is now bounded by the validator's own answer.
     """
-    lines: list[str] = []
+    blocks: list[str] = []
     for entry in verdict.get("rejections") or []:
-        lines.append(
-            f"- item {entry.get('item')} ({entry.get('criterion')}): {entry.get('reason')}"
-        )
+        block = f"- item {entry.get('item')} ({entry.get('criterion')}): {entry.get('reason')}"
         if entry.get("fix_hint"):
-            lines.append(f"  fix: {entry['fix_hint']}")
-    if not lines:
+            block += f"\n  fix: {entry['fix_hint']}"
+        blocks.append(block)
+    itemised = bool(blocks)
+    if not blocks:
         for entry in verdict.get("criteria") or []:
             if str(entry.get("verdict")) == "pass":
                 continue
-            lines.append(
+            blocks.append(
                 f"- criterion {entry.get('id')} ({entry.get('verdict')}): {entry.get('reason')}"
             )
-    if not lines:
+    if not blocks:
         return (
             "The independent validator rejected the previous attempt without itemised reasons; "
             "fix the objective/source alignment and try again."
         )
+    if itemised:
+        # CP-015g: state the rule the hint assumes. The item path names the exact field to repair;
+        # a rejected claim is removed or supported by a supplied source, never restated. The rule
+        # is stated once, ahead of the item blocks, and is not charged against any slot count.
+        rule = (
+            "- Apply every 'fix' hint literally to the item path it names. A rejected claim must "
+            "be removed from that field or supported by an exact excerpt of a source supplied in "
+            "this request; resubmitting the rejected text unchanged is not a repair."
+        )
+        listed = [rule, *blocks]
+    else:
+        listed = list(blocks)
     if verdict.get("sourcing_notes"):
         # CP-015g/D1-F2: the repair list must never read as "find a citation for this". A claim no
         # supplied excerpt carries has exactly one honest answer, and it is the one the author
         # already gave: keep it unverified with no ids.
-        lines.append(
+        listed.append(
             "- do not invent a citation to satisfy a support complaint: an objective whose claim "
             "no supplied excerpt carries stays `support: \"unverified\"` with empty `source_ids`"
         )
-    # W2-2: every reason travels. Eight lines was a silent truncation of the repair list itself —
-    # a draft regenerated from reasons 1-8 could break reason 12 and be refused for a defect the
-    # author was never told about. The list is bounded by the validator's own answer, which is
-    # already bounded by its schema.
-    return "\n".join(["The independent validator rejected the previous attempt for these reasons:", *lines])
+    # The block shape is the CP-015g repair-list rule: one item is one block, so an item path and
+    # its ``fix`` hint always travel together instead of splitting at a line bound. W2-2 removed
+    # the eight-slot truncation outright (every reason travels; the validator's own answer bounds
+    # the list), so there is no cap left to split — the block structure is what remains of the fix.
+    return "\n".join(["The independent validator rejected the previous attempt for these reasons:", *listed])
 
 
 #: Local request-size guard per declared scope. This is not a provider limit: it exists so a
@@ -9095,6 +9166,7 @@ def build_lesson_request(
         scaffold_note=_scaffold_note(policy, locale),
         rubric_profile=rubric_profile,
         capability=capability,
+        revision=feedback,
     )
     if previous_draft is not None:
         instructions += (
@@ -12945,9 +13017,10 @@ def run_lesson_job(
                     " Re-author the plan before generating lessons."
                 )
 
-    # Budget sized to *this* plan: every section gets two attempts of generate + validate, and the
-    # dollar ceiling scales with the calls. Never start a job whose *minimum* (one generate + one
-    # validate per section) cannot be paid: that is the audit's P1-6 half-authored course.
+    # Budget sized to *this* plan: every section gets :data:`LESSON_ATTEMPTS` attempts of generate
+    # + validate, and the dollar ceiling scales with the calls. Never start a job whose *minimum*
+    # (one generate + one validate per section) cannot be paid: that is the audit's P1-6
+    # half-authored course.
     resolved_budget = budget or lesson_cost_budget(len(section_rows), brief_budget_usd=brief.get("budget_usd"))
     preflight = assert_cost_preflight(len(section_rows), budget=resolved_budget)
     usage = _Usage(resolved_budget, cancel_probe=_job_cancel_probe(job_id))
@@ -13324,7 +13397,7 @@ def _author_section(
     # carried into the next request so the parts that already passed are not authored twice.
     previous_draft: dict[str, Any] | None = None
 
-    for attempt in (1, 2):
+    for attempt in range(1, LESSON_ATTEMPTS + 1):
         # Each attempt starts clean so no stale validator report can be attached to a new draft.
         validation_request = None
         validation_response = None
@@ -13379,7 +13452,8 @@ def _author_section(
         problems: list[str] = []
         # H-195: the depth-and-simplicity floor runs before the independent validator, on the
         # real authoring path only. A thin draft is refused for being thin; attempt 1 is retried
-        # with these reasons and attempt 2 parks the lesson needs_review (never a served lesson).
+        # with these reasons and the final attempt (``LESSON_ATTEMPTS``) parks the lesson
+        # needs_review (never a served lesson).
         problems.extend(teaching_quality_problems(candidate))
         try:
             enforce_lesson_rules(
@@ -13415,7 +13489,7 @@ def _author_section(
             problems.extend(exc.reasons)
         if problems:
             rejection_reasons = problems
-            if attempt == 2:
+            if attempt == LESSON_ATTEMPTS:
                 lesson = candidate
                 break
             # W2-2: attempt 2 repairs this draft against every reason, rather than starting over.
@@ -13488,7 +13562,7 @@ def _author_section(
             lesson = candidate
             break
         rejection_reasons = _refusal_reasons(verdict)
-        if attempt == 2:
+        if attempt == LESSON_ATTEMPTS:
             lesson = candidate
             break
         # W2-2: attempt 2 repairs the refused draft against the validator's full reason list.
@@ -13497,8 +13571,8 @@ def _author_section(
 
     assert lesson is not None and request is not None
     if verdict is None:
-        # Deterministic rules failed twice, so no independent validation ever ran. That is not a
-        # pass: the lesson is parked for review with the rule reasons attached.
+        # Deterministic rules failed on every attempt, so no independent validation ever ran. That
+        # is not a pass: the lesson is parked for review with the rule reasons attached.
         verdict = {
             "verdict": "reject",
             "declared": "reject",

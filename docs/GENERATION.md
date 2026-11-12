@@ -21,7 +21,7 @@ Three different calls, three different prompts, three different schemas:
 | Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v3` | `UNIT_SECTIONS_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
 | Unit-sections validator | `coursebook.unit_sections.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
-| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v14` | `LESSON_SCHEMA` |
+| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v15` | `LESSON_SCHEMA` |
 | Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
 
 `build_plan_request()` selects the v2 schema and `plan-prompt.v24` when the brief declares a scope
@@ -781,25 +781,47 @@ Two refusals happen while authoring, before any learner or validator sees the dr
 `format: verification` with no items is refused (a prompt alone is not a checklist), and two items
 whose labels read the same once case, spacing and punctuation are ignored are refused with the
 read seam's own normalisation (`domain._check_label_key`, imported rather than reimplemented).
-Both raise `_RuleViolation`: attempt 1 is retried with the reasons, attempt 2 parks the lesson
-`needs_review` with the check closed, and `check.get` would refuse the same duplicate anyway. The
-prompt change is one of the reasons `LESSON_PROMPT_VERSION` is versioned; `lesson-prompt.v14` is
-the current label.
+Both raise `_RuleViolation`: attempt 1 is retried with the reasons, the final attempt
+(`LESSON_ATTEMPTS`, 3) parks the lesson `needs_review` with the check closed, and `check.get`
+would refuse the same duplicate anyway. The prompt change is one of the reasons
+`LESSON_PROMPT_VERSION` is versioned; `lesson-prompt.v15` is the current label.
 
-**Answer-leak surfaces (CP-015c follow-up).** `lesson-prompt.v14` states the rule
+**Repair pass (CP-015g).** A lesson that the independent validator refused is re-authored with
+the refusal in two places: the request payload's `revision_instructions` (the itemised reasons,
+the rejected item path and the validator's `fix_hint`) and the lesson instruction text, which
+states that a repair pass must apply every hint literally: a rejected claim is removed from the
+field it names or supported by an exact excerpt of a source supplied in that request, never
+resubmitted unchanged. `LESSON_ATTEMPTS` is three because a repair can expose a *different*
+mistake: the live record for one section shows attempt 2 dropping the refused claim (the hint
+worked) and being refused under `answer_leakage` instead, so two attempts left no room to fix the
+second defect. Each retry carries the immediately preceding refusal; a generator that repeats one
+mistake through all three attempts still parks the section `needs_review` with every check closed.
+The label advances for that instruction text: **v15 is v14 plus** (a) the
+`learner_explanation` coaching-surface sentence — the explanation may say how to reach the answer
+and may not state, quote, paraphrase or summarise the key — and (b) the binding repair-pass
+sentence that makes `revision_instructions` the validator's refusal and every item path + `fix`
+hint a literal repair. Everything v12, v13 and v14 introduced is still in v15.
+
+**Answer-leak surfaces (CP-015c follow-up).** `lesson-prompt.v15` states the rule
 `assert_no_answer_leak` and `assert_check_payload_does_not_announce_answer` enforce: a `model`
 segment (and narration media that reads it) is the one surface where the target form, its reading
 and its function appear together; every other learner surface is scanned (non-model segments, the
 worked example, `learner_explanation(_short)`, `parent_notes`, non-narration media, the recap), and
-the check's stimulus prompt and `learner_instructions` must not restate the key. The lesson
+the check's stimulus prompt and `learner_instructions` must not restate the key. `learner_explanation`
+is also named a coaching surface: it describes how to reach the answer (what to notice, what to set
+aside) and must not state, quote, paraphrase or summarise the key. CP-015g measured why the wording
+matters: a live second draft dropped the refused claim but explained the choice in different words,
+and the independent pass refused it under `answer_leakage` even though no verbatim key was present.
+The lesson
 validation payload carries the stored key in its own `answer_key` block, marked
 `learner_facing: false`, because `learner_page` never serializes it; the current validation label
 (§1's table) states that split so a validator does not read the key's presence as a shipped answer.
 
-**Rubric floor.** The lesson prompt (`lesson-prompt.v14`) asks for 3–6 criteria, each a distinct
+**Rubric floor.** The lesson prompt (`lesson-prompt.v15`) asks for 3–6 criteria, each a distinct
 observable aspect of the response. `enforce_lesson_rules` refuses fewer than
 `packs.MIN_RUBRIC_CRITERIA` (3) with a typed reason, so attempt 1 is retried with that reason in
-`revision_instructions` and attempt 2 parks the lesson `needs_review`. Criteria are never
+`revision_instructions` and the final attempt (`LESSON_ATTEMPTS`, 3) parks the lesson
+`needs_review`. Criteria are never
 synthesised to reach the floor: a pack is exportable only when the author actually declared them.
 
 **Teaching floor (H-195).** On the real authoring path, and before the independent validator is
@@ -815,8 +837,8 @@ called, `teaching_quality_problems(lesson)` applies a deterministic floor to the
 * no boilerplate from `PLACEHOLDER_LESSON_PHRASES` (`lorem ipsum`, `to be determined`,
   `insert content`, …) anywhere in the authored teaching text.
 
-A failure is a `_RuleViolation`, so attempt 1 is retried with those reasons and attempt 2 parks the
-lesson `needs_review` with the check closed: a thin draft never reaches a learner. The floor is
+A failure is a `_RuleViolation`, so attempt 1 is retried with those reasons and the final attempt
+parks the lesson `needs_review` with the check closed: a thin draft never reaches a learner. The floor is
 deterministic and structural — it refuses an outline and never scores prose quality — which is
 exactly why it is **not** a `VALIDATION_CRITERIA` entry. The criteria remain the
 independent model's judgment; this floor remains code.
@@ -829,7 +851,7 @@ construct. `enforce_plan_rules` refuses a missing declaration and hands each dec
 (a required illustration, an illustration on a symbolic lesson, audio outside a language lesson).
 The declaration is stored in `gen_plan_sections.media_need_json`. Before the lesson prompt is built,
 the pipeline computes one immutable plan from the recipe, the objective's evidence target, the
-section's declaration, the locale/level and an advisory subject domain. `lesson-prompt.v14`
+section's declaration, the locale/level and an advisory subject domain. `lesson-prompt.v15`
 receives exactly that plan — the check angle, the rubric profile and the *permitted* media roles —
 instead of a generic invitation to add media. A lesson whose policy sets image or audio to `none`
 is told to emit no item of that kind at all, and one whose plan requires an item must produce it.
@@ -842,7 +864,7 @@ kind/role permitted by the plan?) and `artifacts.media_problems` (is the spec co
 text equivalent, transcript/voice/language for narration, `source_ids` plus permission for a sourced
 technical reference, `facts.rows` for a schematic, and never a technical claim on an illustration).
 A failure is a `_RuleViolation` with an itemised reason: attempt 1 is retried with those reasons,
-attempt 2 parks the lesson `needs_review`. Media never becomes evidence because a validator did not
+the final attempt parks the lesson `needs_review`. Media never becomes evidence because a validator did not
 complain; it is refused before the validator is called.
 
 **Rubric angle.** `enforce_lesson_rules` resolves the profile through
@@ -852,7 +874,7 @@ default profile. The profile's own criteria are then validated (3–6 distinct o
 mental-state claims, no restated aspect).
 
 **Procedure header (H-06).** A technical procedure lesson carries an optional typed `procedure`
-object in `LESSON_SCHEMA`; `lesson-prompt.v14` asks the author for it whenever the check's evidence
+object in `LESSON_SCHEMA`; `lesson-prompt.v15` asks the author for it whenever the check's evidence
 target is `procedure` or the lesson's construct is a technical procedure, and forbids it
 everywhere else. The label is versioned rather than frozen: it is recorded in stored validation
 bindings and the idempotency fingerprint, so a different instruction text under a reused label
@@ -1044,14 +1066,16 @@ lesson prompt contradicted: 2-6 segments of up to 2 000 characters plus their sh
 characters of prose before the worked example, the check and the media text, and the configured
 route tokenises Japanese at roughly one token per character.
 
-**Attempt 2 is a repair, not a rewrite.** The refused document travels in the request payload as
+**A refused attempt is a repair, not a rewrite.** The refused document travels in the request payload as
 `previous_draft`, the full reason list travels in `revision_instructions` (`_feedback` no longer
-truncates it at eight lines), and the request carries `REVISION_PROMPT_SUFFIX` (`.revision`) so a
+truncates it at eight lines; each item is one block, so a `fix:` hint can never be split from the
+item path it names), and the request carries `REVISION_PROMPT_SUFFIX` (`.revision`) so a
 repaired draft is never recorded under the first-pass label. The request bound grows by the size of
 the draft it was handed (`_draft_payload_bound`): the draft is authored material bounded by the
 stage's own schema, and fitting it into the existing bound would either cut the document mid-token
 or drop the part the repair exists to keep. Because the lesson stage can now spend a second re-ask
-per attempt, `lesson_calls` is `2n` minimum and `8n` worst legal (§9).
+per attempt and `LESSON_ATTEMPTS` is three (CP-015g), `lesson_calls` is `2n` minimum and `12n`
+worst legal (§9).
 
 ## 8. The lesson document: one validated document, many views
 
@@ -1082,7 +1106,7 @@ Two stored shapes project into the same `$defs/lesson_document`:
 
 Rules the projection cannot bend:
 
-* `short` is authored, never synthesised from `deep`. The lesson writer (`lesson-prompt.v14`)
+* `short` is authored, never synthesised from `deep`. The lesson writer (`lesson-prompt.v15`)
   authors `segments[].short`, `worked_example.short` and `learner_explanation_short`; the
   projection publishes exactly those strings and never slices a deep field. `_enforce_lesson_document`
   runs before the independent validator: it builds the document, re-runs `validate_blocks`
@@ -1174,19 +1198,19 @@ who typed a ceiling must be told it was not applied.
 
 `CostBudget.max_calls` defaults to 32, which is a *fallback* ceiling for a job that was not sized,
 not a bound on the pipeline. A lesson job is budgeted to its own plan (`lesson_cost_budget`,
-8 calls per section) rather than to a constant: a fixed ceiling below the pipeline floor failed jobs
+12 calls per section) rather than to a constant: a fixed ceiling below the pipeline floor failed jobs
 that were behaving exactly as designed (a five-section plan needs 10 calls before any retry, the old
 default was 8). Every stage sizes the truncation re-ask — see *The truncation repair is a legal
 call* below.
 
 The **dollar** ceiling is sized the same way. `lesson_cost_budget(n)` returns
 
-    max_calls     = n * LESSON_ATTEMPTS * (CALLS_PER_LESSON_ATTEMPT + 2 x TRUNCATION_REPAIR_CALLS)  (8n)
+    max_calls     = n * LESSON_ATTEMPTS * (CALLS_PER_LESSON_ATTEMPT + 2 x TRUNCATION_REPAIR_CALLS)  (12n)
     max_cost_usd  = max(DEFAULT_MAX_COST_USD, max_calls * DECLARED_CALL_COST_USD)
 
 with `DEFAULT_MAX_COST_USD = 0.75` (the old flat ceiling, kept as a floor) and
 `DECLARED_CALL_COST_USD = 0.04` (the audit's measured $0.032 per structured call, rounded up so a
-legitimate job is not refused by a rounding error). Eight sections therefore get $2.56, not $0.75:
+legitimate job is not refused by a rounding error). Eight sections therefore get $3.84, not $0.75:
 the audit's P1-6 abort at call 24 — with sections left unauthored — was the flat ceiling binding
 while the call ceiling scaled. The operator override still wins, and the value actually used is
 recorded (`CostBudget.source` = `declared` / `operator_env` / `operator_brief` / `caller`).
@@ -1221,29 +1245,31 @@ call. Live evidence: every observed `coursebook.unit_sections.validate` answer c
 parse used 1 964–2 749 tokens — the cap holds the 10-criterion + claim answer, the first ask spends
 it on reasoning.
 
-The **lesson** stage uses the same arithmetic per section (CP-015e follow-up): two attempts, each
-generate + validate + one repair on the validator's answer — and, since W2-2, one on the lesson's
-own cut answer — so `lesson_calls` is `2n` minimum and `8n` worst legal, and
-`lesson_cost_budget(n)` sizes both ceilings from that 8. The previous `4n` was not a different
+The **lesson** stage uses the same arithmetic per section (CP-015e follow-up, re-sized by W2-2 and
+again by CP-015g): `LESSON_ATTEMPTS` attempts, each generate + validate + two repairs — one on the
+validator's answer and, since W2-2, one on the lesson's own cut answer — so `lesson_calls` is
+`2n` minimum and `12n` worst legal at the current three attempts, and `lesson_cost_budget(n)` sizes
+both ceilings from that 12. The original `4n` was not a different
 policy, it was the H-17 / audit P1-6 "size to the worst legal path" rule applied to an undercounted
 path: CP-015b's Sourdough run recorded five `coursebook.lesson.validate` answers cut at the
 8 000-token cap for a four-lesson job, each repaired. A lesson row is durable before the next
 section starts, so the old abort wasted a run and a resume rather than losing data — a smaller
-failure than the unit stage's, not a safe one. Five sections now size to $1.60 (8 x 5 x $0.04)
-instead of $0.75, and eight to $2.56; an operator ceiling still wins.
+failure than the unit stage's, not a safe one.
 
-W2-2 added a second re-ask to that path and re-sized the ceiling with it. The lesson stage now
-re-asks **its own** answer once when the completion cap cut it (`_stage_answer_with_repair`, marked
-`.cut`), in addition to the validator's repair, so the true worst legal path is
-`2 attempts x (generate + validate + 2 re-asks)` = `8n`, not `6n`:
+W2-2 added a second re-ask to that path and CP-015g raised the attempt count to three; the ceiling
+was re-sized with both. The lesson stage re-asks **its own** answer once when the completion cap
+cut it (`_stage_answer_with_repair`, marked `.cut`), in addition to the validator's repair, so the
+true worst legal path is `3 attempts x (generate + validate + 2 re-asks)` = `12n`, not `8n` and no
+longer `6n`:
 
-    lesson_calls(n)          = (2n minimum, 8n worst legal)
-    max_calls                = 8n
-    max_cost_usd             = max(0.75, 8n x $0.04)
+    lesson_calls(n)          = (2n minimum, 12n worst legal)
+    max_calls                = 12n
+    max_cost_usd             = max(0.75, 12n x $0.04)
 
-Five sections therefore size to $1.60 and eight to $2.56. A ceiling that still said `6n` would
-refuse a run that behaved exactly as designed on a route that truncates — the same defect CP-015e
-fixed for the validators, so the number moved with the call.
+Five sections therefore size to $2.40 and eight to $3.84. A ceiling that still said `8n` (or the
+pre-rebase branch's `9n`, which counted only one re-ask) would refuse a run that behaved exactly
+as designed on a route that truncates — the same defect CP-015e fixed for the validators, so the
+number moved with the call.
 
 #### A budget stop is not a verdict (`CP-015e`)
 
