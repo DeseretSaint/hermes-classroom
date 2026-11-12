@@ -5930,7 +5930,10 @@ def _enforce_plan_rules_v2(
     # Rule 1b — a declared beginner may not open with the act. A learner who says "none" at auto
     # repair must meet the parts and the vocabulary before the head comes off; a plan whose first
     # objective is a procedure or a transfer is refused rather than shipped to a beginner.
-    if is_beginner_level(level) and objectives:
+    if is_beginner_level(level) and len(objectives) > 1:
+        # A one-off brief is one task by definition: a beginner who asks for a single procedure is
+        # asking for that procedure, and refusing it would delete the capability rather than
+        # sequence it. The rule bites where a course has room to sequence.
         opening = str(objectives[0].get("evidence_target") or "")
         if opening in ("procedure", "transfer"):
             reasons.append(
@@ -6018,10 +6021,14 @@ def _enforce_plan_rules_v2(
             )
         expected_kinds = CHECK_KIND_BY_TARGET.get(family)
         declared_kind = str(item.get("kind") or "")
-        if expected_kinds and declared_kind and declared_kind not in expected_kinds:
+        # A procedure is the one family a quiz cannot measure: a checklist of the actual acts is the
+        # performance, and a question about them is a claim about a performance nobody watched. The
+        # other families keep their authored kind, because a scenario quiz is a real transfer check
+        # and a recorded attempt is a stricter one, not a different capability.
+        if family == "procedure" and declared_kind and declared_kind not in expected_kinds:
             reasons.append(
                 f"check for objective {item.get('objective_ref')} is {declared_kind!r} but a "
-                f"{family!r} objective is measured by {' or '.join(expected_kinds)}"
+                f"procedure objective is measured by {' or '.join(expected_kinds)}"
             )
 
     # Rule 6 — prerequisite edges point backwards, are unique, no self ref. The schema bounds

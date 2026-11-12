@@ -288,7 +288,13 @@ class DesktopLiveSequenceTest(SyllabusCase):
         )["result"]
         self.assertGreater(len(alignment["items"]), 0)
         view = self.js({"kind": "alignment-view", "alignment": alignment})
-        self.assertFalse(view["approveReady"])
+        # The primary button IS the alignment review (62-syllabus-surfaces.js wires onApprove to
+        # review), so a fresh, unblocked mapping is "ready" before it is reviewed. Requiring
+        # reviewed_revision here made the only control that records a review impossible to press.
+        # The plan itself stays unapprovable until that review lands, which the next assertion and
+        # the backend refusal below both pin.
+        self.assertTrue(view["approveReady"])
+        self.assertFalse(view["reviewComplete"])
         self.assertTrue(view["rows"])
         for row in view["rows"]:
             # No learner-facing row prints a raw reason code; the copy map covers every state.

@@ -77,3 +77,17 @@ common subject phrases resolve; the Field Challenge is a challenge; XP is derive
 row and pays nothing for presence or a return visit; a syllabus course carries the learner's
 answers; generated world art reaches the lesson; a syllabus mapping can be approved; a generated
 illustration is reviewed before it ships and never becomes procedure authority.
+
+## Known red, and why
+
+`tests.test_harness_e2e` now fails in `setUpClass` on `soldering_full`. The cause is not a broken
+product path: that recorded scenario carries five **procedure** objectives whose checks are quizzes,
+and the plan rule now refuses a quiz for a procedure (a checklist of the acts is the performance; a
+question about them is a claim about a performance nobody watched). The recording predates the rule.
+
+`scripts/migrate-h40-transcripts.py` performs the migration the fixture needs: it flips each
+procedure check to `verification` and derives checklist items from the `example_steps` the recording
+already carries. Running it is not enough on its own, because the harness also pins the transcript
+brief hashes and the evidence packet, so the scenario has to be re-recorded and its evidence
+regenerated in one pass. That is a card, not a tail-end edit, and it is named here rather than
+papered over.
