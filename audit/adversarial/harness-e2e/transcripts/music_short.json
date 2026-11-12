@@ -1,4 +1,9 @@
 {
+  "grounding": {
+    "objective_ordinal": 1,
+    "quote": "It names the semitone counts of the common intervals and the major/minor triad recipes.",
+    "source_url": "https://example.invalid/recorded/music-intervals"
+  },
   "lessons": {
     "Build a major and a minor triad from a root note": {
       "accepted_answers": [

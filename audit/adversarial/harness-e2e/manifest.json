@@ -1,32 +1,32 @@
 {
   "evidence": {
     "bicycle_single.json": {
-      "bytes": 28494,
-      "sha256": "9d5441292cdc6271260f2b0fb392269293ed47d23cb6d5fd562b0fe0b966af08"
+      "bytes": 28820,
+      "sha256": "6d36e9558f182b9d4b1f1b05d12875a1673574333d7aa06448cdd4252d3be47a"
     },
     "focused-tests.txt": {
-      "bytes": 4558,
-      "sha256": "ae3877ed15d06751ccec1d2c702088085b6312e739bec587a431fa13bd4a4463"
+      "bytes": 4544,
+      "sha256": "99ff1a909574bdca39160bac0e156734c9d912e43bbc347eccacab442a6e042b"
     },
     "full-suite.txt": {
-      "bytes": 8298,
-      "sha256": "5eede56a14d8a02c5acc2d7f3478c184470fadf6474d7925cf4dc1d3bedd66e4"
+      "bytes": 21715,
+      "sha256": "232f1db453e55035b3d5e79c46372a1278936caea072928b056f262a14fdcad0"
     },
     "music_short.json": {
-      "bytes": 50048,
-      "sha256": "3a807669e1b81bdb8a327858f5fbd2913b7dc37904196d49419a91ec90b8798d"
+      "bytes": 50349,
+      "sha256": "3e4a4e78f57e5db7d7bea5a4a9ab2793662d91162b8919c2215200f9922f6af4"
     },
     "partial_unit_batch.json": {
       "bytes": 908,
       "sha256": "7f8227c5f97bc53e0c8c399cbeaf97b70e3f445fcd0282ae619eb7d97e899dff"
     },
     "run-output.txt": {
-      "bytes": 8766,
-      "sha256": "139b7ba437b2472726856c51c74a6724f7646a1a55af96548566c65f7c258c33"
+      "bytes": 8806,
+      "sha256": "c591e608c5a3a0ad530c0e60e4eb71d5f25cd6a70ae4f0ef21f4c20fa9f0b6f3"
     },
     "soldering_full.json": {
-      "bytes": 128723,
-      "sha256": "3c21cc38e79e0dbc3bfac85857149d1c3b9312d270b634b8c4928f869c51ede6"
+      "bytes": 130938,
+      "sha256": "4541faa8add4f0b66f784130743f93760b042d121e08e11b232b5034004a4d8e"
     },
     "summary.json": {
       "bytes": 84,
@@ -35,7 +35,7 @@
   },
   "harness": {
     "path": "harness_e2e.py",
-    "sha256": "a2036debecaa6d362114d9d03f58a4bed768a6f196573425c0e93fc7d935e465"
+    "sha256": "d6f6b4cd61ea86060fe3349ec8a76c295461d3d12fbd3c5db4de749eb2c2f835"
   },
   "inputs": {
     "bicycle_single": {
@@ -52,7 +52,7 @@
       "model_transcript_id": "recorded-transcript-h40",
       "scope": "single",
       "transcript": "transcripts/bicycle_single.json",
-      "transcript_sha256": "2bac52b560f95e4e075c7bc3ddfc67eece4085eac0c3216f41c6dd5acd2484d7",
+      "transcript_sha256": "15e5e09aeafb2fb250f61500a8a09c2562d9500cdd43c1de108a88113966d8dd",
       "validator_transcript_id": "recorded-validator-h40"
     },
     "music_short": {
@@ -69,7 +69,7 @@
       "model_transcript_id": "recorded-transcript-h40",
       "scope": "short",
       "transcript": "transcripts/music_short.json",
-      "transcript_sha256": "9cb4f2ce7c33cd5f277c635492785bcf9ee0745590753ab842b2e70ffdfad6de",
+      "transcript_sha256": "028bdca1c459c966470c83ab346feb3e1be83640dc722517a4e244908cba69e4",
       "validator_transcript_id": "recorded-validator-h40"
     },
     "soldering_full": {
@@ -86,7 +86,7 @@
       "model_transcript_id": "recorded-transcript-h40",
       "scope": "full",
       "transcript": "transcripts/soldering_full.json",
-      "transcript_sha256": "21af9c0566710b7d3bc07d170f1f082ef1e0f5793dae212bd48bd3e4a1ea6004",
+      "transcript_sha256": "0e84a1954533d49fc45178858e9f7417ecd65404525a660b01dfc780a785de58",
       "validator_transcript_id": "recorded-validator-h40"
     }
   },

@@ -1,4 +1,9 @@
 {
+  "grounding": {
+    "objective_ordinal": 1,
+    "quote": "the tyre must be fully deflated, the bead seated by hand, and the brake quick-release closed before riding",
+    "source_url": "https://example.invalid/recorded/bicycle-inner-tube"
+  },
   "lessons": {
     "Remove the rear wheel, replace the inner tube and check the brakes": {
       "accepted_answers": [
