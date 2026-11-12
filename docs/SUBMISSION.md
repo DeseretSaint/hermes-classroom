@@ -51,7 +51,7 @@ in migration `0012_fine_tune_revisions`, v13 adds GM-001's Game Mode storage —
 `courses.presentation_mode` plus eight play/homework/tutor tables — in migration
 `0013_game_mode_contracts`, and v14 removes exactly one unique key from `takehome_packs` in
 `0014_takehome_pack_revision_scope`, rebuilding that table in place with rows and indexes preserved,
-additive only. The suite is `Ran 4453 tests in 938.771s … OK (skipped=12)` on `master` `88a88744` (module `e87a2e01…`)
+additive only. The suite is `Ran 4458 tests in 904.597s … OK (skipped=12)` on `master` `4f93f890` (module `e87a2e01…`)
 (the tree the `tests` block of `docs/release-evidence.json` names, 2026-11-12: six cards merged over
 the `d85c30c5` trunk — PRINT-2 `de92dd26` (`cb.pack` v4 names the `coloring_page` role), the Workshop
 share contract cases `393d51a1` (26 -> 32), CP-015g's measured per-call deadlines `918b0a01`,
@@ -63,7 +63,8 @@ Home tag aspect `dccb532c`; the 49-test delta over 4385 is those groups, plus th
 plugin-spawned workers (`5e3a7759`, 3 tests, module unchanged); UI-K9's cover provenance then replaced the
 painted study room with a printed kit plate (`f766d1c6`, 3 tests, module rebuilt to `e87a2e01`), and
 the pack re-export fence made a fine-tuned pack-backed course refuse its export (`6bcd56bb`, 6 tests,
-module unchanged), which is the 4453-test tree `88a88744`); the
+module unchanged), and canonical-model validation independence (`38b7dc7b`, 5 tests, module unchanged),
+which is the 4458-test tree `4f93f890`); the
 release tree `b9f4a19` measured `Ran 2747 tests in 410.301s … OK (skipped=1)` in the H-212 pass.
 
 **The tree is not shippable today.** The pane crash and library clipping that blocked H-85 are fixed
@@ -315,7 +316,7 @@ holds the demo back. No recording happens without DeseretSaint's approval.
 | No release tag | Atlas's operator gate forbids publishing a release or tag until DeseretSaint signs off in chat | Atlas, DeseretSaint |
 
 Verified, so they are not blockers: 93/93 `cb.rpc` v27 methods mounted with no
-contract problems, schema v14 from migrations `0001`-`0014`, 4453 tests on `master` `88a88744`
+contract problems, schema v14 from migrations `0001`-`0014`, 4458 tests on `master` `4f93f890`
 (2747 on the release tree `b9f4a19`), pack round-trip and export
 hash matching, eight `parent.*` methods, the replan carry with the Parent Studio plan guard, and the
 full replan → lessons → export loop on contest row 9 at `29bede7` (export `exp_2e068c56`, content
