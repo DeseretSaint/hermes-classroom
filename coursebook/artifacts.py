@@ -29,7 +29,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Callable, Iterable, Sequence
+from typing import Any, Callable, Iterable, Mapping, Sequence
 
 from . import db
 
@@ -63,12 +63,34 @@ REVIEW_CHECKS = ("subject_matches", "contains_legible_text", "depicts_procedure_
 _MAX_REVIEW_REASON_CHARS = 400
 _MAX_REVIEW_REASONS = 4
 
+#: The canonical failure sentence each failed check produces (item 32). The verdict carries the
+#: check itself in ``criteria``; this table exists so a verdict written before that key existed —
+#: or a hand-built one — can still be read structurally, and so the reviewer's own paragraph is
+#: never mistaken for a criterion.
+REVIEW_FAILURE_TEXT = {
+    "subject_matches": "the picture does not show the subject the prompt asked for",
+    "contains_legible_text": (
+        "the picture contains legible text or numbers a learner could read as a fact"
+    ),
+    "depicts_procedure_or_measurement": (
+        "the picture depicts a procedure or measurement and could be read as authority"
+    ),
+}
 
-def review_record(state: str, reasons: Iterable[str] = ()) -> dict[str, Any]:
-    """The one persisted review shape: ``{state, reasons}``.
+
+def review_record(
+    state: str, reasons: Iterable[str] = (), criteria: Iterable[str] = ()
+) -> dict[str, Any]:
+    """The one persisted review shape: ``{state, reasons, criteria?}``.
 
     ``state`` is one of :data:`REVIEW_STATES`; anything else is a programming error, not a verdict.
     Reasons are whitespace-collapsed, bounded, de-duplicated and order-preserving.
+
+    ``criteria`` carries the *failing checks* as keys from :data:`REVIEW_CHECKS`, never the
+    reviewer's paragraph. It is the only thing a repair reads: a re-prompt that quotes prose
+    re-asks for the same picture, while a re-prompt that names the failed check can rebuild the
+    request. The key is absent on an approval (nothing failed) and on a legacy verdict, so an
+    older stored review keeps its exact bytes.
     """
     normalised = str(state or "").strip()
     if normalised not in REVIEW_STATES:
@@ -78,7 +100,54 @@ def review_record(state: str, reasons: Iterable[str] = ()) -> dict[str, Any]:
         text = " ".join(str(reason).split())[:_MAX_REVIEW_REASON_CHARS]
         if text and text not in cleaned:
             cleaned.append(text)
-    return {"state": normalised, "reasons": cleaned[:_MAX_REVIEW_REASONS]}
+    record: dict[str, Any] = {"state": normalised, "reasons": cleaned[:_MAX_REVIEW_REASONS]}
+    failed: list[str] = []
+    for criterion in criteria:
+        key = str(criterion or "").strip()
+        if key in REVIEW_CHECKS and key not in failed:
+            failed.append(key)
+    if failed:
+        record["criteria"] = failed
+    return record
+
+
+def review_criteria(review: Mapping[str, Any] | None) -> tuple[str, ...]:
+    """The failed checks of one verdict, in :data:`REVIEW_CHECKS` order.
+
+    An explicit ``criteria`` list wins. A verdict without one is read through
+    :data:`REVIEW_FAILURE_TEXT`, which matches the canonical criterion sentence and nothing else:
+    the reviewer's own paragraph never becomes a criterion, and an unrecognised verdict yields no
+    criteria at all (the repair then re-asks the full strict request rather than guessing).
+    """
+    if not isinstance(review, Mapping):
+        return ()
+    declared = review.get("criteria")
+    if isinstance(declared, Sequence) and not isinstance(declared, (str, bytes)):
+        found = {str(value).strip() for value in declared}
+        return tuple(check for check in REVIEW_CHECKS if check in found)
+    reasons = review.get("reasons")
+    text = " ".join(str(reason) for reason in reasons) if isinstance(reasons, Sequence) else ""
+    return tuple(
+        check for check in REVIEW_CHECKS if REVIEW_FAILURE_TEXT[check] in text
+    )
+
+
+def review_reason_text(review: Mapping[str, Any], *, limit: int = 300) -> str:
+    """One bounded, learner-page-safe line for a verdict: its criteria first, then its reasons.
+
+    The criteria are named because they are what failed; the reviewer's sentence may follow, but a
+    reader (and the Desktop chip) can tell what the gate objected to without parsing prose.
+    """
+    criteria = review_criteria(review)
+    reasons = [
+        " ".join(str(reason).split())
+        for reason in (review.get("reasons") or ())
+        if str(reason).strip()
+    ]
+    lead = f"failed {', '.join(criteria)}" if criteria else "no typed criterion returned"
+    body = "; ".join(reasons)
+    text = f"{lead}: {body}" if body else lead
+    return text[:limit].rstrip()
 
 
 def unreviewed_review(reason: str) -> dict[str, Any]:
@@ -1141,16 +1210,30 @@ def _apply_review(
     data: bytes,
     reviewer: Callable[[bytes], dict[str, Any]] | None,
     regenerate: Callable[[dict[str, Any]], bytes] | None,
-) -> tuple[bytes, dict[str, Any]]:
-    """Run the adversarial gate over freshly produced bytes.
+    *,
+    schematic: Callable[[], bytes] | None = None,
+) -> tuple[bytes, str | None, dict[str, Any], bool]:
+    """Run the adversarial gate over freshly produced bytes and repair a rejection.
 
-    Returns ``(bytes, review)``. A rejected first attempt is re-prompted exactly once; the second
-    verdict is final. Any reviewer failure is ``unreviewed`` — never ``approved``: a vision seam
-    that could not answer has not cleared the picture.
+    Returns ``(bytes, mime_override, review, drawn_as_schematic)``. Three outcomes are possible:
+
+    * the first verdict is not a rejection — the bytes ship with their verdict;
+    * the attempt is rejected and the spec carries a structured table (``schematic``) — the
+      deterministic schematic is drawn from those rows instead of asking the provider again. A
+      second provider call is not a repair: the same prompt family tends to fail the same check,
+      and a schematic is a table the product itself renders, so it cannot paint a number;
+    * the attempt is rejected with no table — the request is rebuilt from the *failing criterion*
+      (``regenerate``) exactly once, and any reviewer failure is ``unreviewed``, never
+      ``approved``: a vision seam that could not answer has not cleared the picture.
     """
     if reviewer is None:
-        return data, unreviewed_review(
-            "no vision review seam is bound; the illustration is context only and was not reviewed"
+        return (
+            data,
+            None,
+            unreviewed_review(
+                "no vision review seam is bound; the illustration is context only and was not reviewed"
+            ),
+            False,
         )
 
     def verdict(blob: bytes) -> dict[str, Any]:
@@ -1161,29 +1244,49 @@ def _apply_review(
                 f"the vision review failed ({type(exc).__name__}: {exc}); the illustration is unreviewed"
             )
         try:
-            return review_record(str(raw.get("state")), raw.get("reasons") or ())
+            return review_record(
+                str(raw.get("state")), raw.get("reasons") or (), raw.get("criteria") or ()
+            )
         except (AttributeError, TypeError, ValueError) as exc:
             return unreviewed_review(f"the vision review returned no usable verdict ({exc})")
 
     review = verdict(data)
-    if review["state"] != "rejected" or regenerate is None:
-        return data, review
+    if review["state"] != "rejected":
+        return data, None, review, False
+    if schematic is not None:
+        try:
+            drawn = schematic()
+        except Exception as exc:  # noqa: BLE001 - the table is an option, not a promise
+            review["reasons"].append(
+                f"the deterministic schematic could not be drawn ({type(exc).__name__}: {exc})"
+            )
+        else:
+            repaired = review_record(
+                "rejected",
+                list(review["reasons"])
+                + ["the deterministic schematic drawn from the procedure table was delivered instead"],
+                review_criteria(review),
+            )
+            return drawn, "image/svg+xml", repaired, True
+    if regenerate is None:
+        return data, None, review, False
     try:
         retried = regenerate(review)
     except Exception as exc:  # noqa: BLE001 - the re-prompt is an attempt, not a guarantee
         review["reasons"].append(
             f"the re-prompt could not be produced ({type(exc).__name__}: {exc})"
         )
-        return data, review
+        return data, None, review, False
     second = verdict(retried)
     if second["state"] == "rejected":
         second = review_record(
             "rejected",
-            ["the re-prompted illustration was rejected too"]
+            ["the revised illustration was rejected too"]
             + review["reasons"]
             + second["reasons"],
+            review_criteria(review) + review_criteria(second),
         )
-    return retried, second
+    return retried, None, second, False
 
 
 def produce_with_fallback(
@@ -1197,6 +1300,7 @@ def produce_with_fallback(
     cached: dict[str, Any] | None = None,
     reviewer: Callable[[bytes], dict[str, Any]] | None = None,
     regenerate: Callable[[dict[str, Any]], bytes] | None = None,
+    schematic: Callable[[], bytes] | None = None,
 ) -> MediaOutcome:
     """Generate media, or return the complete text fallback with an honest reason.
 
@@ -1205,9 +1309,11 @@ def produce_with_fallback(
 
     An illustration is additionally gated by ``reviewer`` (the host's vision tool, bound by the
     caller): the bytes are judged against the prompt before they are stored, and a rejection is
-    re-prompted once through ``regenerate``. A still-rejected picture is never saved — the item
-    degrades to its text equivalent with the reviewer's reasons, exactly as a provider failure
-    does. With no reviewer the picture ships ``unreviewed`` and keeps the context-only label.
+    repaired once — by the deterministic schematic when the spec carries a procedure table
+    (``schematic``), otherwise by a request rebuilt from the failing criterion (``regenerate``). A
+    still-rejected picture is never saved — the item degrades to its text equivalent with the
+    failed criteria, exactly as a provider failure does. With no reviewer the picture ships
+    ``unreviewed`` and keeps the context-only label.
     """
     assert_media_ok(spec)
     label = honesty_label(spec)
@@ -1256,15 +1362,44 @@ def produce_with_fallback(
             label=label,
         )
     review: dict[str, Any] | None = None
+    mime_override: str | None = None
     if spec.kind == "visual" and spec.role == "illustration":
-        data, review = _apply_review(data, reviewer, regenerate)
+        data, mime_override, review, drawn = _apply_review(
+            data, reviewer, regenerate, schematic=schematic
+        )
+        if drawn:
+            # The deterministic schematic is the repair: the authored illustration was not
+            # delivered, so the item says so, and the verdict stays with the bytes that shipped.
+            metadata["review"] = review
+            metadata["fallback"] = "schematic"
+            artifact = store.save(
+                course_id=course_id,
+                kind=spec.kind,
+                data=data,
+                mime=mime_override or "image/svg+xml",
+                provenance=metadata,
+            )
+            return MediaOutcome(
+                artifact=artifact,
+                text_equivalent=spec.text_equivalent,
+                degraded=True,
+                reason=(
+                    "illustration rejected by review "
+                    f"({review_reason_text(review)}); the deterministic schematic was delivered "
+                    "instead"
+                )[:300],
+                triage=review_triage(review),
+                label=label,
+                review=review,
+            )
         if review["state"] == "rejected":
-            reasons = "; ".join(review["reasons"]) or "no reason given"
             return MediaOutcome(
                 artifact=None,
                 text_equivalent=spec.text_equivalent,
                 degraded=True,
-                reason=f"illustration rejected by review ({reasons}); delivered as text",
+                reason=(
+                    f"illustration rejected by review ({review_reason_text(review)}); delivered as text"
+                )[:300],
                 triage=review_triage(review),
                 label=label,
                 review=review,
@@ -1273,7 +1408,7 @@ def produce_with_fallback(
     # The reviewer judged these bytes, so the store must record what they actually are: a host
     # provider may return JPEG or WebP even when the caller asked for PNG, and a declared type the
     # bytes contradict would refuse an illustration that is perfectly renderable.
-    shipped_mime = mime
+    shipped_mime = mime_override or mime
     if spec.kind == "visual" and spec.role == "illustration":
         detected = sniff_mime(data)
         if detected in ("image/png", "image/jpeg", "image/webp", "image/gif"):

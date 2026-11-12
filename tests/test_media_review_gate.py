@@ -266,7 +266,9 @@ class ApprovedIllustrationTest(ReviewGateCase):
 
     def test_a_rejected_first_attempt_is_replaced_by_an_approved_retry(self) -> None:
         rejected = artifacts.review_record(
-            "rejected", ["the picture contains legible text or numbers a learner could read as a fact"]
+            "rejected",
+            ["the picture contains legible text or numbers a learner could read as a fact"],
+            ["contains_legible_text"],
         )
         approved = artifacts.review_record("approved", ["a caliper on a bench, no text"])
         host = VerdictHost(rejected, approved, images=[PNG, PNG_RETRY])
@@ -274,10 +276,12 @@ class ApprovedIllustrationTest(ReviewGateCase):
 
         self.assertEqual(summary.generated, 1)
         self.assertEqual(len(host.prompts), 2)
-        # The re-prompt is a different request: it carries the context-art rule and the reason.
-        self.assertIn("Revise the illustration", host.prompts[1])
-        self.assertIn("previous attempt was rejected", host.prompts[1])
-        self.assertIn("legible text", host.prompts[1])
+        # Item 32: the second request is rebuilt for the failed criterion, not the first request
+        # with a paragraph appended.
+        self.assertNotEqual(host.prompts[1], host.prompts[0])
+        self.assertIn(media.REVISION_CRITERIA["contains_legible_text"], host.prompts[1])
+        self.assertIn(media.ILLUSTRATION_TEXTLESS_STRICT, host.prompts[1])
+        self.assertNotIn("previous attempt was rejected", host.prompts[1])
         self.assertEqual(host.reviews[-1]["data"], PNG_RETRY)
 
         item = self.stored_media()[0]
@@ -286,6 +290,50 @@ class ApprovedIllustrationTest(ReviewGateCase):
             str(self.scalar("SELECT path FROM artifacts WHERE id = ?", (item["artifact_id"],)))
         ).read_bytes()
         self.assertEqual(stored, PNG_RETRY)
+
+    def test_the_second_request_differs_structurally_not_by_appended_prose(self) -> None:
+        """Item 32 acceptance: a first-attempt rejection produces a structurally different request.
+
+        The four things proved here are the four ways the old prose retry failed:
+        the request is not a superset of the first one; the failing criterion is named; the
+        textless discipline becomes a hard constraint block; and the reviewer's own sentence is
+        never forwarded to the provider.
+        """
+        verdict = artifacts.review_record(
+            "rejected",
+            ["the picture contains legible text or numbers a learner could read as a fact"],
+            ["contains_legible_text"],
+        )
+        spec = media._media_spec(self.media_items[0], locale="en-US")
+        first = media.lesson_illustration_prompt(spec)
+        revised = media.revision_request(spec, verdict)
+
+        self.assertEqual(revised.criteria, ("contains_legible_text",))
+        self.assertNotEqual(revised.prompt_hash, first.prompt_hash)
+        self.assertFalse(revised.prompt.startswith(first.prompt))
+        self.assertIn(media.REVISION_CRITERIA["contains_legible_text"], revised.prompt)
+        self.assertIn(media.ILLUSTRATION_TEXTLESS_STRICT, revised.prompt)
+        self.assertNotIn(media.ILLUSTRATION_TEXTLESS, revised.prompt)
+        self.assertNotIn(verdict["reasons"][0], revised.prompt)
+        # The house rule survives the repair: subject, composition, medium, palette and negatives.
+        for block in (
+            first.subject,
+            media.ILLUSTRATION_MEDIUM,
+            media.ILLUSTRATION_PALETTE,
+            media.ILLUSTRATION_NEGATIVES[0],
+        ):
+            self.assertIn(block, revised.prompt)
+        self.assertEqual(revised.subject, first.subject)
+
+    def test_a_legacy_verdict_without_criteria_still_gets_a_different_request(self) -> None:
+        # A hand-built verdict (or one written before the gate recorded ``criteria``) must not
+        # re-ask the identical request: re-rolling is the one repair that cannot work.
+        spec = media._media_spec(self.media_items[0], locale="en-US")
+        first = media.lesson_illustration_prompt(spec)
+        legacy = artifacts.review_record("rejected", ["it felt wrong"])
+        revised = media.revision_request(spec, legacy)
+        self.assertNotEqual(revised.prompt, first.prompt)
+        self.assertEqual(revised.criteria, artifacts.REVIEW_CHECKS)
 
 
 class BuiltPromptProvenanceTest(ReviewGateCase):
@@ -311,17 +359,90 @@ class BuiltPromptProvenanceTest(ReviewGateCase):
 
     def test_a_rejected_illustration_is_re_prompted_from_the_built_request(self) -> None:
         host = VerdictHost(
-            artifacts.review_record("rejected", ["legible text on the bench"]),
+            artifacts.review_record(
+                "rejected", ["legible text on the bench"], ["contains_legible_text"]
+            ),
             artifacts.review_record("approved", ["a caliper on a bench, no text"]),
             images=[PNG, PNG_RETRY],
         )
         self.generate(host)
         built = self.built()
-        # The retry keeps the textless block and the negative list; dropping them would repaint the
-        # same defect the reviewer rejected.
-        self.assertTrue(host.prompts[1].startswith(built.prompt), host.prompts[1][:120])
-        self.assertIn("Revise the illustration", host.prompts[1])
+        # The revision keeps the textless discipline and the negative list; dropping them would
+        # repaint the same defect the reviewer rejected, and it names the failed criterion instead
+        # of forwarding the reviewer's sentence.
         self.assertIn("no letters, words or labels", host.prompts[1])
+        self.assertIn(media.REVISION_CRITERIA["contains_legible_text"], host.prompts[1])
+        self.assertNotIn("legible text on the bench", host.prompts[1])
+        self.assertIn(built.subject, host.prompts[1])
+
+    def test_a_rejected_illustration_with_schematic_rows_falls_back_to_the_drawn_table(self) -> None:
+        """Item 32 acceptance: rows exist, so the repair is the deterministic schematic.
+
+        No second provider call is made. The table is drawn from the typed rows the item already
+        carries, so it cannot paint a number or a step, and the rejection that caused the fallback
+        stays on the item with the criteria that failed.
+        """
+        self.media_items[0]["facts"] = {
+            "procedure": {
+                "schematic": {
+                    "title": "Front brake pad replacement",
+                    "rows": [
+                        {"label": "Caliper bolt", "value": "25 Nm"},
+                        {"label": "Pad thickness", "value": "3 mm minimum"},
+                    ],
+                }
+            }
+        }
+        self.insert_lesson(self.media_items)
+        rejected = artifacts.review_record(
+            "rejected",
+            ["the picture contains legible text or numbers a learner could read as a fact"],
+            ["contains_legible_text"],
+        )
+        host = VerdictHost(rejected)
+        summary = self.generate(host)
+
+        self.assertEqual(len(host.prompts), 1, "the schematic fallback spends no second provider call")
+        self.assertEqual(len(host.reviews), 1)
+        self.assertEqual(summary.generated, 1)
+        self.assertEqual(summary.degraded, 1)
+        self.assertEqual(summary.rejected, 1)
+        item = self.stored_media()[0]
+        self.assertEqual(item["mime"], "image/svg+xml")
+        self.assertTrue(item["artifact_id"])
+        self.assertTrue(item["degraded"])
+        self.assertEqual(item["media_status"], artifacts.MEDIA_STATE_DEGRADED)
+        self.assertIn("deterministic schematic", item["reason"])
+        self.assertIn("contains_legible_text", item["reason"])
+        self.assertEqual(item["review"]["state"], "rejected")
+        self.assertEqual(item["review"]["criteria"], ["contains_legible_text"])
+
+        provenance = self.provenance_of(item["artifact_id"])
+        self.assertEqual(provenance["fallback"], "schematic")
+        self.assertEqual(provenance["review"], item["review"])
+        # The bytes are the product's own table render, not a provider picture.
+        self.assertTrue(
+            Path(str(self.scalar("SELECT path FROM artifacts WHERE id = ?", (item["artifact_id"],))))
+            .read_bytes()
+            .lstrip()
+            .startswith(b"<svg")
+        )
+        preview = media.preview_artifact(item["artifact_id"])
+        self.assertTrue(preview["ok"])
+        self.assertEqual(preview["mime"], "image/svg+xml")
+        self.assertEqual(preview["review"]["state"], "rejected")
+
+    def test_a_rejection_without_schematic_rows_keeps_the_text_equivalent(self) -> None:
+        rejected = artifacts.review_record(
+            "rejected", ["legible text"], ["contains_legible_text"]
+        )
+        host = VerdictHost(rejected, rejected, images=[PNG, PNG_RETRY])
+        summary = self.generate(host)
+        self.assertEqual(len(host.prompts), 2, "no rows means the one rebuilt request")
+        self.assertEqual(summary.generated, 0)
+        item = self.stored_media()[0]
+        self.assertFalse(item.get("artifact_id"))
+        self.assertTrue(item["degraded"])
 
 
 class RejectedIllustrationTest(ReviewGateCase):
@@ -353,15 +474,21 @@ class RejectedIllustrationTest(ReviewGateCase):
         self.assertEqual(item["text_equivalent"], "A brake caliper rests on a workshop bench.")
 
     def test_a_second_rejection_keeps_both_reasons(self) -> None:
-        first = artifacts.review_record("rejected", ["does not show the subject the prompt asked for"])
-        second = artifacts.review_record("rejected", ["contains legible numbers"])
+        first = artifacts.review_record(
+            "rejected", ["does not show the subject the prompt asked for"], ["subject_matches"]
+        )
+        second = artifacts.review_record(
+            "rejected", ["contains legible numbers"], ["contains_legible_text"]
+        )
         host = VerdictHost(first, second)
         self.generate(host)
         review = self.stored_media()[0]["review"]
         self.assertEqual(review["state"], "rejected")
         self.assertTrue(any("does not show the subject" in reason for reason in review["reasons"]))
         self.assertTrue(any("legible numbers" in reason for reason in review["reasons"]))
-        self.assertTrue(any("re-prompted" in reason for reason in review["reasons"]))
+        self.assertTrue(any("revised" in reason for reason in review["reasons"]))
+        # Both attempts' failed checks travel with the final verdict.
+        self.assertEqual(review["criteria"], ["subject_matches", "contains_legible_text"])
 
 
 class UnreviewedIllustrationTest(ReviewGateCase):
