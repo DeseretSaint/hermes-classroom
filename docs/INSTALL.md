@@ -303,13 +303,13 @@ once (opening the pane does that), the observed shape is:
 | Field | Value | Meaning |
 | --- | --- | --- |
 | `plugin_version` | `0.1.0` | The package on disk is the one that answered |
-| `contract_version` | `26` | `cb.rpc` v26 is loaded |
+| `contract_version` | `27` | `cb.rpc` v27 is loaded |
 | `db.ready` | `true` | The store is provisioned and migrated |
 | `db.schema_version` | `14` | Migrations `0001`-`0014` applied |
-| `implemented_methods` | 93 names | Every method `cb.rpc` v26 declares has a handler |
+| `implemented_methods` | 93 names | Every method `cb.rpc` v27 declares has a handler |
 | `contracts` | 7 entries | Each frozen contract with its version and hash |
 
-The pane reports the same health block: backend `cb.rpc v26`, plugin 0.1.0, database ready at schema
+The pane reports the same health block: backend `cb.rpc v27`, plugin 0.1.0, database ready at schema
 v14, and `Courses: none yet` until you create or import one. With no chat bound to an enrollment it
 offers `Open Coursebook` and says no durable chat is bound yet.
 
@@ -385,7 +385,7 @@ app is the scoped, previewed data deletion (`enrollment.delete`).
 | `$TARGET already exists and is not a symlink; refusing to replace it.` | A real directory already occupies the plugin slot | Inspect and remove that directory yourself; the script will not do it |
 | Pane says "Coursebook needs its agent plugin" | Desktop half is on, backend half is not enabled or the gateway has not restarted | `hermes plugins enable coursebook`, `hermes gateway restart` |
 | `#/coursebook` shows the session list instead of Coursebook | The window has no gateway: on an isolated home the gateway cannot start (one gateway per host) and the shell then renders the session list for every route | Check the window log for `Gateway inaccessible (runtime_exited)`; point the window at a backend that can serve the session. Evidence: `docs/CB016-RELEASE-VERIFICATION.md` §3 |
-| `VALIDATION_FAILED` naming a method as "not one of [...]" | The method is not in `cb.rpc` v26. Unknown methods are refused before any handler runs | Use one of the 93 declared methods; the error lists them |
+| `VALIDATION_FAILED` naming a method as "not one of [...]" | The method is not in `cb.rpc` v27. Unknown methods are refused before any handler runs | Use one of the 93 declared methods; the error lists them |
 | `NOT_IMPLEMENTED` from an RPC call | A method declared in `cb.rpc` has no handler in this process. Not expected when all 93 are mounted | Check `/runtime` for the mounted list; a partial install or a stale gateway is the usual cause |
 | `db.ready: false` in the status tool | Either the store is unprovisioned (no `/health` call yet) or a migration did not complete | Call `health.get` once; if it stays false, check the gateway log for the migration error |
 | `hermes plugins validate` fails the capability probe | `jsonschema` is missing from the Hermes interpreter | `hermes plugins validate . --install-deps` |

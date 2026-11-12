@@ -2057,6 +2057,8 @@ export {
   LessonReadinessPanel,
   lessonHeroPlan,
   MediaFrame,
+  MediaLabelOverlay,
+  mediaLabelPlacement,
   NotebookView,
   OBSERVATION_NOTE_MAX,
   OverviewView,

@@ -269,8 +269,10 @@ class AuthoringContractTest(unittest.TestCase):
     def test_the_lesson_prompt_states_the_spec_contract(self) -> None:
         instructions = self.request().instructions
         self.assertIn("names subject, medium and composition only", instructions)
-        self.assertIn("authored as text on the block and drawn by the UI", instructions)
-        self.assertIn("never ask the image model to paint text", instructions)
+        self.assertIn("the picture carries the scene", instructions)
+        self.assertIn("the media item's 'labels' array carries the words", instructions)
+        self.assertIn("never ask it to paint text, labels, numbers or arrows", instructions)
+        self.assertIn("The product UI draws those labels over the textless image", instructions)
 
     def test_the_system_prompt_states_text_is_never_asked_of_the_image_model(self) -> None:
         self.assertIn("never requested from the image model", gen.LESSON_SYSTEM_PROMPT)

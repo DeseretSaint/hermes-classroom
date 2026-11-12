@@ -1,6 +1,6 @@
 # Coursebook contracts — authoritative files and owners
 
-Status: **frozen at v26** (CP-052: `cb.rpc` v26 is one additive amendment — `$defs/world_brief` gains one optional `route_anchors` array of `{anchor_id, section_id, x, y}` entries, each `x`/`y` normalised 0–1 of the plate box, so `world.read` returns a plate that declares its route geometry instead of answering `INTERNAL_ERROR`; a brief with no anchors keeps its exact v25 shape; see the v26 delta below. CP-005: `cb.rpc` v25 is one additive amendment — the `library_item` record gains the seven v3 shelf facts `sections_done`, `sections_total`, `checks_recorded`, `is_new`, `subject_label`, `cover_artifact_id`, `last_studied_at`, so a card renders every number, chip and cover from one `library.list` read; see the v25 delta below. GM-004: `cb.rpc` v24 appends the four `world.*` methods the World Studio drives — `world.read`, `world.style.preview`, `world.generate`, `world.approve` — plus the documented extra `course.mode.set`, and gives `course.create` one optional `presentation_mode` creation intent; see the v24 delta below. GM-005: `cb.rpc` v23 appends the six take-home pack methods — `takehome.sources`, `takehome.preview`, `takehome.create`, `takehome.approve`, `takehome.export`, `takehome.read` — a rendered print artifact bound to the source course/objective/lesson version and content hash, with the learner page and the parent-only answer guide as separate artifacts; `cb.db` v14 scopes a pack's revision to the pack instead of its source slot. GM-011: `cb.rpc` v22 appends the two lesson-bound tutor commands — `tutor.ask`, a bounded, cited, tool-free answer scoped to one lesson run whose context excludes answer keys, checks, rubric and attempts and which never writes an attempt, transition or evidence row, and `tutor.history`, the persisted thread read. A turn is not a grade; while a check is open the final answer is withheld (`answer_withheld`) and a hint rides the existing `lesson.assist` policy; a provider failure is the named `provider_failure` state, never an empty or fabricated answer. GM-009: `cb.rpc` v21 appends the two game-only engagement methods `engagement.read` and `engagement.award`; XP is a play layer derived from real recorded actions, idempotent per `(enrollment_id, action_kind, action_id)`, refused outside a `game` course and never joined by evidence, parent, pack or export reads. H-182/D3: `cb.rpc` v20 carries a second additive amendment — `course.outline`'s `outline_plan` and `parent.blueprint.read`'s `plan` gain one optional `validation` object (`approvable`, `source`, `verdict`, `outcome`, `independence`, `facts_unverified`, `reasons`, `reason`, `detail`, `manual_authoring`), the durable approval provenance computed by the same gate `plan.approve` fences on, so a review surface cannot render an approval control for a rejected or unvalidated version. No method, request shape, error code, job kind or vocabulary value moves. H-194b: `cb.rpc` v20 is one additive amendment over v19 — `parent.blueprint.read` gains one required response array, `sections[]`, one entry per composed section carrying `section_id`, `objective_id`, `ordinal`, `title`, `lesson_state`, `lesson_version` and `page_hash`, the exact digest `lesson.revise` fences on, so the desktop can fine-tune a section that has never been revised.
+Status: **frozen at v27** (item 28b: `cb.rpc` v27 is one additive amendment — `$defs/lesson_document_media` gains one optional `labels` array of at most eight `{text 1–40, x, y, anchor}` entries, where `x`/`y` are normalised 0–1 coordinates inside the figure box and `anchor` places that point at the label's `start`, `center` or `end`, so a textless generated figure can carry readable annotations the product UI draws over it; a media child with no labels keeps its exact v26 shape and bytes; see the v27 delta below. CP-052: `cb.rpc` v26 is one additive amendment — `$defs/world_brief` gains one optional `route_anchors` array of `{anchor_id, section_id, x, y}` entries, each `x`/`y` normalised 0–1 of the plate box, so `world.read` returns a plate that declares its route geometry instead of answering `INTERNAL_ERROR`; a brief with no anchors keeps its exact v25 shape; see the v26 delta below. CP-005: `cb.rpc` v25 is one additive amendment — the `library_item` record gains the seven v3 shelf facts `sections_done`, `sections_total`, `checks_recorded`, `is_new`, `subject_label`, `cover_artifact_id`, `last_studied_at`, so a card renders every number, chip and cover from one `library.list` read; see the v25 delta below. GM-004: `cb.rpc` v24 appends the four `world.*` methods the World Studio drives — `world.read`, `world.style.preview`, `world.generate`, `world.approve` — plus the documented extra `course.mode.set`, and gives `course.create` one optional `presentation_mode` creation intent; see the v24 delta below. GM-005: `cb.rpc` v23 appends the six take-home pack methods — `takehome.sources`, `takehome.preview`, `takehome.create`, `takehome.approve`, `takehome.export`, `takehome.read` — a rendered print artifact bound to the source course/objective/lesson version and content hash, with the learner page and the parent-only answer guide as separate artifacts; `cb.db` v14 scopes a pack's revision to the pack instead of its source slot. GM-011: `cb.rpc` v22 appends the two lesson-bound tutor commands — `tutor.ask`, a bounded, cited, tool-free answer scoped to one lesson run whose context excludes answer keys, checks, rubric and attempts and which never writes an attempt, transition or evidence row, and `tutor.history`, the persisted thread read. A turn is not a grade; while a check is open the final answer is withheld (`answer_withheld`) and a hint rides the existing `lesson.assist` policy; a provider failure is the named `provider_failure` state, never an empty or fabricated answer. GM-009: `cb.rpc` v21 appends the two game-only engagement methods `engagement.read` and `engagement.award`; XP is a play layer derived from real recorded actions, idempotent per `(enrollment_id, action_kind, action_id)`, refused outside a `game` course and never joined by evidence, parent, pack or export reads. H-182/D3: `cb.rpc` v20 carries a second additive amendment — `course.outline`'s `outline_plan` and `parent.blueprint.read`'s `plan` gain one optional `validation` object (`approvable`, `source`, `verdict`, `outcome`, `independence`, `facts_unverified`, `reasons`, `reason`, `detail`, `manual_authoring`), the durable approval provenance computed by the same gate `plan.approve` fences on, so a review surface cannot render an approval control for a rejected or unvalidated version. No method, request shape, error code, job kind or vocabulary value moves. H-194b: `cb.rpc` v20 is one additive amendment over v19 — `parent.blueprint.read` gains one required response array, `sections[]`, one entry per composed section carrying `section_id`, `objective_id`, `ordinal`, `title`, `lesson_state`, `lesson_version` and `page_hash`, the exact digest `lesson.revise` fences on, so the desktop can fine-tune a section that has never been revised.
 v19 = H-194 fine-tuning a generated course: `cb.rpc` v19 appends five
 commands — `plan.edit`, `plan.undo`, `lesson.revise`, `lesson.regenerate`, `parent.review.read` —
 and `cb.db` v12 adds the two durable fine-tune ledgers `plan_revisions` and `lesson_revisions`;
@@ -29,7 +29,7 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v4.json` | 4 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v26.json` | 26 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune + engagement + tutor + the `library.list` shelf facts + the plate's `route_anchors`), Sable (transport + `world.*` policy/prompts/media), Lattice (`pack.*` + `lesson_document` + `takehome.*` + `homework.*` + `takehome.html`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.rpc` | `contracts/rpc.v27.json` | 27 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune + engagement + tutor + the `library.list` shelf facts + the plate's `route_anchors`), Sable (transport + `world.*` policy/prompts/media), Lattice (`pack.*` + `lesson_document` + `takehome.*` + `homework.*` + `takehome.html`), easel (the media child's own `labels`) | Desktop half, Coursebook tools, `pre_llm_call` |
 | `cb.db` | `contracts/db.v14.json` | 14 | Cinder (GM-001 storage), Lattice (GM-005 migration 0014) | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v5.json` | 5 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v3.json` (v1 and v2 also accepted) | 3 (v1/v2 accepted) | Cinder (v2 media link, H-137); CP-015g (v3 presentation, 2026-11-11) | import/export, bundled demo packs |
@@ -2641,4 +2641,53 @@ Regression guard: `tests/test_contracts.py::V26AmendmentTest` pins the additive 
 closed anchor item, the optionality and the frozen v25 document; `tests/test_cp052_route_anchors.py`
 reads a fixture plate with three anchors, one with none, and two malformed ones against the real
 SQLite store.
+
+## v27 delta (item 28b) — the figure's own drawn labels
+
+`cb.rpc` v27 is v26 with **one additive amendment**: `$defs/lesson_document_media` gains one
+**optional** array, `labels`, of at most eight entries:
+
+| Label field | Type | What it is, exactly |
+|---|---|---|
+| `text` | string 1–40 | The words a learner reads inside the figure box. One short label, never a sentence. |
+| `x` | number 0–1 | Fraction of the figure box's width, origin top-left. Never pixels, never a percentage string. |
+| `y` | number 0–1 | Fraction of the figure box's height, same origin and rule. |
+| `anchor` | `start` \| `center` \| `end` | Which point of the label sits at `(x, y)`: its left edge, its centre or its right edge. A renderer uses it to keep a label on its subject instead of guessing. |
+
+The array is **page text, not instruction and not raster content**: it carries no check, answer key,
+rubric or attempt, and it never enters the illustration prompt or a content-addressed cache key, so
+the image keeps its textless bytes. It is absent by default — a media child that declares no labels
+keeps its exact v26 shape and bytes, and `lesson.page` returns it verbatim (no empty array is
+manufactured).
+
+A malformed label is refused at the field, never by a generic internal error: the contract closes
+the item (`additionalProperties: false`, all four properties required) and bounds the array at
+eight, the text at 40 characters and each fraction to 0–1. `lesson_document._media_labels()`
+applies the same rule while projecting a stored page, and a labelled child that fails it is dropped
+with the reason named rather than silently truncated.
+
+The two halves are one contract: **the picture carries the scene, the block carries the labels.**
+The illustration prompt (`media.lesson_illustration_prompt`) asks for a textless plate with nine
+negatives; the labels ride the document and are drawn by the Desktop's media frame as an absolutely
+positioned overlay, clamped inside the frame, on a legible backing plate. Neither half is allowed to
+do the other's job.
+
+An answer-leak rule follows the same surface: `lesson_document.narrative_text()` includes each
+label's `text`, so `generation.assert_no_answer_leak` refuses a label that restates the check's
+reference answer or an accepted answer, exactly as it refuses prose that does.
+
+No method is added or removed; `$defs/method.enum` is byte-for-byte the v26 list. No request shape,
+existing required key, error code, job kind, answer kind, verdict, evidence class or vocabulary
+value moves. `rpc.v26.json` stays byte-identical on disk (sha256
+`17480a0bb906f73df2f23ea7c1b2035026acdd563de8d17d752117535e6ed68b`) and `x-supersedes` names
+`.../rpc/v26`. The wire echoes (`contract_version` on both response envelopes and `health.get`)
+move together to 27. `rpc.v27.json` is derived from the frozen v26 document by
+`probes/derive_rpc_v27.py`, not hand-copied, so every record the delta does not name — including
+`world_brief.route_anchors` — survives by being carried.
+
+Regression guard: `tests/test_contracts.py::V27AmendmentTest` pins the additive property set, the
+closed label item, the bounds, the optionality, the frozen v26 document and that the shipped v27 is
+byte-identical to its derivation; `tests/test_lesson_document.py` proves a labelled page validates
+against v27 and is served by `lesson.page`, and that a label restating the reference answer is
+refused.
 
