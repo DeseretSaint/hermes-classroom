@@ -35,6 +35,10 @@
       "status": "draft",
       "units": 12,
       "validation": {
+        "canonical": {
+          "generator": "recorded-transcript-h40",
+          "validator": "recorded-validator-h40"
+        },
         "cost": {
           "calls": 14,
           "cost_usd": 0.0,
@@ -1669,6 +1673,10 @@
               "section_id": "0000000000000031",
               "state": "validated",
               "validation": {
+                "canonical": {
+                  "generator": "recorded-transcript-h40",
+                  "validator": "recorded-validator-h40"
+                },
                 "cost_usd": null,
                 "facts_unverified": false,
                 "generator": {
@@ -1711,6 +1719,10 @@
               "section_id": "0000000000000032",
               "state": "validated",
               "validation": {
+                "canonical": {
+                  "generator": "recorded-transcript-h40",
+                  "validator": "recorded-validator-h40"
+                },
                 "cost_usd": null,
                 "facts_unverified": false,
                 "generator": {
@@ -1817,6 +1829,10 @@
               "section_id": "0000000000000038",
               "state": "validated",
               "validation": {
+                "canonical": {
+                  "generator": "recorded-transcript-h40",
+                  "validator": "recorded-validator-h40"
+                },
                 "cost_usd": null,
                 "facts_unverified": false,
                 "generator": {
@@ -1859,6 +1875,10 @@
               "section_id": "0000000000000039",
               "state": "validated",
               "validation": {
+                "canonical": {
+                  "generator": "recorded-transcript-h40",
+                  "validator": "recorded-validator-h40"
+                },
                 "cost_usd": null,
                 "facts_unverified": false,
                 "generator": {
@@ -1965,6 +1985,10 @@
               "section_id": "000000000000003f",
               "state": "validated",
               "validation": {
+                "canonical": {
+                  "generator": "recorded-transcript-h40",
+                  "validator": "recorded-validator-h40"
+                },
                 "cost_usd": null,
                 "facts_unverified": false,
                 "generator": {
@@ -2007,6 +2031,10 @@
               "section_id": "0000000000000040",
               "state": "validated",
               "validation": {
+                "canonical": {
+                  "generator": "recorded-transcript-h40",
+                  "validator": "recorded-validator-h40"
+                },
                 "cost_usd": null,
                 "facts_unverified": false,
                 "generator": {
@@ -2113,6 +2141,10 @@
               "section_id": "0000000000000046",
               "state": "validated",
               "validation": {
+                "canonical": {
+                  "generator": "recorded-transcript-h40",
+                  "validator": "recorded-validator-h40"
+                },
                 "cost_usd": null,
                 "facts_unverified": false,
                 "generator": {
@@ -2155,6 +2187,10 @@
               "section_id": "0000000000000047",
               "state": "validated",
               "validation": {
+                "canonical": {
+                  "generator": "recorded-transcript-h40",
+                  "validator": "recorded-validator-h40"
+                },
                 "cost_usd": null,
                 "facts_unverified": false,
                 "generator": {
@@ -2261,6 +2297,10 @@
               "section_id": "000000000000004d",
               "state": "validated",
               "validation": {
+                "canonical": {
+                  "generator": "recorded-transcript-h40",
+                  "validator": "recorded-validator-h40"
+                },
                 "cost_usd": null,
                 "facts_unverified": false,
                 "generator": {
@@ -2303,6 +2343,10 @@
               "section_id": "000000000000004e",
               "state": "validated",
               "validation": {
+                "canonical": {
+                  "generator": "recorded-transcript-h40",
+                  "validator": "recorded-validator-h40"
+                },
                 "cost_usd": null,
                 "facts_unverified": false,
                 "generator": {
@@ -2409,6 +2453,10 @@
               "section_id": "0000000000000054",
               "state": "validated",
               "validation": {
+                "canonical": {
+                  "generator": "recorded-transcript-h40",
+                  "validator": "recorded-validator-h40"
+                },
                 "cost_usd": null,
                 "facts_unverified": false,
                 "generator": {
@@ -2451,6 +2499,10 @@
               "section_id": "0000000000000055",
               "state": "validated",
               "validation": {
+                "canonical": {
+                  "generator": "recorded-transcript-h40",
+                  "validator": "recorded-validator-h40"
+                },
                 "cost_usd": null,
                 "facts_unverified": false,
                 "generator": {
@@ -3074,6 +3126,10 @@
           "unknown_cost": false
         },
         "validation": {
+          "canonical": {
+            "generator": "recorded-transcript-h40",
+            "validator": "recorded-validator-h40"
+          },
           "cost": {
             "calls": 6,
             "cost_usd": 0.0,

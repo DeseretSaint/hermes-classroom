@@ -495,6 +495,10 @@
               "section_id": "0000000000000018",
               "state": "validated",
               "validation": {
+                "canonical": {
+                  "generator": "recorded-transcript-h40",
+                  "validator": "recorded-validator-h40"
+                },
                 "cost_usd": null,
                 "facts_unverified": false,
                 "generator": {
@@ -741,6 +745,10 @@
           "unknown_cost": false
         },
         "validation": {
+          "canonical": {
+            "generator": "recorded-transcript-h40",
+            "validator": "recorded-validator-h40"
+          },
           "cost": {
             "calls": 2,
             "cost_usd": 0.0,
