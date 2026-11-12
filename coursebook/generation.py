@@ -8300,29 +8300,38 @@ def _bounded_input(payload: dict[str, Any], limit: int = DEFAULT_REQUEST_BYTES) 
     )
 
 
-def _fit_source_brief(
-    payload: dict[str, Any],
+#: Share of a stage's request bound that the shared source ledger may occupy. The author and its
+#: validator both borrow this same slice, so neither is handed an excerpt the other never saw
+#: (spec item 23). The rest of the bound belongs to the instructions, the declared inputs and the
+#: artifact under review; the validator's own bound is widened by the artifact it grades, so the
+#: plan cannot quietly eat the ledger's room.
+SOURCE_LEDGER_SHARE_NUMERATOR = 3
+SOURCE_LEDGER_SHARE_DENOMINATOR = 5
+
+
+def _source_ledger_budget(limit: int) -> int:
+    """The payload-independent byte budget one stage's shared source ledger may spend."""
+    return max(1, int(limit) * SOURCE_LEDGER_SHARE_NUMERATOR // SOURCE_LEDGER_SHARE_DENOMINATOR)
+
+
+def _shrink_source_brief(
     sources: Sequence[SourceRecord],
     *,
-    limit: int,
+    fits: Any,
 ) -> list[dict[str, Any]]:
-    """Ledger rows for one request, shrunk only as far as the byte bound requires.
+    """Shrink one ledger until ``fits(brief)`` is true, keeping the same rule for every caller.
 
-    A deep research pass carries ten sources; at the full 1200-character window the plan request
-    measured 25 636 bytes against the 24 000-byte short bound and the job failed before the author
-    was called. The fix is not a longer bound and not a truncated request: the excerpt window
-    shrinks (still prose, still from the same fetched text), and only at the 400-character floor
-    does the least-preferred trailing source leave. ``_bounded_input`` still owns the final
-    refusal if even the floor cannot fit.
+    The excerpt window shrinks first (still prose, still from the same fetched text), and only at
+    the 400-character floor does the least-preferred trailing source leave. The bound is whatever
+    the caller's ``fits`` says: a whole payload for :func:`_fit_source_brief`, or the ledger's own
+    byte slice for :func:`_fit_shared_source_brief`.
     """
     floor = 400
     window = ResearchBudget().max_excerpt_chars
     working = list(sources)
     brief = _source_brief(working, excerpt_chars=window)
     while True:
-        payload["sources"] = brief
-        size = len(json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
-        if size <= limit:
+        if fits(brief):
             return brief
         if window > floor:
             window = max(floor, window - 200)
@@ -8333,6 +8342,69 @@ def _fit_source_brief(
             brief = _source_brief(working, excerpt_chars=window)
             continue
         return brief
+
+
+def _fit_shared_source_brief(
+    sources: Sequence[SourceRecord],
+    *,
+    budget: int,
+) -> list[dict[str, Any]]:
+    """The one ledger every pass of a stage receives, fitted against a payload-independent budget.
+
+    Spec item 23: ``_fit_source_brief`` used to shrink the array against each request's own
+    payload, so the author saw 1 200-character excerpts while the validator grading it saw 400 —
+    a claim judged against text its author never read. This budget is the same for both passes of
+    the stage, so the two requests carry byte-identical rows whatever their payload sizes.
+    """
+
+    def fits(brief: list[dict[str, Any]]) -> bool:
+        size = len(json.dumps(brief, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+        return size <= int(budget)
+
+    return _shrink_source_brief(sources, fits=fits)
+
+
+def _plan_artifact_bytes(plan: Any) -> int:
+    """The extra request bound a plan-validation pass needs for the document it grades.
+
+    The plan is authored material the harness itself produced, bounded by ``MAX_PLAN_BYTES``; like
+    a repair author's draft, it travels inside the request and must not be paid for out of the
+    shared source ledger (spec item 23). An unencodable plan contributes nothing and leaves the
+    historic bound in place.
+    """
+    try:
+        return min(len(canonical_json(plan).encode("utf-8")), MAX_PLAN_BYTES)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _fit_source_brief(
+    payload: dict[str, Any],
+    sources: Sequence[SourceRecord],
+    *,
+    limit: int,
+) -> list[dict[str, Any]]:
+    """Ledger rows for one request, shrunk only as far as the payload's byte bound requires.
+
+    A deep research pass carries ten sources; at the full 1200-character window the plan request
+    measured 25 636 bytes against the 24 000-byte short bound and the job failed before the author
+    was called. The fix is not a longer bound and not a truncated request: the excerpt window
+    shrinks (still prose, still from the same fetched text), and only at the 400-character floor
+    does the least-preferred trailing source leave. ``_bounded_input`` still owns the final
+    refusal if even the floor cannot fit.
+
+    The plan stage no longer fits per payload — it fits once with
+    :func:`_fit_shared_source_brief` so the author and validator share one ledger. This helper
+    remains the payload-bound fitter for callers that own a single request.
+    """
+
+    def fits(brief: list[dict[str, Any]]) -> bool:
+        payload["sources"] = brief
+        size = len(json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+        return size <= int(limit)
+
+    return _shrink_source_brief(sources, fits=fits)
+
 
 
 def _source_brief(
@@ -8691,11 +8763,13 @@ def build_plan_request(
             "requires, and return the whole repaired document in the same schema — do not "
             "restructure, shorten or re-order what was not named."
         )
-    # The ledger is fitted last, against the final payload, so a deep pass cannot overflow the
-    # bound after every other field is already in place. A repair request is allowed the stage
-    # bound plus the draft it was handed (W2-2); the draft is bounded by ``MAX_PLAN_BYTES``.
+    # The ledger is fitted once against the stage's own bound, never against this payload: the
+    # validator that grades the plan receives the same rows (spec item 23), so a repair request's
+    # larger bound must not buy the author an excerpt the validator will never see.
     request_limit = _draft_payload_bound(_request_bound(scope), previous_draft)
-    _fit_source_brief(payload, list(research_run.sources), limit=request_limit)
+    payload["sources"] = _fit_shared_source_brief(
+        list(research_run.sources), budget=_source_ledger_budget(_request_bound(scope))
+    )
     return LLMRequest(
         purpose="coursebook.plan.generate",
         prompt_version=(PLAN_PROMPT_VERSION_V2 if blueprint else PLAN_PROMPT_VERSION)
@@ -8772,10 +8846,15 @@ def build_plan_validation_requests(
     frequency_block = _frequency_block(frequency_selection, frequency_status)
     if frequency_block is not None:
         payload["vocabulary_inventory"] = frequency_block
-    # Same bound as the author request: the ledger is fitted against the final payload (which
-    # already carries the plan under review), never truncated.
-    request_limit = _request_bound(scope)
-    _fit_source_brief(payload, list(research_run.sources), limit=request_limit)
+    # The author and this pass share one ledger (spec item 23): the budget is the same
+    # payload-independent slice, so the rows are byte-identical whatever this payload weighs. The
+    # artifact under review is not part of that contest — the bound grows by the plan this pass
+    # was handed, exactly as the author's bound grows by the draft a repair carries, so the plan
+    # can never quietly eat the ledger's room.
+    request_limit = _request_bound(scope) + _plan_artifact_bytes(plan)
+    payload["sources"] = _fit_shared_source_brief(
+        list(research_run.sources), budget=_source_ledger_budget(_request_bound(scope))
+    )
     input_text = _bounded_input(payload, limit=request_limit)
     timeout = _timeout_for("coursebook.plan.validate", timeout_s)
     claims = plan_claim_labels(plan)
