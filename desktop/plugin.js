@@ -16420,18 +16420,11 @@ const CB3_CLASSROOM_COPY = Object.freeze({
   gameXp: '{n} XP',
   challengeTitle: 'Field Challenge',
   challengeStart: 'Try it yourself',
-  // WIRE-8: the challenge card used to print the check already on screen as its prompt and its
-  // action left the section. These rows describe the real thing instead: `progression.challenge_out`
-  // supersedes the open check with an unused audited variant, so the prompt is a promise about a
-  // second question, never a copy of the first one. COPY.md §4 has no row for these strings (like
-  // `answerLabel` above); the deck gap is reported in the review summary rather than invented
-  // elsewhere.
-  challengePrompt: 'A fresh, unseen question on this section: same skill, a different check, answered right here.',
-  challengeOpening: 'Opening a fresh challenge…',
-  challengeOpen: 'Challenge open: a different question is in the check now.',
-  challengeNone: 'No fresh challenge is available for this section yet.',
-  challengeError: 'The fresh challenge could not be opened. Nothing about this section changed; try again.',
-  challengeUnavailable: 'This build cannot open a fresh challenge.',
+  // The aside's action is the door to the check already on this page: it focuses the visible check
+  // card and never starts a second question or advances the section. A section with no check
+  // renders no action at all, so these rows have no "opening"/"unavailable" states to name.
+  // COPY.md §4 has no row for these strings (like `answerLabel` above); the deck gap is reported
+  // in the review summary rather than invented elsewhere.
   // SPEC-V3 §5.3 C7 does not name this label and the deck has no row for it (ruling 2026-11-10):
   // the visible words stay identical and the missing row is reported in the review summary,
   // never invented here as a second copy source.
@@ -17538,7 +17531,6 @@ function ClassroomV3({
   stimulusError = null,
   mode = 'guided',
   engagement = null,
-  challenge = null,
   award = null,
   scene = null,
   state = 'default',
@@ -17557,8 +17549,7 @@ function ClassroomV3({
   onPlayLine,
   onRetry,
   onRetryStimulus,
-  onCommitted,
-  onStartChallenge
+  onCommitted
 }) {
   const width = useCbViewportWidth()
   const wide = width >= 1000
@@ -17607,26 +17598,17 @@ function ClassroomV3({
   }, [nextSectionId, onNextSection])
   const foxPose = verdict === 'pass' ? 'cheer' : verdict && verdict !== 'pass' ? 'think' : 'read'
   const nextStep = row && row.next_step && row.next_step.label ? row.next_step.label : null
-  // WIRE-8: the Field Challenge is its own served question, opened by `progression.challenge_out`,
-  // not the check already on screen. The presentational surface reads only this state and the
-  // copy row it names; it never borrows the visible stimulus as the challenge prompt.
-  const challengeStatus = challenge && challenge.status ? challenge.status : 'idle'
-  const challengePrompt =
-    challengeStatus === 'starting'
-      ? CB3_CLASSROOM_COPY.challengeOpening
-      : challengeStatus === 'started'
-        ? CB3_CLASSROOM_COPY.challengeOpen
-        : challengeStatus === 'error'
-          ? (challenge && challenge.message) || CB3_CLASSROOM_COPY.challengeError
-          : challengeStatus === 'unsupported'
-            ? CB3_CLASSROOM_COPY.challengeUnavailable
-            : CB3_CLASSROOM_COPY.challengePrompt
-  // A control exists only when the wire can serve the challenge. While it is opening the action is
-  // withdrawn (the card states that it is opening), so a second click cannot race the first.
-  const challengeAction =
-    (challengeStatus === 'idle' || challengeStatus === 'error') && typeof onStartChallenge === 'function'
-      ? CB3_CLASSROOM_COPY.challengeStart
-      : null
+  // The aside's `Try it yourself` is a door to the check already on this page, not a second
+  // question and not the next section. It scrolls to the check card and puts focus on the card
+  // itself (the slot is `tabIndex={-1}`), so a keyboard user lands where the action pointed.
+  // Nothing here starts a challenge or advances a section; a section with no check renders no
+  // control at all (see `aside` below).
+  const focusCheck = useCallback(() => {
+    const node = checkRef.current
+    if (!node) return
+    if (typeof node.scrollIntoView === 'function') node.scrollIntoView({ block: 'start' })
+    if (typeof node.focus === 'function') node.focus({ preventScroll: true })
+  }, [])
   // WIRE-9: the award sentence is the backend's own points plus, when the backend supplies one,
   // its own `basis` sentence. Nothing here computes a number. With no basis the line is the
   // number and `XP` only — never a manufactured explanation — and a refused award is `null`,
@@ -17881,13 +17863,14 @@ function ClassroomV3({
     'aria-label': 'Section details',
     style: { display: 'flex', flexDirection: 'column', gap: '0.75rem', minWidth: 0 },
     children: [
-      game
+      game && check && checkCard
         ? jsx(ChallengeCard, {
             title: CB3_CLASSROOM_COPY.challengeTitle,
-            prompt: challengePrompt,
+            // A section with no check renders no control: there is nothing on this page for the
+            // action to open, and inventing a question here would be a second check.
             recordNote: engagement ? classroomCopy(CB3_CLASSROOM_COPY.gameXp, { n: Number(engagement.xp_total) || 0 }) : null,
-            actionLabel: challengeAction,
-            onStart: onStartChallenge
+            actionLabel: CB3_CLASSROOM_COPY.challengeStart,
+            onStart: focusCheck
           }, 'challenge')
         : null,
       game && Array.isArray(gameRows) && gameRows.length > 0
@@ -18103,7 +18086,6 @@ function ClassroomV3Surface({
   const feedbackVisible =
     typeof cbGameFeedbackVisible === 'function' ? cbGameFeedbackVisible(homePrefs, engagement.data) : true
   const [revisionFloor, setRevisionFloor] = useState(0)
-  const [challenge, setChallenge] = useState({ status: 'idle', message: null })
   const [award, setAward] = useState(null)
   // CREATE-EXPERIENCE item 38: the last check's pass is the door to the ending, and the learner
   // opens it with the card's own primary — the verdict and its observation are the teaching beat,
@@ -18134,7 +18116,6 @@ function ClassroomV3Surface({
     enabled: Boolean(objectiveId) && Boolean(page.data) && backendSupports('check.open'),
     implemented: backendWire.implemented
   })
-  const reloadCheck = check.reload
   const reloadEngagement = engagement.reload
   // WIRE-9: one XP event per committed passing attempt. `check_submitted` is the contract's own
   // action kind and `attempt_id` is the real committed row the backend prices — never a click, a
@@ -18177,43 +18158,6 @@ function ClassroomV3Surface({
     },
     [mode, courseId, enrollmentId, reloadEngagement]
   )
-  const canChallenge =
-    mode === 'game' &&
-    Boolean(courseId) &&
-    Boolean(enrollmentId) &&
-    Boolean(objectiveId) &&
-    backendSupports('progression.challenge_out')
-  // WIRE-8: "Try it yourself" opens a different audited check in place. `progression.challenge_out`
-  // is the existing contract method for exactly this (the Plan and Quizzes surfaces already use
-  // it); it returns the new revision, the open check is re-read, and the learner answers the new
-  // question without leaving the section.
-  const startChallenge = useCallback(async () => {
-    if (!canChallenge) return
-    setChallenge({ status: 'starting', message: null })
-    const response = await rpc(
-      'progression.challenge_out',
-      { enrollment_id: enrollmentId, objective_id: objectiveId },
-      {
-        expectedRevision: revision,
-        idempotencyKey: `cb-challenge-${enrollmentId}-${objectiveId}-${newOperationId('challenge')}`
-      }
-    )
-    if (!response.ok) {
-      const reason = response.error && response.error.details ? response.error.details.reason : null
-      setChallenge({
-        status: 'error',
-        message:
-          reason === 'no_varied_challenge_available'
-            ? CB3_CLASSROOM_COPY.challengeNone
-            : CB3_CLASSROOM_COPY.challengeError
-      })
-      return
-    }
-    const nextRevision = Number(response.result && response.result.revision)
-    if (Number.isFinite(nextRevision) && nextRevision > 0) setRevisionFloor(nextRevision)
-    setChallenge({ status: 'started', message: null })
-    reloadCheck()
-  }, [canChallenge, enrollmentId, objectiveId, revision, reloadCheck])
   const sectionId = page.data && page.data.section ? page.data.section.objective_id : objectiveId
   const scene = classroomSceneFromWorld(world.data, sectionId, (row && row.title) || '')
   const lastSection = classroomLastSection(outline.data, page.data)
@@ -18258,7 +18202,6 @@ function ClassroomV3Surface({
     stimulusError: check.stimulusError,
     mode,
     engagement: mode === 'game' && feedbackVisible ? engagement.data : null,
-    challenge: mode === 'game' ? (canChallenge ? challenge : { status: 'unsupported', message: null }) : null,
     award: mode === 'game' && feedbackVisible ? award : null,
     scene,
     state,
@@ -18279,7 +18222,6 @@ function ClassroomV3Surface({
     onStartChat,
     onAskTutor,
     onPlayLine,
-    onStartChallenge: canChallenge ? startChallenge : undefined,
     onRetry: () => {
       page.reload()
       outline.reload()

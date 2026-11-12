@@ -8,9 +8,10 @@ Two defects from ``docs/UX-AUDIT-E2E.md`` meet on one surface, so one jsdom harn
   paints the backend's own ``points`` and, when it supplies one, its own ``basis`` sentence —
   never a computed number and never an invented explanation. A non-passing attempt, a typed
   refusal and an already-awarded replay all award nothing and paint nothing.
-* WIRE-8 — the Field Challenge printed the check already on screen and "Try it yourself" left the
-  lesson. It now calls the existing ``progression.challenge_out``, adopts the returned revision,
-  re-reads the open check, and the learner answers a different served stimulus in place.
+* WIRE-8 (superseded) — the Field Challenge printed the check already on screen and "Try it
+  yourself" left the lesson. The aside's action is now a door to the check already on this page:
+  it scrolls to and focuses the visible check card and never advances the section. A section with
+  no check renders no action, and no action invents a second question.
 
 The harness stages the shipped ``desktop/plugin.js``, registers it with a fake ``ctx.rest`` and
 renders ``ClassroomV3Surface`` in jsdom, exactly like ``tests/test_desktop_pronunciation.py``. It
@@ -57,19 +58,11 @@ const mod = await import('./plugin.js')
 const calls = []
 const events = []
 let awarded = false
-let challengeOpen = false
-let challengeAvailable = payload.challengeAvailable !== false
 
 const stimulusFirst = {
   prompt: 'Which line is the romantic confession?',
   format: 'selection',
   choices: ['A: うん、好きだよ。', 'B: 好きです。付き合ってください。'],
-  items: []
-}
-const stimulusChallenge = {
-  prompt: 'Which line is a polite refusal?',
-  format: 'selection',
-  choices: ['A: それはちょっと難しいです。', 'B: 好きです。'],
   items: []
 }
 
@@ -92,8 +85,7 @@ const fakeRest = async (path, options = {}) => {
   const name = body && body.method
   if (name === 'course.outline') return { ok: true, result: payload.outline }
   if (name === 'lesson.page') {
-    const result = { ...payload.page, revision: challengeOpen ? 8 : 7 }
-    return { ok: true, result }
+    return { ok: true, result: payload.page }
   }
   if (name === 'world.read') return { ok: true, result: { world: null, style: null } }
   if (name === 'engagement.read') {
@@ -115,30 +107,41 @@ const fakeRest = async (path, options = {}) => {
     }
   }
   if (name === 'check.open') {
+    if (payload.noCheck) {
+      return {
+        ok: false,
+        error: {
+          code: 'VALIDATION_FAILED',
+          category: 'validation',
+          message: 'this section has no open check',
+          retryable: false,
+          details: { reason: 'no_open_check', objective_id: 'obj_2' }
+        }
+      }
+    }
     const revision = Number(body.expected_revision)
     return {
       ok: true,
       result: {
-        check_id: challengeOpen ? 'chk_challenge01' : 'chk_first01',
-        check_version: challengeOpen ? 2 : 1,
+        check_id: 'chk_first01',
+        check_version: 1,
         evidence_target: 'discrimination',
         revision
       }
     }
   }
   if (name === 'check.get') {
-    const challenge = body && body.payload && body.payload.check_id === 'chk_challenge01'
     return {
       ok: true,
       result: {
-        check_id: challenge ? 'chk_challenge01' : 'chk_first01',
+        check_id: 'chk_first01',
         objective_id: 'obj_2',
-        check_version: challenge ? 2 : 1,
+        check_version: 1,
         evidence_target: 'discrimination',
         state: 'open',
         audit_state: 'passed',
         attempt_count: 0,
-        stimulus: challenge ? stimulusChallenge : (payload.stimulus || stimulusFirst)
+        stimulus: payload.stimulus || stimulusFirst
       }
     }
   }
@@ -184,22 +187,6 @@ const fakeRest = async (path, options = {}) => {
         ...(payload.awardBasis ? { basis: payload.awardBasis } : {})
       }
     }
-  }
-  if (name === 'progression.challenge_out') {
-    if (!challengeAvailable) {
-      return {
-        ok: false,
-        error: {
-          code: 'VALIDATION_FAILED',
-          category: 'validation',
-          message: 'no unused, audited variant of this check exists; a replay would not be a challenge.',
-          retryable: false,
-          details: { reason: 'no_varied_challenge_available', objective_id: 'obj_2' }
-        }
-      }
-    }
-    challengeOpen = true
-    return { ok: true, result: { check_id: 'chk_challenge01', check_version: 2, revision: 8 } }
   }
   throw new Error('unexpected rpc method ' + name)
 }
@@ -320,10 +307,10 @@ if (payload.scenario === 'award') {
   const ending = document.querySelector('[data-cb3-classroom-state="complete"]')
   endingSeen = ending ? (ending.textContent || '').replace(/\s+/g, ' ').trim() : null
   if (ending) await click(byText('Back to the path'))
-} else if (payload.scenario === 'challenge') {
+} else if (payload.scenario === 'aside-check') {
   await click(byText('Try it yourself'))
-} else if (payload.scenario === 'challenge-none') {
-  await click(byText('Try it yourself'))
+} else if (payload.scenario === 'aside-absent') {
+  // Nothing to click: the assertion is that the control is not rendered at all.
 }
 
 const after = {
@@ -350,6 +337,16 @@ process.stdout.write(JSON.stringify({
   after,
   endingSeen,
   events,
+  tryIt: Boolean(byText('Try it yourself')),
+  focused: (() => {
+    const node = document.activeElement
+    if (!node) return null
+    return {
+      tag: node.tagName,
+      checkSlot: typeof node.hasAttribute === 'function' && node.hasAttribute('data-cb3-check-slot'),
+      text: (node.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 80)
+    }
+  })(),
   calls: calls
     .filter((call) => call.path === '/rpc')
     .map((call) => ({
@@ -498,7 +495,6 @@ IMPLEMENTED = [
     "check.open",
     "check.get",
     "attempt.submit",
-    "progression.challenge_out",
 ]
 
 
@@ -612,41 +608,44 @@ class LearningLiveSurfaceTest(unittest.TestCase):
         self.assertIsNone(data["after"]["award"], "a non-passing attempt painted an award")
         self.assertEqual(data["after"]["xp"], "0 XP")
 
-    def test_try_it_yourself_opens_a_different_check_in_place(self) -> None:
-        data = self.rig.run("challenge")
+    def test_try_it_yourself_focuses_the_visible_check_without_leaving_the_section(self) -> None:
+        data = self.rig.run("aside-check")
         self.assertEqual(data["before"]["question"], "Which line is the romantic confession?")
-        # The card no longer repeats the visible question: it describes the fresh check it opens.
+        # The aside names the action but never reprints the question the check card owns.
         self.assertIn("Field Challenge", data["before"]["challenge"])
-        self.assertIn("A fresh, unseen question", data["before"]["challenge"])
+        self.assertIn("Try it yourself", data["before"]["challenge"])
         self.assertNotIn("Which line is the romantic confession?", data["before"]["challenge"])
 
-        opens = [call for call in data["calls"] if call["method"] == "progression.challenge_out"]
-        self.assertEqual(len(opens), 1, "Try it yourself did not ask the backend for a fresh challenge")
-        self.assertEqual(
-            opens[0]["payload"],
-            {"enrollment_id": "enr_0123456789abcdef", "objective_id": "obj_2"},
+        # The press opens nothing new: it moves focus to the check already on the page.
+        self.assertFalse(
+            [call for call in data["calls"] if call["method"] == "progression.challenge_out"],
+            "Try it yourself invented a second check",
         )
-        self.assertEqual(opens[0]["expected_revision"], 7)
         self.assertFalse(
             [event for event in data["events"] if event.startswith("next-section")],
-            "Try it yourself left the lesson",
-        )
-
-        # The returned revision fences the re-read, and the served stimulus is the variant.
-        check_opens = [call for call in data["calls"] if call["method"] == "check.open"]
-        self.assertGreaterEqual(len(check_opens), 2, "the open check was not re-read after the challenge")
-        self.assertEqual(check_opens[-1]["expected_revision"], 8)
-        self.assertEqual(data["after"]["question"], "Which line is a polite refusal?")
-        self.assertIn("Challenge open", data["after"]["challenge"])
-
-    def test_a_section_with_no_variant_says_so_and_stays(self) -> None:
-        data = self.rig.run("challenge-none", challengeAvailable=False)
-        self.assertIn("No fresh challenge is available", data["after"]["challenge"])
-        self.assertFalse(
-            [event for event in data["events"] if event.startswith("next-section")],
-            "a refused challenge left the lesson",
+            "Try it yourself advanced the section",
         )
         self.assertEqual(data["after"]["question"], "Which line is the romantic confession?")
+        focused = data["focused"] or {}
+        self.assertTrue(
+            focused.get("checkSlot"),
+            f"the visible check card is not the active element target: {focused}",
+        )
+        self.assertIn("Which line is the romantic confession?", focused.get("text", ""))
+
+    def test_a_section_with_no_check_renders_no_try_it_yourself(self) -> None:
+        data = self.rig.run("aside-absent", noCheck=True)
+        self.assertFalse(data["tryIt"], "a section with no check still offered Try it yourself")
+        self.assertIsNone(data["after"]["challenge"], "a section with no check still rendered the card")
+        self.assertIsNone(data["after"]["question"], "the fixture served a check anyway")
+        self.assertFalse(
+            [call for call in data["calls"] if call["method"] == "progression.challenge_out"],
+            "a section with no check invented one",
+        )
+        self.assertFalse(
+            [event for event in data["events"] if event.startswith("next-section")],
+            "a section with no check advanced",
+        )
 
 
 class ClassroomItem33ProseTest(unittest.TestCase):

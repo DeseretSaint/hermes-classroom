@@ -100,7 +100,6 @@ const base = payload.base
 // JSON cannot carry a function: a truthy flag in the fixture means "this surface has the door".
 if (base.onPlayLine) base.onPlayLine = () => {}
 if (base.onAskTutor) base.onAskTutor = () => {}
-if (base.onStartChallenge) base.onStartChallenge = () => {}
 const cases = {}
 for (const entry of payload.cases) {
   cases[entry.name] = render({ ...base, ...entry.props })
@@ -402,7 +401,6 @@ def base_props() -> dict:
         "revision": 7,
         "onPlayLine": "play",
         "onAskTutor": "tutor",
-        "onStartChallenge": "start",
     }
 
 
@@ -443,6 +441,24 @@ def cases() -> list[dict]:
                     "recent_events": [],
                 },
                 "gameRows": [{"label": "Practice the polite form out loud"}],
+            },
+        },
+        {
+            # Game mode with no check for the section: the aside's `Try it yourself` has nothing to
+            # open, so it must not render (and must not invent a second check).
+            "name": "game-plain",
+            "props": {
+                "mode": "game",
+                "engagement": {
+                    "xp_total": 120,
+                    "level": {"level": 2, "title": "Apprentice", "xp_into_level": 20, "xp_for_next_level": 100, "is_cosmetic": True},
+                    "progress": {"label": "Game progress", "is_play_progress": True, "assigned_steps": 9, "completed_steps": 3, "feedback_visible": True},
+                    "recent_events": [],
+                },
+                "page": plain_page,
+                "check": None,
+                "stimulusStatus": "idle",
+                "gameRows": [],
             },
         },
         {"name": "textbook", "props": {"mode": "textbook"}},
@@ -684,20 +700,32 @@ class ClassroomV3RenderTest(unittest.TestCase):
         self.assertIn("data-cb3-challenge", game, "Game mode has no Field Challenge")
         self.assertIn("Field Challenge", game)
         self.assertIn("Try it yourself", game)
-        # WIRE-8: the challenge is a different served question, not the check already on screen.
-        # Isolate the challenge card from the rest of the aside and prove it does not repeat the
-        # visible prompt (the question now renders once, in the check card's own question line).
+        # The aside is a door to the check already on this page, not a second question: it carries
+        # no body paragraph that repeats or describes another check.
         challenge_html = game.split("data-cb3-challenge", 1)[1].split('data-cb3-surface="evidence"', 1)[0]
         self.assertNotIn(
             "Which line is the romantic confession?",
             challenge_html,
             "the Field Challenge repeats the visible check as its prompt",
         )
-        self.assertIn("A fresh, unseen question", challenge_html, "the challenge card does not describe a fresh check")
+        self.assertNotIn("A fresh, unseen question", challenge_html, "the aside still promises a second check")
+        self.assertIn("Try it yourself", challenge_html)
         # The challenge's action is quiet: the check keeps the screen's only fill.
         self.assertEqual(game.count('data-cb3-pill="primary"'), 1,
                          "the Game layer added a second filled control")
         self.assertIn("Practice the polite form out loud", game, "a real practice row was dropped")
+
+    def test_game_aside_try_it_yourself_needs_a_check(self) -> None:
+        # With a check on the page the aside offers the door, and it never reprints the question
+        # (the check card owns that row).
+        with_check = self.html["game"]
+        self.assertIn("data-cb3-challenge", with_check)
+        self.assertIn("Try it yourself", with_check)
+        self.assertNotIn("A fresh, unseen question", with_check)
+        # With no check for the section there is nothing to open, so the control is absent.
+        without = self.html["game-plain"]
+        self.assertNotIn("data-cb3-challenge", without, "a section with no check rendered the aside card")
+        self.assertNotIn("Try it yourself", without, "a section with no check offered the control")
 
     def test_classroom_v3_stepper_matches_outline(self) -> None:
         steps = self.report["steps"]
