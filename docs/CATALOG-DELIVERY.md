@@ -88,3 +88,39 @@ Every time plugin code merges to `master`:
   `tests/`, `audit/`, `probes/`, `scripts/`, `.github/` and `store/` as non-runtime.
 - **An installed copy never moves on its own** unless `plugins.auto_apply` is on; that is the catalog's
   trust model, not a defect.
+
+## After the merge, and the drift that already happened once
+
+The entry is a snapshot. Between the first pin and this audit, master gained 50 commits and 23 runtime
+files — figures, print, tutor, lesson truth, Gate 5 artwork — while the entry still pointed at the
+older tree. Had it merged in that state, users would have installed code we had already replaced.
+That is the failure mode to design against, so `scripts/catalog-sync.py` exists:
+
+```
+python3 scripts/catalog-sync.py --dry-run   # what would happen
+python3 scripts/catalog-sync.py --quiet     # cron mode: silent unless it acts
+```
+
+- **While the PR is open** it bumps `sha:` on the PR branch and pushes — after running the admission
+  gate, so a failing gate rolls the commit back and pushes nothing. The PR can never merge pointing at
+  a stale tree.
+- **After the PR merges** catalog rule 4 requires a *new* PR for every SHA bump. The script does not
+  open one: it prepares a branch off current `upstream/main` with the bump, runs the gate, and prints
+  the exact `gh pr create` command. A timer that opens PRs on maintainers is not a delivery strategy.
+- It reads the pin from the ref that actually carries it (`origin/<branch>` while open,
+  `upstream/main` after merge), never from a checkout that may be on some other branch.
+- A dirty catalog checkout stops it (exit 5) rather than guessing.
+
+The cron job `Catalog pin sync` runs it every 30 minutes from `~/Projects/hermes-classroom` and stays
+silent unless it bumps a pin, prepares a branch, or fails.
+
+## What the user has to do to see it
+
+1. `hermes plugins update coursebook` — the one command that moves an install to the new pin. Or set
+   `plugins.auto_apply: true` and let the gateway tick do it.
+2. The Python half is reloaded by that command (the gateway is asked to re-discover plugins). The
+   Desktop half is copied and rescanned by the app's own Plugins tab; a CLI update while the app is
+   open can therefore need the Plugins tab reopened, or an app restart, before the new UI is live.
+   Plan for that in release notes rather than pretending the swap is invisible.
+3. Plugin data survives: `plugin_data_dir()` / `plugin_db()` live outside the install and follow the
+   profile, not the pin.

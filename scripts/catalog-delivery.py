@@ -60,6 +60,7 @@ def main() -> int:
     ap.add_argument("--name", default="coursebook")
     ap.add_argument("--head", default="origin/master")
     ap.add_argument("--strict", action="store_true")
+    ap.add_argument("--json", action="store_true", help="machine-readable report on stdout")
     args = ap.parse_args()
 
     try:
@@ -88,6 +89,15 @@ def main() -> int:
         same = str(published.get("sha") or "").lower() == pin
         print(f"live       published at {str(published.get('sha'))[:8]}"
               f" ({'matches' if same else 'DIFFERS FROM'} the entry)")
+
+    if args.json:
+        print(json.dumps({"name": args.name, "entry": str(args.entry), "repo": repo, "pin": pin,
+                          "head": head, "ahead": ahead, "ancestor": ancestor,
+                          "runtime": runtime, "published": bool(published),
+                          "published_sha": (published or {}).get("sha")}))
+        if not ancestor:
+            return 1
+        return 1 if runtime else 0
 
     if not ancestor:
         print("FAIL: the pin is not on master — the entry installs a commit nobody can find upstream")
