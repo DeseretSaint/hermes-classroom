@@ -87,11 +87,12 @@ def _profile(domain: str | None) -> str:
 # wrong answer for a hands-on goal.
 
 #: Acts that are unambiguously performed with hands, tools or instruments. These are stems, not
-#: whole words: "replacing" and "soldering" are the same act as "replace" and "solder".
+#: whole words: "replacing" and "soldering" are the same act as "replace" and "solder". ``fix``
+#: carries an explicit suffix group rather than the bare stem because "fixture" is a noun.
 _ALWAYS_PHYSICAL_ACT = re.compile(
     r"\b("
-    r"set\s+up|assembl|disassembl|install|replac|refit|re-fit|repair|solder|desolder|"
-    r"weld|drill|calibrat|collimat|align|tune"
+    r"set\s+up|assembl|disassembl|install|replac|refit|re-fit|repair|fix(?:es|ed|ing)?\b|"
+    r"solder|desolder|weld|drill|calibrat|collimat|align|tune"
     r")"
 )
 
@@ -105,12 +106,16 @@ _PHYSICAL_ACT = re.compile(
     r")"
 )
 
-#: The instruments, tools and objects a physical course is performed with or at.
+#: The instruments, tools and objects a physical course is performed with or at. CP-015 (item 17)
+#: adds the everyday household and vehicle objects a learner names instead of a trade noun: the
+#: detector missed "learn to fix my car" because the list stopped at "bike" and "engine".
 _PHYSICAL_OBJECT = re.compile(
     r"\b("
     r"telescope|eyepiece|finder|tripod|mount|lens|filter|binoculars?|"
     r"board|pcb|circuit|solder|iron|meter|multimeter|probe|wiring|"
-    r"bike|bicycle|wheel|tube|tyre|tire|brake|engine|carburett?or|chain|"
+    r"bike|bicycle|motorcycle|wheel|tube|tyre|tire|brakes?|engine|carburett?or|chain|"
+    r"cars?|trucks?|vehicles?|appliances?|dishwashers?|washers?|dryers?|plumbing|faucets?|toilets?|"
+    r"walls?|drywall|lamps?|outlets?|"
     r"drill|saw|blade|sandpaper|needle|thread|fabric|loom|"
     r"oven|pan|dough|knife|stove|"
     r"guitar|piano|violin|instrument|strings?|"
@@ -133,6 +138,49 @@ _UNDERSTANDING_FRAME = re.compile(
     re.IGNORECASE,
 )
 
+#: The learner naming an act they mean to do: "learn to fix my car", "want to solder a joint",
+#: "help me replace a brake pad". The frame alone is not enough — "learn Spanish" names a subject
+#: and "want to understand how cars work" names knowledge — so the branch below also requires a
+#: physical object, and the framed verb may not itself be a knowledge verb. ``fix`` is matched as
+#: a strong act already; this frame is what lets "learn to play guitar" reach the object list.
+_INTENT_FRAME = re.compile(
+    r"\b(?:learn|learning|want|wants|need|needs)\s+to\s+(?P<verb>[a-z]+)\b"
+    r"|\bhelp\s+me\s+(?P<help_verb>[a-z]+)\b",
+    re.IGNORECASE,
+)
+
+#: Verbs that keep a framed goal a knowledge goal even when a physical object follows it.
+_KNOWLEDGE_VERB = frozenset(
+    {
+        "understand",
+        "know",
+        "explain",
+        "describe",
+        "analyse",
+        "analyze",
+        "appreciate",
+        "study",
+        "read",
+        "write",
+        "speak",
+        "say",
+        "learn",
+    }
+)
+
+#: Objects that make the goal computational, not physical. "Fix a bug in my code" is a programming
+#: task, and turning it into a hands-on procedure would tell the learner their checks are quizzes
+#: about an act they never perform. ``build`` is matched only as the noun ("the build", "build
+#: fails") because "build a shed" is a physical act and a bare word would veto it.
+_COMPUTING_OBJECT = re.compile(
+    r"\b("
+    r"bugs?|code|coding|scripts?|servers?|software|apps?|websites?|databases?|apis?|"
+    r"deploys?|deployments?|repos?|repositor(?:y|ies)|branches?|merges?|pipelines?"
+    r")\b|"
+    r"\b(?:the|a|this|that|failed|failing|broken|green)\s+build\b|"
+    r"\bbuild\s+(?:is|fails?|failed|broken|error|errors)\b"
+)
+
 
 def performance_requirement(goal: str | None) -> dict[str, Any] | None:
     """The typed performance rule for one goal, or ``None`` when the goal is not a performance.
@@ -148,14 +196,25 @@ def performance_requirement(goal: str | None) -> dict[str, Any] | None:
     text = " ".join(str(goal or "").split())
     if not text:
         return None
-    strong = _ALWAYS_PHYSICAL_ACT.search(text.casefold())
-    weak = _PHYSICAL_ACT.search(text.casefold())
-    object_match = _PHYSICAL_OBJECT.search(text.casefold())
+    folded = text.casefold()
+    # A goal that names a computing object asks for a computational act. Veto before any match:
+    # "fix a bug in my code" and "repair a broken build" are not performed with hands, and the
+    # strong-act list would otherwise claim them via "fix"/"repair".
+    if _COMPUTING_OBJECT.search(folded):
+        return None
+    strong = _ALWAYS_PHYSICAL_ACT.search(folded)
+    weak = _PHYSICAL_ACT.search(folded)
+    object_match = _PHYSICAL_OBJECT.search(folded)
+    frame = _INTENT_FRAME.search(folded)
     action: str | None = None
     if strong:
         action = strong.group(0)
     elif weak and object_match and not _UNDERSTANDING_FRAME.search(text):
         action = weak.group(0)
+    elif frame and object_match and not _UNDERSTANDING_FRAME.search(text):
+        framed_verb = frame.group("verb") or frame.group("help_verb") or ""
+        if framed_verb not in _KNOWLEDGE_VERB:
+            action = framed_verb or object_match.group(0)
     if action is None:
         return None
     return {

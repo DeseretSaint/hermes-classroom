@@ -230,6 +230,11 @@ class PerformanceIsEnforcedNotJustStatedTest(unittest.TestCase):
         plan["objectives"][0]["evidence_target"] = "procedure"
         plan["check_plan"][0]["evidence_target"] = "procedure"
         plan["check_plan"][0]["kind"] = "verification"
+        # CP-015 (item 15): a physical goal's plan declares its exit and ends in the act.
+        plan["exit_performance"] = "performance"
+        plan["objectives"][-1]["evidence_target"] = "procedure"
+        plan["check_plan"][-1]["evidence_target"] = "procedure"
+        plan["check_plan"][-1]["kind"] = "verification"
         _rules(plan)
 
     def test_a_knowledge_goal_keeps_a_quiz_plan_valid(self) -> None:
@@ -256,10 +261,14 @@ class CitationCarriesTheClaimTest(unittest.TestCase):
     def _plan(self) -> dict:
         plan = _declared_plan()
         # One performance objective so the plan passes the performance rule and only the citation
-        # rules are in play.
+        # rules are in play; CP-015 (item 15) also needs the typed exit and a closing performance.
         plan["objectives"][0]["evidence_target"] = "procedure"
         plan["check_plan"][0]["evidence_target"] = "procedure"
         plan["check_plan"][0]["kind"] = "verification"
+        plan["exit_performance"] = "performance"
+        plan["objectives"][-1]["evidence_target"] = "procedure"
+        plan["check_plan"][-1]["evidence_target"] = "procedure"
+        plan["check_plan"][-1]["kind"] = "verification"
         return plan
 
     def _sourced(self, plan: dict, **overrides) -> dict:

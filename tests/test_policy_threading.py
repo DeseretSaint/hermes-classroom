@@ -76,6 +76,10 @@ def blueprint() -> dict:
     plan = blueprint_plan(scope="single", units=1, objectives_per_unit=1, recipe="one_off")
     plan["objectives"][0]["evidence_target"] = "procedure"
     plan["check_plan"][0]["evidence_target"] = "procedure"
+    # CP-015 (item 15): the goal is a physical act, so the plan declares its exit and its last
+    # (only) unit ends in the procedure the goal asks for.
+    plan["exit_performance"] = "performance"
+    plan["terminal_performance"] = "Replace the front brake pads and torque the caliper to spec."
     return plan
 
 

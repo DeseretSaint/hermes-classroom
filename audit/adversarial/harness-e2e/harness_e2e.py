@@ -289,6 +289,14 @@ class RecordedLLM:
             "scope": scope,
             "title": scenario["title"],
             "learner_outcome": shape["learner_outcome"],
+            # The recorded plan declares its exit performance where the recording carries one. The
+            # rule that reads it refuses a performance goal whose plan will not say so, so the
+            # replay must pass the authored field through rather than drop it on the floor.
+            **{
+                key: shape[key]
+                for key in ("exit_performance", "terminal_performance")
+                if key in shape
+            },
             # H-195: the plan's arc and starting assumptions are authored in the recording, like
             # every other content field; the replay never invents them.
             "through_line": shape["through_line"],

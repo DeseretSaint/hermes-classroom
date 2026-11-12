@@ -16,6 +16,7 @@ from pathlib import Path
 from unittest import mock
 
 from coursebook import generation as gen
+from coursebook import curriculum
 from coursebook import policy as capability_policy
 from coursebook import research
 from coursebook import rubrics
@@ -1494,7 +1495,7 @@ class LessonJobTest(GenerationTestBase):
         ]
         self.assertTrue(generation_requests)
         for request in generation_requests:
-            self.assertEqual(request.prompt_version, "lesson-prompt.v11")
+            self.assertEqual(request.prompt_version, "lesson-prompt.v12")
             self.assertIn("Capability policy", request.instructions)
             payload = json.loads(request.input_text)
             self.assertIn("capability_policy", payload)
@@ -1509,6 +1510,23 @@ class LessonJobTest(GenerationTestBase):
             self.assertEqual(recorded["check_angle"], recorded["evidence_target"])
             self.assertIn(recorded["rubric_profile"], set(gen.capability_policy.RUBRIC_PROFILES))
             self.assertTrue(recorded["reasons"])
+
+    def test_the_lesson_author_receives_the_goal_and_the_prior_section(self) -> None:
+        # CP-015 (item 16): the wiring, not just the builder — the payload of a real lesson job
+        # carries the course goal the learner typed and the section before this one.
+        plan_result = self.approved_plan()
+        llm = self.lesson_script(validation_from_fixture())
+        self.run_lessons(plan_result, llm)
+        payloads = [
+            json.loads(request.input_text)
+            for request in llm.requests
+            if request.purpose == "coursebook.lesson.generate"
+        ]
+        self.assertTrue(payloads)
+        self.assertTrue(all(payload["goal"] == "Order coffee in Japanese" for payload in payloads))
+        by_ordinal = {int(payload["section"]["ordinal"]): payload for payload in payloads}
+        self.assertIsNone(by_ordinal[min(by_ordinal)]["previous_section"])
+        self.assertEqual(by_ordinal[2]["previous_section"], "Greeting and opening")
 
     def test_learner_page_never_contains_reference_answers_or_rubric(self) -> None:
         plan_result = self.approved_plan()
@@ -1555,7 +1573,7 @@ class LessonJobTest(GenerationTestBase):
         text = gen._lesson_instructions(recipe="parent", locale=None, scaffold_note="")
         self.assertIn("3-6", text)
         self.assertIn("distinct observable", text)
-        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v11")
+        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v12")
 
     def test_a_lesson_with_fewer_than_three_rubric_criteria_is_retried_then_parked(self) -> None:
         plan_result = self.approved_plan()
@@ -1907,6 +1925,24 @@ class LessonCheckKindFollowsEvidenceTargetTest(unittest.TestCase):
         reasons = " ".join(caught.exception.reasons)
         self.assertIn("'procedure' check is measured by verification", reasons)
         self.assertIn("'quiz'", reasons)
+
+    def test_a_transfer_objective_may_be_measured_by_a_quiz(self) -> None:
+        """A transfer check applies a capability to a case the lesson did not teach.
+
+        That can be a scenario question, so the quiz kind is legitimate here even though it is not
+        for a procedure. The rule that refuses a quiz for a procedure must not swallow transfer.
+        """
+        plan = fixture("plan_ja")
+        lesson = lesson_fixture("lesson_ja")
+        lesson["check"]["evidence_target"] = "transfer"
+        gen.enforce_lesson_rules(
+            lesson,
+            section=plan["sections"][0],
+            objective={**plan["objectives"][0], "evidence_target": "transfer"},
+            recipe="committed",
+            locale=None,
+            dials={},
+        )
 
     def test_a_real_verification_checklist_evidences_a_procedure_objective(self) -> None:
         plan = fixture("plan_one_off")
@@ -2577,6 +2613,277 @@ class PlanWideLessonBoundTest(GenerationTestBase):
                 len(request.input_text), gen.DEFAULT_REQUEST_BYTES,
                 f"{request.purpose} exceeded the lesson-stage request bound",
             )
+
+
+class VagueBriefAimsAtTheGoalTest(unittest.TestCase):
+    """CP-015 items 13-17: a vague brief aims at what the learner actually asked for.
+
+    Every assertion here is a deterministic seam — a request payload, a rule refusal, or a
+    detector table row. No model is called and no provider output is invented.
+    """
+
+    BRAKE_GOAL = "Replace the front brake pads on my 2014 Civic"
+    KNOWLEDGE_GOAL = "Understand how a car braking system works"
+
+    # ── item 17: the detector stops missing "fix my car" ───────────────────
+
+    def test_the_performance_detector_table(self) -> None:
+        cases = {
+            "learn to fix my car": True,
+            "learn to play guitar": True,
+            "understand how a car works": False,
+            "fix a bug in my code": False,
+            "repair a bike": True,
+            "learn Spanish": False,
+            # Broader regression rows: the veto must not swallow a real physical goal, and the
+            # frame must not turn a computing or knowledge goal into a performance.
+            "fix my car": True,
+            "help me unclog the toilet": True,
+            "want to understand how cars work": False,
+            "repair a broken build": False,
+            "learn to use Excel": False,
+            "learn about the wiring in a house": False,
+        }
+        for goal, expected in cases.items():
+            with self.subTest(goal=goal):
+                self.assertEqual(
+                    curriculum.performance_requirement(goal) is not None, expected
+                )
+
+    def test_the_detected_action_is_named_from_the_goal(self) -> None:
+        block = curriculum.performance_requirement("learn to play guitar")
+        assert block is not None
+        self.assertEqual(block["detected_action"], "play")
+
+    # ── item 13: plan-time capability is derived, not hard-coded ───────────
+
+    def _plan_request(self, goal: str) -> gen.LLMRequest:
+        run = research.ResearchRun(status="ok", reason=None, queries=[], sources=[])
+        return gen.build_plan_request(
+            goal=goal,
+            recipe="casual",
+            dials={},
+            locale="en-US",
+            research_run=run,
+            scope="short",
+        )
+
+    def test_a_performance_goal_tells_the_planner_its_checks_are_performance(self) -> None:
+        request = self._plan_request(self.BRAKE_GOAL)
+        payload = json.loads(request.input_text)
+        self.assertEqual(payload["capability_policy"]["evidence_target"], "procedure")
+
+    def test_a_knowledge_goal_keeps_the_comprehension_decision(self) -> None:
+        request = self._plan_request(self.KNOWLEDGE_GOAL)
+        payload = json.loads(request.input_text)
+        self.assertEqual(payload["capability_policy"]["evidence_target"], "comprehension")
+
+    def test_the_plan_prompt_asks_for_the_goal_capabilities_and_the_exit(self) -> None:
+        text = self._plan_request(self.BRAKE_GOAL).instructions
+        self.assertIn("goal_capabilities", text)
+        self.assertIn("map to at least one objective", text)
+        self.assertIn("disclosed in 'exclusions'", text)
+        self.assertIn("exit_performance", text)
+
+    # ── items 14/15: plan fixtures and rule refusals ──────────────────────
+
+    def _plan(self, *, units: int = 2, per_unit: int = 2) -> dict:
+        from tests.blueprint_support import blueprint_plan
+
+        return blueprint_plan(
+            scope="short", units=units, objectives_per_unit=per_unit, recipe="casual"
+        )
+
+    def _perform(self, plan: dict, ordinals: tuple[int, ...]) -> None:
+        """Make the named objectives and their checks procedure-family."""
+        for objective in plan["objectives"]:
+            if int(objective["ordinal"]) not in ordinals:
+                continue
+            objective["evidence_target"] = "procedure"
+            for item in plan["check_plan"]:
+                if int(item["objective_ref"]) == int(objective["ordinal"]):
+                    item["evidence_target"] = "procedure"
+                    item["kind"] = "verification"
+
+    def _rule_check(
+        self, plan: dict, *, goal: str | None, recipe: str = "casual"
+    ) -> None:
+        gen.enforce_plan_rules(
+            plan,
+            recipe=recipe,
+            dials={},
+            locale=None,
+            ledger=[],
+            scope=plan.get("scope"),
+            goal=goal,
+        )
+
+    def test_the_schema_carries_the_exit_fields_optionally(self) -> None:
+        properties = gen.PLAN_SCHEMA_V2["properties"]
+        self.assertIn("exit_performance", properties)
+        self.assertIn("terminal_performance", properties)
+        self.assertEqual(
+            properties["exit_performance"]["enum"],
+            ["knowledge", "performance", "mixed", "unspecified"],
+        )
+        self.assertEqual(properties["terminal_performance"]["minLength"], 10)
+        self.assertEqual(properties["terminal_performance"]["maxLength"], 400)
+        # Additive and optional: a pre-label document still loads.
+        self.assertNotIn("exit_performance", gen.PLAN_SCHEMA_V2["required"])
+        self.assertNotIn("terminal_performance", gen.PLAN_SCHEMA_V2["required"])
+
+    def test_a_knowledge_declaration_for_a_performance_goal_is_refused(self) -> None:
+        plan = self._plan()
+        self._perform(plan, (1, 2, 3))  # enough performed objectives to pass every other rule
+        plan["exit_performance"] = "knowledge"
+        with self.assertRaises(gen._RuleViolation) as caught:
+            self._rule_check(plan, goal=self.BRAKE_GOAL)
+        reasons = caught.exception.reasons
+        self.assertTrue(
+            any("'replac'" in reason and "'knowledge'" in reason for reason in reasons),
+            reasons,
+        )
+
+    def test_a_performance_declaration_must_end_in_the_last_unit(self) -> None:
+        plan = self._plan()
+        self._perform(plan, (1, 2))  # opening unit performs; the closing unit does not
+        plan["exit_performance"] = "performance"
+        with self.assertRaises(gen._RuleViolation) as caught:
+            self._rule_check(plan, goal=self.BRAKE_GOAL)
+        reasons = caught.exception.reasons
+        self.assertTrue(
+            any(
+                "'performance'" in reason
+                and "no objective in the last unit (2)" in reason
+                and "'procedure' or 'transfer'" in reason
+                for reason in reasons
+            ),
+            reasons,
+        )
+
+    def test_a_correct_performance_plan_passes(self) -> None:
+        plan = self._plan()
+        self._perform(plan, (1, 2, 3))
+        plan["exit_performance"] = "performance"
+        plan["terminal_performance"] = "Replace the front brake pads and torque the caliper."
+        self._rule_check(plan, goal=self.BRAKE_GOAL)
+
+    def test_a_knowledge_goal_is_unaffected_by_the_exit_rule(self) -> None:
+        plan = self._plan()
+        self._rule_check(plan, goal=self.KNOWLEDGE_GOAL)
+
+    def test_the_coverage_schema_is_optional_and_bounded(self) -> None:
+        properties = gen.PLAN_SCHEMA_V2["properties"]
+        self.assertIn("goal_capabilities", properties)
+        schema = properties["goal_capabilities"]
+        self.assertEqual(schema["minItems"], 1)
+        self.assertEqual(schema["maxItems"], 8)
+        self.assertEqual(schema["items"]["minLength"], 3)
+        self.assertEqual(schema["items"]["maxLength"], 120)
+
+    def test_a_plan_that_excludes_every_capability_is_refused(self) -> None:
+        plan = self._plan()
+        plan["goal_capabilities"] = ["bleed the brake lines", "diagnose a spongy pedal"]
+        with self.assertRaises(gen._RuleViolation) as caught:
+            self._rule_check(plan, goal=self.KNOWLEDGE_GOAL)
+        reason = next(
+            item for item in caught.exception.reasons if "goal_capabilities" in item
+        )
+        self.assertIn("Research wider", reason)
+        self.assertIn("narrow the goal", reason)
+        self.assertIn("explicitly approve a narrower scope", reason)
+
+    def test_one_covered_capability_is_enough(self) -> None:
+        plan = self._plan()
+        plan["goal_capabilities"] = ["bleed the brake lines", "change the engine oil"]
+        plan["objectives"][0]["title"] = "Change the engine oil and replace the filter"
+        self._rule_check(plan, goal=self.KNOWLEDGE_GOAL)
+
+    def test_a_performed_capability_names_the_detected_action(self) -> None:
+        # The title shares no words with the capability; the performance objective and the
+        # detected action are what cover it.
+        plan = self._plan()
+        self._perform(plan, (1, 2, 3))
+        plan["exit_performance"] = "performance"
+        plan["goal_capabilities"] = ["replace the front brake pads"]
+        self._rule_check(plan, goal=self.BRAKE_GOAL)
+
+    def test_an_absent_capability_list_skips_the_rule(self) -> None:
+        plan = self._plan()
+        self.assertNotIn("goal_capabilities", plan)
+        self._rule_check(plan, goal=self.KNOWLEDGE_GOAL)
+
+    # ── item 16: the goal reaches the lesson author ───────────────────────
+
+    def _lesson_plan(self) -> dict:
+        return {
+            "title": "A course that aims somewhere",
+            "learner_outcome": "The learner can do the thing this course is about.",
+            "through_line": "Each section adds one move the next section builds on.",
+            "delivery": "self_study",
+            "sections": [
+                {"ordinal": 1, "title": "Greeting and opening", "objective_refs": [1]},
+                {"ordinal": 2, "title": "Ordering a drink", "objective_refs": [2]},
+            ],
+        }
+
+    def _lesson_request(self, *, goal: str, previous_section: str | None = None):
+        plan = self._lesson_plan()
+        section = {
+            "ordinal": 2,
+            "title": "Ordering a drink",
+            "objective_refs": [2],
+            "source_ids": [],
+        }
+        return gen.build_lesson_request(
+            plan=plan,
+            section=section,
+            objective=None,
+            recipe="casual",
+            dials={},
+            locale=None,
+            sources=[],
+            goal=goal,
+            previous_section=previous_section,
+        )
+
+    def test_the_lesson_payload_carries_the_goal_the_arc_and_the_prior_section(self) -> None:
+        request = self._lesson_request(goal="Learn to fix my car")
+        payload = json.loads(request.input_text)
+        self.assertEqual(payload["goal"], "Learn to fix my car")
+        self.assertEqual(
+            payload["through_line"], "Each section adds one move the next section builds on."
+        )
+        self.assertEqual(payload["previous_section"], "Greeting and opening")
+        self.assertLessEqual(len(request.input_text), gen.DEFAULT_REQUEST_BYTES)
+
+    def test_the_first_section_has_no_previous_section(self) -> None:
+        plan = self._lesson_plan()
+        request = gen.build_lesson_request(
+            plan=plan,
+            section={"ordinal": 1, "title": "Greeting and opening", "objective_refs": [1]},
+            objective=None,
+            recipe="casual",
+            dials={},
+            locale=None,
+            sources=[],
+            goal="Learn to fix my car",
+        )
+        payload = json.loads(request.input_text)
+        self.assertIsNone(payload["previous_section"])
+
+    def test_an_over_long_goal_is_bounded_and_the_request_still_fits(self) -> None:
+        request = self._lesson_request(goal="goal " * 1000)
+        payload = json.loads(request.input_text)
+        self.assertEqual(len(payload["goal"]), gen.LESSON_GOAL_MAX_CHARS)
+        self.assertLessEqual(len(request.input_text), gen.DEFAULT_REQUEST_BYTES)
+
+    def test_the_lesson_prompt_requires_the_goal_and_no_re_teaching(self) -> None:
+        text = self._lesson_request(goal="Learn to fix my car").instructions
+        self.assertIn("names the learner's goal in their own terms", text)
+        self.assertIn("what THIS section adds", text)
+        self.assertIn("does not re-teach the prior section", text)
+        self.assertIn("'previous_section'", text)
 
 
 if __name__ == "__main__":

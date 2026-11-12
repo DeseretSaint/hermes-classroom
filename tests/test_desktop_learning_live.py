@@ -138,7 +138,7 @@ const fakeRest = async (path, options = {}) => {
         state: 'open',
         audit_state: 'passed',
         attempt_count: 0,
-        stimulus: challenge ? stimulusChallenge : stimulusFirst
+        stimulus: challenge ? stimulusChallenge : (payload.stimulus || stimulusFirst)
       }
     }
   }
@@ -150,7 +150,8 @@ const fakeRest = async (path, options = {}) => {
         attempt_id: 'att_0123456789abcdef',
         verdict,
         evidence_class: 'cold',
-        criteria: [],
+        criteria: payload.criteria || [],
+        ...(payload.expected !== undefined ? { expected: payload.expected } : {}),
         next_action: verdict === 'pass' ? 'advance' : 'retry',
         revision: 9
       }
@@ -220,11 +221,13 @@ const root = createRoot(document.getElementById('root'))
 const props = {
   row: payload.row,
   enrollmentId: payload.row.enrollment_id,
-  objectiveId: 'obj_2',
+  objectiveId: payload.objectiveId || 'obj_2',
   mode: 'game',
   onBack: () => events.push('back'),
   onOpenSection: () => events.push('open-section'),
-  onNextSection: () => events.push('next-section'),
+  // The post-pass primary carries the next section's objective id; null means the course path.
+  onNextSection: (nextObjectiveId) =>
+    events.push(nextObjectiveId ? `next-section:${nextObjectiveId}` : 'next-section:path'),
   onStartChat: () => events.push('start-chat')
 }
 
@@ -253,18 +256,64 @@ const xp = () => {
   const node = document.querySelector('[data-cb3-xp]')
   return node ? (node.textContent || '').trim() : null
 }
+const proseStep = () => {
+  const node = document.querySelector('[data-cb3-prose-step]')
+  return node ? (node.textContent || '').trim() : null
+}
+const prose = () => {
+  const node = document.querySelector('[data-cb3-prose-body]')
+  return node ? (node.textContent || '').replace(/\s+/g, ' ').trim() : null
+}
+const verdictText = () => {
+  const node = document.querySelector('[data-cb3-verdict]')
+  return node ? (node.textContent || '').replace(/\s+/g, ' ').trim() : null
+}
+const checkPresent = () => Boolean(document.querySelector('[data-cb3-surface="check"]'))
 const rpc = (name) => calls.filter((call) => call.path === '/rpc' && call.body && call.body.method === name)
 
 await act(async () => { root.render(React.createElement(mod.ClassroomV3Surface, props)) })
 await flush(240)
 
-const before = { question: question(), xp: xp(), challenge: challengeText() }
+const before = {
+  question: question(),
+  xp: xp(),
+  challenge: challengeText(),
+  proseStep: proseStep(),
+  prose: prose(),
+  check: checkPresent()
+}
 
+let middle = null
 if (payload.scenario === 'award') {
   const choice = document.querySelectorAll('[data-cb3-choice] input')[1]
   await act(async () => { choice.click() })
   await flush(60)
   await click(byText('Check answer'))
+} else if (payload.scenario === 'prose') {
+  // The first Continue advances the block index; the last one opens the check card.
+  await click(byText('Continue'))
+  middle = { proseStep: proseStep(), prose: prose(), check: checkPresent() }
+  await click(byText('Continue'))
+} else if (payload.scenario === 'wrong-selection') {
+  const choice = document.querySelectorAll('[data-cb3-choice] input')[1]
+  await act(async () => { choice.click() })
+  await flush(60)
+  await click(byText('Check answer'))
+} else if (payload.scenario === 'wrong-text') {
+  const field = document.querySelector('#cb3-classroom-answer')
+  const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(field), 'value').set
+  await act(async () => {
+    setter.call(field, payload.answer || 'my answer')
+    field.dispatchEvent(new dom.window.Event('input', { bubbles: true }))
+  })
+  await flush(40)
+  await click(byText('Check answer'))
+} else if (payload.scenario === 'next-section') {
+  const choice = document.querySelectorAll('[data-cb3-choice] input')[1]
+  await act(async () => { choice.click() })
+  await flush(60)
+  await click(byText('Check answer'))
+  await click(byText('Next section'))
 } else if (payload.scenario === 'challenge') {
   await click(byText('Try it yourself'))
 } else if (payload.scenario === 'challenge-none') {
@@ -282,11 +331,16 @@ const after = {
   verdict: (() => {
     const node = document.querySelector('[data-cb3-verdict]')
     return node ? node.getAttribute('data-cb3-verdict') : null
-  })()
+  })(),
+  verdictText: verdictText(),
+  proseStep: proseStep(),
+  prose: prose(),
+  check: checkPresent()
 }
 
 process.stdout.write(JSON.stringify({
   before,
+  middle,
   after,
   events,
   calls: calls
@@ -402,6 +456,32 @@ def row() -> dict:
     }
 
 
+def page_with_blocks() -> dict:
+    """The served page with two authored blocks, each carrying a distinctive `short`."""
+    doc = page()
+    doc["document"] = {
+        "objective_id": "obj_2",
+        "section_title": "Tell everyday affection from a direct romantic declaration",
+        "blocks": [
+            {
+                "id": "blk_orient0001",
+                "role": "orient",
+                "headline": "Start here",
+                "short": "DISTINCTIVE FIRST SHORT — affection is a register choice, not a volume knob.",
+                "deep": "Deep first prose that the short replaces.",
+            },
+            {
+                "id": "blk_explain001",
+                "role": "explain",
+                "headline": "The mechanism",
+                "short": "DISTINCTIVE SECOND SHORT — the polite form marks distance.",
+                "deep": "Deep second prose that the short replaces.",
+            },
+        ],
+    }
+    return doc
+
+
 IMPLEMENTED = [
     "course.outline",
     "lesson.page",
@@ -486,7 +566,10 @@ class LearningLiveSurfaceTest(unittest.TestCase):
         # The current contract has no `basis` field, so the line is the backend's number and the
         # label only. No explanation is invented.
         self.assertEqual(data["after"]["award"], "20 XP")
-        self.assertNotIn("next-section", data["events"], "a check pass left the section instead of advancing the surface state")
+        self.assertFalse(
+            [event for event in data["events"] if event.startswith("next-section")],
+            "a check pass left the section instead of advancing the surface state",
+        )
 
     def test_the_award_line_paints_the_backends_own_basis_when_it_supplies_one(self) -> None:
         basis = "comprehension check passed first attempt"
@@ -537,7 +620,10 @@ class LearningLiveSurfaceTest(unittest.TestCase):
             {"enrollment_id": "enr_0123456789abcdef", "objective_id": "obj_2"},
         )
         self.assertEqual(opens[0]["expected_revision"], 7)
-        self.assertNotIn("next-section", data["events"], "Try it yourself left the lesson")
+        self.assertFalse(
+            [event for event in data["events"] if event.startswith("next-section")],
+            "Try it yourself left the lesson",
+        )
 
         # The returned revision fences the re-read, and the served stimulus is the variant.
         check_opens = [call for call in data["calls"] if call["method"] == "check.open"]
@@ -549,8 +635,164 @@ class LearningLiveSurfaceTest(unittest.TestCase):
     def test_a_section_with_no_variant_says_so_and_stays(self) -> None:
         data = self.rig.run("challenge-none", challengeAvailable=False)
         self.assertIn("No fresh challenge is available", data["after"]["challenge"])
-        self.assertNotIn("next-section", data["events"], "a refused challenge left the lesson")
+        self.assertFalse(
+            [event for event in data["events"] if event.startswith("next-section")],
+            "a refused challenge left the lesson",
+        )
         self.assertEqual(data["after"]["question"], "Which line is the romantic confession?")
+
+
+class ClassroomItem33ProseTest(unittest.TestCase):
+    """CREATE-EXPERIENCE item 33: the default modes render the lesson prose."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.rig = _Rig()
+
+    def test_the_authored_prose_is_read_and_the_block_index_advances(self) -> None:
+        data = self.rig.run("prose", page=page_with_blocks())
+        before = data["before"]
+        self.assertEqual(before["proseStep"], "Step 1 of 2")
+        self.assertIn("DISTINCTIVE FIRST SHORT", before["prose"])
+        self.assertNotIn("DISTINCTIVE SECOND SHORT", before["prose"] or "")
+        # The check card is still on the surface while the prose is read.
+        self.assertTrue(before["check"], "the check card left the reading column")
+
+        middle = data["middle"]
+        self.assertEqual(middle["proseStep"], "Step 2 of 2")
+        self.assertIn("DISTINCTIVE SECOND SHORT", middle["prose"])
+        self.assertNotIn("DISTINCTIVE FIRST SHORT", middle["prose"] or "")
+        self.assertTrue(middle["check"])
+
+        # The last Continue does not run past the last block: it hands the learner to the check.
+        self.assertEqual(data["after"]["proseStep"], "Step 2 of 2")
+        self.assertTrue(data["after"]["check"])
+
+    def test_a_page_without_document_blocks_renders_as_it_did(self) -> None:
+        data = self.rig.run("render")
+        self.assertIsNone(data["before"]["proseStep"])
+        self.assertIsNone(data["before"]["prose"])
+        self.assertTrue(data["before"]["check"], "a page with no blocks lost its check card")
+
+
+class ClassroomItem34VerdictTest(unittest.TestCase):
+    """CREATE-EXPERIENCE item 34: a wrong answer is feedback, not a grader string."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.rig = _Rig()
+
+    def test_a_wrong_selection_names_the_chosen_and_the_accepted_choice(self) -> None:
+        data = self.rig.run(
+            "wrong-selection",
+            verdict="not_yet",
+            stimulus={
+                "prompt": "Which line is the romantic confession?",
+                "format": "selection",
+                "choices": ["A: うん、好きだよ。", "B: 好きです。付き合ってください。"],
+                "items": [],
+            },
+            criteria=[
+                {
+                    "id": "c1",
+                    # The real deterministic grader sentence (coursebook/validators.py:271).
+                    "observed": "does not match an accepted answer",
+                    "met": False,
+                    "expected": "A: うん、好きだよ。",
+                }
+            ],
+        )
+        text = data["after"]["verdictText"]
+        self.assertEqual(text, "You chose B. The answer is A: うん、好きだよ。")
+        self.assertNotIn("does not match an accepted answer", text)
+        self.assertNotIn("accepted", text.lower())
+
+    def test_a_wrong_selection_without_a_named_answer_says_so_without_inventing_one(self) -> None:
+        data = self.rig.run(
+            "wrong-selection",
+            verdict="not_yet",
+            criteria=[
+                {
+                    "id": "c1",
+                    "observed": "selection does not match an accepted combination",
+                    "met": False,
+                }
+            ],
+        )
+        text = data["after"]["verdictText"]
+        self.assertEqual(
+            text,
+            "You chose B: 好きです。付き合ってください。 That is not the answer this check accepts.",
+        )
+        self.assertNotIn("accepted combination", text)
+
+    def test_a_free_text_check_keeps_the_authored_reason(self) -> None:
+        data = self.rig.run(
+            "wrong-text",
+            verdict="not_yet",
+            answer="好きです",
+            stimulus={"prompt": "Write the polite form.", "format": "text", "choices": [], "items": []},
+            criteria=[
+                {
+                    "id": "c1",
+                    "observed": "The polite form needs です after the stem.",
+                    "met": False,
+                }
+            ],
+        )
+        self.assertEqual(
+            data["after"]["verdictText"], "Not quite. The polite form needs です after the stem."
+        )
+
+    def test_a_free_text_check_never_prints_a_grader_sentence(self) -> None:
+        data = self.rig.run(
+            "wrong-text",
+            verdict="not_yet",
+            answer="suki desu",
+            stimulus={"prompt": "Write the polite form.", "format": "text", "choices": [], "items": []},
+            criteria=[
+                {"id": "c1", "observed": "does not match an accepted answer", "met": False}
+            ],
+        )
+        self.assertEqual(data["after"]["verdictText"], "Not quite.")
+
+
+class ClassroomItem36NextSectionTest(unittest.TestCase):
+    """CREATE-EXPERIENCE item 36: "Next section" opens the next section."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.rig = _Rig()
+
+    def test_the_post_pass_primary_carries_the_next_objective(self) -> None:
+        data = self.rig.run("next-section")
+        self.assertEqual(
+            [event for event in data["events"] if event.startswith("next-section")],
+            ["next-section:obj_3"],
+            "the post-pass primary did not open the next section",
+        )
+
+    def test_on_the_last_section_the_primary_returns_to_the_path(self) -> None:
+        two = outline()
+        two["objectives"] = two["objectives"][:2]
+        last = page()
+        last["section"] = {**last["section"], "objective_id": "obj_2"}
+        data = self.rig.run("next-section", outline=two, page=last)
+        self.assertEqual(
+            [event for event in data["events"] if event.startswith("next-section")],
+            ["next-section:path"],
+            "the last section did not fall back to the course path",
+        )
+
+    def test_the_route_opens_the_objective_the_classroom_names(self) -> None:
+        source = (ROOT / "desktop" / "src" / "98-page.js").read_text(encoding="utf-8")
+        self.assertIn("onNextSection: (nextObjectiveId) =>", source)
+        self.assertIn("objectiveId: nextObjectiveId || null", source)
+        # Back is unchanged: it still clears the objective and returns to the course home.
+        self.assertIn(
+            "onBack: () => setOpenCourse({ ...openCourse, objectiveId: null, blockId: null })",
+            source,
+        )
 
 
 if __name__ == "__main__":

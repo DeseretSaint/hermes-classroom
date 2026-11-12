@@ -370,8 +370,8 @@ class CreateFlowSequenceTest(unittest.TestCase):
     def test_submit_sends_the_four_dials_at_no_less_than_the_floor(self) -> None:
         source = _source()
         start = source.index("function CreateCourseFlow")
-        submit_at = source.index("const outcome = await startLearnerPlan({", start)
-        block = source[submit_at : start + 8000]
+        submit_at = source.index("const started = await startLearnerPlan({", start)
+        block = source[submit_at : submit_at + 2400]
         self.assertIn("dials: { ...dials, depth: effectiveDepth(dials.depth, scope) }", block)
         # The payload keeps the closed four-dial object: no key is dropped or renamed here.
         for key in ("pace", "depth", "assessment", "autonomy"):
@@ -435,15 +435,15 @@ class CreateFlowSequenceTest(unittest.TestCase):
 
     def test_the_review_step_is_a_trailhead_not_a_status_wall(self) -> None:
         source = _source()
-        step3 = source[source.index("      step === 3\n"):source.index("      jsxs('div', {\n        className: 'flex flex-wrap items-center gap-2 border-t")]
-        self.assertNotIn("StatusRow", step3)
-        self.assertIn("'data-cb-create-preview': ''", step3)
-        self.assertIn("THE TRAILHEAD", step3)
-        self.assertIn("First stop", step3)
+        review_block = source[source.index("      onReview\n"):source.index("      jsxs('div', {\n        className: 'flex flex-wrap items-center gap-2 border-t")]
+        self.assertNotIn("StatusRow", review_block)
+        self.assertIn("'data-cb-create-preview': ''", review_block)
+        self.assertIn("THE TRAILHEAD", review_block)
+        self.assertIn("First stop", review_block)
         self.assertIn("data-cb-create-facts", source)
-        self.assertIn("no lesson is written until you do", step3)
+        self.assertIn("no lesson is written until you do", review_block)
         # The name that will be created is the preview's title.
-        self.assertIn("children: displayTitle", step3)
+        self.assertIn("children: displayTitle", review_block)
         # And the render says the same thing a learner reads.
         html = self.run_case({"kind": "render", "step": 3})["html"]
         self.assertIn("THE TRAILHEAD", html)
@@ -458,7 +458,10 @@ class CreateFlowSequenceTest(unittest.TestCase):
         source = _source()
         self.assertIn("children: 'Name (optional)'", source)
         self.assertIn("'data-cb-title-disclosure': ''", source)
-        self.assertIn("const canAdvance = step === 1 ? goal.trim().length > 0 : Boolean(scope)", source)
+        # The gate asks the current step, in its own words: only the goal itself is required.
+        self.assertIn("const canAdvance =", source)
+        self.assertIn("currentStep.id === 'goal'", source)
+        self.assertIn("goal.trim().length > 0", source)
         # An empty name still sends a title the contract accepts: the suggestion, never invention.
         self.assertIn("title: title.trim() || suggestedTitle(goal),", source)
 
@@ -648,7 +651,7 @@ const type = async (node, value) => {
   await flush(15)
 }
 const stepMarker = () => {
-  const found = [...document.querySelectorAll('div')].find((node) => /^Step [123] of 3$/.test(text(node)))
+  const found = [...document.querySelectorAll('div')].find((node) => /^Step [1-4] of [34]$/.test(text(node)))
   return found ? text(found) : null
 }
 const levelField = () => document.querySelector('[data-cb-create-level]')
@@ -671,6 +674,17 @@ if (payload.kind === 'choices') {
     groupLabel: text(document.querySelector('#cb-level-label'))
   }
   process.stdout.write(JSON.stringify(output))
+} else if (payload.kind === 'outcome-domain') {
+  // A seeded goal and subject open on the shape step; the end-goal step follows it.
+  await press(document.querySelector('[data-cb-scope-option="short"]'), 'the short shape')
+  await press(byText('button', 'Continue'), 'Continue from the shape step')
+  const suggestions = document.querySelector('[data-cb-outcome-suggestions]')
+  process.stdout.write(JSON.stringify({
+    domain: suggestions ? suggestions.getAttribute('data-cb-outcome-suggestions') : null,
+    chips: [...document.querySelectorAll('[data-cb-outcome-chip]')].map((node) => text(node)),
+    question: text(document.querySelector('h2')),
+    subtitle: text(document.querySelector('[data-cb-create-outcome-subtitle]'))
+  }))
 } else {
   await type(document.querySelector('#cb-goal'), payload.goal)
   await press(
@@ -681,10 +695,47 @@ if (payload.kind === 'choices') {
   )
   const afterPick = levelState()
   await press(byText('button', 'Continue'), 'Continue from the goal step')
-  await press(document.querySelector('[data-cb-scope-option="short"]'), 'the short shape')
+  const scopeId = payload.scope || 'short'
+  await press(document.querySelector(`[data-cb-scope-option="${scopeId}"]`), `the ${scopeId} shape`)
   await press(byText('button', 'Continue'), 'Continue from the shape step')
+  const outcomeField = () => document.querySelector('#cb-outcome')
+  const stepAfterShape = {
+    step: stepMarker(),
+    heading: text(document.querySelector('h2')),
+    hasOutcomeField: Boolean(outcomeField())
+  }
+  let outcomeStep = null
+  let outcomeValue = null
+  if (outcomeField()) {
+    const suggestions = document.querySelector('[data-cb-outcome-suggestions]')
+    outcomeStep = {
+      step: stepMarker(),
+      question: text(document.querySelector('h2')),
+      subtitle: text(document.querySelector('[data-cb-create-outcome-subtitle]')),
+      chips: [...document.querySelectorAll('[data-cb-outcome-chip]')].map((node) => text(node)),
+      domain: suggestions ? suggestions.getAttribute('data-cb-outcome-suggestions') : null
+    }
+    if (payload.outcomeMode === 'chip') {
+      await press(
+        document.querySelectorAll('[data-cb-outcome-chip]')[payload.chip || 0],
+        'a suggestion chip'
+      )
+      outcomeValue = outcomeField() ? outcomeField().value : null
+      await press(byText('button', 'Continue'), 'Continue from the outcome step')
+    } else if (payload.outcomeMode === 'text') {
+      await type(outcomeField(), payload.outcome)
+      outcomeValue = outcomeField() ? outcomeField().value : null
+      await press(byText('button', 'Continue'), 'Continue from the outcome step')
+    } else {
+      // Skip for now advances by itself, with an empty outcome.
+      await press(byText('button', 'Skip for now'), 'Skip for now')
+      outcomeValue = ''
+    }
+  }
   const previewNode = document.querySelector('[data-cb-create-preview-level]')
   const previewLevel = previewNode ? text(previewNode) : null
+  const previewOutcomeNode = document.querySelector('[data-cb-create-preview-outcome]')
+  const previewOutcome = previewOutcomeNode ? text(previewOutcomeNode) : null
   const stepAtReview = stepMarker()
   await press(byText('button', 'Create course'), 'Create course')
   await flush(200)
@@ -719,6 +770,10 @@ if (payload.kind === 'choices') {
   process.stdout.write(JSON.stringify({
     afterPick,
     previewLevel,
+    previewOutcome,
+    outcomeStep,
+    stepAfterShape,
+    outcomeValue,
     stepAtReview,
     coursePayload: course ? course.payload : null,
     brief: job && job.payload && job.payload.brief ? job.payload.brief : null,
@@ -825,13 +880,16 @@ class CreateFormInteractionTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr[-3000:])
         return json.loads(result.stdout)
 
-    def submit(self, pick: str, **payload) -> dict:
+    def submit(self, pick: str, brief_goal: str | None = None, **payload) -> dict:
+        job = _rejected_job()
+        if brief_goal:
+            job["brief"]["goal"] = brief_goal
         responses = {
             "course.create": {"course_id": "course_1", "plan_id": "plan_draft_1", "revision": 0},
             "enrollment.create": {"enrollment_id": "enr_1", "revision": 0},
             "jobs.create": {"job_id": "job_plan_1", "state": "queued"},
-            "jobs.get": {"job": _rejected_job()},
-            "jobs.list": {"jobs": [_rejected_job()]},
+            "jobs.get": {"job": job},
+            "jobs.list": {"jobs": [job]},
             "course.outline": {"plan": _rejected_plan(), "objectives": []},
             "parent.blueprint.read": {"plan": _rejected_plan(), "tabs": {}, "sources": []},
         }
@@ -868,7 +926,7 @@ class CreateFormInteractionTest(unittest.TestCase):
         self.assertEqual([row["id"] for row in out["afterPick"] if row["pressed"] == "true"], ["none"])
         brief = out["brief"]
         self.assertIsNotNone(brief)
-        self.assertEqual(out["stepAtReview"], "Step 3 of 3")
+        self.assertEqual(out["stepAtReview"], "Step 4 of 4")
         self.assertEqual(out["coursePayload"]["level"], "none")
         self.assertEqual(brief["level"], "none")
         # The level is the one the deterministic beginner rule accepts, and it is the same value
@@ -887,6 +945,89 @@ class CreateFormInteractionTest(unittest.TestCase):
         self.assertFalse(generation.is_beginner_level(brief["level"]))
         self.assertIn("Starting from: Some", out["previewLevel"])
 
+    # ── CREATE-EXPERIENCE item 1: the end goal ─────────────────────────────
+    def test_the_end_goal_step_comes_after_the_shape_and_before_review(self) -> None:
+        out = self.submit("none")
+        step = out["outcomeStep"]
+        self.assertIsNotNone(step, "the end-goal step did not render for a short course")
+        self.assertEqual(step["step"], "Step 3 of 4")
+        self.assertEqual(step["question"], "What do you want to be able to do when this is done?")
+        self.assertEqual(step["subtitle"], "Not the topic — the thing you want to be able to do.")
+        self.assertEqual(len(step["chips"]), 3)
+        self.assertEqual(step["domain"], "default")
+        # Review still follows it, one step later, and Create is still a press there.
+        self.assertEqual(out["stepAtReview"], "Step 4 of 4")
+
+    def test_a_chip_seeds_the_field_and_the_brief_carries_the_composed_sentence(self) -> None:
+        out = self.submit("none", outcomeMode="chip", chip=1)
+        chip = out["outcomeStep"]["chips"][1]
+        # A chip fills the field; it is a seed the learner can edit, not a submitted value.
+        self.assertEqual(out["outcomeValue"], chip)
+        expected = f"{GOAL}\n\nWhen this course is done I want to be able to: {chip}"
+        self.assertEqual(out["brief"]["goal"], expected)
+        # The course row and the plan job carry the same goal, so they cannot disagree.
+        self.assertEqual(out["coursePayload"]["goal"], expected)
+        # And the last screen before Create shows it back in the learner's words.
+        self.assertEqual(out["previewOutcome"], f"Outcome: {chip}")
+        # Every existing brief field is exactly what it was.
+        self.assertEqual(out["brief"]["scope"], "short")
+        self.assertEqual(out["brief"]["level"], "none")
+
+    def test_the_outcome_is_whatever_the_learner_leaves_in_the_field(self) -> None:
+        typed = "  Replace the front pads, in my driveway.  "
+        out = self.submit("none", outcomeMode="text", outcome=typed)
+        self.assertEqual(out["outcomeValue"], typed)
+        # What is sent is the learner's own sentence, whitespace collapsed, not the chip text.
+        self.assertEqual(
+            out["brief"]["goal"],
+            f"{GOAL}\n\nWhen this course is done I want to be able to: Replace the front pads, in my driveway.",
+        )
+
+    def test_a_single_lesson_never_asks_the_end_goal(self) -> None:
+        out = self.submit("none", scope="single")
+        self.assertIsNone(out["outcomeStep"], "a one-lesson course was asked for an end goal")
+        self.assertFalse(out["stepAfterShape"]["hasOutcomeField"])
+        self.assertEqual(out["stepAfterShape"]["step"], "Step 3 of 3")
+        self.assertEqual(out["stepAtReview"], "Step 3 of 3")
+        self.assertEqual(out["brief"]["goal"], GOAL)
+        self.assertEqual(out["previewOutcome"], "Outcome: not stated")
+
+    def test_skipping_sends_the_goal_unchanged(self) -> None:
+        out = self.submit("none", outcomeMode="skip")
+        self.assertEqual(out["outcomeValue"], "")
+        self.assertEqual(out["brief"]["goal"], GOAL)
+        self.assertEqual(out["coursePayload"]["goal"], GOAL)
+        self.assertNotIn("When this course is done", out["brief"]["goal"])
+
+    def test_the_suggestion_chips_follow_the_subject_domain(self) -> None:
+        cases = {
+            "Spanish": (
+                "language",
+                ["Get by on a trip", "Hold a real conversation", "Read and write it properly"],
+            ),
+            "auto repair": (
+                "repair",
+                ["Do this one job safely", "Handle the routine jobs myself", "Diagnose and fix what I find"],
+            ),
+            "guitar": ("music", ["Play one piece", "Play with other people", "Play anything I hear"]),
+            "Spanish colonial history": (
+                "default",
+                ["Understand it well enough to explain it", "Use it at work", "Teach it to someone else"],
+            ),
+            "marine biology": (
+                "default",
+                ["Understand it well enough to explain it", "Use it at work", "Teach it to someone else"],
+            ),
+        }
+        for subject, (domain, chips) in cases.items():
+            out = self.run_case(
+                {"kind": "outcome-domain", "seed": {"goal": GOAL, "subjectDomain": subject}}
+            )
+            self.assertEqual(out["domain"], domain, subject)
+            self.assertEqual(out["chips"], chips, subject)
+            self.assertEqual(out["question"], "What do you want to be able to do when this is done?")
+            self.assertEqual(out["subtitle"], "Not the topic — the thing you want to be able to do.")
+
     # ── CREATE-5: change the goal really returns to the form ───────────────
     def test_change_the_goal_returns_to_the_prefilled_form(self) -> None:
         out = self.submit("none")
@@ -897,7 +1038,9 @@ class CreateFormInteractionTest(unittest.TestCase):
         self.assertFalse(before["scolds"])
         after = out["after"]
         self.assertIsNotNone(after)
-        self.assertEqual(after["step"], "Step 1 of 3")
+        # The retained short shape means the end-goal step is still part of the walk, so the goal
+        # step is 1 of 4 — the counter counts the list the learner is actually on.
+        self.assertEqual(after["step"], "Step 1 of 4")
         self.assertEqual(after["heading"], "What do you want to be able to do?")
         # The brief the plan actually ran is prefilled, including the level and the subject.
         self.assertEqual(after["goal"], GOAL)
@@ -905,6 +1048,17 @@ class CreateFormInteractionTest(unittest.TestCase):
         self.assertEqual([row["id"] for row in after["levels"] if row["pressed"] == "true"], ["none"])
         self.assertFalse(after["scolds"])
         self.assertFalse(after["stillHasResult"], "the result screen is gone, not stacked under the form")
+
+    def test_changing_the_goal_does_not_compose_the_outcome_twice(self) -> None:
+        """The brief's goal already carries the outcome sentence; the form splits it back apart."""
+        composed = (
+            f"{GOAL}\n\nWhen this course is done I want to be able to: "
+            "Handle the routine jobs myself."
+        )
+        out = self.submit("none", brief_goal=composed)
+        # The goal field is the learner's goal, not the composed brief: pressing Create again
+        # cannot append a second copy of the same sentence.
+        self.assertEqual(out["after"]["goal"], GOAL)
 
 
 if __name__ == "__main__":

@@ -16,8 +16,8 @@ justifications. That is a check-payload leak, not a page-narrative leak.
 
 These cases pin the fix at both ends:
 
-* ``lesson-prompt.v11`` states the scanned surfaces, the one presentation surface, the legal shape
-  and one passing example;
+* ``lesson-prompt.v11`` (carried into ``v12``) states the scanned surfaces, the one presentation
+  surface, the legal shape and one passing example;
 * a page that teaches the target in the model segment and refers to it elsewhere validates;
 * the same page restating the key in the explanation (or a short) is still refused, deterministically,
   before any validator pass;
@@ -83,7 +83,7 @@ class AnswerLeakPromptRuleTest(unittest.TestCase):
         )
 
     def test_the_version_advanced_for_the_new_instruction_text(self) -> None:
-        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v11")
+        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v12")
 
     def test_the_prompt_names_the_scanned_surfaces_and_the_one_presentation_surface(self) -> None:
         text = self.instructions()

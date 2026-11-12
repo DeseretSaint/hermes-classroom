@@ -135,7 +135,7 @@ class StarterCopySourceTest(unittest.TestCase):
 
     def test_step_two_submit_lives_on_the_last_step_only(self) -> None:
         start = SOURCE.index("step === 2\n")
-        end = SOURCE.index("step === 3\n", start)
+        end = SOURCE.index("currentStep.id === 'outcome'\n", start)
         step_two = SOURCE[start:end]
         self.assertIn("data-cb-goal-examples", SOURCE)
         self.assertNotIn("onClick: submit", step_two)

@@ -2982,6 +2982,9 @@ const CB3_CLASSROOM_COPY = Object.freeze({
   checkCriteria: 'Grading criteria',
   correct: 'That is right.',
   wrong: 'Not quite.',
+  // A grader that could not finish is not a wrong answer: the attempt is saved and the retry is
+  // free, so the card says that instead of claiming the learner missed.
+  retryGrading: 'This answer could not be graded yet. It is saved, and checking again does not use a new attempt.',
   retry: 'Try again',
   next: 'Next section',
   evidenceTitle: 'Evidence',
@@ -3125,6 +3128,28 @@ function classroomLineFromPage(page) {
     english: picked.english,
     segments: classroomRubySegments(picked.kana)
   }
+}
+
+/**
+ * The authored prose the classroom shows for one block (CREATE-EXPERIENCE item 33).
+ *
+ * `short` when the author wrote one, else the first paragraph of `deep` — the same rule the v2
+ * player applies (`playerConcept`), so a section does not read differently in the two surfaces.
+ * Nothing is summarised, re-flowed or invented here.
+ */
+function classroomBlockProse(block) {
+  if (!block) return ''
+  const short = typeof block.short === 'string' ? block.short.trim() : ''
+  if (short) return short
+  const deep = typeof block.deep === 'string' ? block.deep : ''
+  return String(deep).split(/\n\s*\n/)[0].trim()
+}
+
+/** The blocks of the served document that carry prose, in the authored order. */
+function classroomProseBlocks(page) {
+  const document = page && page.document
+  const blocks = document && Array.isArray(document.blocks) ? document.blocks : []
+  return blocks.filter((block) => Boolean(classroomBlockProse(block)))
 }
 
 /**
@@ -3371,19 +3396,165 @@ function ClassroomScene({ scene, title, height }) {
   })
 }
 
-/** One verdict line: the deck's sentence plus only the observation the backend recorded. */
-function classroomVerdictSentence(result) {
+/**
+ * The deterministic grader's own sentences (`coursebook/validators.py`). They are audit text, not
+ * feedback: "does not match an accepted answer" is written for a log, and printing it at a learner
+ * is the defect this map closes. The set is deliberately closed — a value that matches is dropped
+ * before it can reach the DOM, and a value that does not match is treated as the open lane's
+ * authored prose and printed as the reason.
+ */
+const CB3_GRADER_MACHINE_TEXT = Object.freeze([
+  'matches an accepted answer',
+  'does not match an accepted answer',
+  'no accepted answer is configured for this check',
+  'selection matches',
+  'selection matches (order-insensitive)',
+  'selection does not match an accepted combination',
+  'the answer is not a selection',
+  'the check has no readable reference value',
+  'the answer is not a number this check can read',
+  'a unit was given but this check expects a plain number'
+])
+const CB3_GRADER_MACHINE_PATTERNS = Object.freeze([
+  /^within tolerance \(/,
+  /^outside tolerance by /,
+  /^the answer has no unit; expected /,
+  /^the unit .+ is not accepted for this check$/,
+  /^cannot convert .+ to .+$/
+])
+
+/** Whether one observed value is a deterministic grader's sentence rather than authored prose. */
+function classroomGraderMachineText(value) {
+  const text = String(value == null ? '' : value).trim()
+  if (!text) return false
+  return (
+    CB3_GRADER_MACHINE_TEXT.indexOf(text) >= 0 ||
+    CB3_GRADER_MACHINE_PATTERNS.some((pattern) => pattern.test(text))
+  )
+}
+
+/** A, B, C … for the served choice at `index`. */
+function classroomChoiceLetter(index) {
+  return String.fromCharCode(65 + Number(index))
+}
+
+/**
+ * The accepted choice a grade result names, resolved against the served choices, or `null`.
+ *
+ * `attempt.submit`'s contracted response carries criteria observations and no reference, so a
+ * deterministic selection grader does not say which option it would have accepted. When a grader
+ * does name it (an `expected`/`accepted` on the result or on an unmet criterion, as an index, a
+ * letter or the choice text), this resolves that name to a served row. When nothing names it the
+ * caller says only what the learner chose — the answer is never guessed.
+ */
+function classroomAcceptedChoice(result, choices) {
+  if (!Array.isArray(choices) || choices.length === 0) return null
+  const pick = (index) => ({ index, letter: classroomChoiceLetter(index), text: choices[index] })
+  const rows = result && Array.isArray(result.criteria) ? result.criteria : []
+  // An index is only trusted when the field says it is one; a bare `expected: 1` could be a
+  // number, a label, or an answer, so it is never read as a position.
+  const indexFields = result ? [result.expected_index, result.accepted_index] : []
+  rows.forEach((row) => {
+    if (!row || row.met === true) return
+    indexFields.push(row.expected_index, row.accepted_index, row.answer_index, row.correct_index)
+  })
+  for (const index of indexFields) {
+    if (Number.isInteger(index) && index >= 0 && index < choices.length) return pick(index)
+  }
+  const candidates = []
+  const push = (value) => {
+    if (value !== undefined && value !== null && value !== '') candidates.push(value)
+  }
+  if (result) {
+    push(result.accepted)
+    push(result.expected)
+  }
+  rows.forEach((row) => {
+    if (!row || row.met === true) return
+    push(row.expected)
+    push(row.accepted)
+  })
+  for (const candidate of candidates) {
+    const text = String(candidate).trim()
+    if (!text) continue
+    if (/^[A-Ha-h]$/.test(text)) {
+      const index = text.toUpperCase().charCodeAt(0) - 65
+      if (index >= 0 && index < choices.length) return pick(index)
+    }
+    const exact = choices.findIndex((choice) => String(choice).trim() === text)
+    if (exact >= 0) return pick(exact)
+    // A choice authored as "A: …" also matches when the grader names just its text.
+    const bare = choices.findIndex(
+      (choice) => String(choice).replace(/^\s*[A-Ha-h]\s*[:.)-]\s*/, '').trim() === text
+    )
+    if (bare >= 0) return pick(bare)
+  }
+  return null
+}
+
+/** A served choice's text without its authored letter prefix: the message supplies the letter. */
+function classroomChoiceText(choice) {
+  return String(choice == null ? '' : choice)
+    .replace(/^\s*[A-Ha-h]\s*[:.)-]\s*/, '')
+    .trim()
+}
+
+/** One sentence ending at the choice's own punctuation, never a doubled full stop. */
+function classroomChoiceSentence(choice) {
+  const text = classroomChoiceText(choice)
+  if (!text) return ''
+  return /[.!?。！？]$/.test(text) ? text : `${text}.`
+}
+
+/**
+ * The miss sentence for a selection check: the learner's own choice, then the accepted choice only
+ * when the grade result names one. Never a grader string, never an invented answer.
+ */
+function classroomSelectionMiss(result, choices, chosenIndex) {
+  const chosen =
+    Number.isInteger(chosenIndex) && chosenIndex >= 0 && chosenIndex < choices.length
+      ? chosenIndex
+      : -1
+  const accepted = classroomAcceptedChoice(result, choices)
+  const chose = chosen >= 0 ? `You chose ${classroomChoiceLetter(chosen)}.` : ''
+  if (accepted) {
+    return `${chose ? `${chose} ` : ''}The answer is ${accepted.letter}: ${classroomChoiceSentence(accepted.text)}`
+  }
+  if (chosen >= 0) {
+    return `You chose ${classroomChoiceLetter(chosen)}: ${classroomChoiceSentence(choices[chosen])} That is not the answer this check accepts.`
+  }
+  return 'That choice is not the answer this check accepts.'
+}
+
+/**
+ * One verdict line: the deck's sentence plus only the observation a learner can act on.
+ *
+ * CREATE-EXPERIENCE item 34: a selection check branches on the served format. Its message is
+ * composed from the chosen row and (when the result names it) the accepted row; the deterministic
+ * grader's sentence never reaches the DOM. A free-text check keeps the authored observation the
+ * open lane wrote — that is prose, and it is the reason the learner needs.
+ */
+function classroomVerdictSentence(result, stimulus, chosenIndex) {
   if (!result) return null
+  const choices =
+    stimulus && Array.isArray(stimulus.choices)
+      ? stimulus.choices.filter((choice) => String(choice || '').trim())
+      : []
+  const selection =
+    Boolean(stimulus) && String(stimulus.format || '') === 'selection' && choices.length > 0
   const criteria = Array.isArray(result.criteria) ? result.criteria : []
   const observed = criteria
     .filter((item) => item && item.observed)
     .map((item) => String(item.observed).trim())
-    .filter(Boolean)
+    .filter((value) => Boolean(value) && !classroomGraderMachineText(value))
   const why = observed.length > 0 ? observed[0] : null
   if (result.verdict === 'pass') {
+    if (selection) return CB3_CLASSROOM_COPY.correct
     return why ? `${CB3_CLASSROOM_COPY.correct} ${why}` : CB3_CLASSROOM_COPY.correct
   }
-  if (result.verdict === 'partial' || result.verdict === 'not_yet' || result.verdict === 'needs_retry') {
+  if (result.verdict === 'needs_retry') return CB3_CLASSROOM_COPY.retryGrading
+  if (result.verdict === 'partial' || result.verdict === 'not_yet') {
+    if (selection) return classroomSelectionMiss(result, choices, chosenIndex)
     return why ? `${CB3_CLASSROOM_COPY.wrong} ${why}` : CB3_CLASSROOM_COPY.wrong
   }
   return null
@@ -3706,7 +3877,7 @@ function ClassroomCheckCard({
               color: result.verdict === 'pass' ? cb3Role('ink') : cb3Role('alert'),
               maxWidth: '60ch'
             },
-            children: classroomVerdictSentence(result)
+            children: classroomVerdictSentence(result, stimulus, selected)
           }, 'verdict')
         : null,
 
@@ -3779,6 +3950,41 @@ function ClassroomV3({
   const line = classroomLineFromPage(page)
   const game = mode === 'game'
   const [verdict, setVerdict] = useState(null)
+  // CREATE-EXPERIENCE item 33: the default modes read the lesson's authored document, one block at
+  // a time. `document.blocks` was never read here, so the reading column was a scene, a line and a
+  // quiz. The index is local to the section and resets when the section changes; a page with no
+  // blocks renders exactly what it rendered before.
+  const proseBlocks = classroomProseBlocks(page)
+  const [blockIndex, setBlockIndex] = useState(0)
+  useEffect(() => {
+    setBlockIndex(0)
+  }, [objectiveId])
+  const proseAt = proseBlocks.length > 0 ? Math.min(blockIndex, proseBlocks.length - 1) : -1
+  const proseBlock = proseAt >= 0 ? proseBlocks[proseAt] : null
+  const proseText = classroomBlockProse(proseBlock)
+  const proseLast = proseAt === proseBlocks.length - 1
+  const checkRef = useRef(null)
+  const continueProse = useCallback(() => {
+    if (!proseLast) {
+      setBlockIndex(proseAt + 1)
+      return
+    }
+    // The last block's Continue is the door to the check: scroll to it and put focus on it, so a
+    // keyboard user lands where the reading was pointing instead of at the top of the column.
+    const node = checkRef.current
+    if (node && typeof node.scrollIntoView === 'function') node.scrollIntoView({ block: 'start' })
+    if (node && typeof node.focus === 'function') node.focus({ preventScroll: true })
+  }, [proseAt, proseLast])
+  // The next section in the plan's own order (CREATE-EXPERIENCE item 36). The post-pass primary
+  // carries that objective id up to the route; on the last section the id is null and the route
+  // falls back to the course path.
+  const currentSectionId = section && section.objective_id ? section.objective_id : objectiveId
+  const currentStepAt = steps.findIndex((step) => step.key === currentSectionId)
+  const nextSectionId =
+    currentStepAt >= 0 && currentStepAt + 1 < steps.length ? steps[currentStepAt + 1].key : null
+  const advanceSection = useCallback(() => {
+    if (typeof onNextSection === 'function') onNextSection(nextSectionId)
+  }, [nextSectionId, onNextSection])
   const foxPose = verdict === 'pass' ? 'cheer' : verdict && verdict !== 'pass' ? 'think' : 'read'
   const nextStep = row && row.next_step && row.next_step.label ? row.next_step.label : null
   // WIRE-8: the Field Challenge is its own served question, opened by `progression.challenge_out`,
@@ -4004,25 +4210,38 @@ function ClassroomV3({
               children: CB3_CLASSROOM_COPY.completeTitle
             }, 'title'),
             jsx(ClassroomQuietLine, { children: CB3_CLASSROOM_COPY.completeBody }, 'body'),
-            jsx(PillAction, { variant: 'primary', label: CB3_CLASSROOM_COPY.completeAction, onClick: onNextSection }, 'action')
+            jsx(PillAction, {
+              variant: 'primary',
+              label: CB3_CLASSROOM_COPY.completeAction,
+              // "Back to the path" is always the path: a finished section never auto-opens another.
+              onClick: () => {
+                if (typeof onNextSection === 'function') onNextSection(null)
+              }
+            }, 'action')
           ]
         }, 'complete')
       : null
 
   const checkCard =
     state === 'default' && !complete
-      ? jsx(ClassroomCheckCard, {
-          check,
-          stimulusStatus,
-          stimulusError,
-          enrollmentId,
-          objectiveId,
-          revision,
-          onRetryStimulus,
-          onCommitted: handleVerdict,
-          onNextSection,
-          busyLabel: CB3_CLASSROOM_COPY.loading
-        }, check && check.check_id ? `check-${check.check_id}` : 'check')
+      ? jsx('div', {
+          ref: checkRef,
+          tabIndex: -1,
+          'data-cb3-check-slot': '',
+          style: { minWidth: 0 },
+          children: jsx(ClassroomCheckCard, {
+            check,
+            stimulusStatus,
+            stimulusError,
+            enrollmentId,
+            objectiveId,
+            revision,
+            onRetryStimulus,
+            onCommitted: handleVerdict,
+            onNextSection: advanceSection,
+            busyLabel: CB3_CLASSROOM_COPY.loading
+          }, check && check.check_id ? `check-${check.check_id}` : 'check')
+        }, check && check.check_id ? `check-slot-${check.check_id}` : 'check-slot')
       : null
 
   const aside = jsxs('aside', {
@@ -4146,6 +4365,48 @@ function ClassroomV3({
                       en: line.english
                     }, 'line-compact')
                   : null,
+              // CREATE-EXPERIENCE item 33: the authored prose of the current block, at the
+              // reader's own measure, between the scene/line and the check. With no document
+              // blocks this renders nothing and the column is exactly what it was.
+              proseText
+                ? jsxs('section', {
+                    'data-cb3-prose': (proseBlock && proseBlock.id) || '',
+                    'aria-label': 'Lesson text',
+                    style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', minWidth: 0 },
+                    children: [
+                      jsx('div', {
+                        'data-cb3-prose-step': String(proseAt + 1),
+                        style: {
+                          fontFamily: 'var(--cb3-font-ui)',
+                          fontSize: cb3Type('meta'),
+                          lineHeight: cb3Lead('meta'),
+                          fontWeight: 600,
+                          color: cb3Role('ink-soft')
+                        },
+                        children: `Step ${proseAt + 1} of ${proseBlocks.length}`
+                      }, 'step'),
+                      jsx(ProseText, {
+                        'data-cb3-prose-body': '',
+                        style: {
+                          maxWidth: CB_MEASURE,
+                          fontFamily: 'var(--cb3-font-display)',
+                          fontSize: cb3Type('body'),
+                          lineHeight: cb3Lead('body'),
+                          color: cb3Role('ink')
+                        },
+                        text: proseText
+                      }, 'body'),
+                      jsx(PillAction, {
+                        'data-cb3-prose-continue': proseLast ? 'check' : 'next',
+                        'aria-label': proseLast ? 'Continue to the check' : 'Continue to the next part',
+                        variant: 'quiet',
+                        label: 'Continue',
+                        onClick: continueProse,
+                        style: { alignSelf: 'flex-start' }
+                      }, 'continue')
+                    ]
+                  }, 'prose')
+                : null,
               nochat,
               statePanel,
               complete,

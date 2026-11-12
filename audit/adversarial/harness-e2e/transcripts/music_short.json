@@ -144,6 +144,7 @@
         "objective_ref": 4
       }
     ],
+    "exit_performance": "knowledge",
     "learner_outcome": "The learner names intervals and triads and uses the circle of fifths to analyse a pop song.",
     "objectives": [
       {
@@ -188,6 +189,7 @@
       "The learner has no formal theory training and is not assumed to read music."
     ],
     "sessions_per_week": 2,
+    "terminal_performance": "Read intervals, triads and the circle of fifths, and explain how a chord is built.",
     "through_line": "Each unit turns a sound into a number and then a number into a name: semitones first, then the thirds, then the triads, then the circle that places every chord of one real song.",
     "units": [
       {

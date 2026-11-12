@@ -63,6 +63,7 @@
         "objective_ref": 1
       }
     ],
+    "exit_performance": "performance",
     "learner_outcome": "The learner replaces the inner tube and confirms the brakes by hand.",
     "objectives": [
       {
@@ -81,6 +82,7 @@
       "The learner can already identify the brake quick-release on this bike."
     ],
     "sessions_per_week": 1,
+    "terminal_performance": "Replace the inner tube on a road bike and check that the tyre holds air before riding.",
     "through_line": "One repair from start to finish: the wheel comes off, the tube goes in, the bead is checked by hand, and the brakes are proved before the ride.",
     "units": [
       {

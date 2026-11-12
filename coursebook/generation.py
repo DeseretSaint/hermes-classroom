@@ -221,7 +221,10 @@ PLAN_PROMPT_VERSION = "plan-prompt.v21"
 #: v20 (CP-015g/D1-F1): the evidence-family, casual-self-check-form and claim-link rules.
 #: v22 (CP-015g/D1-F2): the inferred-subject-domain line and the named-orthography/metalanguage
 #: language-goal rule, the same two shared-text changes as the v1 prompt's v21.
-PLAN_PROMPT_VERSION_V2 = "plan-prompt.v22"
+#: v23 (CP-015 items 14/15): the plan states `goal_capabilities` and its typed `exit_performance`,
+#: so the rule gate's coverage floor and last-unit performance requirement are asked for before
+#: they are enforced.
+PLAN_PROMPT_VERSION_V2 = "plan-prompt.v23"
 #: The unit-sections authoring stage. One unit per call, so its own version. v2 (CP-015g) states the
 #: unit scope and the construct shape its media gate enforces; v3 (CP-015g D3) adds the citation
 #: rule — an owner section copies its objective's source ids, a review section cites the union of
@@ -242,7 +245,10 @@ UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v3"
 #: taught the target in the model segment and then restated it verbatim in the explanation and
 #: worked example, which is the natural way to explain a phrase the learner is about to be
 #: checked on, and both attempts parked on a rule the prompt never stated.
-LESSON_PROMPT_VERSION = "lesson-prompt.v11"
+#: v12 (CP-015 item 16): the first segment names the learner's goal in their own terms and what
+#: this section adds, and never re-teaches the prior section — the payload now carries `goal`,
+#: `through_line` and `previous_section`, so the instruction can name the fields it reads.
+LESSON_PROMPT_VERSION = "lesson-prompt.v12"
 #: The validator instruction text. H-191 §5: a validator answer was discarded because one
 #: ``item`` label was 81 characters against a ``maxLength`` of 80 the prompt never stated. The
 #: text now states the locator rule and the bound (read from :data:`ITEM_REFERENCE_MAX_CHARS`),
@@ -2424,6 +2430,24 @@ PLAN_SCHEMA_V2: dict[str, Any] = {
         "scope": {"type": "string", "enum": list(SCOPES)},
         "title": {"type": "string", "minLength": 3, "maxLength": 200},
         "learner_outcome": {"type": "string", "minLength": 10, "maxLength": 600},
+        # CP-015 (item 15): the plan's own typed exit. Both fields are optional so a document
+        # authored before this label still loads; the rule gate only requires the declaration
+        # when the goal itself is a performance. ``terminal_performance`` is the one sentence
+        # the learner should be able to do at the end, in their terms.
+        "exit_performance": {
+            "type": "string",
+            "enum": ["knowledge", "performance", "mixed", "unspecified"],
+        },
+        "terminal_performance": {"type": "string", "minLength": 10, "maxLength": 400},
+        # CP-015 (item 14): the capabilities the goal itself names, enumerated by the planner so
+        # the rule gate can refuse a plan that excludes every one of them. Optional: a document
+        # authored before this label (or by an older client) has no such field and skips the rule.
+        "goal_capabilities": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 8,
+            "items": {"type": "string", "minLength": 3, "maxLength": 120},
+        },
         # H-195: the arc the units build, and the standing the learner starts from.
         "through_line": THROUGH_LINE_SCHEMA,
         "prerequisite_assumptions": PREREQUISITE_ASSUMPTIONS_SCHEMA,
@@ -4555,6 +4579,15 @@ def _plan_instructions_v2(
             "Each unit goal and objective title must name the specific capability this course "
             "teaches, never a generic template phrase that would fit any course.",
             "State explicit exclusions: what this course will not cover or claim.",
+            # CP-015 (items 14 and 15): the plan's own coverage list and typed exit. The rule
+            # gate refuses a plan that maps none of the named capabilities, and one that claims
+            # performance while ending in knowledge.
+            "Enumerate 'goal_capabilities': the 1 to 8 capabilities the goal itself names, each "
+            "a short phrase of 3 to 120 characters. Every entry must map to at least one "
+            "objective, or be disclosed in 'exclusions'.",
+            "State 'exit_performance' as knowledge, performance, mixed or unspecified, and one "
+            "sentence of 'terminal_performance'. When it is performance or mixed, at least one "
+            "objective in the last unit declares evidence_target 'procedure' or 'transfer'.",
         ]
     )
     if level:
@@ -4716,10 +4749,12 @@ def _lesson_instructions(
         # earns its place: why it matters, a worked example, a second example or counterexample,
         # then a check on the same target. These are requirements, not a suggestion to pad.
         "Teach exactly the section's one objective, in this arc: (1) why this matters for the "
-        "learner's goal, (2) a concrete worked example the learner can follow step by step, "
-        "(3) a second example or a counterexample that shows where the first would mislead, "
-        "(4) one check that tests the same target as the worked example. A definition is "
-        "followed immediately by a use of it.",
+        "learner's goal — the first segment names the learner's goal in their own terms (the "
+        "input's 'goal') and what THIS section adds to it, and it does not re-teach the prior "
+        "section named in 'previous_section', (2) a concrete worked example the learner can "
+        "follow step by step, (3) a second example or a counterexample that shows where the "
+        "first would mislead, (4) one check that tests the same target as the worked example. "
+        "A definition is followed immediately by a use of it.",
         "No listicle padding, no bullet wall, no repeated summary, no restating the objective as "
         "content, and no placeholder prose ('TODO', 'TBD', 'Lorem ipsum', 'this section will "
         "cover'). Every sentence must tell the learner something they did not have before.",
@@ -5494,6 +5529,205 @@ def goal_outcome_integrity_reasons(
     return reasons
 
 
+#: Sentence glue, not capability content: these words appear in almost every clause a learner
+#: writes, so requiring one of them would mark every objective as covering the goal.
+_CAPABILITY_STOPWORDS = frozenset(
+    {
+        "the",
+        "and",
+        "for",
+        "with",
+        "your",
+        "you",
+        "my",
+        "our",
+        "that",
+        "this",
+        "how",
+        "what",
+        "when",
+        "all",
+        "can",
+        "able",
+        "one",
+        "own",
+        "its",
+        "from",
+        "into",
+        "onto",
+        "use",
+        "using",
+        "get",
+        "make",
+        "them",
+        "they",
+        "their",
+        "there",
+        "then",
+        "than",
+        "not",
+        "out",
+        "off",
+        "over",
+        "under",
+        "about",
+        "some",
+        "any",
+        "more",
+        "most",
+        "just",
+        "but",
+        "are",
+        "was",
+        "were",
+        "has",
+        "have",
+        "had",
+        "will",
+        "would",
+        "should",
+        "could",
+        "does",
+        "did",
+        "doing",
+        "done",
+        "very",
+        "also",
+        "only",
+        "like",
+    }
+)
+
+
+def _capability_content_words(capability: str) -> set[str]:
+    """The words a capability phrase contributes, stemmed so inflections compare.
+
+    A capability is a short phrase ("replace the front brake pads"); the glue words carry no
+    capability, and keeping them would let an objective that happens to use "the" count as
+    coverage. A phrase made only of glue (or of words too short to stem) falls back to its whole
+    word set, which is the conservative reading: the objective must contain all of it.
+    """
+    tokens = re.findall(r"[a-z0-9]+", str(capability or "").casefold())
+    content = [token for token in tokens if len(token) >= 3 and token not in _CAPABILITY_STOPWORDS]
+    return {_stem(token) for token in (content or tokens)}
+
+
+def goal_capability_coverage_reasons(
+    plan: Mapping[str, Any],
+    objectives: Sequence[Mapping[str, Any]],
+    *,
+    goal: str | None = None,
+) -> list[str]:
+    """CP-015 (item 14) — a plan may not exclude every capability the goal names.
+
+    The planner enumerates ``goal_capabilities`` (the capabilities the goal names). A capability
+    is covered when an objective's title or evidence criteria carries all of its content words,
+    or when the plan authors a performance objective and the capability names the act the goal
+    detector found. Zero covered means the course teaches something adjacent to the whole goal;
+    the refusal names the three real options instead of shipping it. A partial gap is not this
+    rule's business: the existing ``Not covered — no supporting source:`` disclosure owns it.
+
+    Absent or empty ``goal_capabilities`` skips the rule: an older client never enumerates, and
+    inventing a coverage claim from its goal text would be a second detector.
+    """
+    raw = plan.get("goal_capabilities")
+    if not isinstance(raw, list):
+        return []
+    capabilities = [
+        str(item).strip() for item in raw if str(item or "").strip()
+    ]
+    if not capabilities:
+        return []
+    requirement = curriculum.performance_requirement(goal or plan.get("goal"))
+    action_words = _word_set(requirement["detected_action"]) if requirement else set()
+    performed = [
+        objective
+        for objective in objectives
+        if str(objective.get("evidence_target") or "") in curriculum.PERFORMANCE_FAMILIES
+    ]
+    covered = False
+    for capability in capabilities:
+        words = _capability_content_words(capability)
+        for objective in objectives:
+            fields = [str(objective.get("title") or "")]
+            fields.extend(str(item or "") for item in objective.get("evidence_criteria") or [])
+            if words and words <= _word_set(" ".join(fields)):
+                covered = True
+                break
+        if covered:
+            break
+        if action_words and performed and action_words <= _word_set(capability):
+            covered = True
+            break
+    if covered:
+        return []
+    return [
+        "plan.goal_capabilities names "
+        + ", ".join(repr(capability) for capability in capabilities)
+        + " but no objective's title or evidence criteria covers any of them: the plan excludes "
+        "the whole goal. Research wider so the ledger supports one of these capabilities, narrow "
+        "the goal to what this plan actually teaches, or explicitly approve a narrower scope."
+    ]
+
+
+#: Exit declarations that promise the learner ends the course able to do something.
+PERFORMANCE_EXIT_DECLARATIONS: tuple[str, ...] = ("performance", "mixed")
+
+
+def exit_performance_reasons(
+    plan: Mapping[str, Any],
+    objectives: Sequence[Mapping[str, Any]],
+    *,
+    goal: str | None,
+    recipe: str,
+) -> list[str]:
+    """CP-015 (item 15) — a performance plan must say so and must end in the performance.
+
+    The goal detector is deterministic, so a plan that declares ``knowledge`` for a goal the
+    learner carries out is a contradiction the rule gate can read. The second half is the one a
+    per-objective rule cannot state: the *last* unit must end in a ``procedure`` or ``transfer``
+    objective, because a course whose final unit is a quiz about the act has not taught the act.
+
+    A parent plan is exempt for the same reason the shared performance rule exempts it: its
+    checks are observations of a child, never a graded performance, and the detector does not
+    govern a parent-led brief.
+    """
+    if recipe == "parent":
+        return []
+    reasons: list[str] = []
+    declared = str(plan.get("exit_performance") or "").strip()
+    requirement = curriculum.performance_requirement(goal)
+    if requirement is not None and declared not in PERFORMANCE_EXIT_DECLARATIONS:
+        reasons.append(
+            "the goal asks the learner to carry out a physical act "
+            f"({requirement['detected_action']!r}) but plan.exit_performance is "
+            f"{declared or 'unset'!r}; declare 'performance' (or 'mixed' when the course also "
+            "teaches the knowledge around the act)"
+        )
+    if declared in PERFORMANCE_EXIT_DECLARATIONS:
+        raw_units = plan.get("units")
+        units = (
+            [unit for unit in raw_units if isinstance(unit, dict)]
+            if isinstance(raw_units, list)
+            else []
+        )
+        last_unit = max((int(unit.get("ordinal", 0)) for unit in units), default=0)
+        ending = [
+            objective
+            for objective in objectives
+            if int(objective.get("unit_ref", 0)) == last_unit
+            and str(objective.get("evidence_target") or "")
+            in curriculum.PERFORMANCE_FAMILIES
+        ]
+        if not ending:
+            reasons.append(
+                f"plan.exit_performance is {declared!r} but no objective in the last unit "
+                f"({last_unit or 'none'}) declares a 'procedure' or 'transfer' evidence target; "
+                "a performance course must end in the performance, not in a quiz about it"
+            )
+    return reasons
+
+
 def _enforce_plan_tail(
     plan: dict[str, Any],
     *,
@@ -6056,6 +6290,13 @@ def _enforce_plan_rules_v2(
                 "objective(s); every objective needs its own owner section"
             )
 
+    # CP-015 (items 14 and 15): the plan's typed exit and the coverage floor. Both read fields
+    # only the v2 schema carries, so they live in this rule set and never in the shared tail. The
+    # declaration is checked before the shared tail's per-objective rule so the refusal names the
+    # contradiction ("knowledge" for a physical goal) rather than only its symptom.
+    reasons.extend(exit_performance_reasons(plan, objectives, goal=goal, recipe=recipe))
+    reasons.extend(goal_capability_coverage_reasons(plan, objectives, goal=goal))
+
     _enforce_plan_tail(
         plan,
         recipe=recipe,
@@ -6592,7 +6833,13 @@ def enforce_lesson_rules(
                 "check kind; a lesson check must measure one of "
                 f"{', '.join(sorted(CHECK_KIND_BY_TARGET))}"
             )
-        elif declared_kind not in expected_kinds:
+        elif declared_kind not in expected_kinds and not (
+            declared_target == "transfer" and declared_kind == "quiz"
+        ):
+            # A transfer check applies a capability to a case the lesson did not teach, and a
+            # scenario question is a real way to do that. A procedure is different: the act is the
+            # performance, so a question about it measures nothing. The map still guides authoring;
+            # only the procedure family is enforced strictly.
             reasons.append(
                 f"a {declared_target!r} check is measured by {' or '.join(expected_kinds)}, "
                 f"not {declared_kind or 'no kind'!r}"
@@ -7839,9 +8086,16 @@ def build_plan_request(
     # calls, computed for the plan's own resolved subject domain. At plan time no lesson intent
     # exists yet, so the decision refuses media; its reasons tell the author what the domain
     # permits.
+    #
+    # CP-015 (item 13): the evidence family is derived from the goal, never hard-coded. A plan
+    # for a goal the learner carries out must not be told its checks are quizzes — that made
+    # every blueprint's capability decision say "comprehension" while the plan itself had to
+    # end in a procedure. A goal the detector does not read as a performance keeps comprehension,
+    # so the plan's own targets (and the rule gate) decide.
+    requirement = curriculum.performance_requirement(goal)
     capability = capability_policy.plan_lesson_capability(
         recipe=recipe,
-        evidence_target="comprehension",
+        evidence_target="procedure" if requirement is not None else "comprehension",
         lesson_intent="",
         locale=locale,
         level=declared_level,
@@ -8084,6 +8338,50 @@ def _validation_pass_plan(
     return plan
 
 
+#: The lesson author finally sees the learner's own goal. The contract allows a 4 000-character
+#: goal and the lesson request is bounded at 24 000 bytes; carrying the goal whole pushed a legal
+#: full-scope lesson over that bound (the same failure H-182 measured for the ledger). This is the
+#: field cap the spec names, matching the plan's own 600-character ``learner_outcome`` — not a
+#: second request policy: :func:`_bounded_input` still owns the request bound.
+LESSON_GOAL_MAX_CHARS = 600
+
+
+def _lesson_goal(goal: str | None, plan: Mapping[str, Any]) -> str | None:
+    """The learner's goal, whitespace-normalised and capped for the lesson request.
+
+    ``run_lesson_job`` reads the goal from the course row (``course.create`` is its authority);
+    a direct caller may pass it explicitly. A plan document authored by an older path may carry
+    it on the plan itself, which is the fallback. ``None`` when none of them knows it, so a
+    pre-label plan does not invent a goal.
+    """
+    text = " ".join(str(goal or plan.get("goal") or "").split())
+    if not text:
+        return None
+    return text[:LESSON_GOAL_MAX_CHARS]
+
+
+def _previous_section_title(
+    plan: Mapping[str, Any], section: Mapping[str, Any]
+) -> str | None:
+    """The title of the section before this one in the plan, or ``None`` for the first.
+
+    The v1 document carries its sections; a v2 plan's sections live in their own table, and the
+    caller passes :func:`build_lesson_request`'s ``previous_section`` for that case. The comparison
+    is by ordinal, the plan's own order, never by the caller's list order.
+    """
+    ordinal = int(section.get("ordinal") or 0)
+    rows = [
+        item
+        for item in plan.get("sections") or []
+        if isinstance(item, dict) and int(item.get("ordinal") or 0) < ordinal
+    ]
+    if not rows:
+        return None
+    previous = max(rows, key=lambda item: int(item.get("ordinal") or 0))
+    title = str(previous.get("title") or "").strip()
+    return title or None
+
+
 def build_lesson_request(
     *,
     plan: dict[str, Any],
@@ -8099,6 +8397,8 @@ def build_lesson_request(
     capability: capability_policy.LessonCapabilityPlan | None = None,
     level: str | None = None,
     subject_domain: str | None = None,
+    goal: str | None = None,
+    previous_section: str | None = None,
 ) -> LLMRequest:
     declared_level = level or _dial_text(dials, "level")
     declared_domain = subject_domain or _dial_text(dials, "subject_domain")
@@ -8118,6 +8418,16 @@ def build_lesson_request(
     payload = {
         "plan_title": plan.get("title"),
         "learner_outcome": plan.get("learner_outcome"),
+        # CP-015 (item 16): the author can only aim at the learner's goal if it is in the input.
+        # The goal is bounded; the through-line and the prior section title give the arc without
+        # repeating the whole plan.
+        "goal": _lesson_goal(goal, plan),
+        "through_line": plan.get("through_line"),
+        "previous_section": (
+            previous_section
+            if previous_section is not None
+            else _previous_section_title(plan, section)
+        ),
         "delivery": plan.get("delivery"),
         "section": section,
         "objective": objective,
@@ -11784,6 +12094,20 @@ def run_lesson_job(
 
     plan = document["document"].get("plan") or {}
     recipe = str(document["document"].get("recipe") or "casual")
+    # CP-015 (item 16): the brief's own goal, carried to the lesson author. The course row is
+    # the authority (``course.create`` wrote it, and a replan keeps it); the document and the
+    # job brief are older/alternate routes to the same sentence.
+    course_row = _row_dict(
+        connection.execute(
+            "SELECT goal FROM courses WHERE id = ?", (plan_row["course_id"],)
+        ).fetchone()
+    )
+    goal = str(
+        document["document"].get("goal")
+        or (course_row or {}).get("goal")
+        or brief.get("goal")
+        or ""
+    )
     # The plan document stores the declared inputs beside the dials; a plan authored before v10
     # has neither key, so its lessons behave exactly as they did. ``dials`` is the closed object
     # the contract carries; the declared inputs are passed beside it, never inside it.
@@ -12008,6 +12332,7 @@ def run_lesson_job(
                     usage=usage,
                     job_id=job_id,
                     now=now,
+                    goal=goal,
                     parent_brief=lesson_parent_brief,
                     review_target=review_target,
                     park_reason=park_reason,
@@ -12259,6 +12584,7 @@ def _author_section(
     review_target: dict[str, Any] | None = None,
     park_reason: str | None = None,
     version: int = 1,
+    goal: str | None = None,
 ) -> dict[str, Any]:
     objective_ordinal = int(
         review_target["objective_ordinal"]
@@ -12272,6 +12598,19 @@ def _author_section(
     )
     # The requests carry the closed contract dials; ``dials`` here is the in-memory policy view.
     request_dials = dict(stored_dials if stored_dials is not None else dials)
+    # CP-015 (item 16): the section before this one is a plan fact, not the model's memory. The
+    # writer stores sections with global ordinals for v1 and v2 alike, so one query answers both;
+    # the first section legitimately gets None.
+    previous_section: str | None = None
+    section_ordinal = int(section.get("ordinal") or 0)
+    if section_ordinal > 1:
+        previous_row = connection.execute(
+            "SELECT title FROM gen_plan_sections WHERE plan_id = ? AND ordinal < ?"
+            " ORDER BY ordinal DESC LIMIT 1",
+            (str(plan_id), section_ordinal),
+        ).fetchone()
+        if previous_row is not None and previous_row[0]:
+            previous_section = str(previous_row[0])
     # Decide the capability plan once per section: the prompt gets exactly its permissions, the
     # deterministic rules score the same rubric angle, and the lesson row records the same plan.
     capability = lesson_capability_plan(
@@ -12312,6 +12651,8 @@ def _author_section(
             capability=capability,
             level=level,
             subject_domain=subject_domain,
+            goal=goal,
+            previous_section=previous_section,
         )
         response = _call_llm(llm, request, usage)
         candidate = _parse_structured(response, LESSON_SCHEMA, what="lesson", max_bytes=MAX_LESSON_BYTES)

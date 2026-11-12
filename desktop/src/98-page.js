@@ -395,8 +395,8 @@ function CoursebookPage() {
   } else if (classroomMode && openCourse.objectiveId) {
     // CP-040: the classroom's own surface. It is a wired container (its own outline, page, world
     // and Game engagement reads), so the route hands it identity and navigation only. Back returns
-    // to the course home, a completed section returns there too — the Continue plate names the next
-    // real stop — and a section switch stays inside the classroom.
+    // to the course home; the post-pass primary carries the next section's objective id (item 36),
+    // and the last section passes null, which is the course path.
     body = jsx(ClassroomV3Surface, {
       row: openCourse.row,
       enrollmentId: openCourse.row ? openCourse.row.enrollment_id : null,
@@ -404,7 +404,8 @@ function CoursebookPage() {
       mode: classroomMode,
       onBack: () => setOpenCourse({ ...openCourse, objectiveId: null, blockId: null }),
       onOpenSection: (objectiveId) => setOpenCourse({ ...openCourse, objectiveId, blockId: null }),
-      onNextSection: () => setOpenCourse({ ...openCourse, objectiveId: null, blockId: null }),
+      onNextSection: (nextObjectiveId) =>
+        setOpenCourse({ ...openCourse, objectiveId: nextObjectiveId || null, blockId: null }),
       onStartChat: () => startClassroomRun(openCourse),
       onChanged: () => reloadHealth()
     })

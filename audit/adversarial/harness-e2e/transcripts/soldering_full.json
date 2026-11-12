@@ -448,6 +448,7 @@
         "objective_ref": 12
       }
     ],
+    "exit_performance": "performance",
     "learner_outcome": "The learner solders, inspects and reworks a through-hole board without lifting a pad.",
     "objectives": [
       {
@@ -564,6 +565,7 @@
       "The learner has not soldered before and is not assumed to know any bench rule."
     ],
     "sessions_per_week": 2,
+    "terminal_performance": "Build and inspect a through-hole joint, then desolder a part and prove continuity with a meter.",
     "through_line": "One board taken from a safe bench to a proved repair: name the hazards, set the iron, read the part, seat it, form the joint, inspect it, rework what fails, and prove continuity before power.",
     "units": [
       {

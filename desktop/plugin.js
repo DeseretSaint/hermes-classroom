@@ -9694,6 +9694,113 @@ const GOAL_PLACEHOLDER = 'e.g. Hold a six-minute conversation in Spanish'
 const TITLE_PLACEHOLDER = 'e.g. Six-minute Spanish conversation'
 
 /**
+ * CREATE-EXPERIENCE item 1: the end goal, asked once on its own step between the shape and the
+ * review.
+ *
+ * The chips are seeds, not values: pressing one fills the field, and what the plan receives is
+ * whatever sentence the learner leaves there. The bucket below only chooses which three
+ * suggestions are offered — it is never the course's `subject_domain`, which the learner declares
+ * (or leaves blank) on the shape step. `OUTCOME_DOMAIN_STEMS` mirrors the declared-subject lookup
+ * the backend already owns (`coursebook/policy.py::_DOMAIN_STEMS`) for the two buckets it names,
+ * and adds the music/craft bucket this question offers; anything else gets the default three.
+ */
+const OUTCOME_QUESTION = 'What do you want to be able to do when this is done?'
+const OUTCOME_SUBTITLE = 'Not the topic — the thing you want to be able to do.'
+//: Phase 1 of the spec: the outcome travels inside `goal`, the field the planner already reads.
+//: No contract field is added, and a brief with no outcome sends its goal byte-for-byte.
+const OUTCOME_SENTENCE_PREFIX = 'When this course is done I want to be able to: '
+const OUTCOME_SUGGESTIONS = Object.freeze({
+  language: Object.freeze(['Get by on a trip', 'Hold a real conversation', 'Read and write it properly']),
+  repair: Object.freeze(['Do this one job safely', 'Handle the routine jobs myself', 'Diagnose and fix what I find']),
+  music: Object.freeze(['Play one piece', 'Play with other people', 'Play anything I hear']),
+  default: Object.freeze([
+    'Understand it well enough to explain it',
+    'Use it at work',
+    'Teach it to someone else'
+  ])
+})
+//: Stems, not spellings: a learner types "auto repair", "Spanish" or "guitar", and the head of an
+//: English compound decides (so "Spanish colonial history" is not a language course).
+const OUTCOME_DOMAIN_STEMS = Object.freeze([
+  {
+    domain: 'language',
+    stems: (
+      'language linguistic spanish french german italian portuguese japanese korean chinese ' +
+      'mandarin cantonese arabic russian hindi urdu hebrew turkish dutch greek polish swedish ' +
+      'norwegian danish finnish vietnamese thai indonesian swahili cefr esl efl ielts toefl'
+    ).split(' ')
+  },
+  {
+    domain: 'repair',
+    stems: (
+      'technical procedure procedural trade maintenance engineering repair mechanic automotive ' +
+      'electrical electric electrician wiring plumbing carpentry carpenter welding welder ' +
+      'installation safety hydraulic pneumatic machining machinist hvac'
+    ).split(' ')
+  },
+  {
+    domain: 'music',
+    stems: (
+      'music musical guitar piano violin drums drum singing sing songwriter bass ukulele craft ' +
+      'crafts woodwork woodworking pottery ceramics drawing sketch painting paint knitting sewing'
+    ).split(' ')
+  },
+  {
+    // The backend's other named domains get the default three, and they are listed so the head of
+    // a compound can move the bucket back: "Spanish colonial history" is history, not language.
+    domain: 'default',
+    stems: (
+      'mathematic math maths algebra geometry geometric calculus statistic trigonometry arithmetic ' +
+      'probability grammar syntax conjugation history historical'
+    ).split(' ')
+  }
+])
+
+/** The chip bucket a declared subject belongs to, or `default` when nothing names one. */
+function createOutcomeDomain(subjectDomain) {
+  let found = 'default'
+  String(subjectDomain || '')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .forEach((word) => {
+      const stem = word.length > 3 && word.endsWith('s') && !word.endsWith('ss') ? word.slice(0, -1) : word
+      if (!stem) return
+      const bucket = OUTCOME_DOMAIN_STEMS.find((entry) =>
+        entry.stems.some((candidate) => stem === candidate || stem.startsWith(candidate))
+      )
+      if (bucket) found = bucket.domain
+    })
+  return found
+}
+
+/** The three suggestions this subject gets. Always three, always the default when unsure. */
+function createOutcomeSuggestions(subjectDomain) {
+  return OUTCOME_SUGGESTIONS[createOutcomeDomain(subjectDomain)] || OUTCOME_SUGGESTIONS.default
+}
+
+/**
+ * The goal a planner receives: the learner's goal, then — only when they gave one — their outcome
+ * in their own words. An empty outcome returns the goal untouched, so an old client and a skipped
+ * step produce the same brief.
+ */
+function composePlanGoal(goal, outcome) {
+  const want = String(outcome == null ? '' : outcome).replace(/\s+/g, ' ').trim()
+  if (!want) return goal
+  return `${String(goal == null ? '' : goal)}\n\n${OUTCOME_SENTENCE_PREFIX}${want}`
+}
+
+/** The inverse of `composePlanGoal`, for seeding the form from a brief that already ran. */
+function splitComposedGoal(goal) {
+  const text = String(goal == null ? '' : goal)
+  const at = text.lastIndexOf(`\n\n${OUTCOME_SENTENCE_PREFIX}`)
+  if (at < 0) return { goal: text, outcome: '' }
+  return {
+    goal: text.slice(0, at),
+    outcome: text.slice(at + 2 + OUTCOME_SENTENCE_PREFIX.length).trim()
+  }
+}
+
+/**
  * CREATE-2/CREATE-3: the starting level is a question on the first screen, not a free-text dial
  * behind "Help me tune it".
  *
@@ -9795,7 +9902,9 @@ function planJobBrief(input) {
     stage: 'plan',
     course_id: input.courseId,
     enrollment_id: input.enrollmentId,
-    goal: input.goal,
+    // Phase 1 of the end-goal question: the goal the planner reads already carries the outcome,
+    // in the learner's words. No field is added; a skipped outcome sends the goal unchanged.
+    goal: composePlanGoal(input.goal, input.outcome),
     recipe: input.recipe,
     dials: input.dials || {}
   }
@@ -9808,7 +9917,13 @@ function planJobBrief(input) {
 
 /** The `course.create` payload for the same decision. Only contract fields, nothing extra. */
 function courseCreatePayload(input) {
-  const payload = { title: input.title, recipe: input.recipe, goal: input.goal, dials: input.dials || {} }
+  const payload = {
+    title: input.title,
+    recipe: input.recipe,
+    // The course row stores the same composed goal the plan job runs, so the two cannot disagree.
+    goal: composePlanGoal(input.goal, input.outcome),
+    dials: input.dials || {}
+  }
   if (input.locale) payload.locale = input.locale
   if (input.level) payload.level = input.level
   if (input.subjectDomain) payload.subject_domain = input.subjectDomain
@@ -9828,8 +9943,8 @@ function courseCreatePayload(input) {
  * already has: the course and its draft plan are real and the same key retries the same job, so the
  * draft is recoverable instead of abandoned.
  */
-async function startLearnerPlan({ call, key, title, goal, recipe, dials, locale, level, subjectDomain, scope, presentationMode }) {
-  const decision = { title, goal, recipe, dials, locale, level, subjectDomain, scope, presentationMode }
+async function startLearnerPlan({ call, key, title, goal, outcome, recipe, dials, locale, level, subjectDomain, scope, presentationMode }) {
+  const decision = { title, goal, outcome, recipe, dials, locale, level, subjectDomain, scope, presentationMode }
   const course = await call('course.create', courseCreatePayload(decision), {
     idempotencyKey: key,
     expectedRevision: null
@@ -9903,30 +10018,57 @@ function effectiveDepth(depth, scope) {
 }
 
 /**
- * The three steps, in the words a learner uses, each with the next thing that will happen.
+ * The steps, in the words a learner uses, each with the next thing that will happen.
  *
  * H-170: the goal is first. The first-run plate promises "name one goal, review the plan", so the
  * flow has to open on the goal field — a first-time learner should never be asked "one lesson, a
  * short course or a full course" before they have said what they want to learn. Size stays a
  * required choice on step 2 (no default is preselected) and Review still gates the single
  * mutation. H-179 renames the middle step to what it now is: the shape of the journey.
+ *
+ * CREATE-EXPERIENCE item 1 adds the fourth entry, the end goal. It is on the spine only when the
+ * course has room to aim (`createSteps` drops it for `single` and before a shape is chosen), so a
+ * one-lesson course still reads "Step 3 of 3" at review and every step number is the index of the
+ * list the learner is actually walking.
  */
 const CREATE_STEP_SPINE = Object.freeze([
-  { n: 1, name: 'Goal', next: 'Next: choose the shape of the course.' },
-  { n: 2, name: 'Shape', next: 'Next: check the trailhead before it is created.' },
-  { n: 3, name: 'Review', next: 'Create the course, then review the draft plan.' }
+  { id: 'goal', name: 'Goal', next: 'Next: choose the shape of the course.' },
+  { id: 'shape', name: 'Shape', next: 'Next: check the trailhead before it is created.' },
+  { id: 'outcome', name: 'Outcome' },
+  { id: 'review', name: 'Review', next: 'Create the course, then review the draft plan.' }
 ])
+
+/** The steps this brief actually has: the end-goal question is skipped for a one-lesson course. */
+function createSteps(scope) {
+  const aimed = scope === 'short' || scope === 'full'
+  return CREATE_STEP_SPINE.filter((item) => item.id !== 'outcome' || aimed)
+}
+
+/** What follows the current step. The shape's next line depends on whether the outcome is asked. */
+function createStepNext(stepId, scope) {
+  if (stepId === 'shape') {
+    return scope === 'short' || scope === 'full'
+      ? 'Next: say what this course should let you do.'
+      : 'Next: check the trailhead before it is created.'
+  }
+  if (stepId === 'outcome') return OUTCOME_SUBTITLE
+  const found = CREATE_STEP_SPINE.find((item) => item.id === stepId)
+  return found && found.next ? found.next : ''
+}
 
 /**
  * Which step a seeded create form opens on: the first one whose answer is still missing. A rejected
  * plan's own choices are prefilled, so re-answering them is not demanded — but the form never
  * submits itself: with every answer present it opens on Review, where Create is still a press.
+ * `createStartStep` returns the review's position in the spine that scope actually has, so a
+ * short course's seeded form opens on 4 (Review) and a single one on 3.
  */
 function createStartStep(seed) {
   if (!seed) return 1
   if (!String(seed.goal || '').trim()) return 1
   if (!String(seed.scope || '').trim()) return 2
-  return 3
+  const review = createSteps(seed.scope).findIndex((item) => item.id === 'review')
+  return review >= 0 ? review + 1 : 3
 }
 
 /**
@@ -10013,6 +10155,9 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
   const [recipeTouched, setRecipeTouched] = useState(Boolean(seed))
   const [level, setLevel] = useState(start.level || '')
   const [subjectDomain, setSubjectDomain] = useState(start.subjectDomain || '')
+  // CREATE-EXPERIENCE item 1: the learner's own sentence of what they want to be able to do. It
+  // rides inside the goal when the brief is built; it is never a dial or a contract field.
+  const [outcome, setOutcome] = useState(start.outcome || '')
   const [locale, setLocale] = useState(start.locale || '')
   const [dials, setDials] = useState(() => {
     const base = start.dials || { pace: 'light', depth: 'working', assessment: 'self_check', autonomy: 'guided' }
@@ -10039,10 +10184,20 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
   const narrowUses = routeWidth > 0 && routeWidth < 380
 
   const goalInvalid = step === 1 && goal.trim().length === 0
+  // The spine the learner is actually walking: the end-goal step is dropped for a one-lesson
+  // course and until a shape is chosen, so every number below counts the list on screen.
+  const steps = createSteps(scope)
+  const currentStep = steps[Math.min(Math.max(step, 1), steps.length) - 1] || steps[0]
+  const onReview = currentStep.id === 'review'
   // H-179: the goal alone opens the flow. The course name is suggested and optional — it lives
   // behind `Name (optional)` and can never block Continue. The shape step still needs a real
-  // choice, and Review has everything, so it is never blocked by this gate.
-  const canAdvance = step === 1 ? goal.trim().length > 0 : Boolean(scope)
+  // choice; the end-goal step is skippable by design; Review has everything.
+  const canAdvance =
+    currentStep.id === 'goal'
+      ? goal.trim().length > 0
+      : currentStep.id === 'shape'
+        ? Boolean(scope)
+        : true
 
   const changeGoal = useCallback(
     (next) => {
@@ -10081,8 +10236,12 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
   const returnToCreate = useCallback(
     (seedFromPlan) => {
       const source = seedFromPlan || {}
+      // The brief's goal may already carry the composed outcome sentence (this form wrote it). Split
+      // it back so pressing Create again cannot append the same sentence twice.
+      const seeded = splitComposedGoal(source.goal || goal)
       const next = {
-        goal: source.goal || goal,
+        goal: seeded.goal,
+        outcome: seeded.outcome || outcome,
         title: source.title || title,
         recipe: source.recipe || recipe,
         dials: source.dials || dials,
@@ -10095,6 +10254,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
       setRecoverable(null)
       setError(null)
       setGoal(next.goal)
+      setOutcome(next.outcome)
       setTitle(next.title)
       setTitleEdited(Boolean(String(next.title || '').trim()))
       setRecipe(next.recipe)
@@ -10116,13 +10276,16 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
     if (!keyRef.current) keyRef.current = `cb-course-create-${newOperationId('create')}`
     setSubmitting(true)
     setError(null)
-    const outcome = await startLearnerPlan({
+    const started = await startLearnerPlan({
       call: rpc,
       key: keyRef.current,
       // The name is optional, the contract's title is not: an empty field falls back to the
       // suggestion the learner has been reading since step 1, never to an invented name.
       title: title.trim() || suggestedTitle(goal),
       goal: goal.trim(),
+      // CREATE-EXPERIENCE item 1: the learner's answer, composed into `goal` by the payload
+      // builder. Empty stays empty, so Skip sends exactly what the form sent before this step.
+      outcome: outcome.trim() || null,
       // Same rule the backend applies: "One task" only survives under the single-lesson size.
       recipe: recipe === 'one_off' && scope !== 'single' ? SCOPE_DEFAULT_RECIPE[scope] || 'casual' : recipe,
       dials: { ...dials, depth: effectiveDepth(dials.depth, scope) },
@@ -10133,13 +10296,13 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
       presentationMode
     })
     setSubmitting(false)
-    if (!outcome.ok) {
-      if (outcome.courseId) setRecoverable(outcome)
+    if (!started.ok) {
+      if (started.courseId) setRecoverable(started)
       setError({
-        code: outcome.stage,
+        code: started.stage,
         message:
-          describeError(outcome.error) +
-          (outcome.stage === 'jobs.create'
+          describeError(started.error) +
+          (started.stage === 'jobs.create'
             ? ' The course and its draft plan are saved. Trying again continues the same plan; it does not create a second course.'
             : '')
       })
@@ -10147,9 +10310,9 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
     }
     setRecoverable(null)
     setRevision(0)
-    setResult(outcome)
-    onCreated(outcome)
-  }, [dials, goal, level, locale, onCreated, recipe, scope, subjectDomain, submitting, title])
+    setResult(started)
+    onCreated(started)
+  }, [dials, goal, level, locale, onCreated, outcome, recipe, scope, subjectDomain, submitting, title])
 
   const onKeyDown = useCallback(
     (event) => {
@@ -10213,6 +10376,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                 setTitleEdited(false)
                 setLevel('')
                 setSubjectDomain('')
+                setOutcome('')
                 setLocale('')
                 keyRef.current = null
               },
@@ -10225,12 +10389,13 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
     })
   }
 
-  const stepTitle =
-    step === 1
-      ? 'What do you want to be able to do?'
-      : step === 2
-        ? 'What shape should this course take?'
-        : 'Your trailhead'
+  const STEP_TITLES = {
+    goal: 'What do you want to be able to do?',
+    shape: 'What shape should this course take?',
+    outcome: OUTCOME_QUESTION,
+    review: 'Your trailhead'
+  }
+  const stepTitle = STEP_TITLES[currentStep.id] || STEP_TITLES.review
   // The name the learner will see: theirs if they typed one, else the suggestion from the goal.
   const displayTitle = title.trim() || suggestedTitle(goal)
 
@@ -10247,14 +10412,14 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
               jsx('div', {
                 'data-cb-create-spine': '',
                 className: 'flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-(--ui-text-secondary)',
-                children: CREATE_STEP_SPINE.map((item) =>
+                children: steps.map((item, index) =>
                   jsxs(
                     'span',
                     {
-                      'data-cb-create-step': String(item.n),
-                      'aria-current': item.n === step ? 'step' : undefined,
+                      'data-cb-create-step': String(index + 1),
+                      'aria-current': index + 1 === step ? 'step' : undefined,
                       style:
-                        item.n === step
+                        index + 1 === step
                           ? {
                               display: 'inline-flex',
                               alignItems: 'baseline',
@@ -10266,20 +10431,23 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                             }
                           : { display: 'inline-flex', alignItems: 'baseline', gap: '0.3rem' },
                       children: [
-                        jsx('span', { style: { fontVariantNumeric: 'tabular-nums' }, children: String(item.n) }),
+                        jsx('span', { style: { fontVariantNumeric: 'tabular-nums' }, children: String(index + 1) }),
                         jsx('span', { children: item.name })
                       ]
                     },
-                    item.n
+                    item.id
                   )
                 )
               }),
-              jsx('div', { className: 'mt-1 text-xs text-(--ui-text-secondary)', children: `Step ${step} of 3` }),
+              jsx('div', { className: 'mt-1 text-xs text-(--ui-text-secondary)', children: `Step ${step} of ${steps.length}` }),
               jsx('h2', { className: 'mt-1 text-lg font-semibold', children: stepTitle }),
               jsx('p', {
                 'data-cb-create-next': '',
+                'data-cb-create-outcome-subtitle': currentStep.id === 'outcome' ? '' : undefined,
                 className: 'mt-0.5 max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
-                children: CREATE_STEP_SPINE[step - 1].next
+                // For the end-goal step this line *is* the question's subtitle: the screen asks the
+                // question once, in the heading, and says what kind of answer is wanted underneath.
+                children: createStepNext(currentStep.id, scope)
               })
             ]
           })
@@ -10726,7 +10894,58 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
             ]
           })
         : null,
-      step === 3
+      currentStep.id === 'outcome'
+        ? jsxs('div', {
+            className: 'flex flex-col gap-3',
+            'data-cb-create-outcome': '',
+            children: [
+              jsxs('div', {
+                className: 'flex flex-col gap-1.5',
+                children: [
+                  jsx('label', {
+                    className: 'text-xs font-medium text-(--ui-text-secondary)',
+                    htmlFor: 'cb-outcome',
+                    children: 'Your answer, in your own words'
+                  }, 'label'),
+                  jsx(sdk.Textarea, {
+                    'aria-describedby': 'cb-outcome-help',
+                    id: 'cb-outcome',
+                    onChange: (event) => setOutcome(event.target.value),
+                    placeholder: 'e.g. replace the front brake pads on my car, in my driveway, with hand tools',
+                    rows: 3,
+                    value: outcome
+                  }, 'field'),
+                  jsx('div', {
+                    className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                    id: 'cb-outcome-help',
+                    children: outcome.trim()
+                      ? 'This is the sentence the plan is aimed at. Edit it until it says what you mean.'
+                      : 'A suggestion starts the sentence; change any word of it. Leaving this empty asks the plan to aim at the goal alone.'
+                  }, 'help')
+                ]
+              }, 'field'),
+              jsxs('div', {
+                'aria-label': 'Suggestions for what you want to be able to do',
+                'data-cb-outcome-suggestions': createOutcomeDomain(subjectDomain),
+                role: 'group',
+                style: { display: 'flex', flexWrap: 'wrap', gap: '0.4rem', minWidth: 0 },
+                children: createOutcomeSuggestions(subjectDomain).map((suggestion) =>
+                  jsx(sdk.Button, {
+                    'aria-label': `${suggestion} — suggestion`,
+                    'data-cb-outcome-chip': suggestion,
+                    className: 'max-w-full text-left',
+                    onClick: () => setOutcome(suggestion),
+                    size: 'sm',
+                    style: { height: 'auto', whiteSpace: 'normal', fontFamily: CB_SANS },
+                    variant: outcome.trim() === suggestion ? 'secondary' : 'outline',
+                    children: suggestion
+                  }, suggestion)
+                )
+              }, 'suggestions')
+            ]
+          })
+        : null,
+      onReview
         ? jsxs('div', {
             className: 'flex flex-col gap-3',
             children: [
@@ -10799,7 +11018,13 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                       jsx('span', {
                         'data-cb-create-preview-level': level || 'none',
                         children: levelFact(level)
-                      }, 'level')
+                      }, 'level'),
+                      // CREATE-EXPERIENCE item 1: the outcome, in the learner's own words, beside
+                      // the length and the level — the three things the plan will be judged against.
+                      jsx('span', {
+                        'data-cb-create-preview-outcome': outcome.trim() ? 'stated' : 'empty',
+                        children: outcome.trim() ? `Outcome: ${outcome.trim()}` : 'Outcome: not stated'
+                      }, 'outcome')
                     ]
                   }, 'facts'),
                   jsxs('p', {
@@ -10855,10 +11080,10 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                 children: 'Back'
               }, 'back')
             : null,
-          step < 3
+          !onReview
             ? jsx(CbAction, {
                 'aria-describedby':
-                  !canAdvance ? (step === 1 ? 'cb-goal-help' : 'cb-scope-time') : undefined,
+                  !canAdvance ? (currentStep.id === 'goal' ? 'cb-goal-help' : 'cb-scope-time') : undefined,
                 disabled: !canAdvance,
                 onClick: () => setStep(step + 1),
                 variant: 'primary',
@@ -10870,6 +11095,20 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                 variant: 'primary',
                 children: submitting ? 'Creating course' : recoverable ? 'Try again' : 'Create course'
               }, 'advance'),
+          // Skippable by design: an empty outcome sends the goal unchanged, and the plan is asked to
+          // aim at that goal alone. The control advances exactly like Continue would.
+          currentStep.id === 'outcome'
+            ? jsx(CbAction, {
+                'data-cb-create-skip-outcome': '',
+                onClick: () => {
+                  setOutcome('')
+                  setStep(step + 1)
+                },
+                variant: 'secondary',
+                disabled: submitting,
+                children: 'Skip for now'
+              }, 'skip-outcome')
+            : null,
           // One row of actions: the primary is the only filled control; Back is secondary; Cancel
           // is tertiary and sits at the far edge on every step.
           jsx(CbAction, {
@@ -15822,6 +16061,9 @@ const CB3_CLASSROOM_COPY = Object.freeze({
   checkCriteria: 'Grading criteria',
   correct: 'That is right.',
   wrong: 'Not quite.',
+  // A grader that could not finish is not a wrong answer: the attempt is saved and the retry is
+  // free, so the card says that instead of claiming the learner missed.
+  retryGrading: 'This answer could not be graded yet. It is saved, and checking again does not use a new attempt.',
   retry: 'Try again',
   next: 'Next section',
   evidenceTitle: 'Evidence',
@@ -15965,6 +16207,28 @@ function classroomLineFromPage(page) {
     english: picked.english,
     segments: classroomRubySegments(picked.kana)
   }
+}
+
+/**
+ * The authored prose the classroom shows for one block (CREATE-EXPERIENCE item 33).
+ *
+ * `short` when the author wrote one, else the first paragraph of `deep` — the same rule the v2
+ * player applies (`playerConcept`), so a section does not read differently in the two surfaces.
+ * Nothing is summarised, re-flowed or invented here.
+ */
+function classroomBlockProse(block) {
+  if (!block) return ''
+  const short = typeof block.short === 'string' ? block.short.trim() : ''
+  if (short) return short
+  const deep = typeof block.deep === 'string' ? block.deep : ''
+  return String(deep).split(/\n\s*\n/)[0].trim()
+}
+
+/** The blocks of the served document that carry prose, in the authored order. */
+function classroomProseBlocks(page) {
+  const document = page && page.document
+  const blocks = document && Array.isArray(document.blocks) ? document.blocks : []
+  return blocks.filter((block) => Boolean(classroomBlockProse(block)))
 }
 
 /**
@@ -16211,19 +16475,165 @@ function ClassroomScene({ scene, title, height }) {
   })
 }
 
-/** One verdict line: the deck's sentence plus only the observation the backend recorded. */
-function classroomVerdictSentence(result) {
+/**
+ * The deterministic grader's own sentences (`coursebook/validators.py`). They are audit text, not
+ * feedback: "does not match an accepted answer" is written for a log, and printing it at a learner
+ * is the defect this map closes. The set is deliberately closed — a value that matches is dropped
+ * before it can reach the DOM, and a value that does not match is treated as the open lane's
+ * authored prose and printed as the reason.
+ */
+const CB3_GRADER_MACHINE_TEXT = Object.freeze([
+  'matches an accepted answer',
+  'does not match an accepted answer',
+  'no accepted answer is configured for this check',
+  'selection matches',
+  'selection matches (order-insensitive)',
+  'selection does not match an accepted combination',
+  'the answer is not a selection',
+  'the check has no readable reference value',
+  'the answer is not a number this check can read',
+  'a unit was given but this check expects a plain number'
+])
+const CB3_GRADER_MACHINE_PATTERNS = Object.freeze([
+  /^within tolerance \(/,
+  /^outside tolerance by /,
+  /^the answer has no unit; expected /,
+  /^the unit .+ is not accepted for this check$/,
+  /^cannot convert .+ to .+$/
+])
+
+/** Whether one observed value is a deterministic grader's sentence rather than authored prose. */
+function classroomGraderMachineText(value) {
+  const text = String(value == null ? '' : value).trim()
+  if (!text) return false
+  return (
+    CB3_GRADER_MACHINE_TEXT.indexOf(text) >= 0 ||
+    CB3_GRADER_MACHINE_PATTERNS.some((pattern) => pattern.test(text))
+  )
+}
+
+/** A, B, C … for the served choice at `index`. */
+function classroomChoiceLetter(index) {
+  return String.fromCharCode(65 + Number(index))
+}
+
+/**
+ * The accepted choice a grade result names, resolved against the served choices, or `null`.
+ *
+ * `attempt.submit`'s contracted response carries criteria observations and no reference, so a
+ * deterministic selection grader does not say which option it would have accepted. When a grader
+ * does name it (an `expected`/`accepted` on the result or on an unmet criterion, as an index, a
+ * letter or the choice text), this resolves that name to a served row. When nothing names it the
+ * caller says only what the learner chose — the answer is never guessed.
+ */
+function classroomAcceptedChoice(result, choices) {
+  if (!Array.isArray(choices) || choices.length === 0) return null
+  const pick = (index) => ({ index, letter: classroomChoiceLetter(index), text: choices[index] })
+  const rows = result && Array.isArray(result.criteria) ? result.criteria : []
+  // An index is only trusted when the field says it is one; a bare `expected: 1` could be a
+  // number, a label, or an answer, so it is never read as a position.
+  const indexFields = result ? [result.expected_index, result.accepted_index] : []
+  rows.forEach((row) => {
+    if (!row || row.met === true) return
+    indexFields.push(row.expected_index, row.accepted_index, row.answer_index, row.correct_index)
+  })
+  for (const index of indexFields) {
+    if (Number.isInteger(index) && index >= 0 && index < choices.length) return pick(index)
+  }
+  const candidates = []
+  const push = (value) => {
+    if (value !== undefined && value !== null && value !== '') candidates.push(value)
+  }
+  if (result) {
+    push(result.accepted)
+    push(result.expected)
+  }
+  rows.forEach((row) => {
+    if (!row || row.met === true) return
+    push(row.expected)
+    push(row.accepted)
+  })
+  for (const candidate of candidates) {
+    const text = String(candidate).trim()
+    if (!text) continue
+    if (/^[A-Ha-h]$/.test(text)) {
+      const index = text.toUpperCase().charCodeAt(0) - 65
+      if (index >= 0 && index < choices.length) return pick(index)
+    }
+    const exact = choices.findIndex((choice) => String(choice).trim() === text)
+    if (exact >= 0) return pick(exact)
+    // A choice authored as "A: …" also matches when the grader names just its text.
+    const bare = choices.findIndex(
+      (choice) => String(choice).replace(/^\s*[A-Ha-h]\s*[:.)-]\s*/, '').trim() === text
+    )
+    if (bare >= 0) return pick(bare)
+  }
+  return null
+}
+
+/** A served choice's text without its authored letter prefix: the message supplies the letter. */
+function classroomChoiceText(choice) {
+  return String(choice == null ? '' : choice)
+    .replace(/^\s*[A-Ha-h]\s*[:.)-]\s*/, '')
+    .trim()
+}
+
+/** One sentence ending at the choice's own punctuation, never a doubled full stop. */
+function classroomChoiceSentence(choice) {
+  const text = classroomChoiceText(choice)
+  if (!text) return ''
+  return /[.!?。！？]$/.test(text) ? text : `${text}.`
+}
+
+/**
+ * The miss sentence for a selection check: the learner's own choice, then the accepted choice only
+ * when the grade result names one. Never a grader string, never an invented answer.
+ */
+function classroomSelectionMiss(result, choices, chosenIndex) {
+  const chosen =
+    Number.isInteger(chosenIndex) && chosenIndex >= 0 && chosenIndex < choices.length
+      ? chosenIndex
+      : -1
+  const accepted = classroomAcceptedChoice(result, choices)
+  const chose = chosen >= 0 ? `You chose ${classroomChoiceLetter(chosen)}.` : ''
+  if (accepted) {
+    return `${chose ? `${chose} ` : ''}The answer is ${accepted.letter}: ${classroomChoiceSentence(accepted.text)}`
+  }
+  if (chosen >= 0) {
+    return `You chose ${classroomChoiceLetter(chosen)}: ${classroomChoiceSentence(choices[chosen])} That is not the answer this check accepts.`
+  }
+  return 'That choice is not the answer this check accepts.'
+}
+
+/**
+ * One verdict line: the deck's sentence plus only the observation a learner can act on.
+ *
+ * CREATE-EXPERIENCE item 34: a selection check branches on the served format. Its message is
+ * composed from the chosen row and (when the result names it) the accepted row; the deterministic
+ * grader's sentence never reaches the DOM. A free-text check keeps the authored observation the
+ * open lane wrote — that is prose, and it is the reason the learner needs.
+ */
+function classroomVerdictSentence(result, stimulus, chosenIndex) {
   if (!result) return null
+  const choices =
+    stimulus && Array.isArray(stimulus.choices)
+      ? stimulus.choices.filter((choice) => String(choice || '').trim())
+      : []
+  const selection =
+    Boolean(stimulus) && String(stimulus.format || '') === 'selection' && choices.length > 0
   const criteria = Array.isArray(result.criteria) ? result.criteria : []
   const observed = criteria
     .filter((item) => item && item.observed)
     .map((item) => String(item.observed).trim())
-    .filter(Boolean)
+    .filter((value) => Boolean(value) && !classroomGraderMachineText(value))
   const why = observed.length > 0 ? observed[0] : null
   if (result.verdict === 'pass') {
+    if (selection) return CB3_CLASSROOM_COPY.correct
     return why ? `${CB3_CLASSROOM_COPY.correct} ${why}` : CB3_CLASSROOM_COPY.correct
   }
-  if (result.verdict === 'partial' || result.verdict === 'not_yet' || result.verdict === 'needs_retry') {
+  if (result.verdict === 'needs_retry') return CB3_CLASSROOM_COPY.retryGrading
+  if (result.verdict === 'partial' || result.verdict === 'not_yet') {
+    if (selection) return classroomSelectionMiss(result, choices, chosenIndex)
     return why ? `${CB3_CLASSROOM_COPY.wrong} ${why}` : CB3_CLASSROOM_COPY.wrong
   }
   return null
@@ -16546,7 +16956,7 @@ function ClassroomCheckCard({
               color: result.verdict === 'pass' ? cb3Role('ink') : cb3Role('alert'),
               maxWidth: '60ch'
             },
-            children: classroomVerdictSentence(result)
+            children: classroomVerdictSentence(result, stimulus, selected)
           }, 'verdict')
         : null,
 
@@ -16619,6 +17029,41 @@ function ClassroomV3({
   const line = classroomLineFromPage(page)
   const game = mode === 'game'
   const [verdict, setVerdict] = useState(null)
+  // CREATE-EXPERIENCE item 33: the default modes read the lesson's authored document, one block at
+  // a time. `document.blocks` was never read here, so the reading column was a scene, a line and a
+  // quiz. The index is local to the section and resets when the section changes; a page with no
+  // blocks renders exactly what it rendered before.
+  const proseBlocks = classroomProseBlocks(page)
+  const [blockIndex, setBlockIndex] = useState(0)
+  useEffect(() => {
+    setBlockIndex(0)
+  }, [objectiveId])
+  const proseAt = proseBlocks.length > 0 ? Math.min(blockIndex, proseBlocks.length - 1) : -1
+  const proseBlock = proseAt >= 0 ? proseBlocks[proseAt] : null
+  const proseText = classroomBlockProse(proseBlock)
+  const proseLast = proseAt === proseBlocks.length - 1
+  const checkRef = useRef(null)
+  const continueProse = useCallback(() => {
+    if (!proseLast) {
+      setBlockIndex(proseAt + 1)
+      return
+    }
+    // The last block's Continue is the door to the check: scroll to it and put focus on it, so a
+    // keyboard user lands where the reading was pointing instead of at the top of the column.
+    const node = checkRef.current
+    if (node && typeof node.scrollIntoView === 'function') node.scrollIntoView({ block: 'start' })
+    if (node && typeof node.focus === 'function') node.focus({ preventScroll: true })
+  }, [proseAt, proseLast])
+  // The next section in the plan's own order (CREATE-EXPERIENCE item 36). The post-pass primary
+  // carries that objective id up to the route; on the last section the id is null and the route
+  // falls back to the course path.
+  const currentSectionId = section && section.objective_id ? section.objective_id : objectiveId
+  const currentStepAt = steps.findIndex((step) => step.key === currentSectionId)
+  const nextSectionId =
+    currentStepAt >= 0 && currentStepAt + 1 < steps.length ? steps[currentStepAt + 1].key : null
+  const advanceSection = useCallback(() => {
+    if (typeof onNextSection === 'function') onNextSection(nextSectionId)
+  }, [nextSectionId, onNextSection])
   const foxPose = verdict === 'pass' ? 'cheer' : verdict && verdict !== 'pass' ? 'think' : 'read'
   const nextStep = row && row.next_step && row.next_step.label ? row.next_step.label : null
   // WIRE-8: the Field Challenge is its own served question, opened by `progression.challenge_out`,
@@ -16844,25 +17289,38 @@ function ClassroomV3({
               children: CB3_CLASSROOM_COPY.completeTitle
             }, 'title'),
             jsx(ClassroomQuietLine, { children: CB3_CLASSROOM_COPY.completeBody }, 'body'),
-            jsx(PillAction, { variant: 'primary', label: CB3_CLASSROOM_COPY.completeAction, onClick: onNextSection }, 'action')
+            jsx(PillAction, {
+              variant: 'primary',
+              label: CB3_CLASSROOM_COPY.completeAction,
+              // "Back to the path" is always the path: a finished section never auto-opens another.
+              onClick: () => {
+                if (typeof onNextSection === 'function') onNextSection(null)
+              }
+            }, 'action')
           ]
         }, 'complete')
       : null
 
   const checkCard =
     state === 'default' && !complete
-      ? jsx(ClassroomCheckCard, {
-          check,
-          stimulusStatus,
-          stimulusError,
-          enrollmentId,
-          objectiveId,
-          revision,
-          onRetryStimulus,
-          onCommitted: handleVerdict,
-          onNextSection,
-          busyLabel: CB3_CLASSROOM_COPY.loading
-        }, check && check.check_id ? `check-${check.check_id}` : 'check')
+      ? jsx('div', {
+          ref: checkRef,
+          tabIndex: -1,
+          'data-cb3-check-slot': '',
+          style: { minWidth: 0 },
+          children: jsx(ClassroomCheckCard, {
+            check,
+            stimulusStatus,
+            stimulusError,
+            enrollmentId,
+            objectiveId,
+            revision,
+            onRetryStimulus,
+            onCommitted: handleVerdict,
+            onNextSection: advanceSection,
+            busyLabel: CB3_CLASSROOM_COPY.loading
+          }, check && check.check_id ? `check-${check.check_id}` : 'check')
+        }, check && check.check_id ? `check-slot-${check.check_id}` : 'check-slot')
       : null
 
   const aside = jsxs('aside', {
@@ -16986,6 +17444,48 @@ function ClassroomV3({
                       en: line.english
                     }, 'line-compact')
                   : null,
+              // CREATE-EXPERIENCE item 33: the authored prose of the current block, at the
+              // reader's own measure, between the scene/line and the check. With no document
+              // blocks this renders nothing and the column is exactly what it was.
+              proseText
+                ? jsxs('section', {
+                    'data-cb3-prose': (proseBlock && proseBlock.id) || '',
+                    'aria-label': 'Lesson text',
+                    style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', minWidth: 0 },
+                    children: [
+                      jsx('div', {
+                        'data-cb3-prose-step': String(proseAt + 1),
+                        style: {
+                          fontFamily: 'var(--cb3-font-ui)',
+                          fontSize: cb3Type('meta'),
+                          lineHeight: cb3Lead('meta'),
+                          fontWeight: 600,
+                          color: cb3Role('ink-soft')
+                        },
+                        children: `Step ${proseAt + 1} of ${proseBlocks.length}`
+                      }, 'step'),
+                      jsx(ProseText, {
+                        'data-cb3-prose-body': '',
+                        style: {
+                          maxWidth: CB_MEASURE,
+                          fontFamily: 'var(--cb3-font-display)',
+                          fontSize: cb3Type('body'),
+                          lineHeight: cb3Lead('body'),
+                          color: cb3Role('ink')
+                        },
+                        text: proseText
+                      }, 'body'),
+                      jsx(PillAction, {
+                        'data-cb3-prose-continue': proseLast ? 'check' : 'next',
+                        'aria-label': proseLast ? 'Continue to the check' : 'Continue to the next part',
+                        variant: 'quiet',
+                        label: 'Continue',
+                        onClick: continueProse,
+                        style: { alignSelf: 'flex-start' }
+                      }, 'continue')
+                    ]
+                  }, 'prose')
+                : null,
               nochat,
               statePanel,
               complete,
@@ -40406,8 +40906,8 @@ function CoursebookPage() {
   } else if (classroomMode && openCourse.objectiveId) {
     // CP-040: the classroom's own surface. It is a wired container (its own outline, page, world
     // and Game engagement reads), so the route hands it identity and navigation only. Back returns
-    // to the course home, a completed section returns there too — the Continue plate names the next
-    // real stop — and a section switch stays inside the classroom.
+    // to the course home; the post-pass primary carries the next section's objective id (item 36),
+    // and the last section passes null, which is the course path.
     body = jsx(ClassroomV3Surface, {
       row: openCourse.row,
       enrollmentId: openCourse.row ? openCourse.row.enrollment_id : null,
@@ -40415,7 +40915,8 @@ function CoursebookPage() {
       mode: classroomMode,
       onBack: () => setOpenCourse({ ...openCourse, objectiveId: null, blockId: null }),
       onOpenSection: (objectiveId) => setOpenCourse({ ...openCourse, objectiveId, blockId: null }),
-      onNextSection: () => setOpenCourse({ ...openCourse, objectiveId: null, blockId: null }),
+      onNextSection: (nextObjectiveId) =>
+        setOpenCourse({ ...openCourse, objectiveId: nextObjectiveId || null, blockId: null }),
       onStartChat: () => startClassroomRun(openCourse),
       onChanged: () => reloadHealth()
     })
