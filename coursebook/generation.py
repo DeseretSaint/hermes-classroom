@@ -760,6 +760,15 @@ def _call_deadline_error(
         # time. Naming which bound fired is the difference between "the provider is slow" and
         # "this job's budget is spent".
         message += "; cancelled at the job's deadline, not the call's"
+    else:
+        # CP-015g quality: a fired bound is a *slow route*, and the message says so and names the
+        # knob that changes it. The old text carried only the number, so a parent read the
+        # contract's retryable HOST_UNAVAILABLE code as a host outage and never learned that
+        # raising one variable would have let the call finish.
+        env_name = PROVIDER_TIMEOUT_ENV.get(purpose)
+        message += "; the route was slower than its declared bound"
+        if env_name:
+            message += f" — raise {env_name} on a slower route"
     return ProviderTimeout(
         message,
         purpose=purpose,
@@ -1160,13 +1169,34 @@ class CostBudget:
 #: ``audit/visual/h182-repair/EVIDENCE.md``, ``audit/h194/live/MANIFEST.md``. The regression test
 #: ``tests.test_plan_generate_deadline`` replays these numbers against the resolved default, so a
 #: future reduction below observed behaviour fails the suite rather than a live plan.
+#:
+#: CP-015g quality, measured 2026-11-11 in the production-shaped scratch home (``cb-prod-home``,
+#: route ``nous`` / ``deepseek/deepseek-v4.1-flash-1017``). The two stages a user actually waits on
+#: carried the *smallest* bounds in the table and both sat below observed behaviour:
+#:
+#: * ``coursebook.plan.validate``: a four-objective plan job took 204 s end to end and its validate
+#:   stage was cut twice at the old 180 s bound, reported to the parent as ``HOST_UNAVAILABLE``. It
+#:   completed only with ``COURSEBOOK_PLAN_VALIDATE_TIMEOUT_SECONDS=600``. 600 s admits that
+#:   measurement with ~2.9x headroom.
+#: * ``coursebook.lesson.generate``: successful single-section writes took 94.5 / 95.3 / 79.3 s on
+#:   the recorded unit, and the job was cut at the old 300 s bound after 908 s with 1 of 3 sections
+#:   saved. 1200 s admits the measured per-section p100 (95.3 s) times every section of a supported
+#:   course with headroom.
+#: * ``coursebook.unit_sections.generate`` is the one call that authors a whole unit's section
+#:   outline at once; the old 240 s bound was below 3 x the measured per-section write time
+#:   (285.9 s), so it is raised to 900 s (above a six-section unit's measured-rate cost).
+#:
+#: These are outer bounds, not targets. The wait heartbeat (``gen_call_waits``) keeps a slow job
+#: visibly ``waiting``; a bound that fires names the purpose, the declared bound, the elapsed wait
+#: and the operator variable, so a slow route is never read as a host outage. The measurement
+#: regression is ``tests/test_cp015g_provider_deadlines.py``.
 PROVIDER_TIMEOUT_SECONDS: dict[str, float] = {
     "coursebook.plan.generate": 900.0,
-    "coursebook.plan.validate": 180.0,
-    # One unit's sections: the same outer bounds as the blueprint stage, sized to one unit.
-    "coursebook.unit_sections.generate": 240.0,
+    "coursebook.plan.validate": 600.0,
+    # One unit's sections: one call authors the unit's whole section outline.
+    "coursebook.unit_sections.generate": 900.0,
     "coursebook.unit_sections.validate": 180.0,
-    "coursebook.lesson.generate": 300.0,
+    "coursebook.lesson.generate": 1200.0,
     "coursebook.lesson.validate": 240.0,
 }
 
@@ -11991,6 +12021,30 @@ def enforce_unit_section_rules(
         raise _RuleViolation(reasons)
 
 
+def unit_sections_timeout_recovery(
+    exc: ProviderTimeout, *, unit_ordinal: int, plan_id: str
+) -> str:
+    """The parent-facing recovery line for a unit-sections call that missed its bound.
+
+    CP-015g quality: one ``coursebook.unit_sections.generate`` call authors a whole unit's section
+    outline, and its bound was the smallest in the pipeline. The batch is transactional, so no
+    partial unit is durable; say that, and name the variable that changes the bound, instead of
+    leaving the contract's retryable ``HOST_UNAVAILABLE`` code to read as a host outage.
+    """
+    purpose = str(exc.purpose or "coursebook.unit_sections.generate")
+    env_name = PROVIDER_TIMEOUT_ENV.get(
+        purpose, PROVIDER_TIMEOUT_ENV["coursebook.unit_sections.generate"]
+    )
+    default_s = PROVIDER_TIMEOUT_SECONDS.get(
+        purpose, PROVIDER_TIMEOUT_SECONDS["coursebook.unit_sections.generate"]
+    )
+    return (
+        f"unit {unit_ordinal} of plan {plan_id} saved no sections from this attempt "
+        f"(the batch is transactional). Next: run the unit again as a new job, or raise "
+        f"{env_name} above {default_s:g} on a slower route"
+    )
+
+
 def run_unit_sections_job(
     connection: sqlite3.Connection,
     job: dict[str, Any],
@@ -12393,6 +12447,14 @@ def run_unit_sections_job(
                 },
             },
         )
+    except ProviderTimeout as exc:
+        _record_usage(connection, job_id, usage, now)
+        exc.with_recovery(
+            unit_sections_timeout_recovery(
+                exc, unit_ordinal=int(requested_unit), plan_id=str(plan_id)
+            )
+        )
+        raise
     except BaseException:
         _record_usage(connection, job_id, usage, now)
         raise
@@ -13105,11 +13167,15 @@ def run_lesson_job(
         completed = [str(item["section_id"]) for item in lesson_summaries]
         if isinstance(exc, ProviderTimeout):
             # The authored sections are already durable. Say so, and name the action that
-            # continues without re-authoring (and re-charging) them.
+            # continues without re-authoring (and re-charging) them. CP-015g quality: also name
+            # the operator variable — a 300 s bound cut a 95 s-per-section route as
+            # HOST_UNAVAILABLE and the parent had no way to read it as slowness.
             exc.with_recovery(
                 f"{len(lesson_summaries)} of {len(section_rows)} sections are saved for plan "
                 f"{plan_id}; create a new lessons job for that plan to continue without "
-                f"re-authoring them"
+                f"re-authoring them, or raise "
+                f"{PROVIDER_TIMEOUT_ENV['coursebook.lesson.generate']} above "
+                f"{PROVIDER_TIMEOUT_SECONDS['coursebook.lesson.generate']:g} on a slower route"
             )
         elif isinstance(exc, CostCeilingExceeded):
             # Same durable truth as a timeout, plus the ceiling arithmetic and the three legal

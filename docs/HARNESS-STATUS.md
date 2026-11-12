@@ -302,14 +302,16 @@ executor shutdown that keeps the caller waiting *after* the timeout fired.
   connection and never runs inside a provider request or a caller transaction.
 
 **Still provider-bound (not claimed):** the wall time is the *deadline*, not a fast answer — a slow
-route still costs its full declared bound (300 s `lesson.generate` by default, operator-overridable
-via `COURSEBOOK_LESSON_GENERATE_TIMEOUT_SECONDS`). An abandoned call may keep running and billing
+route still costs its full declared bound (1200 s `lesson.generate` by default as of CP-015g
+quality, operator-overridable via `COURSEBOOK_LESSON_GENERATE_TIMEOUT_SECONDS`). An abandoned call
+may keep running and billing
 at the provider after Coursebook stops waiting; nothing records its tokens or cost, because nothing
 measured them. The abandoned worker thread lives until the host returns (capped, daemon). No live
 provider was re-run as proof of this change — the proof is nine offline tests plus the red baseline
 measured by reverting `coursebook/deadline.py` (the same suite then failed `6.0 s not less than
 2.0` and `DeadlineExceeded not raised`, i.e. one blocking shape overran and the other never fired).
-`plan.validate` and unit-section bounds are untouched (H-192b owns them).
+`plan.validate` and unit-section bounds were re-sized by CP-015g quality after the 2026-11-11
+measurements (`docs/GENERATION.md` §9); the deadline mechanism itself is unchanged.
 
 Measured: `python3 -m unittest tests.test_h199_lesson_deadline` → 9 tests OK; full suite
 `python3 -m unittest discover -s tests -t .` → `Ran 2747 tests in 410.301s … OK (skipped=1)` at
