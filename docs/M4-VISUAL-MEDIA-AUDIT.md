@@ -6,7 +6,9 @@ Status: independent gate for the product-line claims in `docs/VISUAL_MEDIA_PLAN.
 regenerated for **CP-049** on `wt/cp-049-m4-pin` (branch from master `19fec67`), after `d4d37e2`
 changed the shipped type stacks and `879fdb2` added the guard for that wiring. It is pinned to the
 module master ships: `desktop/plugin.js` sha256
-`4087908c1881df93bf0f7e71bbac65c2511aee3f115271f6b3f846091c9d03b7`.
+`4087908c1881df93bf0f7e71bbac65c2511aee3f115271f6b3f846091c9d03b7` (that was the shipping module
+on 2026-11-10; the committed audit has since been re-pinned for the trunk module `52dac9ed…`, and the
+Reproducibility section records each re-pin with the numbers it measured).
 
 The recapture moved **no pixels and no measurement**. All 62 committed PNGs hash byte-identically
 before and after the run, and a structural diff of `audit.json` shows exactly three changed values —
@@ -75,6 +77,27 @@ measure **298** AX controls, the worst authored contrast is unchanged at 5.93:1,
 measures **0** animated nodes in the four reduced-motion frames against **70** in full motion. As at
 every earlier re-pin, the regeneration rewrote only `generated_at`, the recorded branch and
 `plugin_sha256`; the measurements and all 62 screenshots reproduced unchanged.
+
+**Re-pin at `d6d85566` (CB-trunk, `6dc7a927`, 2026-11-12).** The CB-trunk frame-rig merge
+(`05056293`, merged as `6dc7a927`) exported four more names from `desktop/src` and rebuilt
+`desktop/plugin.js` to sha256
+`d6d85566fde0a4b79b9c0a04e965ec39e0458e9b227fc448727671258f33ddd5`; the committed audit is pinned to
+it. Unlike every earlier re-pin, this regeneration moved measurements: the 56 non-forced frames
+measure **2,172** text nodes (was 2,120), the 32 frames with an accessibility tree measure **320** AX
+controls (was 298), and C-08 measures **0** animated nodes in the four reduced-motion frames against
+**158** in full motion (was 70). All 15 claims still PASS, worst authored contrast is still 5.93:1,
+and clipping and overflow are still 0. `scripts/m4v-repro-check.py` has **not** been run at this pin;
+the numbers above come from the single generation recorded in
+`audit/visual/m4-visual/audit.json` (`generated_at: 2026-11-12T13:24:40.349Z`).
+
+**Re-pin at `52dac9ed` (Gate 5 artwork, `8eb1f944`, 2026-11-12).** The Gate 5 artwork landing
+(`d73d1d24`, merged as `8eb1f944`) changed the vignette and the fox export ladder and rebuilt
+`desktop/plugin.js` to sha256
+`52dac9ed7d8ff05f744dfabd406bcd2cdef34df6bf94605e3845ea51f9f801f1`. The audit was regenerated for it
+(`generated_at: 2026-11-12T15:29:48.198Z`) and this one **did** reproduce every measurement: comparing
+the committed audit with the `d6d85566` one shows only `generated_at`, `branch` and `plugin_sha256`
+differ, so the numbers on this page (2,172 text nodes, 320 AX controls, 158 animated nodes in full
+motion, 62 frames, 15/15 claims PASS) are the same measurements under a new pin.
 
 The zero-pixel result is a property of this gate's mount, not a claim that `d4d37e2` changed nothing:
 the v3 `--cb3-font-*` variables are set by `CbV3Scope` on the route root, and this harness mounts the
@@ -166,6 +189,10 @@ audio players, text-only, media-unavailable.
 
 ## Verdicts
 
+The claim table below is the release-tree audit at `cd862140` (`b9f4a19`). The trunk audit at
+`52dac9ed` keeps every verdict PASS and re-measures 2,172 text nodes, 320 AX controls and 158
+full-motion animated nodes; the Reproducibility section records that re-pin.
+
 | Claim | Verdict | Evidence (in `audit/visual/m4-visual/audit.json`) |
 |---|---|---|
 | C-01 Paint only from the `--cb-*` token layer | **PASS** | 62/62 frames carry all ten measured tokens; 0 colour literals in authored inline paint; 0 colour literals in `desktop/plugin.js` outside the embedded table; table equals `contracts/cb.tokens.v2.json` |
@@ -235,7 +262,7 @@ non-forced.
 
 Sum check: `−170` (Quest) `+380` (Field Desk) = the `+210` the two records differ by across all 62
 frames; over the 56 non-forced frames the claim counts, `+304 − 170 = +134`, which is `2,282 → 2,416`
-in the `8347331f`/`eed7dc7` record — history here, not the current tree, which measures **2,120** after
+in the `8347331f`/`eed7dc7` record — history here, not the release-tree record, which measures **2,120** after
 the H-183/H-189 learner-copy sweep.
 AX `−11 × 6 = −66` is `364 → 298`; Tab stops `−6 × 6 = −36` is `304 → 268`; images `−1 × 10` and
 audio `−1 × 10` are `60 → 50` and `22 → 12`. No other frame moves any of the four measures.

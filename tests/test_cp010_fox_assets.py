@@ -370,9 +370,9 @@ class BrandSegmentAdoption(unittest.TestCase):
     * the shipped WebP decodes to that painted plate at that size (alpha identical), so the bytes
       cannot quietly come from anywhere else;
     * the generated segment has one key per pose and export, pointing at that file with that hash;
-    * ``cb3FoxSource``/``cb3FoxPixels`` in the built module select 512 at >=416, 256 at >=208,
-      128 at >=128 and 64 below, and ``FoxPose`` renders 208 and 512 from those exports with a
-      1x/2x srcSet;
+    * ``cb3FoxSource``/``cb3FoxPixels`` in the built module serve the smallest export at least 2x
+      the box (208 -> 512, 128 -> 256, 64 -> 128), and ``FoxPose`` renders 208 and 512 from those
+      exports with a 1x/2x srcSet only while a larger export exists;
     * no ``assets/masters/fox`` path is reachable from the manifest, the segment or the module.
     """
 
@@ -384,17 +384,17 @@ class BrandSegmentAdoption(unittest.TestCase):
         start = text.index("Object.freeze(") + len("Object.freeze(")
         cls.assets = json.loads(text[start:text.rindex(");")])["assets"]
 
-    #: The audit's rule (``docs/launch/FOX-ASSET-AUDIT.md`` item 3), stated here independently of
-    #: the module so a silent change to the thresholds is a failure, not a new truth.
+    #: The gate's rule (``docs/launch/VISUAL-QUALITY-PROGRAM.md`` §4 Gate 2, and Atlas's VQ-010
+    #: ruling): the file the module serves must be at least 2x the rendered box. Stated here
+    #: independently of the module so a silent change to the thresholds is a failure, not a new
+    #: truth.
     @staticmethod
     def expected_export(size: int) -> int:
-        if size >= 416:
-            return 512
-        if size >= 208:
-            return 256
-        if size >= 128:
-            return 128
-        return 64
+        need = max(size, 0) * 2
+        for export in (64, 128, 256, 512):
+            if export >= need:
+                return export
+        return 512
 
     def manifest_row(self, pose: str, size: int) -> dict:
         path = "assets/fox/fox-%s-%d.webp" % (pose, size)
@@ -599,35 +599,70 @@ process.stdout.write(JSON.stringify({ exports: mod.CB3_FOX_EXPORTS, probes, imgs
                 self.assertEqual(probe["src"], self.manifest_row("clock", expected)["sha256"],
                                  "a %d px box embedded something other than the %d WebP"
                                  % (size, expected))
-                next_up = next((px for px in (64, 128, 256, 512) if px > expected), 512)
-                self.assertEqual(
-                    [c["descriptor"] for c in probe["srcset"]], ["1x", "2x"],
-                    "a %d px box has no 1x/2x srcSet" % size,
-                )
-                self.assertEqual(
-                    [c["sha"] for c in probe["srcset"]],
-                    [self.manifest_row("clock", expected)["sha256"],
-                     self.manifest_row("clock", next_up)["sha256"]],
-                    "the srcSet candidates are not the %d and %d painted WebPs"
-                    % (expected, next_up),
-                )
+                exports = (64, 128, 256, 512)
+                next_up = next((px for px in exports if px > expected), None)
+                if next_up is None:
+                    self.assertEqual(
+                        probe["srcset"], [],
+                        "a %d px box resolved to the top export must not describe it twice "
+                        "as a 1x/2x pair" % size,
+                    )
+                else:
+                    self.assertEqual(
+                        [c["descriptor"] for c in probe["srcset"]], ["1x", "2x"],
+                        "a %d px box has no 1x/2x srcSet" % size,
+                    )
+                    self.assertEqual(
+                        [c["sha"] for c in probe["srcset"]],
+                        [self.manifest_row("clock", expected)["sha256"],
+                         self.manifest_row("clock", next_up)["sha256"]],
+                        "the srcSet candidates are not the %d and %d painted WebPs"
+                        % (expected, next_up),
+                    )
 
     def test_foxpose_renders_208_and_512_from_the_painted_set(self):
         renders = [{"pose": "wave", "size": 208}, {"pose": "clock", "size": 208},
                    {"pose": "clock", "size": 512}]
         out = self.probe({"pose": "clock", "sizes": [], "renders": renders})
         self.assertEqual(out["wrappers"], [
-            {"pose": "wave", "px": 256},
-            {"pose": "clock", "px": 256},
+            {"pose": "wave", "px": 512},
             {"pose": "clock", "px": 512},
-        ], "FoxPose did not mount the 208 boxes on the 256 export")
-        expected = [("wave", 256), ("clock", 256), ("clock", 512)]
+            {"pose": "clock", "px": 512},
+        ], "FoxPose did not mount the 208 boxes on the 2x export")
+        expected = [("wave", 512), ("clock", 512), ("clock", 512)]
         self.assertEqual(len(out["imgs"]), len(expected))
         for image, (pose, px) in zip(out["imgs"], expected):
             with self.subTest(pose=pose, px=px):
                 self.assertEqual(image["src"], self.manifest_row(pose, px)["sha256"])
-                self.assertEqual([c["descriptor"] for c in image["srcset"]], ["1x", "2x"])
-                self.assertEqual(image["srcset"][0]["sha"], self.manifest_row(pose, px)["sha256"])
+                self.assertEqual(image["srcset"], [],
+                                 "the top export must not be emitted as a degenerate pair")
+
+    def test_every_rendered_fox_box_is_served_at_2x(self):
+        """VQ-010: the capture gate refuses a plate whose natural size is under 2x the box.
+
+        The gate measures the file the module serves at a device pixel ratio of 1, so the base
+        ``src`` — not a srcSet candidate — has to carry the 2x. The boxes below are the ones the
+        product mounts: Home 208, course home 208/128, Classroom 96/88, the specimen sheet 128.
+        A regression to the old "smallest export that is not an upscale" ladder serves 1x and
+        fails here.
+        """
+        sizes = [88, 96, 128, 208]
+        out = self.probe({"pose": "clock", "sizes": sizes, "renders": []})
+        for probe in out["probes"]:
+            size = probe["size"]
+            with self.subTest(size=size):
+                self.assertGreaterEqual(
+                    probe["px"], size * 2,
+                    "a %d px fox box is served the %d px plate, under the gate's 2x rule"
+                    % (size, probe["px"]),
+                )
+        # 512 is the top of the owner-approved export ladder, so a box of 256 or more is served it
+        # and cannot reach 2x. No product surface mounts one (the 512 box is the review proof page
+        # only); a future one would fail the capture gate, which is the correct signal.
+        ceiling = self.probe({"pose": "clock", "sizes": [256, 512], "renders": []})
+        for probe in ceiling["probes"]:
+            with self.subTest(ceiling=probe["size"]):
+                self.assertEqual(probe["px"], 512)
 
 
 class FoxProofPage(unittest.TestCase):
@@ -635,7 +670,7 @@ class FoxProofPage(unittest.TestCase):
 
     ``design/fox-adoption.html`` mounts ``FoxPose`` from ``desktop/plugin.js`` at 208 for the two
     poses the acceptance names. Re-running the generator must reproduce the committed bytes, and
-    the page must actually carry two 208 px boxes resolved to the 256 export.
+    the page must actually carry two 208 px boxes resolved to the 2x export.
     """
 
     PAGE = ROOT / "design" / "fox-adoption.html"
@@ -648,8 +683,8 @@ class FoxProofPage(unittest.TestCase):
                       "the proof page names a module sha that is not desktop/plugin.js")
         self.assertEqual(page.count('style="width:208px;height:208px'), 2,
                          "the proof does not show two 208 px boxes")
-        self.assertGreaterEqual(page.count('data-cb3-fox-export="256"'), 2,
-                                "a 208 px box is not mounted on the 256 export")
+        self.assertGreaterEqual(page.count('data-cb3-fox-export="512"'), 2,
+                                "a 208 px box is not mounted on the 2x export")
         for pose in POSES:
             with self.subTest(pose=pose):
                 self.assertIn('data-cb3-fox="%s"' % pose, page)
