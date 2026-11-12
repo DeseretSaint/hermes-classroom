@@ -215,10 +215,10 @@ class HomeSceneTest(unittest.TestCase):
         self.assertEqual(declaration(two, "top"), "684px")
         self.assertEqual(declaration(two, "height"), "30px")
         tag = css_block(self.source, "data-cb-home-scene-tag")
-        self.assertEqual(declaration(tag, "left"), "880px")
-        self.assertEqual(declaration(tag, "top"), "606px")
-        self.assertEqual(declaration(tag, "width"), "164px")
-        self.assertEqual(declaration(tag, "height"), "88px")
+        self.assertEqual(declaration(tag, "left"), "888px")
+        self.assertEqual(declaration(tag, "top"), "559px")
+        self.assertEqual(declaration(tag, "width"), "148px")
+        self.assertEqual(declaration(tag, "height"), "148px")
         clock = css_block(self.source, "data-cb-home-scene-clock")
         self.assertEqual(declaration(clock, "left"), "1042px")
         self.assertEqual(declaration(clock, "top"), "568px")
@@ -229,6 +229,23 @@ class HomeSceneTest(unittest.TestCase):
         self.assertEqual(declaration(fox, "top"), "481px")
         hero = css_block(self.source, "data-cb-home-scene-hero")
         self.assertEqual(declaration(hero, "top"), "128px")
+
+    def test_the_tag_plate_keeps_the_master_aspect(self) -> None:
+        # VQ-011: the plate paints the square 256x256 tag object, so its box is square and its size
+        # is the single keyword `contain`. A two-value, box-derived size (100% 100% or otherwise)
+        # stretches the kraft body and its rope hole, which is a composition defect, and a plate
+        # colour or box shadow would paint a square behind the object's transparent corners.
+        tag = css_block(self.source, "data-cb-home-scene-tag")
+        self.assertEqual(declaration(tag, "width"), declaration(tag, "height"),
+                         "a non-square box cannot paint the square tag master at its own aspect")
+        size = declaration(tag, "background-size")
+        self.assertEqual(size, "contain", f"the tag plate size must preserve the file's aspect: {size!r}")
+        self.assertEqual(len(size.split()), 1, f"a two-value background-size stretches the plate: {size!r}")
+        self.assertNotIn("%", size)
+        self.assertNotIn("background-color", tag,
+                         "a plate colour paints the transparent corners as a square")
+        self.assertNotIn("box-shadow", tag,
+                         "a box shadow paints a square around the transparent corners")
 
     def test_the_fox_and_clock_stand_on_plank_two_and_do_not_overlap(self) -> None:
         # Scope override item 3: feet and clock base sit on the plank's top edge (+/- 2 px). The card's
