@@ -1398,6 +1398,143 @@ function pronunciationAvailabilityCopy(status) {
   return { tone: 'unavailable', text: `Practice only, not graded. Recording stays off because ${reason}.` }
 }
 
+/**
+ * UI-K13 — a pronunciation score can be disputed.
+ *
+ * `pronunciation.attempt` was called here and `attempt.dispute` covered graded checks, but a
+ * pronunciation measurement had no dispute control at all: the one score a learner is most likely
+ * to disagree with (a recogniser hearing the wrong word) was the one they could not answer.
+ * `pronunciation.dispute` appends the note to the attempt's own record; the verdict, confidence and
+ * evidence class never change, and the reply is shown as evidence (`dispute_id`, `state`) rather
+ * than announced in a toast.
+ */
+function PronunciationDispute({ enrollmentId, attemptId, implemented }) {
+  const supported = Boolean(implemented && typeof implemented.has === 'function' && implemented.has('pronunciation.dispute'))
+  const [open, setOpen] = useState(false)
+  const [note, setNote] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+  const [recorded, setRecorded] = useState(null)
+
+  if (!supported || !attemptId) return null
+
+  const submit = async () => {
+    const text = note.trim()
+    if (text.length < 3) {
+      setError({ code: 'VALIDATION_FAILED', message: 'Write a sentence saying what the recogniser got wrong.' })
+      return
+    }
+    setBusy(true)
+    setError(null)
+    const response = await rpc(
+      'pronunciation.dispute',
+      { enrollment_id: enrollmentId, attempt_id: attemptId, note: text },
+      { idempotencyKey: `cb-pronunciation-dispute-${attemptId}` }
+    )
+    setBusy(false)
+    if (!response || response.ok !== true) {
+      setError(
+        (response && response.error) || {
+          code: 'INTERNAL_ERROR',
+          message: 'The backend did not answer the dispute, so nothing was recorded.'
+        }
+      )
+      return
+    }
+    setRecorded(response.result || {})
+    setNote('')
+    setOpen(false)
+  }
+
+  return jsxs('div', {
+    'data-cb-pronunciation-dispute': recorded ? 'recorded' : open ? 'open' : 'closed',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.3rem' },
+    children: [
+      recorded
+        ? jsxs('div', {
+            'data-cb-pronunciation-dispute-id': recorded.dispute_id || '',
+            style: { display: 'flex', flexDirection: 'column', gap: '0.1rem', fontSize: CB_TYPE.caption, lineHeight: 1.5 },
+            children: [
+              jsx('span', {
+                style: { color: 'var(--cb-ink)' },
+                children: `Dispute recorded and open (${recorded.dispute_id || 'id not returned'}).`
+              }),
+              jsx('span', {
+                style: { color: 'var(--cb-ink-soft)' },
+                children:
+                  'The measurement, its confidence and its evidence class are unchanged. The dispute is appended to the attempt’s record and never replaces it.'
+              })
+            ]
+          })
+        : jsxs('div', {
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem' },
+            children: [
+              jsx(sdk.Button, {
+                variant: 'text',
+                size: 'sm',
+                'data-cb-pronunciation-dispute-open': attemptId,
+                onClick: () => {
+                  setOpen((value) => !value)
+                  setError(null)
+                },
+                children: open ? 'Cancel the dispute' : 'This score looks wrong',
+                'aria-expanded': open ? 'true' : 'false'
+              }),
+              jsx('span', {
+                style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                children: 'The recogniser heard your take; if it heard the wrong word, say so.'
+              })
+            ]
+          }),
+      open && !recorded
+        ? jsxs('div', {
+            style: { display: 'flex', flexDirection: 'column', gap: '0.3rem' },
+            children: [
+              jsx('label', {
+                htmlFor: `cb-pronunciation-dispute-note-${attemptId}`,
+                style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                children: 'What did it get wrong?'
+              }),
+              jsx('textarea', {
+                id: `cb-pronunciation-dispute-note-${attemptId}`,
+                value: note,
+                rows: 2,
+                maxLength: 1000,
+                'data-cb-pronunciation-dispute-note': '',
+                onChange: (event) => setNote(event.target.value),
+                style: {
+                  width: '100%',
+                  maxWidth: '32rem',
+                  fontFamily: CB_SANS,
+                  fontSize: CB_TYPE.meta,
+                  lineHeight: 1.45,
+                  color: 'var(--cb-ink)',
+                  background: 'var(--cb-paper)',
+                  border: '1px solid var(--cb-rule)',
+                  borderRadius: '3px',
+                  padding: '0.35rem 0.45rem'
+                }
+              }),
+              jsx(CbAction, {
+                variant: 'secondary',
+                disabled: busy,
+                onClick: submit,
+                'data-cb-pronunciation-dispute-submit': attemptId,
+                children: busy ? 'Recording the dispute…' : 'Record the dispute'
+              })
+            ]
+          })
+        : null,
+      error
+        ? jsx('div', {
+            'data-cb-pronunciation-dispute-refusal': error.code || 'ERROR',
+            children: jsx(ErrorLine, { error })
+          })
+        : null
+    ]
+  })
+}
+
 function PronunciationStudio({ enrollmentId, objectiveId, revision, locale, block, media, implemented, onSaved }) {
   const target = String((media && media.text_equivalent) || '').trim()
   const preview = useArtifactPreview(media && media.artifact_id)
@@ -1816,6 +1953,11 @@ function PronunciationStudio({ enrollmentId, objectiveId, revision, locale, bloc
                   `Practice measurement by ${assessment.provider}` +
                   `${assessment.model ? ` (${assessment.model})` : ''} — not verified pronunciation and not a graded score.` +
                   `${result.attempt_id ? ` Attempt ${result.attempt_id}.` : ''}`
+              }),
+              jsx(PronunciationDispute, {
+                enrollmentId,
+                attemptId: result.attempt_id || null,
+                implemented
               }),
               jsxs('div', {
                 style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' },

@@ -490,7 +490,20 @@ class HomeSettingsSheetTest(Harness):
         self.assertEqual(opened["scopeLabel"], "On this device")
         self.assertEqual(
             opened["sections"],
-            ["appearance", "default-view", "classroom", "child-safe", "sound", "companion", "haptics", "reduced-motion", "game-feedback"],
+            [
+                "appearance",
+                "default-view",
+                "classroom",
+                "child-safe",
+                "sound",
+                "companion",
+                "haptics",
+                "reduced-motion",
+                "game-feedback",
+                # UI-K13: the generation-usage read-out closes the sheet. It is a record, not a
+                # preference, so it carries no reset control.
+                "usage",
+            ],
         )
         for label in opened["sectionLabels"]:
             self.assertEqual(label["id"], label["headingId"])

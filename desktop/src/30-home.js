@@ -3832,7 +3832,7 @@ function FieldNotesStrip({ notes, courseTitle, current, sections, stale, onOpenS
  * The reset is disabled at the default, so "already at the default" is visible instead of
  * offering a control that would do nothing. Every control fires on change; there is no Save.
  */
-function CbSettingsSection({ id, title, description, resetLabel, atDefault, onReset, children }) {
+function CbSettingsSection({ id, title, description, resetLabel, atDefault, onReset, children, readOnly = false }) {
   return jsxs('section', {
     'data-cb-settings-section': id,
     'aria-labelledby': `cb-settings-${id}`,
@@ -3861,16 +3861,18 @@ function CbSettingsSection({ id, title, description, resetLabel, atDefault, onRe
               },
               children: title
             }),
-            jsx(sdk.Button, {
-              size: 'sm',
-              variant: 'ghost',
-              disabled: Boolean(atDefault),
-              'data-cb-settings-reset': id,
-              'aria-label': resetLabel,
-              style: { minHeight: '44px' },
-              onClick: onReset,
-              children: 'Reset'
-            })
+            readOnly
+              ? null
+              : jsx(sdk.Button, {
+                  size: 'sm',
+                  variant: 'ghost',
+                  disabled: Boolean(atDefault),
+                  'data-cb-settings-reset': id,
+                  'aria-label': resetLabel,
+                  style: { minHeight: '44px' },
+                  onClick: onReset,
+                  children: 'Reset'
+                })
           ]
         },
         'head'
@@ -3880,6 +3882,87 @@ function CbSettingsSection({ id, title, description, resetLabel, atDefault, onRe
         children: description
       }),
       children
+    ]
+  })
+}
+
+/**
+ * UI-K13 — what generation has actually used, on Home settings.
+ *
+ * `usage.summary` had no surface at all: a learner could spend provider calls and never see a
+ * number. It stays quiet (a few caption lines, no card, no chart) and every value is the backend's
+ * own field. A token count the backend did not record reads "not recorded" — never a zero, and
+ * never a total this screen adds up itself. A failed read shows the code and states that no number
+ * is being shown, because a stale or invented usage figure is worse than none.
+ */
+function CbGenerationUsage() {
+  const supported = typeof backendSupports === 'function' ? backendSupports('usage.summary') : true
+  const query = useRpcQuery('usage.summary', {}, 'cb-home-usage', supported)
+  const usage = query.status === 'ready' ? query.data || {} : null
+
+  const count = (value) =>
+    typeof value === 'number' && Number.isFinite(value) ? value.toLocaleString() : 'not recorded'
+  const tokenRows = usage && usage.tokens ? usage.tokens : {}
+
+  return jsxs('div', {
+    'data-cb-usage': query.status,
+    style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0 },
+    children: [
+      !supported
+        ? jsx('p', {
+            'data-cb-usage-unavailable': 'unsupported',
+            style: { margin: 0, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+            children: 'This build does not report generation usage.'
+          })
+        : query.status === 'loading'
+          ? jsx('p', {
+              style: { margin: 0, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+              children: 'Reading the usage record…'
+            })
+          : query.status === 'error'
+            ? jsxs('div', {
+                'data-cb-usage-error': (query.error && query.error.code) || 'ERROR',
+                style: { display: 'flex', flexDirection: 'column', gap: '0.2rem' },
+                children: [
+                  jsx(ErrorLine, { error: query.error }),
+                  jsx('p', {
+                    style: { margin: 0, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+                    children: 'No usage total is shown while this read fails.'
+                  }),
+                  jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: query.reload, children: 'Read it again' })
+                ]
+              })
+            : jsxs('div', {
+                style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', fontSize: CB_TYPE.caption, lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
+                children: [
+                  jsx('div', {
+                    'data-cb-usage-calls': String(usage && typeof usage.calls === 'number' ? usage.calls : ''),
+                    children: `Generation calls: ${count(usage ? usage.calls : null)}`
+                  }),
+                  jsx('div', {
+                    'data-cb-usage-tokens': 'input',
+                    children: `Tokens in: ${count(tokenRows.input)} · out: ${count(tokenRows.output)}`
+                  }),
+                  jsx('div', {
+                    'data-cb-usage-tokens': 'cache',
+                    children: `Cache read: ${count(tokenRows.cache_read)} · cache write: ${count(tokenRows.cache_write)}`
+                  }),
+                  jsx('div', {
+                    'data-cb-usage-artifacts': String(usage && typeof usage.artifacts === 'number' ? usage.artifacts : ''),
+                    children: `Artifacts generated: ${count(usage ? usage.artifacts : null)}`
+                  }),
+                  usage && Array.isArray(usage.unknown_fields) && usage.unknown_fields.length
+                    ? jsx('div', {
+                        'data-cb-usage-unknown': String(usage.unknown_fields.length),
+                        children: `Also recorded, and not read here: ${usage.unknown_fields.join(', ')}.`
+                      })
+                    : null,
+                  jsx('div', {
+                    children:
+                      'A value the backend did not record reads “not recorded”. Nothing on this line is estimated, and no total is added up here.'
+                  })
+                ]
+              })
     ]
   })
 }
@@ -4316,6 +4399,20 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
               })
             },
             'game-feedback'
+          ),
+          // UI-K13: the one quiet usage block. It is a read, not a setting, so it carries no
+          // reset control; it sits last because nothing here changes how a lesson behaves.
+          jsx(
+            CbSettingsSection,
+            {
+              id: 'usage',
+              title: 'Generation usage',
+              description:
+                'What Coursebook’s own generation has used on this profile. A number the backend did not record is shown as not recorded, never as zero.',
+              readOnly: true,
+              children: jsx(CbGenerationUsage, {})
+            },
+            'usage'
           )
         ]
       },

@@ -3476,6 +3476,272 @@ function CourseHomeV3({
 }
 
 /**
+ * UI-K13 — the review queue, with the four scheduling actions `review.action` records.
+ *
+ * A dropped item is **not** a queue row, and cannot be made into one: `coursebook.review._item`
+ * returns `None` once the latest scheduling event is `review_drop`, so `review.queue` omits it
+ * while its stored state still reads `independent_evidence`. Resume is therefore rendered from
+ * `evidence.inspect`, whose layer-1 events carry the scheduler's own `review_drop` /
+ * `review_resume` kinds newest-first — the only read that can say "this objective was taken out of
+ * the queue". That read is bounded by its `limit`, so the paused list is bounded too; it never
+ * claims to be the whole history.
+ *
+ * An objective is *not* dropped because its state is `independent_evidence`: that is also the state
+ * of an overdue objective whose `refresh_due` has not run yet. Only a `review_drop` event with no
+ * later `review_resume` makes a row a dropped one, so snooze / stretch / drop stay on every due row.
+ */
+const REVIEW_SCHEDULE_COPY = Object.freeze({
+  snooze: { label: 'Snooze', hint: 'Start the interval again from today.' },
+  stretch: { label: 'Stretch', hint: 'Wait one interval longer before this returns.' },
+  drop: { label: 'Drop', hint: 'Take it out of the review queue. The evidence stays.' },
+  resume: { label: 'Resume', hint: 'Put this section back in the review queue.' }
+})
+
+const REVIEW_QUEUE_ACTIONS = Object.freeze(['snooze', 'stretch', 'drop'])
+const REVIEW_RESUME_ACTIONS = Object.freeze(['resume'])
+
+/** The two layer-1 event kinds that change whether an objective is in the queue at all. */
+const REVIEW_SCHEDULING_EVENTS = Object.freeze(['review_drop', 'review_resume'])
+
+function reviewDueLabel(value) {
+  if (!value) return 'no due date recorded'
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return String(value)
+  return parsed.toISOString().slice(0, 10)
+}
+
+/**
+ * The objectives a learner has taken out of the review queue, derived from `evidence.inspect`.
+ *
+ * One row per objective whose newest scheduling event is `review_drop`. A later `review_resume`
+ * cancels it, so a resumed objective never appears here. Titles come from the same read's layer 2;
+ * an objective whose title is not in the bounded read keeps its id instead of inventing a name.
+ */
+function reviewPausedItems(evidence) {
+  const l1 = (evidence && evidence.l1) || {}
+  const events = Array.isArray(l1.events) ? l1.events : []
+  const l2 = (evidence && evidence.l2) || {}
+  const objectives = new Map()
+  for (const objective of Array.isArray(l2.objectives) ? l2.objectives : []) {
+    if (objective && objective.objective_id) objectives.set(objective.objective_id, objective)
+  }
+  // Newest first. The backend already orders the read that way; sorting defensively means a caller
+  // that reorders the list cannot flip a resumed objective back to "dropped".
+  const scheduling = events
+    .map((event, index) => ({ event, index }))
+    .filter(({ event }) => event && event.objective_id && REVIEW_SCHEDULING_EVENTS.includes(event.kind))
+    .sort((a, b) => {
+      const left = Date.parse(a.event.created_at)
+      const right = Date.parse(b.event.created_at)
+      if (Number.isFinite(left) && Number.isFinite(right) && left !== right) return right - left
+      return a.index - b.index
+    })
+  const newest = new Map()
+  for (const { event } of scheduling) {
+    if (!newest.has(event.objective_id)) newest.set(event.objective_id, event)
+  }
+  const rows = []
+  for (const [objectiveId, event] of newest) {
+    if (event.kind !== 'review_drop') continue
+    const objective = objectives.get(objectiveId) || null
+    const ordinal = objective && typeof objective.ordinal === 'number' ? objective.ordinal : null
+    rows.push({
+      objective_id: objectiveId,
+      title: (objective && objective.title) || objectiveId,
+      state: (objective && objective.state) || null,
+      ordinal,
+      dropped_at: event.created_at || null,
+      due_at: null,
+      overdue: false
+    })
+  }
+  rows.sort((a, b) => (Number(a.ordinal) || 0) - (Number(b.ordinal) || 0))
+  return rows
+}
+
+/**
+ * The queue panel: the rows `review.queue` says are due, then the rows `evidence.inspect` says were
+ * taken out of the queue. Both lists call the same method and both show its answer as evidence.
+ */
+function ReviewDuePanel({ enrollmentId, revision, review, evidence, onRecorded, onOpenSection }) {
+  const dueRows = (review && Array.isArray(review.items) ? review.items : []).filter(
+    (item) => item && (item.overdue || item.state === 'review_due')
+  )
+  const pausedRows = reviewPausedItems(evidence)
+  const rows = [
+    ...dueRows.map((item) => ({ item, paused: false })),
+    ...pausedRows.map((item) => ({ item, paused: true }))
+  ]
+  const [pending, setPending] = useState(null)
+  const [outcomes, setOutcomes] = useState({})
+  const [error, setError] = useState(null)
+
+  const act = useCallback(
+    async (item, action) => {
+      const objectiveId = item && item.objective_id
+      if (!objectiveId) return
+      setPending(`${objectiveId}:${action}`)
+      setError(null)
+      // One logical action at one revision is one operation: a double click replays the stored
+      // result instead of writing a second scheduling event.
+      const response = await rpc(
+        'review.action',
+        { enrollment_id: enrollmentId, objective_id: objectiveId, action },
+        {
+          expectedRevision: Number(revision) || 0,
+          idempotencyKey: `cb-review-${objectiveId}-${action}-${Number(revision) || 0}`
+        }
+      )
+      setPending(null)
+      if (!response || response.ok !== true) {
+        setError(
+          (response && response.error) || {
+            code: 'INTERNAL_ERROR',
+            message: 'The backend did not answer the review action, so nothing here changed.'
+          }
+        )
+        const current = response && response.error ? staleRevision(response) : null
+        if (current !== null) onRecorded && onRecorded(current)
+        return
+      }
+      const result = response.result || {}
+      setOutcomes((previous) => ({
+        ...previous,
+        [objectiveId]: {
+          action: result.action || action,
+          state: result.state || null,
+          due_at: result.due_at !== undefined ? result.due_at : null,
+          recorded_at: result.recorded_at || null
+        }
+      }))
+      if (onRecorded && typeof response.revision === 'number') onRecorded(response.revision)
+    },
+    [enrollmentId, revision, onRecorded]
+  )
+
+  if (rows.length === 0) return null
+
+  return jsxs('div', {
+    'data-cb-review-queue': String(rows.length),
+    'data-cb-review-paused-count': String(pausedRows.length),
+    style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: 0 },
+    children: [
+      rows.slice(0, 8).map(({ item, paused }) => {
+        const objectiveId = item.objective_id
+        const actions = paused ? REVIEW_RESUME_ACTIONS : REVIEW_QUEUE_ACTIONS
+        const outcome = outcomes[objectiveId] || null
+        const busyRow = pending !== null && String(pending).startsWith(`${objectiveId}:`)
+        const stateLine = paused
+          ? `${OBJECTIVE_STATE_COPY[item.state] || item.state || 'State not recorded'} · dropped ${reviewDueLabel(item.dropped_at)}`
+          : `${OBJECTIVE_STATE_COPY[item.state] || item.state || 'State not recorded'} · due ${reviewDueLabel(item.due_at)}`
+        return jsxs(
+          'div',
+          {
+            'data-cb-review-item': objectiveId,
+            'data-cb-review-state': item.state || 'unknown',
+            'data-cb-review-paused': paused ? 'true' : 'false',
+            style: {
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.25rem',
+              padding: '0.4rem 0',
+              borderTop: '1px solid var(--cb-rule)',
+              minWidth: 0
+            },
+            children: [
+              jsxs('div', {
+                style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.3rem 0.6rem', minWidth: 0 },
+                children: [
+                  jsx('span', {
+                    style: { fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-ink)', overflowWrap: 'anywhere' },
+                    children: item.title || 'Untitled section'
+                  }),
+                  jsx('span', {
+                    style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                    children: stateLine
+                  }),
+                  onOpenSection && objectiveId
+                    ? jsx(sdk.Button, {
+                        variant: 'text',
+                        size: 'sm',
+                        onClick: () => onOpenSection(objectiveId),
+                        children: 'Open section'
+                      })
+                    : null
+                ]
+              }),
+              jsxs('div', {
+                style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem' },
+                children: [
+                  jsx('span', {
+                    style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                    children: paused
+                      ? 'You took this out of the queue. Resume puts it back.'
+                      : 'Decide when this comes back.'
+                  }),
+                  actions.map((action) =>
+                    jsx(
+                      sdk.Button,
+                      {
+                        variant: 'text',
+                        size: 'sm',
+                        'data-cb-review-action': action,
+                        'data-cb-review-target': objectiveId,
+                        disabled: busyRow,
+                        title: REVIEW_SCHEDULE_COPY[action].hint,
+                        onClick: () => act(item, action),
+                        children:
+                          pending === `${objectiveId}:${action}`
+                            ? `${REVIEW_SCHEDULE_COPY[action].label}…`
+                            : REVIEW_SCHEDULE_COPY[action].label
+                      },
+                      action
+                    )
+                  )
+                ]
+              }),
+              outcome
+                ? jsxs('div', {
+                    'data-cb-review-outcome': `${outcome.action}:${outcome.state || 'unknown'}`,
+                    style: { fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink)' },
+                    children: [
+                      `${REVIEW_SCHEDULE_COPY[outcome.action] ? REVIEW_SCHEDULE_COPY[outcome.action].label : outcome.action} recorded. `,
+                      `State now ${OBJECTIVE_STATE_COPY[outcome.state] || outcome.state || 'not recorded'}; `,
+                      `next due ${reviewDueLabel(outcome.due_at)}; `,
+                      `recorded ${whenLabel(outcome.recorded_at)}.`
+                    ]
+                  })
+                : null
+            ]
+          },
+          objectiveId
+        )
+      }),
+      error
+        ? jsxs('div', {
+            'data-cb-review-refusal': error.code || 'ERROR',
+            style: { display: 'flex', flexDirection: 'column', gap: '0.15rem' },
+            children: [
+              jsx(ErrorLine, {
+                error: {
+                  ...error,
+                  message: `${error.message || describeError(error)} The queue is unchanged; read it again before retrying.`
+                }
+              }),
+              jsx(sdk.Button, {
+                variant: 'text',
+                size: 'sm',
+                onClick: () => onRecorded && onRecorded(Number(revision) || 0),
+                children: 'Read the queue again'
+              })
+            ]
+          })
+        : null
+    ]
+  })
+}
+
+/**
  * Course detail — the durable page for one enrollment.
  *
  * Local tabs, not more sidebar destinations. At wide widths the view switcher is a segmented
@@ -3528,10 +3794,15 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
   )
   const evidence = useRpcQuery(
     'evidence.inspect',
-    { enrollment_id: row.enrollment_id, limit: 100 },
+    // The contract's own maximum: the review panel derives its paused rows from this read's
+    // layer-1 events, so a short window would hide a drop the learner can still undo.
+    { enrollment_id: row.enrollment_id, limit: 200 },
     `evidence-${row.enrollment_id}`,
     supports('evidence.inspect')
   )
+  // UI-K13: `review.queue` cannot return a dropped objective, so the resume door reads the
+  // scheduler's own drop/resume events out of the evidence bundle this page already holds.
+  const pausedReview = reviewPausedItems(evidence.data)
   // H-174: the section whose page this screen is about. The backend's current objective wins; a
   // course whose plan exists but whose evidence is empty opens on the plan's mainline section, so
   // the hero can answer "is there a readable page here?" instead of guessing from an absent id.
@@ -4125,23 +4396,60 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
             children: `You are reading ${((moreTabs.find((option) => option.id === view) || {}).label || viewLabel).toLowerCase()} from More. Overview, Learn, Notebook and Evidence stay one click away above.`
           })
         : null,
-      review.data && review.data.total_overdue > 0 && view !== 'overview'
+      // UI-K13: the queue itself, with the four scheduling actions `review.action` records. Due
+      // rows are the `review.queue` read this banner counted; paused rows are derived from the
+      // `evidence.inspect` read this page already holds, because a dropped objective is absent
+      // from `review.queue` by construction. Rendered on Overview too, so the row controls are on
+      // the page a learner lands on.
+      ((review.data && review.data.total_overdue > 0) || pausedReview.length > 0) &&
+      (view !== 'overview' || supports('review.action'))
         ? jsx(CheckPanelFrame, {
             kind: 'check',
             label: 'Review due',
             children: jsxs('div', {
-              style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' },
+              style: { display: 'flex', flexDirection: 'column', gap: '0.4rem' },
               children: [
-                jsx('span', {
-                  style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink)' },
-                  children: `${review.data.total_overdue} ${review.data.total_overdue === 1 ? 'section is' : 'sections are'} due for review.`
+                jsxs('div', {
+                  style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' },
+                  children: [
+                    jsx('span', {
+                      style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink)' },
+                      children: [
+                        review.data && review.data.total_overdue > 0
+                          ? `${review.data.total_overdue} ${review.data.total_overdue === 1 ? 'section is' : 'sections are'} due for review.`
+                          : 'Nothing is due for review right now.',
+                        pausedReview.length > 0
+                          ? ` ${pausedReview.length} ${pausedReview.length === 1 ? 'section is' : 'sections are'} out of the queue.`
+                          : ''
+                      ].join('')
+                    }),
+                    review.data && review.data.total_overdue > 0 && view !== 'overview'
+                      ? jsx(sdk.Button, {
+                          variant: 'text',
+                          size: 'sm',
+                          onClick: () => selectView('overview'),
+                          children: 'See what is due'
+                        })
+                      : null
+                  ]
                 }),
-                jsx(sdk.Button, {
-                  variant: 'text',
-                  size: 'sm',
-                  onClick: () => selectView('overview'),
-                  children: 'See what is due'
-                })
+                supports('review.action')
+                  ? jsx(ReviewDuePanel, {
+                      enrollmentId: row.enrollment_id,
+                      revision,
+                      review: review.data,
+                      evidence: evidence.data,
+                      onRecorded: (nextRevision) => {
+                        if (typeof nextRevision === 'number') setRevision(nextRevision)
+                        review.reload()
+                        evidence.reload()
+                      },
+                      onOpenSection: (objectiveId) => {
+                        setView('textbook')
+                        setOpenSectionId(objectiveId)
+                      }
+                    })
+                  : null
               ]
             })
           })

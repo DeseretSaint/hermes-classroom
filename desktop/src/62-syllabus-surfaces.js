@@ -131,10 +131,137 @@ function SyllabusWeekRow({ week, onAnchor }) {
 }
 
 /**
+ * UI-K13 — an imported syllabus can be removed.
+ *
+ * Intake could start, parse, align and review, and never undo: `syllabus.delete` had no caller, so
+ * a file imported by mistake stayed on the profile forever. The removal is two-step on purpose
+ * (this deletes the parse, its blocks and its alignments), and the answer is shown as evidence —
+ * the backend's own `deleted: true` — before the surface closes. The refusal path matters more than
+ * the happy one: a syllabus bound to a live companion course answers `SYLLABUS_IN_USE` with the
+ * course ids, and this control shows them instead of pretending the file is gone.
+ */
+function SyllabusRemoveControl({ syllabusId, onRemoved }) {
+  const [stage, setStage] = useState('idle')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+  const [deleted, setDeleted] = useState(false)
+
+  if (!syllabusId) return null
+
+  const remove = async () => {
+    setBusy(true)
+    setError(null)
+    // No idempotency key: `syllabus.delete` is not replay-safe (the row is gone on the second
+    // call), and this control disables itself while the call is in flight.
+    const response = await rpc('syllabus.delete', { syllabus_id: syllabusId })
+    setBusy(false)
+    if (!response || response.ok !== true) {
+      setStage('idle')
+      setError(
+        (response && response.error) || {
+          code: 'INTERNAL_ERROR',
+          message: 'The backend did not answer the removal, so the syllabus is still here.'
+        }
+      )
+      return
+    }
+    setDeleted(true)
+  }
+
+  const courseIds =
+    error && error.details && Array.isArray(error.details.course_ids) ? error.details.course_ids : []
+
+  return jsxs('div', {
+    'data-cb-syllabus-remove': deleted ? 'deleted' : stage,
+    style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0 },
+    children: [
+      deleted
+        ? jsxs('div', {
+            style: { display: 'flex', flexDirection: 'column', gap: '0.3rem' },
+            children: [
+              jsx('div', {
+                'data-cb-syllabus-remove-evidence': 'deleted',
+                style: { fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink)' },
+                children: `Removed. The backend answered deleted: true for ${syllabusId}; its parse, blocks and alignments are gone.`
+              }),
+              // The evidence stays on screen until the reader dismisses it; leaving immediately
+              // would turn a recorded deletion into a toast.
+              onRemoved
+                ? jsx(sdk.Button, {
+                    variant: 'secondary',
+                    size: 'sm',
+                    'data-cb-syllabus-remove-done': syllabusId,
+                    onClick: () => onRemoved({ deleted: true, syllabus_id: syllabusId }),
+                    children: 'Back to the syllabus door'
+                  })
+                : null
+            ]
+          })
+        : stage === 'confirm'
+          ? jsxs('div', {
+              style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem' },
+              children: [
+                jsx('span', {
+                  style: { fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink)' },
+                  children: 'Remove this imported syllabus? Its parsed blocks and any alignment are deleted and cannot be restored.'
+                }),
+                jsx(sdk.Button, {
+                  variant: 'secondary',
+                  size: 'sm',
+                  disabled: busy,
+                  'data-cb-syllabus-remove-confirm': syllabusId,
+                  onClick: remove,
+                  children: busy ? 'Removing…' : 'Yes, remove it'
+                }),
+                jsx(sdk.Button, {
+                  variant: 'text',
+                  size: 'sm',
+                  disabled: busy,
+                  onClick: () => {
+                    setStage('idle')
+                    setError(null)
+                  },
+                  children: 'Keep it'
+                })
+              ]
+            })
+          : jsx(sdk.Button, {
+              variant: 'text',
+              size: 'sm',
+              'data-cb-syllabus-remove-start': syllabusId,
+              onClick: () => {
+                setStage('confirm')
+                setError(null)
+              },
+              children: 'Remove this syllabus'
+            }),
+      error
+        ? jsxs('div', {
+            'data-cb-syllabus-remove-refusal': error.code || 'ERROR',
+            style: { display: 'flex', flexDirection: 'column', gap: '0.1rem' },
+            children: [
+              jsx(ErrorLine, { error }),
+              courseIds.length
+                ? jsx('span', {
+                    style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', overflowWrap: 'anywhere' },
+                    children: `Still used by: ${courseIds.join(', ')}. Archive or delete that course first; nothing was removed here.`
+                  })
+                : jsx('span', {
+                    style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                    children: 'Nothing was removed.'
+                  })
+            ]
+          })
+        : null
+    ]
+  })
+}
+
+/**
  * The parse review: course facts, outcomes, weeks, assessments, then what the file does not
  * state. The coverage line is measured by the backend; the sentence is the design's own.
  */
-function SyllabusParseReview({ parsed, blocks, onContinue, onBack, onReparse, busy, continueLabel }) {
+function SyllabusParseReview({ parsed, blocks, onContinue, onBack, onReparse, busy, continueLabel, onRemoved }) {
   const [anchor, setAnchor] = useState(null)
   const document = parsed && parsed.document ? parsed.document : parsed || {}
   const fields = syllabusCourseFields(document)
@@ -235,6 +362,13 @@ function SyllabusParseReview({ parsed, blocks, onContinue, onBack, onReparse, bu
       jsxs('div', { className: 'flex flex-wrap items-center gap-2 border-t border-(--ui-stroke-tertiary) pt-3', children: [
         jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: onBack, children: 'Back' }),
         onReparse ? jsx(sdk.Button, { size: 'sm', variant: 'ghost', onClick: onReparse, disabled: Boolean(busy), children: 'Read it again' }) : null,
+        // UI-K13: undo an import. It sits with the secondary actions, never beside the primary.
+        onRemoved
+          ? jsx(SyllabusRemoveControl, {
+              syllabusId: (parsed && parsed.syllabus_id) || null,
+              onRemoved
+            })
+          : null,
         jsx(CbAction, {
           variant: 'primary',
           disabled: Boolean(busy) || needsReview,
@@ -1119,6 +1253,12 @@ function SyllabusParseStage({ syllabus, jobId, parsed, revisionOnly, onParsed, o
     busy: Boolean(busy),
     continueLabel: revisionOnly ? 'Check the new version' : null,
     onBack: onCancel,
+    // UI-K13: a syllabus imported by mistake can be removed from the surface that read it. The
+    // removal deletes the parse; this flow then returns to the entry point instead of leaving the
+    // sheet on a document that no longer exists.
+    onRemoved: () => {
+      onCancel && onCancel()
+    },
     onContinue: () => {
       if (revisionOnly) {
         // A new revision is not a new course: the parse is recorded, the mapping is now stale, and
