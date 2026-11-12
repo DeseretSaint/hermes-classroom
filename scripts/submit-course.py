@@ -287,6 +287,27 @@ def _push(work: Path, remote: str, branch: str) -> tuple[subprocess.CompletedPro
     return forked, f"{login}:{branch}"
 
 
+def _index_command(work: Path) -> list[str]:
+    """The command that rebuilds ``work``'s index with the *installed* builder.
+
+    ``scripts/store_index.py`` resolves its own checkout first and inserts it on ``sys.path``
+    before importing ``coursebook``. Running the fetched tree's copy would therefore execute
+    whatever is on the base branch that day — code from outside the reviewed pin — on the user's
+    machine. So run this checkout's script and move only the data root with ``--root``.
+
+    Never ``CB_STORE_ROOT``: that variable is inserted on ``sys.path`` by the builder, which is
+    exactly the unreviewed-code path this avoids. ``--root`` rebinds the store paths after the
+    import has already come from the installed copy.
+    """
+    builder = (ROOT / "scripts" / "store_index.py").resolve()
+    if builder.parent.parent == work.resolve():
+        raise SystemExit(
+            "the store index builder resolved inside the fetched worktree; refusing to run "
+            "code that is not the installed review pin"
+        )
+    return [sys.executable, str(builder), "--root", str(work)]
+
+
 def _publish_from_worktree(
     work: Path, archive_path: Path, pack_id: str, manifest: dict[str, Any],
     archive_sha: str, ledger: dict[str, Any], *, derived_from: str | None, base: str,
@@ -296,7 +317,7 @@ def _publish_from_worktree(
     destination = work / "store" / "packs" / f"{pack_id}.zip"
     destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(archive_path, destination)
-    _run([sys.executable, str(work / "scripts" / "store_index.py")], cwd=work)
+    _run(_index_command(work), cwd=work)
     indexed = _store_index(work)
     if not any(str(row.get("pack_id")) == pack_id for row in indexed.get("packs") or []):
         raise SystemExit(f"{pack_id} was not indexed after submission; the store is inconsistent")
