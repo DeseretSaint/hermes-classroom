@@ -1337,12 +1337,97 @@ def review_export_tree(manifest: Mapping[str, Any], files: Mapping[str, bytes]) 
     return entries
 
 
+#: The one refusal a fine-tuned pack-backed course gets from ``pack.export``. The surface prints
+#: this sentence verbatim (``<code>: <message>``), so it names both the reason and the way out.
+PACK_EXPORT_REVISED_COURSE = (
+    "this course has author edits that the installed pack does not contain, so exporting the pack "
+    "now would ship its original pages instead of the course on screen. Nothing was exported. "
+    "Undo the edit (plan.undo) to export the pack exactly as published; this build has no "
+    "detach-from-pack export and cannot export an edited pack-backed course as authored content, "
+    "so the edits stay in the course until that path exists."
+)
+
+
+def course_pack_divergence(
+    connection: sqlite3.Connection, course: Any, manifest: Mapping[str, Any]
+) -> dict[str, Any] | None:
+    """Whether a pack-backed course's own state has moved away from the installed pack.
+
+    ``pack.export`` rebuilds the installed pack's stored manifest and bytes; it never composes the
+    course. A fine-tune (``plan.edit``/``plan.undo``, or a lesson revision) changes the course
+    without touching those bytes, so a blind export would ship the pre-edit lesson under the
+    post-edit course. This is the read that catches that.
+
+    The test is **content**, not bookkeeping: a course whose current objectives and criteria equal
+    what the pack declared still exports even after an edit was undone, because the archive then
+    describes the course again. ``None`` means the pack bytes still describe this course.
+
+    A ``lesson_revisions`` row is always divergence: a page revision replaces the section's served
+    page and no undo exists for it, so the pack's file can never describe the course again. An
+    imported course has no generation staging in this build, so ``lesson.revise`` cannot currently
+    write one; the check is kept so a future revision path cannot silently reopen this hole.
+    """
+    lesson_revisions = int(
+        connection.execute(
+            "SELECT COUNT(*) AS n FROM lesson_revisions WHERE course_id = ?", (str(course["id"]),)
+        ).fetchone()["n"]
+    )
+    plan = authoring.current_plan(connection, str(course["id"]))
+    objective_rows = []
+    if plan is not None:
+        objective_rows = connection.execute(
+            "SELECT id, ordinal, title, evidence_target, evidence_criteria_json FROM objectives"
+            " WHERE plan_id = ? ORDER BY ordinal",
+            (plan["id"],),
+        ).fetchall()
+    expected = sorted(manifest.get("objectives") or [], key=lambda item: int(item["ordinal"]))
+    changed: list[str] = []
+    if len(objective_rows) != len(expected):
+        changed.append("objective count")
+    else:
+        for row, objective in zip(objective_rows, expected):
+            if int(row["ordinal"]) != int(objective["ordinal"]):
+                changed.append(f"objective {int(objective['ordinal'])} ordinal")
+                continue
+            if str(row["title"]) != str(objective["title"]):
+                changed.append(f"objective {int(objective['ordinal'])} title")
+            if str(row["evidence_target"]) != str(objective["evidence_target"]):
+                changed.append(f"objective {int(objective['ordinal'])} evidence target")
+            stored = json.loads(row["evidence_criteria_json"] or "[]")
+            if stored != objective_criteria(objective, recipe=str(manifest["recipe"])):
+                changed.append(f"objective {int(objective['ordinal'])} criteria")
+    if not changed and not lesson_revisions:
+        return None
+    return {
+        "changed": changed[:20],
+        "lesson_revisions": lesson_revisions,
+        "plan_id": str(plan["id"]) if plan is not None else None,
+    }
+
+
+def _revised_course_refusal(course: Any, manifest: Mapping[str, Any], divergence: Mapping[str, Any]) -> RpcError:
+    """The typed refusal, with the same details from the pre-write and adopt-time checks."""
+    return RpcError.of(
+        "POLICY_VIOLATION",
+        PACK_EXPORT_REVISED_COURSE,
+        reason="course_has_revisions",
+        course_id=str(course["id"]),
+        pack_id=str(manifest["pack_id"]),
+        pack_version=str(manifest["pack_version"]),
+        **divergence,
+    )
+
+
 def pack_export(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
     """``pack.export``: rebuild the pack from its stored content and record an export artifact.
 
     The exported document is assembled field-by-field from :func:`coursebook.packs.export_allowlist`,
     so no transcript, attempt, notebook entry, provider setting or path can ride along. The
     returned ``content_hash`` is recomputed from the written archive.
+
+    A course whose own edits no longer match the installed pack refuses with
+    ``reason: course_has_revisions`` instead of shipping the pre-edit bytes
+    (:func:`course_pack_divergence`); nothing is written and no artifact is recorded.
     """
     db.ensure_schema()
     options = export_options(payload.get("options"))
@@ -1378,6 +1463,14 @@ def pack_export(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
     problems = packs.audit_bundle(library().path_for(pack_id, version))
     if problems:
         raise _rejected("pack content audit failed before export: " + "; ".join(problems), "content_audit_failed")
+
+    # A pack is immutable published content, but the course over it is not: a fine-tune moves the
+    # course while these bytes stay put. Refuse before a single file is written rather than
+    # shipping the pre-edit lesson under the post-edit course.
+    with db.read() as connection:
+        divergence = course_pack_divergence(connection, course, manifest)
+    if divergence is not None:
+        raise _revised_course_refusal(course, manifest, divergence)
 
     try:
         document, exported = packs.build_export(manifest, files)
@@ -1421,56 +1514,75 @@ def pack_export(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
 
     size = destination.stat().st_size
     file_digest = "sha256:" + hashlib.sha256(destination.read_bytes()).hexdigest()
-    with db.transaction() as connection:
-        # ``artifacts`` is unique on (content_hash, kind): a second export of unchanged bytes is
-        # the same artifact, not a new one. Reuse the row and count the reference; only content
-        # that actually changed produces a new digest and therefore a new row.
-        existing = _row(
-            connection,
-            "SELECT * FROM artifacts WHERE content_hash IN (?, ?) AND kind = 'export'",
-            artifacts.hash_forms(file_digest),
-        )
-        if existing is not None:
-            artifact_id = str(existing["id"])
-            recorded = Path(str(existing["path"]))
-            if not recorded.is_file() or recorded.stat().st_size != size:
-                # The row outlived its file (reconciliation, manual cleanup): repoint it at the
-                # archive just verified, so a reused artifact always resolves to real bytes.
-                connection.execute(
-                    "UPDATE artifacts SET path = ?, bytes = ?, ref_count = ref_count + 1 WHERE id = ?",
-                    (str(destination), size, artifact_id),
-                )
-            else:
-                connection.execute(
-                    "UPDATE artifacts SET ref_count = ref_count + 1 WHERE id = ?", (artifact_id,)
-                )
-        else:
-            artifact_id = _new_id("art")
-            connection.execute(
-                "INSERT INTO artifacts (id, course_id, kind, content_hash, path, bytes, mime, provenance_json,"
-                " ref_count, created_at) VALUES (?, ?, 'export', ?, ?, ?, 'application/zip', ?, 1, ?)",
-                (
-                    artifact_id,
-                    course["id"],
-                    artifacts.labelled_hash(file_digest),
-                    str(destination),
-                    size,
-                    json.dumps(
-                        {
-                            "generator": "coursebook.pack_flow",
-                            "model": None,
-                            "prompt_hash": None,
-                            "source_ids": [],
-                            "notes": (
-                                f"export of {pack_id} {version} from enrollment {enrollment['id']}; "
-                                f"pack content_hash {document['content_hash']}"
-                            ),
-                        },
-                        sort_keys=True,
-                    ),
-                    _now(),
-                ),
+    try:
+        with db.transaction() as connection:
+            # Re-ask the revision question against storage: a plan edit may have landed while the
+            # archive was being written, and these bytes must not outlive that answer.
+            fresh_course = _row(connection, "SELECT * FROM courses WHERE id = ?", (course["id"],))
+            if fresh_course is None:
+                raise RpcError.of("NOT_FOUND", "course not found", course_id=str(course["id"]))
+            fresh_divergence = course_pack_divergence(connection, fresh_course, manifest)
+            if fresh_divergence is not None:
+                raise _revised_course_refusal(fresh_course, manifest, fresh_divergence)
+            # ``artifacts`` is unique on (content_hash, kind): a second export of unchanged bytes is
+            # the same artifact, not a new one. Reuse the row and count the reference; only content
+            # that actually changed produces a new digest and therefore a new row.
+            existing = _row(
+                connection,
+                "SELECT * FROM artifacts WHERE content_hash IN (?, ?) AND kind = 'export'",
+                artifacts.hash_forms(file_digest),
             )
+            if existing is not None:
+                artifact_id = str(existing["id"])
+                recorded = Path(str(existing["path"]))
+                if not recorded.is_file() or recorded.stat().st_size != size:
+                    # The row outlived its file (reconciliation, manual cleanup): repoint it at the
+                    # archive just verified, so a reused artifact always resolves to real bytes.
+                    connection.execute(
+                        "UPDATE artifacts SET path = ?, bytes = ?, ref_count = ref_count + 1 WHERE id = ?",
+                        (str(destination), size, artifact_id),
+                    )
+                else:
+                    connection.execute(
+                        "UPDATE artifacts SET ref_count = ref_count + 1 WHERE id = ?", (artifact_id,)
+                    )
+            else:
+                artifact_id = _new_id("art")
+                connection.execute(
+                    "INSERT INTO artifacts (id, course_id, kind, content_hash, path, bytes, mime, provenance_json,"
+                    " ref_count, created_at) VALUES (?, ?, 'export', ?, ?, ?, 'application/zip', ?, 1, ?)",
+                    (
+                        artifact_id,
+                        course["id"],
+                        artifacts.labelled_hash(file_digest),
+                        str(destination),
+                        size,
+                        json.dumps(
+                            {
+                                "generator": "coursebook.pack_flow",
+                                "model": None,
+                                "prompt_hash": None,
+                                "source_ids": [],
+                                "notes": (
+                                    f"export of {pack_id} {version} from enrollment {enrollment['id']}; "
+                                    f"pack content_hash {document['content_hash']}"
+                                ),
+                            },
+                            sort_keys=True,
+                        ),
+                        _now(),
+                    ),
+                )
+    except RpcError:
+        # A refusal adopts nothing. Drop the archive this call staged, unless a previous export
+        # already points at these exact bytes (then the file is that artifact's, not ours).
+        with db.read() as connection:
+            holder = connection.execute(
+                "SELECT 1 FROM artifacts WHERE path = ? LIMIT 1", (str(destination),)
+            ).fetchone()
+        if holder is None:
+            destination.unlink(missing_ok=True)
+        raise
     return 0, {
         "artifact_id": artifact_id,
         "content_hash": str(document["content_hash"]),

@@ -5790,6 +5790,16 @@ def lesson_revise(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[in
                 "a lesson revision needs an approved plan; approve the plan first.",
                 reason="plan_not_approved", plan_id=str(plan["id"]), state=str(plan["state"]),
             )
+        # The section must be a *generated* section: `gen_plan_documents` and `gen_lessons` are
+        # created lazily by the generation pipeline, so a pack-backed course (which has no
+        # generated staging at all) would otherwise answer INTERNAL_ERROR from a missing table
+        # instead of the typed NOT_FOUND a wrong section id already gets on a generated course.
+        if _row(
+            connection,
+            "SELECT 1 AS present FROM gen_plan_sections WHERE id = ? AND plan_id = ?",
+            (str(payload["section_id"]), str(plan["id"])),
+        ) is None:
+            raise _not_found("section lesson", str(payload["section_id"]))
         digest = authoring.generation_plan_hash(connection, str(plan["id"]), str(plan["plan_hash"] or ""))
         lesson = _latest_section_lesson(connection, str(plan["id"]), digest, str(payload["section_id"]))
         if lesson is None:

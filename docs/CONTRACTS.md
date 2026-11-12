@@ -1641,6 +1641,7 @@ Documented sub-reasons at v4 (not exhaustive of every emitter, but the ones a cl
 | `cost_preflight_insufficient` | `POLICY_VIOLATION` | `jobs.create` preflight refuses a ceiling that cannot pay the plan minimum; no job row is created. |
 | `plan_empty`, `plan_not_validated` | `VALIDATION_FAILED` | plan approval and edit fences in `domain.py`. |
 | `course_not_pack_backed`, `export_not_exportable` | `POLICY_VIOLATION` | `pack_flow` export gates; `problems` carries the per-question detail. |
+| `course_has_revisions` | `POLICY_VIOLATION` | `pack.export` when the course's own edits (objectives or a lesson revision) are not in the installed pack; `changed[]`, `lesson_revisions` and the pack identity ride along, and the message names `plan.undo` as the way back (CP-015g residual, no wire change). |
 
 The same naming rule applies to `jobs.checkpoint` labels, which are also an open object
 (`maxProperties: 40`): `cost_ceiling_exceeded`, `checkpoint_serializer_failed`.
@@ -2368,6 +2369,94 @@ Regression guard: `tests/test_h194_fine_tune.py::ExportedPageRevisionTest` — a
 its `check_id`, pre-approval both surfaces answer `no_final_approval`, the export succeeds after
 approval, a checkless page answers `no_generated_content` from both surfaces (before and after an
 approval), and a page payload that rewrites `check` is refused with nothing written.
+
+## CP-015g residual correction — a fine-tuned course never re-exports stale pack bytes (no wire change)
+
+Ruling, made because the alternative changed the export contract: **`pack.export` refuses** a
+pack-backed course whose own edits the installed pack does not contain. The refusal is
+`POLICY_VIOLATION` with `details.reason = "course_has_revisions"`; nothing is written. This amends
+the v13 delta's sentence that an imported course "keeps using `pack.export`" — it keeps using it
+only while the course still matches the pack. The preferred repair — re-derive the revised files and
+overlay them — is not achievable inside this build's authoring surface; the reasons are recorded
+below so a later card can pick it up with the contract work it needs.
+
+**Why path 1 (allow `course.export`) was not taken.** `course.export` composes from the generation
+staging (`gen_plan_sections` + `gen_lessons` + `gen_lesson_checks`) that only the authoring pipeline
+writes. Pack import writes none of it: an imported course's text is `lesson_runs`/`lesson_segments`
+projected from the pack's own files, and its checks live inside
+`objectives.evidence_criteria_json`. Letting `course.export` serve an imported course therefore needs
+a second composer *and* a section-revision store for pack content — a new authoring engine, not an
+export repair. Two export commands silently composing one course from two authorities is worse than
+one honest refusal.
+
+**Why path 2 (re-derive the changed files and overlay them) was not landed.** The preferred repair
+has four independent blockers in this build, each of which is a contract change, not a local edit:
+
+1. **No revision can describe a pack page.** A pack course's served text is
+   `lesson_runs`/`lesson_segments` materialized from the pack's `content/section-*.md` bytes.
+   `lesson.revise` writes a `gen_lessons` row under a generated `gen_plan_sections` section, and pack
+   import creates neither (see Reachability below). There is no route that writes an edited pack
+   page, so there is no revision state from which to re-derive one.
+2. **No composer reads pack content.** `parent_authoring.sections()` composes only `gen_*` rows;
+   `_authored_export_plan()` answers `course_pack_backed` before it reaches either. Rendering
+   `lesson_segments` (or a pack section file plus an edit) back into a `cb.pack` section file would
+   be a second authoring surface, not an overlay on the existing one.
+3. **`derived_from` cannot name the source `content_hash`.** `contracts/pack-manifest.v2.json`
+   declares `derived_from` with `additionalProperties: false` and exactly `pack_id` +
+   `pack_version`. Recording the original `content_hash` (the ruling's provenance requirement)
+   needs a `cb.pack` manifest contract revision.
+4. **A changed archive cannot keep the installed identity.** `pack.import` refuses an installed
+   `pack_id`/`version` whose manifest hash differs (`version_immutable`), so an overlay exported
+   under the original identity cannot be re-imported — the acceptance path expects a re-import.
+   Passing a new identity to `packs.build_export` is the derived-pack authoring path this build does
+   not have; it is a new pack, not the installed pack's re-export.
+
+Failing closed is therefore the only honest choice until a card owns the derived-pack authoring
+surface: refuse, say why, and name the one recovery that exists.
+
+**The fence reads content, not bookkeeping.** `pack_flow.course_pack_divergence` compares the
+course's current objectives — ordinal, title, `evidence_target` and the criteria re-projected through
+the same `objective_criteria` the import used — against the manifest that was imported, and treats
+any `lesson_revisions` row as divergence (a page revision replaces the served page and has no undo).
+A `plan_revisions` row alone is *not* divergence: after `plan.undo` restored the content, the undo
+row stays at `needs_review` while the archive again describes the course, and the export proceeds.
+The fence is asked twice — once before a byte is written and again inside the adopt transaction — so
+a fine-tune that lands mid-export discards the staged archive instead of adopting it. On refusal no
+artifact row is recorded and no archive survives; a staged file is removed only when no artifact row
+points at those bytes.
+
+**Recovery, named in the refusal itself.** The message is learner-facing and carries both the fault
+and the way out, verbatim: *"this course has author edits that the installed pack does not contain,
+so exporting the pack now would ship its original pages instead of the course on screen. Nothing was
+exported. Undo the edit (plan.undo) to export the pack exactly as published; this build has no
+detach-from-pack export and cannot export an edited pack-backed course as authored content, so the
+edits stay in the course until that path exists."* A deliberate detach path plus an authored
+composition of imported content is a feature card, not a silent approximation here; until it exists,
+the refusal says so instead of shipping the pre-edit pages under the post-edit course.
+
+**Reachability.** `lesson.revise` cannot currently write a revision for a pack-backed course: the
+import stores no `gen_plan_sections`, so the course has no `section_id` to revise and
+`parent.blueprint.read` answers `sections: []`. The defect is reachable through `plan.edit`
+(objective title / target / criteria / order), which is what the regression test drives; the
+`lesson_revisions` clause is defensive and is tested by writing that ledger row directly.
+`lesson.revise` now answers the typed `NOT_FOUND` (`section lesson <id> does not exist in this
+scope.`) for a section that is not a generated section, because the generation tables
+(`gen_plan_documents`, `gen_lessons`) are created lazily and a pack-backed course has none: before
+this guard the command answered `INTERNAL_ERROR` ("lesson.revise failed: OperationalError",
+`retryable: true`) for the very section id it had to refuse. A generated course sees the same
+`NOT_FOUND` shape it already got from a stale section id, so nothing a working caller sees moves.
+
+**No wire change.** `error.details` is an open object and `details.reason` is the existing snake_case
+seam, so `cb.rpc` stays **v27** and `cb.db` stays **v14**: no method, request field, response key,
+error code, job kind, migration or enum value moves. The Desktop already prints `<code>: <message>`
+for a `pack.export` refusal, so the recovery sentence reaches the author without a UI change.
+
+Regression guard: `tests/test_pack_flow.py::ExportTest` — the unchanged course still exports the
+published archive hash (the bundled pack's `content_hash` is pinned literally), the refusal names the
+reason and writes nothing, a criteria-only edit is caught, an edit that lands while the archive is
+being written discards the staged file, an undone edit exports the published pack and re-imports the
+published text, a `lesson_revisions` row blocks the export, and the card's `lesson.revise` route is
+pinned as unwritable on a pack course (`sections: []`, typed `NOT_FOUND`, no ledger row written).
 
 ## cb.db v13 delta (GM-001) — Game Mode storage, additive and unbackfilled
 
