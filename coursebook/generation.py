@@ -206,7 +206,12 @@ logger = logging.getLogger("coursebook.generation")
 #: source of that decision named, so the author is told the profile the research actually used;
 #: the second D1-F2 rule (a named orthography or metalanguage is a language goal) states the same
 #: shared line. Both are changes to the instruction text, so the label advances twice.
-PLAN_PROMPT_VERSION = "plan-prompt.v21"
+#: v22 (W2-9, CREATE-EXPERIENCE-SPEC item 21): ``_plan_sourcing_rules`` no longer tells the author
+#: to leave no objective at ``support: 'unverified'``. That clause contradicted the declared-gap
+#: contract the validator applies and pushed the author toward inventing a citation; the honesty
+#: clause ("do not invent a citation") stays verbatim. The rule is shared text, so the v1 and v2
+#: authoring labels both advance.
+PLAN_PROMPT_VERSION = "plan-prompt.v22"
 
 #: The blueprint prompt. The design (``docs/COURSE-BLUEPRINT.md`` §5) names it
 #: ``plan-prompt.v2`` because it was written against ``plan-prompt.v1``; master already shipped
@@ -226,7 +231,11 @@ PLAN_PROMPT_VERSION = "plan-prompt.v21"
 #: v23 (CP-015 items 14/15): the plan states `goal_capabilities` and its typed `exit_performance`,
 #: so the rule gate's coverage floor and last-unit performance requirement are asked for before
 #: they are enforced.
-PLAN_PROMPT_VERSION_V2 = "plan-prompt.v23"
+#: v24 (W2-9, CREATE-EXPERIENCE-SPEC items 20 and 21): the mastery directives no longer ask for
+#: ``independent_evidence`` / ``delayed_evidence`` — a v2 ``check_plan`` entry carries
+#: ``objective_ref``, ``kind`` and ``evidence_target`` only and the enforce gate rejects those
+#: keys — and the shared sourcing rule no longer forbids a declared ``support: 'unverified'`` gap.
+PLAN_PROMPT_VERSION_V2 = "plan-prompt.v24"
 #: The unit-sections authoring stage. One unit per call, so its own version. v2 (CP-015g) states the
 #: unit scope and the construct shape its media gate enforces; v3 (CP-015g D3) adds the citation
 #: rule — an owner section copies its objective's source ids, a review section cites the union of
