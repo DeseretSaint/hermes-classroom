@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -464,18 +465,26 @@ class CourseShelfTest(unittest.TestCase):
                 self.assertIn("object-fit:cover", block)
         self.assertNotIn('data-cb-cover-kind="letter"', html, "a letter plate stands in for the cover")
 
-    def test_courses_card_without_a_mapped_plate_reads_the_lesson_room(self) -> None:
+    def test_courses_card_without_a_mapped_plate_wears_the_printed_cover(self) -> None:
+        # UI-K9: the lesson room is painted as a cafe study room, so an unmapped course may not wear
+        # it. The card falls back to its own title printed on kit paper behind a measured rule.
         result = self.run_harness(
             {
                 "mode": "render",
                 "rows": [shelf_row(title="Sourdough starter", provenance={"source": "authored", "pack_id": None})],
             }
         )
-        block = self.cover_block(result["html"], "Sourdough starter")
-        self.assertIn('data-cb-cover-kind="kit"', block)
-        self.assertIn(f'src="{result["kit"]["lessonRoom"]}"', block)
-        self.assertIn('data-cb-cover-plate="field-atlas-lesson-room"', block)
-        self.assertNotIn('data-cb-cover-kind="letter"', result["html"])
+        html = result["html"]
+        block = self.cover_block(html, "Sourdough starter")
+        self.assertIn('data-cb-cover-kind="letter"', block)
+        self.assertIn('data-cb-cover-letter=""', block, "the printed cover is not dressed as kit paper")
+        printed = re.search(r'data-cb-cover-letter=""(.*?)<h3', html, re.S)
+        printed_text = printed.group(1) if printed else ""
+        # GM-002: the cover carries the course's mark alongside (or instead of) a first title.
+        self.assertIn(">SS<", printed_text, "the printed cover lost its mark")
+        self.assertNotIn('src="' + result["kit"]["lessonRoom"] + '"', html,
+                         "an unmapped course still wears the painted lesson room")
+        self.assertNotIn('data-cb-cover-plate="field-atlas-lesson-room"', html)
 
 
 class LibraryActionTest(unittest.TestCase):
