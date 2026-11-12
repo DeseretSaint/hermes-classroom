@@ -16,16 +16,16 @@ Three different calls, three different prompts, three different schemas:
 
 | Pass | Purpose string | Prompt version | Schema |
 |---|---|---|---|
-| Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v21` | `PLAN_SCHEMA` |
-| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v23` | `PLAN_SCHEMA_V2` |
+| Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v22` | `PLAN_SCHEMA` |
+| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v24` | `PLAN_SCHEMA_V2` |
 | Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v3` | `UNIT_SECTIONS_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
 | Unit-sections validator | `coursebook.unit_sections.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
 | Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v13` | `LESSON_SCHEMA` |
 | Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
 
-`build_plan_request()` selects the v2 schema and `plan-prompt.v23` when the brief declares a scope
-(`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v21` otherwise. The rounds that
+`build_plan_request()` selects the v2 schema and `plan-prompt.v24` when the brief declares a scope
+(`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v22` otherwise. The rounds that
 advanced these labels, in order: CP-015's ledger-grounding, single-defensible-answer,
 evidence-target-fit, goal-coverage and check-covers-criteria rules; CP-015a's exclusions /
 outcome-integrity rule; CP-015g/D1-F1's three shared rules (the check's `kind` follows the
@@ -36,8 +36,8 @@ the goal text alone and `enforce_plan_rules` refusing a performance goal with no
 `procedure`/`transfer` objective before validation); and CP-015g/D1-F2's resolved-subject-domain
 line — when the brief declared no domain and the goal names one, the author is told
 `Subject domain: <domain> (inferred from the goal; the brief declared none)` — plus its rule that a
-named orthography or metalanguage goal is a language goal. The validation prompt advances to
-`validation-prompt.v12`: the plan-validation payload carries the typed `performance` block and the
+named orthography or metalanguage goal is a language goal. That round also advanced the validation
+prompt: the plan-validation payload carries the typed `performance` block and the
 resolved domain with its `domain_source` (declared, inferred or default), so the validator judges
 the plan against the same profile the author was given, and the instruction text states the
 `source_support` rule below.
@@ -49,6 +49,18 @@ records an honest `unknown` on a criterion the artifact does not owe as a waived
 reason — capping that artifact's outcome at `model_assessed`. The plan stage keeps its own
 long-form rubrics and its full criteria set; the recipe-aware hazard rule is a lesson/unit rule,
 because the plan's criteria set is split across statically batched passes.
+
+`plan-prompt.v22` / `plan-prompt.v24` (W2-9) carry two instruction-text corrections.
+`mastery_path.plan_policy_lines` no longer asks the v2 author for `independent_evidence` or
+`delayed_evidence`: a v2 `check_plan` entry carries `objective_ref`, `kind` and `evidence_target`
+only, and `enforce_plan_rules` rejects those keys, so the directive now says the harness records
+that evidence and names the three keys the entry actually has. `_plan_sourcing_rules` no longer
+tells the author that an objective the excerpts do not carry "must not be written at all" and not
+to leave it at `support: 'unverified'`; that contradicted `_PLAN_SUPPORT_RULE` and the
+declared-gap contract, and pushed the author toward inventing a citation. The honesty clause
+("do not invent a citation") stays verbatim. `tests/test_w2_9_prompt_schema.py` scans every
+authoring stage's instruction text for a compound key that stage's own schema does not declare, so
+a third instance of the same contradiction fails the suite instead of shipping.
 
 The prompt labels above are the ones **CP-015** ships: on top of H-192b's labels (v10/v11) both plan
 prompts now state the ledger-grounding, single-defensible-answer, evidence-target-fit, goal-coverage
@@ -116,8 +128,8 @@ was broken; it is typed as `ModelOutputInvalid` → `VALIDATION_FAILED` (non-ret
 **not** treated as a refusal — no second authoring call, no validation record, no plan document.
 Making that carrier a refusal is what spent a whole extra authoring and research cycle on
 `_feedback`'s generic "without itemised reasons" hint, and what discarded the declared refusal
-whenever the second attempt passed. The rule is stated in the pass instructions under
-`validation-prompt.v12` (the label advanced for the plan payload's typed `performance` block and
+whenever the second attempt passed. The rule is stated in the pass instructions (the label
+advanced with the plan payload's typed `performance` block and
 resolved-domain brief; CP-015g/D1-F2's second half then changed the instruction text itself, adding
 the `source_support` rule in §5c), so it is a
 stated contract rather than an unstated schema trap (the H-191

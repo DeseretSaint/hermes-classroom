@@ -453,10 +453,11 @@ class GeneratedPlanDeclarationTest(unittest.TestCase):
         self.assertIn("sourced_reference", instructions)
         self.assertIn("never declare decorative media", instructions.lower())
         # CP-015's ledger-first authoring rule advances the label (v12 -> v14); CP-015a then takes
-        # it to v17, CP-015g/D1-F1's evidence-family/claim-link rules take it to v19, and
-        # CP-015g/D1-F2's inferred-domain and named-orthography rules take it to v21. The media
+        # it to v17, CP-015g/D1-F1's evidence-family/claim-link rules take it to v19,
+        # CP-015g/D1-F2's inferred-domain and named-orthography rules take it to v21, and W2-9's
+        # declared-gap deletion from the shared sourcing rule takes it to v22. The media
         # declaration rule this test guards is unchanged.
-        self.assertEqual(gen.PLAN_PROMPT_VERSION, "plan-prompt.v21")
+        self.assertEqual(gen.PLAN_PROMPT_VERSION, "plan-prompt.v22")
 
     def test_lesson_prompt_receives_the_declared_permissions_not_a_wish_list(self) -> None:
         for name, row in MATRIX.items():

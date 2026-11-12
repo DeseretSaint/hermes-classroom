@@ -104,10 +104,11 @@ class ScopeCopyInTheRenderedPromptsTest(unittest.TestCase):
         # without changing that range; H-195 adds the through-line and prerequisite-assumption
         # requirements and advances the label again (v6 -> v8), still with the same range.
         # CP-015's ledger-first authoring rule advances the label to v13; CP-015a takes it to
-        # v17, CP-015g/D1-F1's shared evidence-family/claim-link rules take it to v19, and
-        # CP-015g/D1-F2's inferred-domain and named-orthography rules take it to v21. The range
+        # v17, CP-015g/D1-F1's shared evidence-family/claim-link rules take it to v19,
+        # CP-015g/D1-F2's inferred-domain and named-orthography rules take it to v21, and W2-9's
+        # declared-gap deletion from the shared sourcing rule takes it to v22. The range
         # this test guards is unchanged.
-        self.assertEqual(gen.PLAN_PROMPT_VERSION, "plan-prompt.v21")
+        self.assertEqual(gen.PLAN_PROMPT_VERSION, "plan-prompt.v22")
         for scope, expected in (("single", "4 to 5"), ("short", "4 to 6"), ("full", "4 to 8")):
             with self.subTest(scope=scope):
                 text = gen._plan_instructions(
