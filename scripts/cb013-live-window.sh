@@ -8,14 +8,51 @@
 #   scripts/cb013-live-window.sh            # start
 #   scripts/cb013-live-window.sh --stop
 #   scripts/cb013-live-window.sh --status
+#   scripts/cb013-live-window.sh --print-bin   # print the Electron it would launch, start nothing
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+HERMES_AGENT="${HERMES_AGENT_HOME:-$HOME/.hermes/hermes-agent}"
 STATE_DIR="${COURSEBOOK_TEST_STATE:-$HOME/.hermes/coursebook-test}"
 HOME_DIR="$STATE_DIR/home"
 USERDATA="$STATE_DIR/userdata"
 PORT="${CB013_CDP_PORT:-9337}"
-APP="${HERMES_DESKTOP_APP:-$HOME/.hermes/hermes-agent/apps/desktop}"
-ELECTRON="${ELECTRON_BIN:-$HOME/.hermes/hermes-agent/node_modules/electron/dist/electron}"
+APP="${HERMES_DESKTOP_APP:-$HERMES_AGENT/apps/desktop}"
+
+# The dev Electron is a host tool and pnpm does not hoist it: it lives under
+# `node_modules/.pnpm/electron@<version>/node_modules/electron/dist`. Looking only at the
+# hoisted path made Gate 5 stop with "no electron binary at .../node_modules/electron/dist/electron"
+# while the binary was installed all along. Resolve in this order:
+#   1. ELECTRON_BIN, when set and executable;
+#   2. this repo's own pnpm store;
+#   3. the hermes-agent install (pnpm stores, then the desktop workspace copy);
+#   4. the hoisted hermes-agent path the script used to hardcode.
+# Prints the chosen path on stdout; tried paths go to stderr. Returns 1 when nothing is found.
+resolve_electron() {
+  local candidates=() candidate store
+  [[ -n "${ELECTRON_BIN:-}" ]] && candidates+=("$ELECTRON_BIN")
+  for store in \
+    "$REPO_ROOT/node_modules/.pnpm" \
+    "$HERMES_AGENT/node_modules/.pnpm" \
+    "$HERMES_AGENT/apps/desktop/node_modules/.pnpm"; do
+    for candidate in "$store"/electron@*/node_modules/electron/dist/electron; do
+      [[ -x "$candidate" ]] && candidates+=("$candidate")
+    done
+  done
+  candidates+=("$HERMES_AGENT/apps/desktop/node_modules/electron/dist/electron")
+  candidates+=("$HERMES_AGENT/node_modules/electron/dist/electron")
+  for candidate in "${candidates[@]}"; do
+    [[ -n "$candidate" && -x "$candidate" ]] && { printf '%s\n' "$candidate"; return 0; }
+  done
+  local tried=("${candidates[@]}")
+  [[ ${#tried[@]} -eq 0 ]] && tried=("$REPO_ROOT/node_modules/.pnpm/electron@*/node_modules/electron/dist/electron" "$HERMES_AGENT/node_modules/.pnpm/electron@*/node_modules/electron/dist/electron")
+  for candidate in "${tried[@]}"; do
+    [[ -n "$candidate" ]] && printf '  tried %s\n' "$candidate" >&2
+  done
+  return 1
+}
+
 LOG="$STATE_DIR/window.log"
 PIDF="$STATE_DIR/window.pid"
 
@@ -37,14 +74,25 @@ status() {
 }
 
 case "${1:-}" in
+  --print-bin)
+    ELECTRON="$(resolve_electron)" || {
+      echo "no electron binary for the rig; set ELECTRON_BIN to apps/desktop/node_modules/electron/dist/electron" >&2
+      exit 1
+    }
+    printf '%s\n' "$ELECTRON"
+    exit 0
+    ;;
   --stop) stop; exit 0 ;;
   --status) status; exit $? ;;
   --restart) ;;
   "") ;;
-  *) echo "usage: $0 [--restart|--stop|--status]" >&2; exit 2 ;;
+  *) echo "usage: $0 [--restart|--stop|--status|--print-bin]" >&2; exit 2 ;;
 esac
 
-[[ -x "$ELECTRON" ]] || { echo "no electron binary at $ELECTRON" >&2; exit 1; }
+ELECTRON="$(resolve_electron)" || {
+  echo "no electron binary for the rig; set ELECTRON_BIN to apps/desktop/node_modules/electron/dist/electron" >&2
+  exit 1
+}
 # A test rig must never launch the operator's packaged app or default profile.
 # The packaged binary shares the main app's WM class; `hermes desktop` would
 # bring the real window to the front and make a test look like a main-window
