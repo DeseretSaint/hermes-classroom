@@ -1,0 +1,75 @@
+{
+  "card": "PRINT-2 (kanban t_6418b9dd)",
+  "generated_by": "scripts/print2_coloring_pack.py",
+  "task": "hw_labels",
+  "paper": "A4",
+  "pack": {
+    "pack_id": "takehome-hw-labels",
+    "pack_version": "1.0.0",
+    "contract": "cb.pack",
+    "contract_version": 4,
+    "content_hash": "sha256:0758c372d6b2e3b9fde99c3913d40ab79cfe09977259b3ca37ec0f192d32ecf4",
+    "archive": "takehome-hw-labels-1.0.0.zip",
+    "archive_sha256": "71829df26ab0c0813d7d8d65dd52f4303d8ed79d94c12d17c4ac262f7bb949a1",
+    "audit_problems": [],
+    "round_trip_content_hash": "sha256:0758c372d6b2e3b9fde99c3913d40ab79cfe09977259b3ca37ec0f192d32ecf4"
+  },
+  "roles": [
+    {
+      "role": "answer_guide",
+      "path": "content/answer-guide.html",
+      "mime": "text/html",
+      "bytes": 7317
+    },
+    {
+      "role": "coloring_page",
+      "path": "content/coloring-page.html",
+      "mime": "text/html",
+      "bytes": 9864
+    },
+    {
+      "role": "learner_page",
+      "path": "content/learner-page.html",
+      "mime": "text/html",
+      "bytes": 8478
+    },
+    {
+      "role": "parent_guide",
+      "path": "content/parent-guide.html",
+      "mime": "text/html",
+      "bytes": 11019
+    }
+  ],
+  "coloring_artifact": {
+    "role": "coloring_page",
+    "path": "content/coloring-page.html",
+    "mime": "text/html",
+    "bytes": 9864
+  },
+  "parent_guide_carries_while_they_colour": true,
+  "pdftotext": {
+    "pdf": "coloring-page.pdf",
+    "pdf_sha256": "9f45de00aee45bf839b995562cac037424d1a394f0880fe3224f0aba96fc9d12",
+    "text": "coloring-page.txt",
+    "text_sha256": "f22a305e334f29d761978c10c9d749b1703cdb50380107e46425d0fc88dfbc99",
+    "word_bank_words_found": [
+      "ドア",
+      "まど",
+      "いす",
+      "テーブル",
+      "コップ",
+      "ほん"
+    ],
+    "answer_guide_phrases_found": [],
+    "lines": [
+      "C O U R S E B O O K · TA K E - H O M E PA C K · C O L O U R I N G PA G E",
+      "Colour it in",
+      "Colour the picture. As you colour each thing, say its word out loud.",
+      "Line drawing made from this lesson’s own words. One colour, thick outlines, large areas to fill.",
+      "Words in this picture",
+      "ドア",
+      "doa",
+      "まど"
+    ]
+  }
+}

@@ -154,13 +154,37 @@ other means for painterly sources.
 ### Code seam
 
 `coloring_print.render_coloring(fixture, task_id, paper=...)` returns one complete HTML document.
-It is deliberately *not* a key on `homework_print.render_documents`, whose four keys are a frozen
-contract pinned by `tests.test_homework_content_print`; the take-home pack spec amendment here is
-what would let it join the set. `coloring_print.parent_ask_line(...)` is the guide section, wired in
-`homework_print._parent_guide`.
+**PRINT-2 (kanban t_6418b9dd) made it a key on `homework_print.render_documents`**, so the take-home
+document set is now five: `parent_guide`, `learner_page`, `answer_guide`, `homework_sheet`,
+`coloring_page`. The four original keys are unchanged; the fifth is the page this section describes.
+`tests.test_homework_content_print` pins the new set deliberately, and no consumer of the four old
+keys had to change.
 
-Proof: `scripts/gm020_coloring_proof.py` → `docs/visual-review/gm-020-coloring/` (PDFs for A4 and
-Letter, PNGs, a figure-only raster whose OCR is empty, and `MANIFEST.json` with the measurements).
+The page is reachable from a built pack, not only from the renderer. `cb.pack` **v4** adds the file
+role `coloring_page` and the MIME `text/html`, which is the exact byte form of every print document
+this build renders (the four print roles may hold `text/html`). `homework_print.pack_manifest(...)`
+builds the `hw_labels` pack with four files, one per pack role:
+
+| role | pack path | MIME |
+|---|---|---|
+| `parent_guide` | `content/parent-guide.html` | `text/html` |
+| `learner_page` | `content/learner-page.html` | `text/html` |
+| `answer_guide` | `content/answer-guide.html` | `text/html` |
+| `coloring_page` | `content/coloring-page.html` | `text/html` |
+
+`coloring_page` is in `packs.LEARNER_FACING_ROLES`, so the answer-leak audit reads it exactly as it
+reads `learner_page`: a check's reference answer may not appear in the artifact. Because an HTML
+print document must be printable rather than executable, both the pack audit and the archive MIME
+check refuse active content (`<script>`, frames, forms, event handlers, `javascript:`). A v3 pack
+keeps its own four-role enum and still validates, so no installed pack moves; only a pack that
+declares `coloring_page` declares `contract_version: 4`.
+
+`coloring_print.parent_ask_line(...)` is the guide section, wired in `homework_print._parent_guide`.
+
+Proof: `scripts/print2_coloring_pack.py` → `docs/visual-review/print-2-coloring/` (a real
+`cb.pack` archive, its audit result, the role/path listing, and `pdftotext` of the shipped
+artifact). `scripts/gm020_coloring_proof.py` → `docs/visual-review/gm-020-coloring/` keeps the page
+measurements (PDFs for A4 and Letter, PNGs, a figure-only raster whose OCR is empty).
 
 ### Limits
 
