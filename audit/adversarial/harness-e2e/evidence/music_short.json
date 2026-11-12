@@ -269,7 +269,7 @@
       "independent": true,
       "needs_review": false,
       "outcome": "independently_validated",
-      "prompt_version": "plan-prompt.v22",
+      "prompt_version": "plan-prompt.v23",
       "warning": null
     },
     "attempt_rows": [
@@ -340,7 +340,7 @@
     "plan_scope": "short",
     "plan_state_after_approval": "approved",
     "plan_state_before_approval": "draft",
-    "prompt_version": "plan-prompt.v22",
+    "prompt_version": "plan-prompt.v23",
     "schema_name": "coursebook_plan_v2",
     "sections": 4,
     "units": 2,
@@ -379,6 +379,7 @@
     "exclusions": [
       "Does not certify competence; a supervisor checks the first attempt."
     ],
+    "exit_performance": "knowledge",
     "learner_outcome": "The learner names intervals and triads and uses the circle of fifths to analyse a pop song.",
     "objectives": [
       {
@@ -387,8 +388,11 @@
         ],
         "evidence_target": "recall",
         "ordinal": 1,
-        "source_ids": [],
-        "support": "unverified",
+        "source_ids": [
+          "0000000000000008"
+        ],
+        "source_quote": "It names the semitone counts of the common intervals and the major/minor triad recipes.",
+        "support": "sourced",
         "title": "Count the semitones in a major third and a perfect fifth",
         "unit_ref": 1
       },
@@ -434,6 +438,7 @@
     "scope": "short",
     "source_ids": [],
     "spaced_review": true,
+    "terminal_performance": "Read intervals, triads and the circle of fifths, and explain how a chord is built.",
     "through_line": "Each unit turns a sound into a number and then a number into a name: semitones first, then the thirds, then the triads, then the circle that places every chord of one real song.",
     "time_estimate": {
       "attainment_hours": null,
@@ -750,7 +755,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v11",
+                "prompt_version": "lesson-prompt.v13",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000002b",
@@ -791,7 +796,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v11",
+                "prompt_version": "lesson-prompt.v13",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000002e",
@@ -827,7 +832,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": 2,
-          "plan_hash": "sha256:4f01d6b97088838ddeffb4056d7769792f0098f7e4d1a1e9e146a579add84bcd",
+          "plan_hash": "sha256:e4900f2bc9e290784ecaa05e3b331919f6f5e6fb504a12055a98f97f9b898b25",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -867,7 +872,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 4583,
+            "input_tokens": 4771,
             "output_tokens": 1881,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -896,7 +901,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v11",
+                "prompt_version": "lesson-prompt.v13",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000037",
@@ -937,7 +942,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v11",
+                "prompt_version": "lesson-prompt.v13",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000003a",
@@ -973,7 +978,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": null,
-          "plan_hash": "sha256:4f01d6b97088838ddeffb4056d7769792f0098f7e4d1a1e9e146a579add84bcd",
+          "plan_hash": "sha256:e4900f2bc9e290784ecaa05e3b331919f6f5e6fb504a12055a98f97f9b898b25",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -1013,7 +1018,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 4654,
+            "input_tokens": 4839,
             "output_tokens": 1938,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -1178,7 +1183,7 @@
           3,
           6
         ],
-        "prompt_version": "plan-prompt.v22",
+        "prompt_version": "plan-prompt.v23",
         "schema_name": "coursebook_plan_v2",
         "unit_count_rule": [
           1,
@@ -1205,7 +1210,7 @@
           "independent": true,
           "needs_review": false,
           "outcome": "independently_validated",
-          "prompt_version": "plan-prompt.v22",
+          "prompt_version": "plan-prompt.v23",
           "warning": null
         },
         "course_id": "crs_00000000000000000000000000000002",
@@ -1220,7 +1225,7 @@
           "known": true,
           "model": "recorded-transcript-h40",
           "pipeline_version": "cb.gen.v2",
-          "prompt_version": "plan-prompt.v22",
+          "prompt_version": "plan-prompt.v23",
           "provider": "recorded"
         },
         "job_id": "job_00000000000000000000000000000007",
@@ -1230,7 +1235,7 @@
         "next_unit_ordinal": 1,
         "objectives": 4,
         "plan_content_hash": "sha256:c58bcf1ff2a5bf91213b171f846a49462e90aa4f41fec429fe7d1577bd1deef3",
-        "plan_hash": "sha256:4f01d6b97088838ddeffb4056d7769792f0098f7e4d1a1e9e146a579add84bcd",
+        "plan_hash": "sha256:e4900f2bc9e290784ecaa05e3b331919f6f5e6fb504a12055a98f97f9b898b25",
         "plan_id": "pln_00000000000000000000000000000003",
         "plan_schema": "coursebook.plan.v2",
         "plan_version": 1,
@@ -1240,8 +1245,8 @@
             "Understand intervals",
             "triads",
             "the circle of fifths well enough to analyse a pop song",
-            "Understand intervals, triads and the circle of fifths well enough to analyse a pop song. syllabus learning objectives",
-            "Understand intervals, triads and the circle of fifths well enough to analyse a pop song. how to teach curriculum sequence"
+            "Understand intervals, triads and the circle of fifths well enough to analyse a pop song. how to teach curriculum sequence",
+            "Understand intervals, triads and the circle of fifths well enough to analyse a pop song. syllabus learning objectives"
           ],
           "reason": null,
           "status": "ok"
@@ -1279,8 +1284,8 @@
           "calls": 4,
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
-          "input_tokens": 4989,
-          "output_tokens": 1191,
+          "input_tokens": 5202,
+          "output_tokens": 1257,
           "unknown_calls": 0,
           "unknown_cost": false
         },
@@ -1365,7 +1370,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": 2,
           "owners": 2,
-          "plan_hash": "sha256:4f01d6b97088838ddeffb4056d7769792f0098f7e4d1a1e9e146a579add84bcd",
+          "plan_hash": "sha256:e4900f2bc9e290784ecaa05e3b331919f6f5e6fb504a12055a98f97f9b898b25",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -1399,7 +1404,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 1291,
+            "input_tokens": 1297,
             "output_tokens": 559,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -1424,7 +1429,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": null,
           "owners": 2,
-          "plan_hash": "sha256:4f01d6b97088838ddeffb4056d7769792f0098f7e4d1a1e9e146a579add84bcd",
+          "plan_hash": "sha256:e4900f2bc9e290784ecaa05e3b331919f6f5e6fb504a12055a98f97f9b898b25",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,

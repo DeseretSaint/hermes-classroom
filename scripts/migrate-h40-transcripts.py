@@ -2,9 +2,10 @@
 
 A procedure objective is measured by a confirmation checklist of the acts, not by a question about
 them. The recordings already carry `example_steps` for every procedure lesson; those steps are the
-checklist. This rewrites the two transcripts whose procedure checks were quizzes so the end-to-end
-harness exercises the capability the product now enforces, instead of failing on a fixture authored
-before the rule existed.
+checklist. This rewrites any transcript whose procedure checks are still quizzes so the end-to-end
+harness exercises the capability the product enforces, instead of failing on a fixture authored
+before the rule existed. On the W2-8 recording it is a no-op: `build_transcripts.py` now authors the
+verification kind and the checklist items directly, so a rebuild cannot regress them.
 """
 
 from __future__ import annotations
@@ -12,7 +13,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-ROOT = Path("/home/deseretsaint/.hermes/cache/scratch/e2e")
+ROOT = Path(__file__).resolve().parents[1]
 TRANSCRIPTS = ROOT / "audit" / "adversarial" / "harness-e2e" / "transcripts"
 
 

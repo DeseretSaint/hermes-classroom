@@ -19,6 +19,7 @@
     "plan_validated_before_approval": true,
     "prerequisite_edges_declared": true,
     "prerequisite_edges_point_backwards": true,
+    "procedure_checks_are_verification": true,
     "scope_contract_is_coherent": true,
     "scope_matches_documented_bounds": true,
     "units_user_enqueued_not_chained": true,
@@ -69,7 +70,7 @@
     },
     "over_bound": {
       "label": "over_bound",
-      "message": "plan violates its schema at check_plan: [{'objective_ref': 1, 'kind': 'verification', 'evidence_target': 'procedure'}, {'objective_ref': 2, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 3, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 4, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 5, 'kind': 'verification', 'evidence_target': 'procedure'}, {'objective_ref': 6, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 7, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 8, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 9, 'kind': 'verification', 'evidence_target': 'procedure'}, {'objective_ref': 10, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 11, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 12, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 13, 'kind': 'verification', 'evidence_target': 'procedure'}, {'objective_ref': 14, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 15, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 16, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 17, 'kind': 'verification', 'evidence_target': 'procedure'}, {'objective_ref': 18, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 19, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 20, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 21, 'kind': 'verification', 'evidence_target': 'procedure'}, {'objective_ref': 22, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 23, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 24, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 25, 'kind': 'verification', 'evidence_target': 'procedure'}, {'objective_ref': 26, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 27, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 28, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 29, 'kind': 'verification', 'evidence_target': 'procedure'}, {'objective_ref': 30, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 31, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 32, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 33, 'kind': 'verification', 'evidence_target': 'procedure'}, {'objective_ref': 34, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 35, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 36, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 37, 'kind': 'verification', 'evidence_target': 'procedure'}, {'objective_ref': 38, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 39, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 40, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 41, 'kind': 'verification', 'evidence_target': 'procedure'}] is too long",
+      "message": "plan violates its schema at check_plan: [{'objective_ref': 1, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 2, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 3, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 4, 'kind': 'verification', 'evidence_target': 'procedure'}, {'objective_ref': 5, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 6, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 7, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 8, 'kind': 'verification', 'evidence_target': 'procedure'}, {'objective_ref': 9, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 10, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 11, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 12, 'kind': 'verification', 'evidence_target': 'procedure'}, {'objective_ref': 13, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 14, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 15, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 16, 'kind': 'verification', 'evidence_target': 'procedure'}, {'objective_ref': 17, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 18, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 19, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 20, 'kind': 'verification', 'evidence_target': 'procedure'}, {'objective_ref': 21, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 22, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 23, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 24, 'kind': 'verification', 'evidence_target': 'procedure'}, {'objective_ref': 25, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 26, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 27, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 28, 'kind': 'verification', 'evidence_target': 'procedure'}, {'objective_ref': 29, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 30, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 31, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 32, 'kind': 'verification', 'evidence_target': 'procedure'}, {'objective_ref': 33, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 34, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 35, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 36, 'kind': 'verification', 'evidence_target': 'procedure'}, {'objective_ref': 37, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 38, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 39, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 40, 'kind': 'verification', 'evidence_target': 'procedure'}, {'objective_ref': 41, 'kind': 'quiz', 'evidence_target': 'comprehension'}] is too long",
       "objectives": 41,
       "raised": "GenerationRejected",
       "rejected": true,
@@ -150,13 +151,26 @@
             "hint": "available"
           },
           "evidence_target": "procedure",
-          "kind": "quiz",
-          "learner_instructions": "Answer in one short phrase, without notes.",
+          "kind": "verification",
+          "learner_instructions": "Tick only what you actually did.",
           "scaffolds": [],
           "stimulus": {
             "choices": [],
-            "format": "text",
-            "items": [],
+            "format": "verification",
+            "items": [
+              {
+                "id": "step-1",
+                "label": "Set the dial"
+              },
+              {
+                "id": "step-2",
+                "label": "Wait for the display"
+              },
+              {
+                "id": "step-3",
+                "label": "Tin the tip"
+              }
+            ],
             "prompt": "What temperature range suits leaded solder?"
           }
         },
@@ -321,13 +335,26 @@
             "hint": "available"
           },
           "evidence_target": "procedure",
-          "kind": "quiz",
-          "learner_instructions": "Answer in one short phrase, without notes.",
+          "kind": "verification",
+          "learner_instructions": "Tick only what you actually did.",
           "scaffolds": [],
           "stimulus": {
             "choices": [],
-            "format": "text",
-            "items": [],
+            "format": "verification",
+            "items": [
+              {
+                "id": "step-1",
+                "label": "Measure the board"
+              },
+              {
+                "id": "step-2",
+                "label": "Bend with pliers"
+              },
+              {
+                "id": "step-3",
+                "label": "Drop the part"
+              }
+            ],
             "prompt": "Which side of the board should the bent lead sit on?"
           }
         },
@@ -435,13 +462,26 @@
             "hint": "available"
           },
           "evidence_target": "procedure",
-          "kind": "quiz",
-          "learner_instructions": "Answer in one short phrase, without notes.",
+          "kind": "verification",
+          "learner_instructions": "Tick only what you actually did.",
           "scaffolds": [],
           "stimulus": {
             "choices": [],
-            "format": "text",
-            "items": [],
+            "format": "verification",
+            "items": [
+              {
+                "id": "step-1",
+                "label": "Touch pad and lead"
+              },
+              {
+                "id": "step-2",
+                "label": "Wait for heat"
+              },
+              {
+                "id": "step-3",
+                "label": "Feed into the joint"
+              }
+            ],
             "prompt": "Where does the solder go?"
           }
         },
@@ -606,13 +646,26 @@
             "hint": "available"
           },
           "evidence_target": "procedure",
-          "kind": "quiz",
-          "learner_instructions": "Answer in one short phrase, without notes.",
+          "kind": "verification",
+          "learner_instructions": "Tick only what you actually did.",
           "scaffolds": [],
           "stimulus": {
             "choices": [],
-            "format": "text",
-            "items": [],
+            "format": "verification",
+            "items": [
+              {
+                "id": "step-1",
+                "label": "Add flux"
+              },
+              {
+                "id": "step-2",
+                "label": "Lay the wick"
+              },
+              {
+                "id": "step-3",
+                "label": "Heat until the bridge flows"
+              }
+            ],
             "prompt": "When do you lift the wick?"
           }
         },
@@ -663,13 +716,26 @@
             "hint": "available"
           },
           "evidence_target": "procedure",
-          "kind": "quiz",
-          "learner_instructions": "Answer in one short phrase, without notes.",
+          "kind": "verification",
+          "learner_instructions": "Tick only what you actually did.",
           "scaffolds": [],
           "stimulus": {
             "choices": [],
-            "format": "text",
-            "items": [],
+            "format": "verification",
+            "items": [
+              {
+                "id": "step-1",
+                "label": "Add fresh solder"
+              },
+              {
+                "id": "step-2",
+                "label": "Alternate the heat"
+              },
+              {
+                "id": "step-3",
+                "label": "Pull gently"
+              }
+            ],
             "prompt": "Why add fresh solder before desoldering?"
           }
         },
@@ -780,7 +846,7 @@
       "independent": true,
       "needs_review": false,
       "outcome": "independently_validated",
-      "prompt_version": "plan-prompt.v22",
+      "prompt_version": "plan-prompt.v23",
       "warning": null
     },
     "attempt_rows": [
@@ -790,15 +856,15 @@
         "grading_provenance_json": "{\"grader\":\"deterministic:exact\",\"reference_sha256\":\"sha256:a584036c58bec84268da0f48bc2c9dd1cb37778a58696daaec992ee25300155c\"}",
         "id": "att_000000000000000000000000000000a5",
         "state": "committed",
-        "verdict": "pass"
+        "verdict": "not_yet"
       },
       {
-        "check_id": "000000000000005f",
-        "evidence_class": "cold",
-        "grading_provenance_json": "{\"grader\":\"deterministic:exact\",\"reference_sha256\":\"sha256:91075c69b554ba156c9217b2becefa7bb24045d55e7b0e05d829d65b251720de\"}",
-        "id": "att_000000000000000000000000000000ab",
+        "check_id": "000000000000005c",
+        "evidence_class": "hinted",
+        "grading_provenance_json": "{\"grader\":\"deterministic:exact\",\"reference_sha256\":\"sha256:a584036c58bec84268da0f48bc2c9dd1cb37778a58696daaec992ee25300155c\"}",
+        "id": "att_000000000000000000000000000000aa",
         "state": "committed",
-        "verdict": "not_yet"
+        "verdict": "pass"
       }
     ],
     "check_lanes": [
@@ -810,9 +876,9 @@
       },
       {
         "objective_id": "0000000000000015",
-        "reference_kind": "exact",
+        "reference_kind": "rubric_only",
         "state": "open",
-        "stimulus_format": "text"
+        "stimulus_format": "verification"
       },
       {
         "objective_id": "0000000000000016",
@@ -828,9 +894,9 @@
       },
       {
         "objective_id": "0000000000000018",
-        "reference_kind": "exact",
+        "reference_kind": "rubric_only",
         "state": "open",
-        "stimulus_format": "text"
+        "stimulus_format": "verification"
       },
       {
         "objective_id": "0000000000000019",
@@ -840,9 +906,9 @@
       },
       {
         "objective_id": "000000000000001a",
-        "reference_kind": "exact",
+        "reference_kind": "rubric_only",
         "state": "open",
-        "stimulus_format": "text"
+        "stimulus_format": "verification"
       },
       {
         "objective_id": "000000000000001b",
@@ -858,15 +924,15 @@
       },
       {
         "objective_id": "000000000000001d",
-        "reference_kind": "exact",
+        "reference_kind": "rubric_only",
         "state": "open",
-        "stimulus_format": "text"
+        "stimulus_format": "verification"
       },
       {
         "objective_id": "000000000000001e",
-        "reference_kind": "exact",
+        "reference_kind": "rubric_only",
         "state": "open",
-        "stimulus_format": "text"
+        "stimulus_format": "verification"
       },
       {
         "objective_id": "000000000000001f",
@@ -935,7 +1001,7 @@
     "plan_scope": "full",
     "plan_state_after_approval": "approved",
     "plan_state_before_approval": "draft",
-    "prompt_version": "plan-prompt.v22",
+    "prompt_version": "plan-prompt.v23",
     "schema_name": "coursebook_plan_v2",
     "sections": 12,
     "units": 6,
@@ -952,7 +1018,7 @@
       },
       {
         "evidence_target": "procedure",
-        "kind": "quiz",
+        "kind": "verification",
         "objective_ref": 2
       },
       {
@@ -967,7 +1033,7 @@
       },
       {
         "evidence_target": "procedure",
-        "kind": "quiz",
+        "kind": "verification",
         "objective_ref": 5
       },
       {
@@ -977,7 +1043,7 @@
       },
       {
         "evidence_target": "procedure",
-        "kind": "quiz",
+        "kind": "verification",
         "objective_ref": 7
       },
       {
@@ -992,12 +1058,12 @@
       },
       {
         "evidence_target": "procedure",
-        "kind": "quiz",
+        "kind": "verification",
         "objective_ref": 10
       },
       {
         "evidence_target": "procedure",
-        "kind": "quiz",
+        "kind": "verification",
         "objective_ref": 11
       },
       {
@@ -1014,6 +1080,7 @@
     "exclusions": [
       "Does not certify competence; a supervisor checks the first attempt."
     ],
+    "exit_performance": "performance",
     "learner_outcome": "The learner solders, inspects and reworks a through-hole board without lifting a pad.",
     "objectives": [
       {
@@ -1110,8 +1177,11 @@
         ],
         "evidence_target": "transfer",
         "ordinal": 9,
-        "source_ids": [],
-        "support": "unverified",
+        "source_ids": [
+          "0000000000000009"
+        ],
+        "source_quote": "A good solder joint is shiny, smooth, and volcano-shaped — it wets both the pad and the component lead completely.",
+        "support": "sourced",
         "title": "Inspect a finished joint against the fillet criterion",
         "unit_ref": 5
       },
@@ -1157,6 +1227,7 @@
     "scope": "full",
     "source_ids": [],
     "spaced_review": true,
+    "terminal_performance": "Build and inspect a through-hole joint, then desolder a part and prove continuity with a meter.",
     "through_line": "One board taken from a safe bench to a proved repair: name the hazards, set the iron, read the part, seat it, form the joint, inspect it, rework what fails, and prove continuity before power.",
     "time_estimate": {
       "attainment_hours": null,
@@ -1303,14 +1374,14 @@
     ],
     "approve": {
       "approval_provenance": null,
-      "plan_hash": "sha256:3f7372ca2c4564824d3fcc3aa9cdcb60470b8dcaa2078b544402814f494986ba",
+      "plan_hash": "sha256:f2e4a763de7b97adc0154c93532698f9d4a7feb35fce90276052afc7d5db6f58",
       "revision": 1,
       "state_after": "approved"
     },
     "grading": [
       {
         "check_id": "000000000000005c",
-        "label": "correct",
+        "label": "wrong",
         "objective_ordinal": 1,
         "open": {
           "ok": true,
@@ -1326,22 +1397,22 @@
             "criteria": [
               {
                 "id": "c1",
-                "met": true,
-                "observed": "matches an accepted answer"
+                "met": false,
+                "observed": "does not match an accepted answer"
               }
             ],
             "evidence_class": "cold",
-            "next_action": "complete_objective",
+            "next_action": "retry_attempt",
             "revision": 2,
-            "verdict": "pass"
+            "verdict": "not_yet"
           },
           "revision": 2
         }
       },
       {
-        "check_id": "000000000000005f",
-        "label": "wrong",
-        "objective_ordinal": 2,
+        "check_id": "000000000000005c",
+        "label": "correct",
+        "objective_ordinal": 1,
         "open": {
           "ok": true,
           "revision": 2
@@ -1350,20 +1421,20 @@
         "submit": {
           "contract_version": 26,
           "ok": true,
-          "operation_id": "op-h40-attempt-submit-0000aa",
+          "operation_id": "op-h40-attempt-submit-0000a9",
           "result": {
-            "attempt_id": "att_000000000000000000000000000000ab",
+            "attempt_id": "att_000000000000000000000000000000aa",
             "criteria": [
               {
                 "id": "c1",
-                "met": false,
-                "observed": "does not match an accepted answer"
+                "met": true,
+                "observed": "matches an accepted answer"
               }
             ],
-            "evidence_class": "cold",
-            "next_action": "retry_attempt",
+            "evidence_class": "hinted",
+            "next_action": "review_objective",
             "revision": 3,
-            "verdict": "not_yet"
+            "verdict": "pass"
           },
           "revision": 3
         }
@@ -1589,7 +1660,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v11",
+                "prompt_version": "lesson-prompt.v13",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000005b",
@@ -1630,7 +1701,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v11",
+                "prompt_version": "lesson-prompt.v13",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000005e",
@@ -1666,7 +1737,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": 2,
-          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
+          "plan_hash": "sha256:7a11a27cab96370287615650624af8126a607ab547e529462ed2b60504df7e9e",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -1706,8 +1777,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10447,
-            "output_tokens": 1884,
+            "input_tokens": 10701,
+            "output_tokens": 1919,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -1735,7 +1806,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v11",
+                "prompt_version": "lesson-prompt.v13",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000067",
@@ -1776,7 +1847,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v11",
+                "prompt_version": "lesson-prompt.v13",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000006a",
@@ -1812,7 +1883,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": 3,
-          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
+          "plan_hash": "sha256:7a11a27cab96370287615650624af8126a607ab547e529462ed2b60504df7e9e",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -1852,7 +1923,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10451,
+            "input_tokens": 10662,
             "output_tokens": 1888,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -1881,7 +1952,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v11",
+                "prompt_version": "lesson-prompt.v13",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000073",
@@ -1922,7 +1993,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v11",
+                "prompt_version": "lesson-prompt.v13",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000076",
@@ -1958,7 +2029,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": 4,
-          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
+          "plan_hash": "sha256:7a11a27cab96370287615650624af8126a607ab547e529462ed2b60504df7e9e",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -1998,8 +2069,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10412,
-            "output_tokens": 1877,
+            "input_tokens": 10674,
+            "output_tokens": 1912,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -2027,7 +2098,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v11",
+                "prompt_version": "lesson-prompt.v13",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000007f",
@@ -2068,7 +2139,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v11",
+                "prompt_version": "lesson-prompt.v13",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000082",
@@ -2104,7 +2175,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": 5,
-          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
+          "plan_hash": "sha256:7a11a27cab96370287615650624af8126a607ab547e529462ed2b60504df7e9e",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -2144,8 +2215,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10388,
-            "output_tokens": 1847,
+            "input_tokens": 10653,
+            "output_tokens": 1884,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -2173,7 +2244,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v11",
+                "prompt_version": "lesson-prompt.v13",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000008b",
@@ -2214,7 +2285,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v11",
+                "prompt_version": "lesson-prompt.v13",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000008e",
@@ -2250,7 +2321,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": 6,
-          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
+          "plan_hash": "sha256:7a11a27cab96370287615650624af8126a607ab547e529462ed2b60504df7e9e",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -2290,8 +2361,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10445,
-            "output_tokens": 1894,
+            "input_tokens": 8270,
+            "output_tokens": 1930,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -2319,7 +2390,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v11",
+                "prompt_version": "lesson-prompt.v13",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000097",
@@ -2360,7 +2431,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v11",
+                "prompt_version": "lesson-prompt.v13",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000009a",
@@ -2396,7 +2467,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": null,
-          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
+          "plan_hash": "sha256:7a11a27cab96370287615650624af8126a607ab547e529462ed2b60504df7e9e",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -2436,8 +2507,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10443,
-            "output_tokens": 1891,
+            "input_tokens": 10709,
+            "output_tokens": 1926,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -2582,7 +2653,7 @@
         }
       ],
       "plan": {
-        "plan_hash": "sha256:3f7372ca2c4564824d3fcc3aa9cdcb60470b8dcaa2078b544402814f494986ba",
+        "plan_hash": "sha256:f2e4a763de7b97adc0154c93532698f9d4a7feb35fce90276052afc7d5db6f58",
         "plan_id": "pln_00000000000000000000000000000003",
         "state": "approved",
         "units": [
@@ -2877,7 +2948,7 @@
           12,
           40
         ],
-        "prompt_version": "plan-prompt.v22",
+        "prompt_version": "plan-prompt.v23",
         "schema_name": "coursebook_plan_v2",
         "unit_count_rule": [
           2,
@@ -2904,7 +2975,7 @@
           "independent": true,
           "needs_review": false,
           "outcome": "independently_validated",
-          "prompt_version": "plan-prompt.v22",
+          "prompt_version": "plan-prompt.v23",
           "warning": null
         },
         "course_id": "crs_00000000000000000000000000000002",
@@ -2919,7 +2990,7 @@
           "known": true,
           "model": "recorded-transcript-h40",
           "pipeline_version": "cb.gen.v2",
-          "prompt_version": "plan-prompt.v22",
+          "prompt_version": "plan-prompt.v23",
           "provider": "recorded"
         },
         "job_id": "job_00000000000000000000000000000007",
@@ -2928,8 +2999,8 @@
         "locale": "en-US",
         "next_unit_ordinal": 1,
         "objectives": 12,
-        "plan_content_hash": "sha256:3f7372ca2c4564824d3fcc3aa9cdcb60470b8dcaa2078b544402814f494986ba",
-        "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
+        "plan_content_hash": "sha256:f2e4a763de7b97adc0154c93532698f9d4a7feb35fce90276052afc7d5db6f58",
+        "plan_hash": "sha256:7a11a27cab96370287615650624af8126a607ab547e529462ed2b60504df7e9e",
         "plan_id": "pln_00000000000000000000000000000003",
         "plan_schema": "coursebook.plan.v2",
         "plan_version": 1,
@@ -2942,8 +3013,8 @@
             "joints official procedure steps safety limits",
             "inspection official procedure steps safety limits",
             "desoldering official procedure steps safety limits",
-            "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. official procedure steps safety limits",
             "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. how to teach curriculum sequence",
+            "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. official procedure steps safety limits",
             "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. prerequisite knowledge learning progression",
             "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. reference documentation",
             "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. official guidance"
@@ -2984,8 +3055,8 @@
           "calls": 7,
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
-          "input_tokens": 33005,
-          "output_tokens": 2167,
+          "input_tokens": 33542,
+          "output_tokens": 2254,
           "unknown_calls": 0,
           "unknown_cost": false
         },
@@ -3094,7 +3165,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": 2,
           "owners": 2,
-          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
+          "plan_hash": "sha256:7a11a27cab96370287615650624af8126a607ab547e529462ed2b60504df7e9e",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -3128,7 +3199,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5865,
+            "input_tokens": 5867,
             "output_tokens": 551,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3153,7 +3224,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": 3,
           "owners": 2,
-          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
+          "plan_hash": "sha256:7a11a27cab96370287615650624af8126a607ab547e529462ed2b60504df7e9e",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -3212,7 +3283,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": 4,
           "owners": 2,
-          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
+          "plan_hash": "sha256:7a11a27cab96370287615650624af8126a607ab547e529462ed2b60504df7e9e",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -3246,7 +3317,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5847,
+            "input_tokens": 5849,
             "output_tokens": 537,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3271,7 +3342,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": 5,
           "owners": 2,
-          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
+          "plan_hash": "sha256:7a11a27cab96370287615650624af8126a607ab547e529462ed2b60504df7e9e",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -3305,7 +3376,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5855,
+            "input_tokens": 5857,
             "output_tokens": 539,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3330,7 +3401,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": 6,
           "owners": 2,
-          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
+          "plan_hash": "sha256:7a11a27cab96370287615650624af8126a607ab547e529462ed2b60504df7e9e",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -3364,7 +3435,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5857,
+            "input_tokens": 5865,
             "output_tokens": 543,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3389,7 +3460,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": null,
           "owners": 2,
-          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
+          "plan_hash": "sha256:7a11a27cab96370287615650624af8126a607ab547e529462ed2b60504df7e9e",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -3423,7 +3494,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5878,
+            "input_tokens": 5880,
             "output_tokens": 542,
             "unknown_calls": 0,
             "unknown_cost": false

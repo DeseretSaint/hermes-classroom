@@ -46,6 +46,11 @@ SCENARIOS: dict[str, dict] = {
             "weeks": 1,
             "sessions_per_week": 1,
             "learner_outcome": "The learner replaces the inner tube and confirms the brakes by hand.",
+            # CP-015 item 15: the plan states its own typed exit. Authored here, not synthesised,
+            # so a rebuild of the recording carries the same declaration the rules read.
+            "exit_performance": "performance",
+            "terminal_performance": "Replace the inner tube on a road bike and check that the "
+                                    "tyre holds air before riding.",
             # H-195: the plan states its own arc and starting assumptions. Authored here, not
             # synthesised, so the recorded plan is a plan the rules would accept.
             "through_line": (
@@ -124,6 +129,9 @@ SCENARIOS: dict[str, dict] = {
             "sessions_per_week": 2,
             "learner_outcome": "The learner names intervals and triads and uses the circle of "
                                "fifths to analyse a pop song.",
+            "exit_performance": "knowledge",
+            "terminal_performance": "Read intervals, triads and the circle of fifths, and explain "
+                                    "how a chord is built.",
             # H-195: the arc the units build and the standing the learner starts from.
             "through_line": (
                 "Each unit turns a sound into a number and then a number into a name: semitones "
@@ -268,6 +276,9 @@ SCENARIOS: dict[str, dict] = {
             "sessions_per_week": 2,
             "learner_outcome": "The learner solders, inspects and reworks a through-hole board "
                                "without lifting a pad.",
+            "exit_performance": "performance",
+            "terminal_performance": "Build and inspect a through-hole joint, then desolder a part "
+                                    "and prove continuity with a meter.",
             # H-195: the arc every unit serves and the standing the learner starts from. The
             # bench safety unit comes first because every later unit assumes a controlled iron.
             "through_line": (
@@ -325,8 +336,12 @@ SCENARIOS: dict[str, dict] = {
                 {"ordinal": 12, "unit_ref": 6, "title": "Prove continuity with a meter after rework",
                  "evidence_target": "transfer", "evidence_criteria": ["Chooses the continuity setting and reads it"]},
             ],
+            # A procedure is measured by a confirmation checklist of the acts, not by a question
+            # about them (CP-015g/D1-F1, `CHECK_KIND_BY_TARGET`). The five procedure objectives
+            # therefore carry `verification`; the knowledge objectives keep their quiz.
             "check_plan": [
-                {"objective_ref": ordinal, "kind": "quiz", "evidence_target": target}
+                {"objective_ref": ordinal, "kind": "verification" if target == "procedure" else "quiz",
+                 "evidence_target": target}
                 for ordinal, target in enumerate(
                     ["recall", "procedure", "comprehension", "discrimination", "procedure",
                      "comprehension", "procedure", "discrimination", "transfer", "procedure",
@@ -494,6 +509,33 @@ SCENARIOS: dict[str, dict] = {
                 "items": None,
             },
         },
+    },
+}
+
+
+#: The one claim per scenario that the recorded plan grounds in a fetched page. GEN-1 refuses an
+#: independent outcome when every objective is `unverified` and no claim verdict links to the
+#: ledger, so a recording that wants to exercise `independently_validated` must cite. The quote is
+#: copied verbatim from the page the scenario's research pass actually supplies (and must survive
+#: `_fit_source_brief`'s 400-character floor); the replay maps `source_url` to the live ledger id.
+GROUNDING: dict[str, dict] = {
+    "bicycle_single": {
+        "objective_ordinal": 1,
+        "source_url": "https://example.invalid/recorded/bicycle-inner-tube",
+        "quote": "the tyre must be fully deflated, the bead seated by hand, and the brake "
+                 "quick-release closed before riding",
+    },
+    "music_short": {
+        "objective_ordinal": 1,
+        "source_url": "https://example.invalid/recorded/music-intervals",
+        "quote": "It names the semitone counts of the common intervals and the major/minor triad "
+                 "recipes.",
+    },
+    "soldering_full": {
+        "objective_ordinal": 9,
+        "source_url": "https://physicslabs.colorado.edu/courses/phys-3330/resources/soldering/",
+        "quote": "A good solder joint is shiny, smooth, and volcano-shaped — it wets both the pad "
+                 "and the component lead completely.",
     },
 }
 
@@ -869,6 +911,18 @@ def build(name: str) -> dict:
             raise SystemExit(f"{name}: no authored depth (headings/why/counter) for {title!r}")
         lessons[title].update(short)
         lessons[title].update(depth)
+        # A procedure objective is evidenced by a confirmation checklist of the acts the lesson
+        # already teaches (`example_steps`). Derive the items here, once, so a rebuild of the
+        # recording cannot silently regress to the quiz that the product now refuses as the
+        # measure of a procedure. Lessons that author their own item wording keep it.
+        recording = lessons[title]
+        if objective["evidence_target"] == "procedure" and not recording.get("items"):
+            steps = [str(step) for step in recording.get("example_steps") or [] if str(step).strip()]
+            if steps:
+                recording["items"] = [
+                    {"id": f"step-{index + 1}", "label": step}
+                    for index, step in enumerate(steps[:5])
+                ]
         # H-195: the recorded lesson has to clear the deterministic teaching floor on its own
         # words, so the builder refuses a transcript that would only pass a lowered floor.
         prose = (
@@ -886,6 +940,7 @@ def build(name: str) -> dict:
         "research": _research_block(name, authored),
         "shape": shape,
         "lessons": lessons,
+        "grounding": GROUNDING[name],
     }
 
 

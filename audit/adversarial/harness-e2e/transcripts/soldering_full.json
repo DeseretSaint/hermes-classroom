@@ -1,4 +1,9 @@
 {
+  "grounding": {
+    "objective_ordinal": 9,
+    "quote": "A good solder joint is shiny, smooth, and volcano-shaped — it wets both the pad and the component lead completely.",
+    "source_url": "https://physicslabs.colorado.edu/courses/phys-3330/resources/soldering/"
+  },
   "lessons": {
     "Desolder a two-lead part without overheating it": {
       "accepted_answers": [
@@ -21,7 +26,20 @@
         "Alternate the heat"
       ],
       "intent": "Teach desoldering a part.",
-      "items": null,
+      "items": [
+        {
+          "id": "step-1",
+          "label": "Add fresh solder"
+        },
+        {
+          "id": "step-2",
+          "label": "Alternate the heat"
+        },
+        {
+          "id": "step-3",
+          "label": "Pull gently"
+        }
+      ],
       "practice": "Add fresh solder to each joint, alternate heat between the leads, and pull gently once both are molten.",
       "practice_short": "Add fresh solder to each joint and alternate heat between the leads.",
       "reference_answer": "to restore the flux",
@@ -47,7 +65,20 @@
         "The lead carries the gap"
       ],
       "intent": "Teach lead forming.",
-      "items": null,
+      "items": [
+        {
+          "id": "step-1",
+          "label": "Measure the board"
+        },
+        {
+          "id": "step-2",
+          "label": "Bend with pliers"
+        },
+        {
+          "id": "step-3",
+          "label": "Drop the part"
+        }
+      ],
       "practice": "Bend the lead with pliers at the board thickness and let the part drop flush without pushing it.",
       "practice_short": "Bend the lead with pliers at the board thickness.",
       "reference_answer": "the solder side",
@@ -73,7 +104,20 @@
         "Solder on the tip looks joined"
       ],
       "intent": "Teach the heat order.",
-      "items": null,
+      "items": [
+        {
+          "id": "step-1",
+          "label": "Touch pad and lead"
+        },
+        {
+          "id": "step-2",
+          "label": "Wait for heat"
+        },
+        {
+          "id": "step-3",
+          "label": "Feed into the joint"
+        }
+      ],
       "practice": "Touch the tip to the pad and the lead at once, count two seconds, then feed solder into the joint, not the tip.",
       "practice_short": "Touch the tip to the pad and the lead at once.",
       "reference_answer": "into the heated joint",
@@ -287,7 +331,20 @@
         "Hotter is not faster"
       ],
       "intent": "Teach the temperature setting for leaded solder.",
-      "items": null,
+      "items": [
+        {
+          "id": "step-1",
+          "label": "Set the dial"
+        },
+        {
+          "id": "step-2",
+          "label": "Wait for the display"
+        },
+        {
+          "id": "step-3",
+          "label": "Tin the tip"
+        }
+      ],
       "practice": "Set the station, wait for the display to settle, and tin the tip before the first joint.",
       "practice_short": "Set the station and wait for the display to settle.",
       "reference_answer": "320 to 350 degrees Celsius",
@@ -314,7 +371,20 @@
         "Lift only after the solder flows"
       ],
       "intent": "Teach bridge removal.",
-      "items": null,
+      "items": [
+        {
+          "id": "step-1",
+          "label": "Add flux"
+        },
+        {
+          "id": "step-2",
+          "label": "Lay the wick"
+        },
+        {
+          "id": "step-3",
+          "label": "Heat until the bridge flows"
+        }
+      ],
       "practice": "Add flux, lay the wick over the bridge, and heat the wick until the solder flows into it before lifting.",
       "practice_short": "Add flux and lay the wick over the bridge.",
       "reference_answer": "after the solder flows into it",
@@ -394,7 +464,7 @@
       },
       {
         "evidence_target": "procedure",
-        "kind": "quiz",
+        "kind": "verification",
         "objective_ref": 2
       },
       {
@@ -409,7 +479,7 @@
       },
       {
         "evidence_target": "procedure",
-        "kind": "quiz",
+        "kind": "verification",
         "objective_ref": 5
       },
       {
@@ -419,7 +489,7 @@
       },
       {
         "evidence_target": "procedure",
-        "kind": "quiz",
+        "kind": "verification",
         "objective_ref": 7
       },
       {
@@ -434,12 +504,12 @@
       },
       {
         "evidence_target": "procedure",
-        "kind": "quiz",
+        "kind": "verification",
         "objective_ref": 10
       },
       {
         "evidence_target": "procedure",
-        "kind": "quiz",
+        "kind": "verification",
         "objective_ref": 11
       },
       {

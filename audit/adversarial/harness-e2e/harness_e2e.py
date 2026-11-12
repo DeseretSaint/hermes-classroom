@@ -234,6 +234,42 @@ class RecordedSearch:
         return page
 
 
+def _apply_grounding(objectives: list[dict], payload: dict, authored: dict) -> None:
+    """Mark the recording's grounded objective `sourced`, using the live ledger's own id.
+
+    GEN-1 refuses an independent outcome when every objective is `unverified` and no claim
+    verdict links to the ledger. The recording names the page and a verbatim span; the research
+    pass supplies the id and the excerpt, so this never invents provenance — and a page the pass
+    did not fetch is a hard failure, never a fallback.
+    """
+    grounding = authored.get("grounding")
+    if not grounding:
+        return
+    source = next(
+        (row for row in (payload.get("sources") or [])
+         if str(row.get("url")) == str(grounding["source_url"])),
+        None,
+    )
+    if source is None:
+        raise AssertionError(
+            f"recording grounds objective {grounding['objective_ordinal']} in "
+            f"{grounding['source_url']!r}, which the research pass did not supply"
+        )
+    cited = next(
+        (objective for objective in objectives
+         if int(objective["ordinal"]) == int(grounding["objective_ordinal"])),
+        None,
+    )
+    if cited is None:
+        raise AssertionError(
+            f"recording grounds objective {grounding['objective_ordinal']}, which the plan does "
+            "not carry"
+        )
+    cited["support"] = "sourced"
+    cited["source_ids"] = [str(source["source_id"])]
+    cited["source_quote"] = str(grounding["quote"])
+
+
 class RecordedLLM:
     """Replays the recorded transcript; records every real request the pipeline sent.
 
@@ -284,6 +320,10 @@ class RecordedLLM:
             }
             for item in shape["check_plan"]
         ]
+        # GEN-1: an independent outcome needs one objective the plan itself grounds in a source
+        # the research pass actually fetched. The recording names the page and the verbatim span;
+        # the live ledger supplies the id, so the replay never invents provenance.
+        _apply_grounding(objectives, payload, authored)
         return {
             "plan_schema": gen.PLAN_SCHEMA_V2_NAME,
             "scope": scope,
@@ -793,8 +833,37 @@ def _run_scenario(name: str, *, home: Path) -> dict:
 
     attempts = [(objectives[0], recorded_answer(objectives[0]), "correct")]
     if scenario["recipe"] != "one_off" and len(objectives) > 1:
-        attempts.append((objectives[1], {"kind": "text", "text": "a deliberately wrong answer"},
-                         "wrong"))
+        # The wrong-answer lane must land on a quiz: a procedure's verification checklist has no
+        # exact answer to be wrong about (a free-text answer to it is `needs_retry`, not
+        # `not_yet`). It must also be a check that can be opened: a later unit refuses while its
+        # prerequisite unit is unmet, so fall back to the graded objective and retry it.
+        unit_state = {
+            int(unit["ordinal"]): str(unit.get("prerequisite_state") or "")
+            for unit in outline["plan"]["units"]
+        }
+        unit_of = {
+            int(row["ordinal"]): int(unit["ordinal"])
+            for unit in outline["plan"]["units"]
+            for row in unit["objectives"]
+        }
+        wrong_objective = next(
+            (objective for objective in objectives[1:]
+             if not recording[objective["title"]].get("items")
+             and unit_state.get(unit_of.get(int(objective["ordinal"]), 0)) != "unmet"),
+            None,
+        )
+        if wrong_objective is None:
+            wrong_objective = objectives[0]
+        wrong_answer = {"kind": "text", "text": "a deliberately wrong answer"}
+        if wrong_objective is objectives[0]:
+            # Retry the graded check: a wrong answer first (`not_yet`), then the recorded answer
+            # (`pass`). The same lane proves both verdicts without crossing an unmet unit edge.
+            attempts = [
+                (wrong_objective, wrong_answer, "wrong"),
+                (objectives[0], recorded_answer(objectives[0]), "correct"),
+            ]
+        else:
+            attempts.append((wrong_objective, wrong_answer, "wrong"))
     grading_rows = []
     for objective, answer, label in attempts:
         opened = _rpc("check.open", {
@@ -981,11 +1050,31 @@ def _assert_scenario(name: str, scenario: dict, evidence: dict) -> dict[str, boo
             "wrong_answer_is_not_yet": wrong is not None and wrong.get("verdict") == "not_yet",
         })
     elif name == "soldering_full":
+        # CP-015g/D1-F1: the check family follows the objective's evidence target. A procedure is
+        # measured by a confirmation checklist (rubric_only verification); the knowledge and
+        # transfer objectives keep the exact-lane quiz this recording authored. A committed
+        # course still needs at least one graded quiz (`coursebook` kernel rule).
+        targets = {
+            row["objective_id"]: row["evidence_target"]
+            for row in evidence["steps"]["outline"]["objectives"]
+        }
+        lanes_match_targets = all(
+            (lane["reference_kind"] == "rubric_only"
+             and lane["stimulus_format"] == "verification")
+            if targets.get(lane["objective_id"]) == "procedure"
+            else (lane["reference_kind"] == "exact" and lane["stimulus_format"] == "text")
+            for lane in lanes
+        )
         assertions.update({
             "multi_unit_course": obs["units"] >= 2,
             "prerequisite_edges_declared": any(edges.values()),
-            "graded_checks_present": len(lanes) == obs["objectives"] and all(
-                lane["reference_kind"] == "exact" for lane in lanes
+            "graded_checks_present": len(lanes) == obs["objectives"] and lanes_match_targets
+            and any(lane["reference_kind"] == "exact" for lane in lanes),
+            "procedure_checks_are_verification": all(
+                lane["reference_kind"] == "rubric_only"
+                and lane["stimulus_format"] == "verification"
+                for lane in lanes
+                if targets.get(lane["objective_id"]) == "procedure"
             ),
             "correct_answer_passes": correct.get("verdict") == "pass",
             "wrong_answer_is_not_yet": wrong is not None and wrong.get("verdict") == "not_yet",
@@ -1035,8 +1124,10 @@ class CeilingLLM(RecordedLLM):
                 # CP-015g/D1-F1: this brief's goal is a physical act, so the plan must declare the
                 # performance it teaches. Every fourth objective is the one the learner performs;
                 # the rest are the knowledge that supports it. The objective count — the thing the
-                # bound is about — is unchanged.
-                performed = ordinal % 4 == 1
+                # bound is about — is unchanged. Ordinal 1 stays knowledge (a learner starting from
+                # nothing may not open with the act), and ordinal 40 is performed so the last unit
+                # ends in the performance the plan claims.
+                performed = ordinal % 4 == 0
                 document["objectives"].append({
                     "ordinal": ordinal,
                     "unit_ref": unit["ordinal"],
@@ -1055,6 +1146,10 @@ class CeilingLLM(RecordedLLM):
                     "evidence_target": "procedure" if performed else "comprehension",
                 })
         assert ordinal == self.objectives_n, (ordinal, self.objectives_n)
+        # The ceiling plan re-authors its objectives, so the recording's grounding must be
+        # re-applied: an ungrounded plan can pass validation but not earn the independent label
+        # the draft state requires (GEN-1).
+        _apply_grounding(document["objectives"], payload, self.transcript)
         return document
 
 
@@ -1530,7 +1625,7 @@ def main(argv: list[str]) -> int:
         print(text)
         lines.append(text)
 
-    emit("H-40 arbitrary-topic evidence packet — H-46b re-run on cd818fa (blueprint v2)")
+    emit("H-40 arbitrary-topic evidence packet — re-recorded under the current plan rules")
     emit(f"model: RECORDED TRANSCRIPT ({AUTHOR_MODEL}) / validator RECORDED ({VALIDATOR_MODEL})")
     emit("provider calls: 0, provider spend: $0.00, network: none")
     emit()
