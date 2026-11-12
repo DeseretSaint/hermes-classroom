@@ -75,12 +75,13 @@ EXPORT_SHIM = """
 // --- CP-024 test export shim (staged copy only; the repo module is not edited) ---
 // CP-040 moved CourseHomeV3, CourseRouteList, CourseRouteMapNode, CB3_COURSE_COPY, cb3CourseNodes,
 // cb3CourseRoutePlan, cb3CoursePlateAnchors, cb3CourseHeroPlate, cb3CourseWorldPosture and
-// cb3CourseEvidenceLine into the module's single export block. `CourseDetail` is the one name the
-// composite screen mounts that the seam does not export, so it is the only one staged here.
+// cb3CourseEvidenceLine into the module's single export block. `CourseDetail` used to be staged here
+// because the seam did not export it; the frame registry now requires it (a destination frame may
+// only mount a surface the shipped module exports), so it is in the real export block and staging it
+// again is a duplicate export.
 // UI-K5 adds the hero resolver and the motion publisher so the fallback order and the
 // reduced-motion rule are executable without a repo edit to the export seam.
 export {
-  CourseDetail,
   cb3CourseHeroResolution,
   publishCbMotion
 };

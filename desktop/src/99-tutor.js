@@ -2232,6 +2232,14 @@ export {
   WorkshopView,
   // UI-K4 — the Courses route, exported so the frame audit can photograph the shipped surface.
   CoursesView,
+  // UI-K14 — the four route surfaces the destination frame audit mounts, exported so the frame
+  // photographs the shipped component and not a copy. They are defined on this tree already
+  // (`CourseDetail` in 90-course.js; the three Studio surfaces in 95-studio.js); the frame
+  // registry cannot mount what the module does not export.
+  CourseDetail,
+  StudioList,
+  StudioDetail,
+  StudioBriefForm,
   workshopFactRows,
   cbLayoutFor,
   cbModeFromTheme,
