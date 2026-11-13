@@ -56,7 +56,7 @@ disclose it in `exclusions` with the prefix `Scope shortfall — fewer supportin
 v2 label also states the derived band (the ledger's capability floor and the research cell's
 sourcing ceiling) instead of the band's own numbers.
 
-`plan-prompt.v22` / `plan-prompt.v24` (W2-9) carry two instruction-text corrections.
+The two W2-9 instruction-text corrections carry forward in both current labels.
 `mastery_path.plan_policy_lines` no longer asks the v2 author for `independent_evidence` or
 `delayed_evidence`: a v2 `check_plan` entry carries `objective_ref`, `kind` and `evidence_target`
 only, and `enforce_plan_rules` rejects those keys, so the directive now says the harness records

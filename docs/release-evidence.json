@@ -8,30 +8,30 @@
  "record_scope": "measured_commit is the frozen release tree that the module pin and the M4 audit describe. The tests, rpc and db blocks track the master tree the release gate reads and each names its own measurement commit, because test-only merges land without moving the release pin.",
  "tests": {
   "command": "python3 -m unittest discover -s tests -t .",
-  "measured_commit": "4f93f890a81eede11b7618f3663d5c915d67b12d",
-  "measured_commit_short": "4f93f890",
+  "measured_commit": "67c1c405c84ba63882bda29e4fac07477ee12969",
+  "measured_commit_short": "67c1c405",
   "measured_at": "2026-11-12",
-  "ran": 4458,
+  "ran": 4573,
   "skipped": 12,
-  "seconds": 904.597,
+  "seconds": 1605.0,
   "verdict": "OK (skipped=12)",
-  "note": "Measured 2026-11-12 on trunk `4f93f890`, the merge of `wt/t_4d9e6724` (`38b7dc7b`: validation independence classified by canonical model through one provenance-annotated `MODEL_ALIASES` table, so two spellings of one route stop counting as two opinions, plus a re-recorded harness packet for the canonical pair) over `88a88744` (UI-K9 cover provenance `f766d1c6` and the pack re-export fence `6bcd56bb`): Ran 4458 tests in 904.597s, OK (skipped=12), exit 0, one uninterrupted run in a dedicated scratch worktree over `24133b24`. The 5-test delta over 4453 is that card's own alias cases (tests/test_validator_independence.py +129 lines: the four alias spellings, the unidentified case and the end-to-end plan-job assertion). desktop/plugin.js moves no bytes in this merge (Python, docs and committed evidence only) and still hashes e87a2e01; the release gate `bash scripts/validate-plugin.sh` passed 4/4 on 4f93f890 (4404 files) and `python3 scripts/check-docs-truth.py --skip-tests` PASSES on it. Previous records (4453 at 88a88744, 4444 at d616f84a, 4441 at 373c9424, 4437 at 5e3a7759, 4434 at 170aa650, 4429 at 165d7da0, 4424 at ec99038e, 4401 at 3b82959f, 4385 at be6b3856, 4375 at 5df8dfdc, 4359 at 8eb1f944, 4350 at 6dc7a927, 4212 at 5f956f7b, 4033 at 6d08cc8a) are history. The docs commit above it touches only documentation, so it cannot move a test count."
+  "note": "Measured 2026-11-12 on the merged E2E trunk `67c1c405`, after the E2E wave (L4/L5 `54b789a4`, the composed v28 carrying L1 `131179ac`, U3b `67abe18f`) and master's S5/S6 + G6 (`bb0feb6f`) were merged: Ran 4573 tests in 1605s, OK (skipped=12), one uninterrupted run in a dedicated scratch worktree. The 115-test delta over 4458 is the merged cards' own cases (E2E L1/L4/L5, S5/S6, G6, U3b) plus the v15 schema pins re-derived on the union. The same tree passes `bash scripts/validate-plugin.sh` 4/4 and `python3 scripts/check-docs-truth.py --skip-tests`. Previous records (4458 at 4f93f890, 4453 at 88a88744, 4444 at d616f84a, 4437 at 5e3a7759, 4434 at 170aa650, 4429 at 165d7da0, 4424 at ec99038e, 4401 at 3b82959f, 4385 at be6b3856, 4375 at 5df8dfdc, 4359 at 8eb1f944) are history."
  },
  "rpc": {
   "contract": "cb.rpc",
-  "version": 27,
-  "measured_commit": "5f956f7bdb1ee550ee6e5eb2383b694982126089",
+  "version": 28,
+  "measured_commit": "131179ac6d8bddd77c33f71432d3f6644454a282",
   "declared_methods": 93,
   "handlers": 93,
-  "note": "re-asserted by the supervisor on master at b1913af7 (the CP-052 merge over eaf2d41): contracts/rpc.v26.json declares 93 methods and 93 handlers and `x-supersedes` names contracts/rpc.v25.json; coursebook/contracts.py WIRE_CONTRACT_VERSION = 26; a probe importing every registering module reports 93 implemented methods, no declared method lacking a handler and no handler outside the contract. v26 is one additive amendment over v25 (CP-052): `$defs/world_brief` gains one **optional** `route_anchors` array of `{anchor_id, section_id, x, y}` entries with x/y numbers in 0-1, so a brief that declares no anchors keeps its exact v25 shape and bytes, and no method, request shape, existing required key, error code, job kind or vocabulary value moves. The read side was the defect: world.read.response.world.oneOf collapsed the real brief into \"not valid under any of the given schemas\" for a stored plate with anchors, and the write side silently dropped the field on every world.generate. rpc.v25.json stays byte-identical on disk as immutable history, and the wire echoes (`contract_version` on both response envelopes and health.get) move 25 -> 26. The record's previous v25 / 93 methods measured on 07976d8 and v24 / 83 before it stay in the immutable history. A separate post-submission card (t_ed8e33c7) lands `library_item.created_at` as v27."
+  "note": "re-asserted by the supervisor on the merged E2E trunk 67c1c405: contracts/rpc.v28.json declares 93 methods and 93 handlers (the same set as v27 — no method moved in v26, v27 or v28) and `x-supersedes` names contracts/rpc.v27.json; coursebook/contracts.py WIRE_CONTRACT_VERSION = 28. v28 composes two additive amendments over v27 (E2E L1 and E2E L4/L5): `check.open`, `check.get` and `progression.challenge_out` responses gain one optional boolean `revisit` (a passed generated section reopens as a clone of the newest closed authored check at the next version, recorded as an attempt and its layer-1 row but never moving `objectives.state`, never writing a second layer-2 row and never paying XP twice); `library_item.next_step.kind` gains `review_lesson`, the terminal `complete` and the repair-only `repair_lesson`; `outline_objective` and the `lesson.page` section record may carry `section_id`, `lesson_state` and `lesson_rejection_reasons`; `lesson.regenerate` accepts the optional `reasons` the caller displayed; and `lesson.page.section` gains `sections_total`, the count the handler already projected. Every new key is optional, every response that omits it keeps its exact v27 shape, and no method, required key, error code, job kind, answer kind, verdict, evidence class or vocabulary value moves. v27 (item 28b) added the optional `lesson_document_media.labels` array, v26 (CP-052) the optional `world_brief.route_anchors` array; both stay on disk byte-identical as immutable history. The record's previous v27 / 93 methods and v26 / 93 before it stay in the immutable history."
  },
  "db": {
   "contract": "cb.db",
-  "version": 14,
-  "measured_commit": "07976d85c84c83a8183f2e66a481b12512b37a60",
-  "schema_version": 14,
-  "migrations": "0001-0014",
-  "note": "re-asserted on master at 07976d8 for gate 8 (t_12c5410e): coursebook/db.py DB_SCHEMA_VERSION = 14; contracts/db.v14.json schema_version 14; migrations 0001_initial.sql through 0014_takehome_pack_revision_scope.sql. CP-042 touched no coursebook/, contracts/ or migration path, so v14 is unchanged from 7130109. v13 carries GM-001's nullable courses.presentation_mode plus eight Game Mode tables; v14 is additive over v13 in inventory and removes exactly one unique key from takehome_packs by drop-and-rename rebuild, with rows and indexes preserved and no backfill. contracts/db.v13.json stays byte-identical and pinned. The suite, module pin and M4 values in this record stay the b9f4a19 measurement; this block tracks the tree the release gate reads."
+  "version": 15,
+  "measured_commit": "67c1c405c84ba63882bda29e4fac07477ee12969",
+  "schema_version": 15,
+  "migrations": "0001-0015",
+  "note": "re-asserted on the merged E2E trunk 67c1c405: coursebook/db.py DB_SCHEMA_VERSION = 15; contracts/db.v15.json schema_version 15; migrations 0001_initial.sql through 0015_check_revisit.sql. v15 is additive over v14 by one migration: 0015_check_revisit.sql adds exactly one column, `checks.revisit` (INTEGER NOT NULL DEFAULT 0), the flag that marks a check as a revisit clone of a closed authored check, so every existing row reads unchanged and contracts/db.v14.json stays byte-identical as immutable history. The suite, module pin and M4 values in this record stay the b9f4a19 measurement; this block tracks the tree the release gate reads."
  },
  "plugin": {
   "path": "desktop/plugin.js",

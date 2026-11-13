@@ -53,19 +53,21 @@ land without moving the release pin:
 
 | Fact | Value | Measured on | Command |
 | --- | --- | --- | --- |
-| Suite | `Ran 4375 tests in 883.625s`, `OK (skipped=12)`, exit 0 | `5df8dfdc` (`master`, 2026-11-12, the merge of the recovered colouring page `01048f96` over the `7fdfd94c` trunk; 16 of the 4375 are `tests/test_coloring_print.py`) | `python3 -m unittest discover -s tests -t .` |
-| `cb.rpc` | v27, 93 declared methods, 93 handlers, no declared method without a handler and none outside the contract | `8eb1f944` (`master`, 2026-11-12) | `contracts/rpc.v27.json`, `coursebook/contracts.py` `WIRE_CONTRACT_VERSION = 27`, `coursebook/api.py` `METHOD_HANDLERS` after importing every registering module |
-| `cb.db` | v14, `DB_SCHEMA_VERSION = 14`, migrations `0001`-`0014` | `b1913af7` (`master`, 2026-11-10, supervisor CP-052 merge) | `coursebook/db.py`, `contracts/db.v14.json` |
+| Suite | `Ran 4573 tests in 1605s`, `OK (skipped=12)`, exit 0 | `67c1c405` (`master`, 2026-11-12, the merged E2E trunk: L4/L5 `54b789a4`, the composed `cb.rpc` v28 carrying L1 `131179ac` and U3b `67abe18f`, over master's S5/S6 + G6 `bb0feb6f`) | `python3 -m unittest discover -s tests -t .` |
+| `cb.rpc` | v28, 93 declared methods, 93 handlers, no declared method without a handler and none outside the contract | `67c1c405` (`master`, 2026-11-12, the merged E2E trunk) | `contracts/rpc.v28.json`, `coursebook/contracts.py` `WIRE_CONTRACT_VERSION = 28`, `coursebook/api.py` `METHOD_HANDLERS` after importing every registering module |
+| `cb.db` | v15, `DB_SCHEMA_VERSION = 15`, migrations `0001`-`0015` | `67c1c405` (`master`, 2026-11-12, the merged E2E trunk; v15 adds the one-column `checks.revisit` flag by `0015_check_revisit.sql`) | `coursebook/db.py`, `contracts/db.v15.json` |
 
-The 2026-11-12 run is the count every release document now quotes: `Ran 4375 tests in 883.625s`,
-`OK (skipped=12)`, exit 0, on `5df8dfdc` (the colouring-page merge over `7fdfd94c`). Its sixteen
-extra tests over the `8eb1f944` count of 4359 are `tests/test_coloring_print.py`; the record in
-`docs/release-evidence.json` names `5df8dfdc` and the suite discovered exactly that count. The
+The 2026-11-12 run on the merged E2E trunk is the count every release document now quotes:
+`Ran 4573 tests in 1605s`, `OK (skipped=12)`, exit 0, on `67c1c405` (the E2E wave merged over
+`bb0feb6f`). Its 115-test delta over the `4f93f890` count of 4458 is the merged cards' own cases —
+E2E L1/L4/L5, S5/S6, G6, U3b — plus the v15 schema pins re-derived on the union; the record in
+`docs/release-evidence.json` names `67c1c405` and the suite discovered exactly that count. The
 duration was measured while other workers were active on the host, so it is a count measurement, not
-a quiet-host timing. The previous records — 4359 at `8eb1f944`, 4350 at `6dc7a927`, 4212 at
-`5f956f7b`, and 4033 at `6d08cc8a` before it — are history. `cb.rpc` v27 (W2-6's optional
-`lesson_document_media.labels` array) adds no method, so the registry test still holds 93 declared to
-93 handlers.
+a quiet-host timing. The previous records — 4458 at `4f93f890`, 4453 at `88a88744`, 4434 at
+`170aa650`, 4375 at `5df8dfdc`, 4359 at `8eb1f944`, 4350 at `6dc7a927`, 4212 at `5f956f7b`, and 4033
+at `6d08cc8a` before it — are history. `cb.rpc` v26, v27 and v28 are each additive amendments that
+add no method (v28 also carries the `cb.db` v15 `checks.revisit` column), so the registry test still
+holds 93 declared to 93 handlers.
 
 The M4 block on the `b9f4a19` table above still describes the frozen release tree; this pass does not
 re-pin it. Re-checked 2026-11-12 by summing the committed `audit/visual/m4-visual/audit.json`

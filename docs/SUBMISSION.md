@@ -27,8 +27,19 @@ as this tree's numbers. Every current-tree number in this file is re-derived on 
 checked by `python3 scripts/check-docs-truth.py`; what was measured, and what is branch-only, is
 `docs/RELEASE-EVIDENCE.md`.
 
-The tree carries `cb.rpc` v25 (93 declared methods, 93 handlers) and `cb.db` v14 (schema v14,
-migrations `0001`-`0014`): v25 is one additive amendment over v24 — CP-005 makes seven `library_item`
+The tree carries `cb.rpc` v28 (93 declared methods, 93 handlers) and `cb.db` v15 (schema v15,
+migrations `0001`-`0015`): v28 is one additive amendment over v27, composed from two E2E lanes — a
+passed generated section reopens as a revisit, a clone of the newest closed authored check at the
+next version, served when the objective has no hand-written `check_spec` (`revisit` on `check.open`,
+`check.get` and `progression.challenge_out`, recorded as an attempt and its layer-1 evidence row but
+never moving the objective's state again, never writing a second layer-2 row and never paying XP
+twice), and `library_item.next_step.kind` gains `review_lesson`, the terminal `complete` and the
+repair-only `repair_lesson`, which may carry the `objective_id`, `section_id` and validator `reasons`
+the repair is aimed at; `lesson.page.section` gains `sections_total`. Every new key is optional, a
+response that omits it keeps its exact v27 shape, and no method moves. v27 added the optional
+`lesson_document_media.labels` array (a figure's drawn labels as page text over a textless raster) and
+v26 the optional `world_brief.route_anchors` array; both are immutable history on disk. v25 is one
+additive amendment over v24 — CP-005 makes seven `library_item`
 shelf facts required (`sections_done`, `sections_total`, `checks_recorded`, `is_new`, `subject_label`,
 `cover_artifact_id`, `last_studied_at`) so a v3 card renders every number, chip and cover from one
 `library.list` read; no method moves. v24 is additive over v23 and appends ten methods — GM-004's
@@ -51,8 +62,12 @@ in migration `0012_fine_tune_revisions`, v13 adds GM-001's Game Mode storage —
 `courses.presentation_mode` plus eight play/homework/tutor tables — in migration
 `0013_game_mode_contracts`, and v14 removes exactly one unique key from `takehome_packs` in
 `0014_takehome_pack_revision_scope`, rebuilding that table in place with rows and indexes preserved,
-additive only. The suite is `Ran 4458 tests in 904.597s … OK (skipped=12)` on `master` `4f93f890` (module `e87a2e01…`)
-(the tree the `tests` block of `docs/release-evidence.json` names, 2026-11-12: six cards merged over
+additive only. The suite is `Ran 4573 tests in 1605s … OK (skipped=12)` on `master` `67c1c405`
+(module `aad05f41…`), the tree the `tests` block of `docs/release-evidence.json` names (2026-11-12): the
+E2E wave was merged over `bb0feb6f` (master's S5/S6 and G6) — E2E L4/L5 `54b789a4`, the composed `cb.rpc`
+v28 that carries E2E L1 `131179ac`, and U3b's `sections_total` `67abe18f` — and the cb.db v15 pins were
+re-derived on the union. The previous record was `Ran 4458 tests in 904.597s … OK (skipped=12)` on
+`4f93f890` (module `e87a2e01…`, 2026-11-12: six cards merged over
 the `d85c30c5` trunk — PRINT-2 `de92dd26` (`cb.pack` v4 names the `coloring_page` role), the Workshop
 share contract cases `393d51a1` (26 -> 32), CP-015g's measured per-call deadlines `918b0a01`,
 CP-G7-02's `parent.brief.get` NOT_FOUND answer `ef04029c`, the pnpm-aware electron resolver
@@ -64,7 +79,7 @@ plugin-spawned workers (`5e3a7759`, 3 tests, module unchanged); UI-K9's cover pr
 painted study room with a printed kit plate (`f766d1c6`, 3 tests, module rebuilt to `e87a2e01`), and
 the pack re-export fence made a fine-tuned pack-backed course refuse its export (`6bcd56bb`, 6 tests,
 module unchanged), and canonical-model validation independence (`38b7dc7b`, 5 tests, module unchanged),
-which is the 4458-test tree `4f93f890`); the
+which was the 4458-test tree `4f93f890`); the
 release tree `b9f4a19` measured `Ran 2747 tests in 410.301s … OK (skipped=1)` in the H-212 pass.
 
 **The tree is not shippable today.** The pane crash and library clipping that blocked H-85 are fixed
@@ -110,7 +125,7 @@ invalidates the earlier evidence.
 | 5 | Desktop shell with real views | Vellum | The H-85 blockers are fixed here: `670de1b` removes the null-runtime section crash and the Library clipping that failed the gate at `7d0f9cf`. No live Desktop window has driven this exact commit; the chat composer still needs the gateway-owning profile (CB-QA-09, P3-operational) | [~] |
 | 6 | Probes answer the three open questions | Sentinel | Re-run on `bc9f607` (code tree `ab6dc7e`, module `cd862140`), not carried forward: probes 1, 3, 4, 6, 7 PASS; probe 1's compression segment is now PASS in place (34 → 12 messages, `post_compaction` fired, `session_id` kept) because `compression.in_place` is on; probe 5 seam PASS with the Desktop render BLOCKED (no Electron window on this host); probe 2 stays FAIL — `pre_llm_call` injection is persisted and replayed, a host/doc mismatch, not a Coursebook defect. `PROBES.md` §"Re-run on the release candidate"; docs-truth PASS; suite `Ran 2724 tests in 541.893s … OK` | [~] |
 | 7 | Demo scenarios pass on the release commit | Sentinel | `docs/ACCEPTANCE.md` and the run record `docs/ACCEPTANCE-RUN.md` (frames under `docs/concept-parity/demo/gate7/`). The film this row used to say did not exist is `docs/launch/coursebook-walkthrough.mp4` (42.4 s, sha `9b6eed5e…e620`). The run scored `7831d31d` (module `71d940ce…`), the tree whose `desktop/plugin.js` is byte-identical to the pinned release tree `42fcd0f5`. Verdict **4 PASS / 3 FAIL**: S1a plan surface, S1c lesson, S2 app-restart resume, S4 parent surface PASS; S1b approve leg and S3 repair run FAIL on the provider-key defect `t_3e8b07ba`, S1d graded copy FAILs on `t_d2cbff9a`, and `t_b28115be` owns the `Session length could not be read` surface. The row stays `[ ]` until those three land and the FAIL rows are re-driven on the shipped tree | [ ] |
-| 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `docs/RELEASE-EVIDENCE.md`; `python3 scripts/check-docs-truth.py` (full) passes on `1c663172` plus this docs-only diff after the 2026-11-12 suite re-measurement (`4434 tests`, `OK (skipped=12)` on `170aa650`, the record's measured commit); its doc/contract/pin checks also pass with `--skip-tests` and the `cb.rpc` v27 / 93-method re-assertion, and its doc/contract/pin checks pass against the `b9f4a19` record they describe. The M4 and module fields still describe the frozen `b9f4a19` tree, not the head: re-pinning them to the trunk module is the operator's freeze decision, not a docs edit | [x] |
+| 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `docs/RELEASE-EVIDENCE.md`; `python3 scripts/check-docs-truth.py` (full) passes on `1c663172` plus this docs-only diff after the 2026-11-12 suite re-measurement (`4434 tests`, `OK (skipped=12)` on `170aa650`, the record's measured commit); its doc/contract/pin checks also pass with `--skip-tests` and the `cb.rpc` v28 / 93-method re-assertion, and its doc/contract/pin checks pass against the `b9f4a19` record they describe. The M4 and module fields still describe the frozen `b9f4a19` tree, not the head: re-pinning them to the trunk module is the operator's freeze decision, not a docs edit | [x] |
 | 9 | License present | DeseretSaint | `LICENSE` ships MIT (copyright 2026 DeseretSaint) at `0d17824`, the owner's decision on `t_6f2d2080`; this row, README §License, `CHANGELOG.md` and the catalog `known_issues` were reconciled in the same docs commit | [x] |
 | 10 | Public repository pushed | DeseretSaint | Measured 2026-11-10: `gh repo view DeseretSaint/hermes-classroom` reports `"visibility": "PUBLIC"` and an anonymous `git ls-remote https://github.com/DeseretSaint/hermes-classroom.git refs/heads/master` resolves `3278bae`. The visibility change itself has no recorded decision and no date in this repository — GitHub exposes no visibility-change timestamp for a user-owned repository — so this row records the measurement, not an approval | [x] |
 | 11 | Catalog entry pins the release commit | Harbor | `plugin-catalog/coursebook.yaml` on the pull-request branch pins the release tree `42fcd0f5` (module `71d940ce`; `docs_url` at the README's `#install-locally` heading, `readme: true` so the catalog renders install steps at that commit). The pull request is `NousResearch/hermes-agent#152920`, opened 2026-11-10, **open, not draft, `mergeable: MERGEABLE`** as of 2026-11-11 14:10 MST (verified through the GitHub API, not from this file), and unmerged: merging it is gated on the owner's sign-off in §0 and on gates 5 and 7. The pin and the `readme` key were changed after the maintainer's earlier approval of `3278bae`, and that delta is stated in a comment on the PR rather than silently carried | [x] |
@@ -315,8 +330,8 @@ holds the demo back. No recording happens without DeseretSaint's approval.
 | Public listing not authorised | The source repository is public (gate 10 met by measurement 2026-11-10), but a catalog merge, a tag and an announcement are publication under the operator gate, and none of them is authorised | DeseretSaint |
 | No release tag | Atlas's operator gate forbids publishing a release or tag until DeseretSaint signs off in chat | Atlas, DeseretSaint |
 
-Verified, so they are not blockers: 93/93 `cb.rpc` v27 methods mounted with no
-contract problems, schema v14 from migrations `0001`-`0014`, 4458 tests on `master` `4f93f890`
+Verified, so they are not blockers: 93/93 `cb.rpc` v28 methods mounted with no
+contract problems, schema v15 from migrations `0001`-`0015`, 4573 tests on `master` `67c1c405`
 (2747 on the release tree `b9f4a19`), pack round-trip and export
 hash matching, eight `parent.*` methods, the replan carry with the Parent Studio plan guard, and the
 full replan → lessons → export loop on contest row 9 at `29bede7` (export `exp_2e068c56`, content
