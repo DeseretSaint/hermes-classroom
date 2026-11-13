@@ -154,22 +154,67 @@ def _without_v24_course_create_intent(payload: dict, method: str) -> dict:
     return payload
 
 
+#: The E2E L1 amendment (``t_1b7cab16``) shares this same v28 document: `revisit` on the check
+#: read responses and each `lesson.page.checks` row, and `sections_total` on the lesson page's
+#: section record. On the merged tree those keys travel in the same file, so a carried-over
+#: comparison has to drop both amendments' additions rather than only this branch's. On a tree
+#: without L1 they are absent and removing them is a no-op.
+V28_L1_RESPONSE_FIELDS: dict[str, tuple[str, ...]] = {
+    "check.open": ("revisit",),
+    "check.get": ("revisit",),
+    "progression.challenge_out": ("revisit",),
+}
+
+
+def _sibling_v28_document() -> dict | None:
+    """The E2E L1 branch's own v28 derivation, when that script is present on this tree.
+
+    Two branches independently produce an rpc v28. ``probes/derive_rpc_v28.py`` is L1's and
+    ``probes/derive_rpc_v28_l4l5.py`` composes over it, so a merged tree ships the union. The
+    invariant tests below name *this* branch's delta; subtracting the sibling's own additions
+    keeps them exact on either tree instead of asserting the sibling does not exist.
+    """
+    path = contracts.CONTRACT_DIR.parent / "probes" / "derive_rpc_v28.py"
+    if not path.exists():
+        return None
+    spec = importlib.util.spec_from_file_location("derive_rpc_v28_l1_for_tests", path)
+    if spec is None or spec.loader is None:
+        return None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    derive = getattr(module, "derive", None)
+    if not callable(derive):
+        return None
+    document = derive(_document("rpc.v27.json"))
+    return document if isinstance(document, dict) else None
+
+
 def _without_v28_repair_fields(payload: dict, method: str) -> dict:
     """Undo E2E L4/L5's additive lesson fields for a carried-over comparison.
 
     v28 added three optional keys to the ``lesson.page`` section record and one optional
     ``reasons`` array to ``lesson.regenerate``. The next-step kinds and the outline's fields are
-    carried by ``$defs`` references, so no inline method payload changes for those.
+    carried by ``$defs`` references, so no inline method payload changes for those. The E2E L1
+    amendment's inline additions (see ``V28_L1_RESPONSE_FIELDS``) are undone here too, so one
+    helper serves the union document.
     """
     carried = json.loads(json.dumps(payload))
     if method == "lesson.page":
-        section = carried.get("response", {}).get("properties", {}).get("section")
+        response = carried.get("response", {})
+        section = response.get("properties", {}).get("section")
         if isinstance(section, dict):
-            for field in ("section_id", "lesson_state", "rejection_reasons"):
+            for field in ("section_id", "lesson_state", "rejection_reasons", "sections_total"):
                 (section.get("properties") or {}).pop(field, None)
+        checks = response.get("properties", {}).get("checks")
+        if isinstance(checks, dict):
+            items = checks.get("items") or {}
+            (items.get("properties") or {}).pop("revisit", None)
     if method == "lesson.regenerate":
         (carried.get("request", {}).get("properties") or {}).pop("reasons", None)
+    for field in V28_L1_RESPONSE_FIELDS.get(method, ()):
+        (carried.get("response", {}).get("properties") or {}).pop(field, None)
     return carried
+
 
 
 def _without_v17_source_fields(payload: dict, method: str) -> dict:
@@ -5119,8 +5164,23 @@ class V28AmendmentTest(unittest.TestCase):
     def test_the_next_step_gains_two_kinds_and_only_optional_fields(self) -> None:
         v27 = _document("rpc.v27.json")["$defs"]["library_item"]["properties"]["next_step"]
         after = contracts.contract("cb.rpc")["$defs"]["library_item"]["properties"]["next_step"]
+        # On the merged tree the E2E L1 amendment contributes `review_lesson` to the same enum;
+        # subtract what its own derivation adds so this assertion still names only this delta.
+        sibling = _sibling_v28_document()
+        sibling_kinds = (
+            set(
+                sibling["$defs"]["library_item"]["properties"]["next_step"]["properties"]["kind"][
+                    "enum"
+                ]
+            )
+            - set(v27["properties"]["kind"]["enum"])
+            if sibling is not None
+            else set()
+        )
         self.assertEqual(
-            set(after["properties"]["kind"]["enum"]) - set(v27["properties"]["kind"]["enum"]),
+            set(after["properties"]["kind"]["enum"])
+            - set(v27["properties"]["kind"]["enum"])
+            - sibling_kinds,
             {"complete", "repair_lesson"},
         )
         self.assertEqual(
@@ -5158,8 +5218,21 @@ class V28AmendmentTest(unittest.TestCase):
         after_section = current["$defs"]["methods"]["properties"]["lesson.page"]["response"][
             "properties"
         ]["section"]["properties"]
+        # The sibling E2E L1 derivation adds `sections_total` to this record; subtract it when
+        # present so the assertion names only this delta's three fields.
+        sibling = _sibling_v28_document()
+        sibling_section = (
+            set(
+                sibling["$defs"]["methods"]["properties"]["lesson.page"]["response"]["properties"][
+                    "section"
+                ]["properties"]
+            )
+            - set(before_section)
+            if sibling is not None
+            else set()
+        )
         self.assertEqual(
-            set(after_section) - set(before_section),
+            set(after_section) - set(before_section) - sibling_section,
             {"section_id", "lesson_state", "rejection_reasons"},
         )
         self.assertEqual(set(before_section) - set(after_section), set())
