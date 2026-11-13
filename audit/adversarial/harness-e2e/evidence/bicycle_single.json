@@ -720,7 +720,7 @@
         "units": 1,
         "usage": {
           "budget": {
-            "max_calls": 32,
+            "max_calls": 12,
             "max_cost_usd": 0.75,
             "source": "declared"
           },

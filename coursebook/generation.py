@@ -108,6 +108,12 @@ __all__ = [
     "default_cost_budget",
     "lesson_cost_budget",
     "lesson_calls",
+    "plan_cost_budget",
+    "plan_calls",
+    "plan_pass_count",
+    "plan_claim_band",
+    "plan_output_tokens",
+    "PLAN_OUTPUT_TOKENS_BY_SCOPE",
     "preflight_lesson_cost",
     "assert_cost_preflight",
     "provider_timeout_s",
@@ -631,6 +637,37 @@ SCOPE_EXPECTATIONS: dict[str, dict[str, Any]] = {
 MAX_PLAN_BYTES = 48 * 1024
 MAX_LESSON_BYTES = 64 * 1024
 MAX_VALIDATION_BYTES = 24 * 1024
+
+#: Completion cap for one authored plan answer, sized by the declared scope's objective band.
+#:
+#: The blueprint was authored under one flat ``max_tokens=12000`` whatever the scope
+#: (``docs/COURSE-BLUEPRINT.md`` §6 raised it from 4 000). That is a short-course cap applied to a
+#: full plan: the schema keeps the artifact under :data:`MAX_PLAN_BYTES`, and the design estimate
+#: for the worst legal full plan (40 objectives, 12 units) is roughly 25–35 KiB. A Japanese plan
+#: is tokenised at about one token per character on the measured route and a character is three
+#: UTF-8 bytes, so 35 KiB is ~12 000 tokens of artifact *before* JSON keys, the reasoning trace
+#: (the cap counts it, as :data:`VALIDATION_OUTPUT_TOKENS` documents) and the prose the prompt
+#: asks for. One flat cap therefore either cuts a ``full`` answer mid-JSON — which used to surface
+#: as ``GenerationRejected`` after the author had been paid for the whole answer — or overpays on a
+#: ``single`` plan.
+#:
+#: Each band is its own worst legal plan read in the route's token unit:
+#:
+#: * ``single`` — 1 objective / 1 unit: 8 000 (the v1-era 4 000 plus the blueprint fields it
+#:   never had: units, check_plan, capability policy, curriculum brief).
+#: * ``short`` — 3–6 objectives / 1–3 units: 12 000, the cap the measured short blueprint already
+#:   authored under.
+#: * ``full`` — 12–40 objectives / 2–12 units: 24 000, twice the upper artifact estimate, so the
+#:   artifact plus a reasoning trace fits.
+PLAN_OUTPUT_TOKENS_BY_SCOPE: dict[str, int] = {
+    "single": 8000,
+    "short": 12000,
+    "full": 24000,
+}
+
+#: Cap for an unscoped (pre-blueprint v1) plan. The v1 document is the pre-blueprint shape the
+#: contract keeps authoring unchanged (§10): 4–8 objectives, no units and no check plan.
+PLAN_OUTPUT_TOKENS_UNSCOPED = 4000
 
 #: Completion budget for one authored lesson (W2-2). The lesson prompt's own stated prose budget is
 #: 2-6 segments of up to 2 000 characters of deep body each, and every segment, the worked example
@@ -1218,13 +1255,14 @@ def generation_provenance(
 class CostBudget:
     """Honest ceilings for one job. Unknown cost is charged at a declared estimate, never zero.
 
-    The dataclass default is a *fallback*, not a bound on the pipeline: a plan job starts it, and
-    every lesson job is re-sized to its own plan (:func:`lesson_cost_budget`, 9 calls per section
+    The dataclass default is a *fallback*, not a bound on the pipeline: a plan job is sized to its
+    own validation pass plan (:func:`plan_cost_budget`, 60 calls for a 40-objective/12-unit plan),
+    every lesson job to its own plan (:func:`lesson_cost_budget`, 9 calls per section
     including the truncation re-ask) and every unit-sections job to its unit
     (:func:`unit_sections_cost_budget`, 6). The old default of 8 was below the floor for any plan
     larger than four sections (CB-011-D1: a five-section plan needs 10 calls before a single retry,
-    so the job ended ``POLICY_VIOLATION`` on a fast provider); 32 is kept as a ceiling that is still
-    above any single blueprint call set without pretending to be the worst legal lesson path.
+    so the job ended ``POLICY_VIOLATION`` on a fast provider). 32 remains only the dataclass
+    fallback for a caller that constructs one by hand, never the plan stage's own ceiling.
 
     ``max_cost_usd`` is the hard dollar ceiling this job will not cross. ``source`` records where
     it came from so the job view can show the *actual configured* value instead of implying a
@@ -1503,6 +1541,101 @@ def lesson_cost_budget(section_count: int, *, brief_budget_usd: Any = None) -> C
     tighter ceiling can declare one, but the default never refuses a call the pipeline itself makes.
     """
     _, worst_legal = lesson_calls(section_count)
+    sized_floor = worst_legal * DECLARED_CALL_COST_USD
+    override, source = _operator_cost_override(brief_budget_usd=brief_budget_usd)
+    return CostBudget(
+        max_calls=worst_legal,
+        max_cost_usd=max(DEFAULT_MAX_COST_USD, sized_floor) if override is None else override,
+        source=source or "declared",
+    )
+
+
+#: How many authoring attempts a plan job may spend (``run_plan_job``'s ``for attempt in (1, 2)``).
+PLAN_ATTEMPTS = 2
+
+#: Objective cap for an unscoped (pre-blueprint v1) plan, from the v1 prompt's own band. The v1
+#: document has no units, so it contributes no unit claim labels.
+V1_OBJECTIVE_CAP = 8
+
+
+def plan_claim_band(scope: str | None) -> list[str]:
+    """The worst legal claim-label set for the declared scope, without authoring a plan.
+
+    ``plan_claim_labels`` needs a candidate document, but a job's ceiling has to exist *before*
+    its first provider call. The scope's own bands (:data:`SCOPE_EXPECTATIONS`) are the upper
+    bound the rule gate enforces, so the worst legal candidate for the declared scope is the
+    claim set a plan job can never exceed. Labels are produced by the same function the job calls
+    on its candidate, from a synthetic worst-case document, so ordering and vocabulary cannot
+    drift between this estimate and the real claim plan.
+    """
+    if scope is None:
+        objectives, units = V1_OBJECTIVE_CAP, 0
+    else:
+        expectation = _scope_expectation(scope)
+        assert expectation is not None
+        objectives = int(expectation["blueprint_objectives"][1])
+        units = int(expectation["blueprint_units"][1])
+    document = {
+        "objectives": [{"ordinal": ordinal} for ordinal in range(1, objectives + 1)],
+        "units": [{"ordinal": ordinal} for ordinal in range(1, units + 1)],
+        "learner_outcome": "the course's declared outcome",
+    }
+    return plan_claim_labels(document)
+
+
+def plan_pass_count(claim_labels: Sequence[str]) -> int:
+    """How many validation passes one plan's claim set becomes.
+
+    This is the job's real validation demand: ``build_plan_validation_requests`` emits exactly one
+    request per entry of :func:`_validation_pass_plan`, so the pass plan is the only honest input
+    to the call ceiling (H-192: 1 objective is 2 passes, 40 objectives / 12 units is 14).
+    """
+    return len(_validation_pass_plan(list(claim_labels)))
+
+
+def plan_calls(pass_count: int) -> tuple[int, int]:
+    """``(minimum_calls, worst_legal_calls)`` for a plan job with ``pass_count`` passes.
+
+    Per attempt the pipeline legally makes one generation, one ``.cut`` re-ask on that answer
+    (``_stage_answer_with_repair``), one call per validation pass and one ``.cut``/shape re-ask
+    per pass (``_validation_answer_with_repair``)::
+
+        1 + TRUNCATION_REPAIR_CALLS * (1 + passes)
+
+    and a job may spend :data:`PLAN_ATTEMPTS` attempts (a deterministic rule violation or a
+    grounded validator rejection starts attempt 2), so the worst legal path is
+    ``PLAN_ATTEMPTS x (1 + passes) x (1 + TRUNCATION_REPAIR_CALLS)``. The minimum is the same
+    shape without either repair. A ceiling below the worst legal path would abort a run behaving
+    exactly as designed — the CP-015e defect, one stage up.
+    """
+    passes = max(1, int(pass_count))
+    per_attempt_min = 1 + passes
+    per_attempt_max = per_attempt_min + TRUNCATION_REPAIR_CALLS * (1 + passes)
+    return PLAN_ATTEMPTS * per_attempt_min, PLAN_ATTEMPTS * per_attempt_max
+
+
+def plan_cost_budget(
+    scope: str | None,
+    *,
+    claims: Sequence[str] | None = None,
+    brief_budget_usd: Any = None,
+) -> CostBudget:
+    """Budget sized to the plan's validation pass plan, not to a constant.
+
+    The flat ``CostBudget(max_calls=32, max_cost_usd=0.75)`` was below the floor for any full
+    plan: 40 objectives / 12 units are 14 validation passes, so attempt 1 alone is 1 + 14 calls,
+    attempt 2 reserves 14 more, and the $0.75 ceiling (charged at
+    :data:`DECLARED_CALL_COST_USD` per unknown-cost call) stopped the job at call 19 with no
+    verdict stated. Sizing from the pass plan is the same policy :func:`lesson_cost_budget`
+    applies to sections: the ceiling is the worst legal path the stage itself can walk.
+
+    ``claims`` is the candidate's own ``plan_claim_labels`` once a plan exists; ``scope`` alone
+    sizes a job before its first call from the worst legal candidate for that band
+    (:func:`plan_claim_band`). A caller/operator dollar ceiling still wins
+    (``COURSEBOOK_JOB_MAX_COST_USD`` or ``brief.budget_usd``).
+    """
+    labels = list(claims) if claims is not None else plan_claim_band(scope)
+    _, worst_legal = plan_calls(plan_pass_count(labels))
     sized_floor = worst_legal * DECLARED_CALL_COST_USD
     override, source = _operator_cost_override(brief_budget_usd=brief_budget_usd)
     return CostBudget(
@@ -4201,6 +4334,24 @@ def _scope_expectation(scope: str | None) -> dict[str, Any] | None:
 #: review allowance.
 REVIEW_SECTIONS_PER_UNIT = 2
 REVIEW_SECTIONS_PER_COURSE = 8
+
+
+def plan_output_tokens(scope: str | None) -> int:
+    """The completion cap for one plan answer, sized by the scope's own objective band.
+
+    A flat cap is a bug in both directions: a ``full`` plan does not fit under a short course's
+    cap, and a ``single`` plan does not need a full course's headroom. The bands are declared in
+    :data:`PLAN_OUTPUT_TOKENS_BY_SCOPE` with their arithmetic; an unknown scope raises exactly as
+    :func:`_scope_expectation` does, so a fourth scope cannot be authored under no cap while the
+    document claims one.
+    """
+    if not scope:
+        return PLAN_OUTPUT_TOKENS_UNSCOPED
+    key = str(scope).strip().lower()
+    try:
+        return PLAN_OUTPUT_TOKENS_BY_SCOPE[key]
+    except KeyError as exc:
+        raise GenerationRejected(f"unknown scope {scope!r}; expected one of {SCOPES}") from exc
 
 
 def _section_caps(expectation: Mapping[str, Any]) -> tuple[int, int]:
@@ -9063,7 +9214,7 @@ def build_plan_request(
         schema_name=(
             "coursebook_plan_v2" if blueprint else "coursebook_plan_v1"
         ),
-        max_tokens=12000 if blueprint else 4000,
+        max_tokens=plan_output_tokens(scope),
         timeout_s=_timeout_for("coursebook.plan.generate", timeout_s),
     )
 
@@ -10862,7 +11013,10 @@ def run_plan_job(
     # second brief store.
     parent_brief = parent_brief_view(brief) if recipe == "parent" else None
     job_id = str(job.get("job_id") or "") or None
-    usage = _Usage(budget or default_cost_budget(), cancel_probe=_job_cancel_probe(job_id))
+    usage = _Usage(
+        budget or plan_cost_budget(scope, brief_budget_usd=brief.get("budget_usd")),
+        cancel_probe=_job_cancel_probe(job_id),
+    )
     # CP-044: a plan call is the longest one Coursebook makes (900 s declared), so a plan job that
     # is waiting on a slow provider must be visible as *waiting*, not as a dead row with no usage.
     # The reporter runs on this thread and writes through this job's connection.
@@ -10983,6 +11137,7 @@ def run_plan_job(
             validation_request = None
             validation_response = None
             verdict = None
+            attempt_started = time.monotonic()
             plan_request = build_plan_request(
                 goal=planning_goal,
                 recipe=recipe,
@@ -10999,9 +11154,35 @@ def run_plan_job(
                 previous_draft=previous_draft,
             )
             response = _call_llm(llm, plan_request, usage)
-            candidate = _parse_structured(
-                response, plan_request.schema, what="plan", max_bytes=MAX_PLAN_BYTES
+            # W2-2 applied to the plan stage: an answer cut at the plan's completion cap is an
+            # *incomplete* answer, not a malformed one. `_parse_structured` raised
+            # `GenerationRejected` for it (a non-retryable end of the job, after the whole answer
+            # had been paid for), while the lesson and unit stages already re-ask once under the
+            # marked `.cut` label. Route the plan answer through that same seam.
+            candidate, response = _stage_answer_with_repair(
+                llm,
+                plan_request,
+                response,
+                usage,
+                schema=plan_request.schema,
+                what="plan",
+                max_bytes=MAX_PLAN_BYTES,
+                started_at=attempt_started,
             )
+            # Size the ceiling to the claim plan this candidate actually has. The band-sized
+            # budget above already covers the worst legal candidate for the declared scope, but a
+            # parent plan can carry a page budget wider than its scope's own objective band, so the
+            # real pass plan is the authority once it exists. This only ever raises a *declared*
+            # ceiling; an operator/caller value stays binding.
+            if usage.budget.source == "declared":
+                claims = plan_claim_labels(candidate)
+                actual_passes = plan_pass_count(claims)
+                if plan_calls(actual_passes)[1] > usage.budget.max_calls:
+                    usage.budget = plan_cost_budget(
+                        scope,
+                        claims=claims,
+                        brief_budget_usd=brief.get("budget_usd"),
+                    )
 
             try:
                 enforce_plan_rules(

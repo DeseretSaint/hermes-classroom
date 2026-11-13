@@ -3101,8 +3101,8 @@
         "units": 6,
         "usage": {
           "budget": {
-            "max_calls": 32,
-            "max_cost_usd": 0.75,
+            "max_calls": 60,
+            "max_cost_usd": 2.4,
             "source": "declared"
           },
           "by_purpose": {
@@ -3269,7 +3269,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5867,
+            "input_tokens": 4204,
             "output_tokens": 551,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3328,7 +3328,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5860,
+            "input_tokens": 4196,
             "output_tokens": 538,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3387,7 +3387,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5849,
+            "input_tokens": 4185,
             "output_tokens": 537,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3446,7 +3446,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5857,
+            "input_tokens": 4193,
             "output_tokens": 539,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3505,7 +3505,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5865,
+            "input_tokens": 1749,
             "output_tokens": 543,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3564,7 +3564,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5880,
+            "input_tokens": 4217,
             "output_tokens": 542,
             "unknown_calls": 0,
             "unknown_cost": false
