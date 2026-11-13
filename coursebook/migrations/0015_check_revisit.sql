@@ -1,0 +1,24 @@
+-- 0015 — a check can be re-served as a review (E2E L1).
+--
+-- A generated lesson writes plain-string evidence criteria and stores the real check in
+-- `checks`, so `check.open` had no spec to mint a new check from once the generated check was
+-- closed: every passed generated section raised `objective_not_checkable`, and
+-- `progression.challenge_out` refused identically. Spaced review was impossible for generated
+-- courses.
+--
+-- `check.open` now clones the newest closed authored check as a revisit: a new `checks` row at
+-- the next version, with the same stimulus/reference/rubric, marked `revisit = 1`. The flag is
+-- what keeps the clone honest:
+--
+--   * a revisit pass is recorded (an attempt and its layer-1 evidence row) but never moves
+--     `objectives.state` again and never writes a second layer-2 evidence row;
+--   * `engagement.award` refuses a `check_submitted` action whose check is a revisit, so XP,
+--     which is keyed by attempt id, is paid for the first pass only;
+--   * `check.open`, `check.get` and `lesson.page` report it so the lesson page and the desk can
+--     label the section "Review" instead of "Start".
+--
+-- Additive only: no table, column, index or unique key is dropped or retyped, and no existing
+-- row is rewritten. Every check written before this migration keeps `revisit = 0`, which is
+-- exactly what it was: an ordinary check.
+
+ALTER TABLE checks ADD COLUMN revisit INTEGER NOT NULL DEFAULT 0;

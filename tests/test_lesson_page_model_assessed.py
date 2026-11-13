@@ -22,8 +22,8 @@ from __future__ import annotations
 import json
 import unittest
 
-from coursebook import db, domain, generation
-from tests.kernel_support import KernelCase, numeric_spec
+from coursebook import contracts, db, domain, generation
+from tests.kernel_support import KernelCase, criteria_with, numeric_spec
 
 SEPARATOR = "4711"
 
@@ -274,6 +274,73 @@ class ModelAssessedLessonPageTest(LessonPageCase):
         self.assertEqual(page["document"]["blocks"], [])
         self.assertIsNone(page["provenance"])
         self.assertIn("missing teaching segments", page["document"]["view_note"] or "")
+
+
+class LessonPageSectionTotalTest(LessonPageCase):
+    """E2E U3b: the stop chip's denominator is the course's own section count.
+
+    ``lesson.page.section.sections_total`` is projected from the current plan inside the read
+    transaction and validated against cb.rpc v28's response schema. It is the plan's objective
+    count — the number of stops in the course the learner is actually enrolled in — never the
+    page's block count (which is what the old chip wrongly divided by) and never a pack's
+    manifest count.
+    """
+
+    def test_the_page_reports_the_plans_objective_count(self) -> None:
+        # Objectives are authored on the draft, then the plan is approved: the count the page
+        # reports is the approved plan's own objective count.
+        course_id, plan_id = self.new_course()
+        objective_id = self.seed_objective(plan_id, numeric_spec(SEPARATOR))
+        for title in ("Second stop", "Third stop"):
+            domain.record_objective(
+                plan_id,
+                title=title,
+                evidence_target="recall",
+                criteria=criteria_with(numeric_spec()),
+            )
+        enrollment_id = self.new_enrollment(course_id)
+        revision = self.approve(enrollment_id, plan_id, 0)
+        opened = self.ok(
+            "check.open", {"enrollment_id": enrollment_id, "objective_id": objective_id},
+            expected_revision=revision,
+        )["result"]
+        lesson = {
+            "course_id": course_id,
+            "plan_id": plan_id,
+            "objective_id": objective_id,
+            "enrollment_id": enrollment_id,
+            "check_id": opened["check_id"],
+            "check_version": opened["check_version"],
+            "revision": opened["revision"],
+        }
+        with db.transaction() as connection:
+            generation.ensure_schema(connection)
+        self.seed_generated_lesson(lesson, authored_page(), state="model_assessed")
+        self.set_check_audit(lesson["check_id"], state="open", audit_state="pending")
+        with db.read() as connection:
+            objectives = int(
+                connection.execute(
+                    "SELECT COUNT(*) FROM objectives WHERE plan_id = ?", (plan_id,)
+                ).fetchone()[0]
+            )
+        self.assertEqual(objectives, 3)
+
+        # The response is contract-validated by `api.dispatch`; a field the schema forbids or a
+        # value outside its bounds would make this read fail rather than reach the assertion.
+        page = self.read_page(lesson)
+
+        self.assertEqual(page["section"]["ordinal"], 1)
+        self.assertEqual(page["section"]["sections_total"], objectives)
+        # The block count is the step readout's denominator and must not be substituted here.
+        self.assertNotEqual(page["section"]["sections_total"], len(page["document"]["blocks"]))
+
+    def test_a_v27_page_without_the_field_still_validates(self) -> None:
+        """Additive means additive: the field is optional, so an older server keeps its shape."""
+        lesson = self.prepare()
+        page = self.read_page(lesson)
+        section = dict(page["section"])
+        section.pop("sections_total", None)
+        contracts.validate_response_payload("lesson.page", {**page, "section": section})
 
 
 if __name__ == "__main__":
