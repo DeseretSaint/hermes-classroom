@@ -387,32 +387,69 @@ _HAZARD_NOT_APPLICABLE = (
     "so there is no declared child age band to judge materials, tools and supervision against"
 )
 
+_RUBRIC_CRITERION = "rubric_consistency"
 
-def lesson_validation_criteria(*, recipe: str | None = None) -> tuple[str, ...]:
+#: Why a verification checklist is not judged on weighted rubric earnability. The confirmation
+#: lane grades the items and ``pass_rule``; the criteria and weights are never read for this shape
+#: (``grading.py:grade_closed``/``grade_confirmation``). Demanding that every band be elicitable
+#: from an item asked the validator to reject a lesson over a score no learner could earn and no
+#: grader computes — measured as three refusals of one good one-off lesson (E2E A1).
+_VERIFICATION_RUBRIC_NOT_APPLICABLE = (
+    "rubric_consistency does not apply to a verification checklist: this check is scored from its "
+    "items and pass rule, and its weighted rubric criteria are not read by the confirmation lane; "
+    "every safety obligation the lesson names must instead appear as a checklist item"
+)
+
+
+def _is_verification_check(check: Mapping[str, Any] | None) -> bool:
+    """Whether the artifact's check is a confirmation-shaped verification checklist."""
+    if not isinstance(check, Mapping):
+        return False
+    if str(check.get("kind") or "") != "verification":
+        return False
+    stimulus = check.get("stimulus")
+    return isinstance(stimulus, Mapping) and str(stimulus.get("format") or "") == "verification"
+
+
+def lesson_validation_criteria(
+    *, recipe: str | None = None, check: Mapping[str, Any] | None = None
+) -> tuple[str, ...]:
     """The lesson/unit criteria this recipe's artifact is actually asked to satisfy.
 
     ``hazard_age_appropriateness`` was in every set, so an adult car course was refused or passed
     on a child-safety judgement nobody had the facts for. The criterion is now required only where
     the artifact is child-facing (:data:`ADULT_LEARNER_RECIPES` names the adult routes). An unknown
     recipe keeps the full set: an unrecognised route must not silently lose a safety check.
+
+    ``rubric_consistency`` is dropped for a ``verification`` checklist. That check is graded by the
+    confirmation lane, which reads ``rubric.pass_rule`` and the learner's item marks; the weighted
+    rubric criteria are authoring material no learner can earn and no grader reads. Asking the
+    validator to reject a checklist because a weight cannot be elicited from an item refused a good
+    one-off lesson three times and left the course with no servable page (E2E A1).
     """
+    criteria = list(LESSON_VALIDATION_CRITERIA)
     if recipe in ADULT_LEARNER_RECIPES:
-        return tuple(
-            criterion for criterion in LESSON_VALIDATION_CRITERIA if criterion != _HAZARD_CRITERION
-        )
-    return LESSON_VALIDATION_CRITERIA
+        criteria = [item for item in criteria if item != _HAZARD_CRITERION]
+    if _is_verification_check(check):
+        criteria = [item for item in criteria if item != _RUBRIC_CRITERION]
+    return tuple(criteria)
 
 
-def lesson_validation_waivers(*, recipe: str | None = None) -> dict[str, str]:
+def lesson_validation_waivers(
+    *, recipe: str | None = None, check: Mapping[str, Any] | None = None
+) -> dict[str, str]:
     """The criteria this recipe's artifact was not asked, and why a validator's ``unknown`` is waived.
 
     An honest ``unknown`` on a criterion the artifact does not owe is not a defect and must not
     reject the lesson; the reason travels to :func:`validation_verdict` and into the stored record.
     An empty mapping for a child-facing or unrecognised recipe keeps ``unknown`` a refusal there.
     """
+    waivers: dict[str, str] = {}
     if recipe in ADULT_LEARNER_RECIPES:
-        return {_HAZARD_CRITERION: _HAZARD_NOT_APPLICABLE}
-    return {}
+        waivers[_HAZARD_CRITERION] = _HAZARD_NOT_APPLICABLE
+    if _is_verification_check(check):
+        waivers[_RUBRIC_CRITERION] = _VERIFICATION_RUBRIC_NOT_APPLICABLE
+    return waivers
 
 
 #: What each criterion means, in one bounded sentence, stated by :func:`_validation_instructions`
@@ -9391,8 +9428,12 @@ def build_lesson_validation_request(
         system_prompt=VALIDATION_SYSTEM_PROMPT,
         instructions=_validation_instructions(
             subject="lesson and its learner page",
-            criteria=lesson_validation_criteria(recipe=recipe),
-            not_applicable=lesson_validation_waivers(recipe=recipe),
+            criteria=lesson_validation_criteria(
+                recipe=recipe, check=(lesson or {}).get("check")
+            ),
+            not_applicable=lesson_validation_waivers(
+                recipe=recipe, check=(lesson or {}).get("check")
+            ),
         ),
         input_text=_bounded_input(payload),
         schema=VALIDATION_SCHEMA,
@@ -11809,6 +11850,29 @@ def _unit_sections_instructions(*, unit: dict[str, Any], objectives: Sequence[di
     return "\n".join(lines)
 
 
+def _unit_cited_sources(
+    plan: Mapping[str, Any],
+    objectives: Sequence[Mapping[str, Any]],
+    sources: Sequence[SourceRecord],
+) -> list[SourceRecord]:
+    """The ledger rows a unit's objectives actually cite, in ledger order.
+
+    The unit stage used to hand every source of a deep research pass to every unit. On the
+    measured full-scope plan (12 objectives, 4 units, 6 sources) the unit-sections request
+    reached 25,786 bytes compact and was refused at the 24,000-byte default bound before the
+    first model call — a legal full course could not author a lesson. A unit only needs the rows
+    its own objectives cite; filtering is also the topicality rule: a unit's validator should
+    grade its claims against the sources its sections were told to use.
+
+    A unit whose objectives cite nothing gets the first four rows (the same cap ``_lesson_ledger``
+    applies), never the whole course ledger, so one unsourced unit cannot grow with course length.
+    """
+    ordinals = [int(obj["ordinal"]) for obj in objectives]
+    cited = set(_cited_source_ids(plan.get("objectives") or [], ordinals))
+    selected = [source for source in sources if source.source_id in cited]
+    return selected or list(sources[:4])
+
+
 def build_unit_sections_request(
     *,
     plan: dict[str, Any],
@@ -11870,7 +11934,9 @@ def build_unit_sections_request(
         instructions=_unit_sections_instructions(
             unit=unit, objectives=objectives, recipe=recipe, locale=locale, feedback=feedback
         ),
-        input_text=_bounded_input(payload),
+        input_text=_bounded_input(
+            payload, limit=_request_bound(plan.get("scope"))
+        ),
         schema=UNIT_SECTIONS_SCHEMA,
         schema_name="coursebook_unit_sections_v1",
         max_tokens=6000,
@@ -11950,7 +12016,9 @@ def build_unit_sections_validation_request(
             criteria=lesson_validation_criteria(recipe=recipe),
             not_applicable=lesson_validation_waivers(recipe=recipe),
         ),
-        input_text=_bounded_input(payload),
+        input_text=_bounded_input(
+            payload, limit=_request_bound(plan.get("scope"))
+        ),
         schema=VALIDATION_SCHEMA,
         schema_name="coursebook_validation_v1",
         max_tokens=VALIDATION_OUTPUT_TOKENS,
@@ -12239,6 +12307,7 @@ def run_unit_sections_job(
         for objective in objectives
         if int(objective["ordinal"]) not in set(existing_owner_refs)
     ]
+    unit_sources = _unit_cited_sources(plan, missing_objectives, sources)
     target = int(unit["target_lessons"])
     if not missing_objectives and len(existing_sections) >= target:
         # The stored batch is what the lesson stage will author from. Claiming it as reusable
@@ -12292,7 +12361,7 @@ def run_unit_sections_job(
                 goal=goal,
                 recipe=recipe,
                 locale=locale,
-                sources=sources,
+                sources=unit_sources,
                 research_status=research_status,
                 feedback=feedback,
             )
@@ -12329,7 +12398,7 @@ def run_unit_sections_job(
                 goal=goal,
                 recipe=recipe,
                 locale=locale,
-                sources=sources,
+                sources=unit_sources,
                 research_status=research_status,
             )
             assert request is not None
@@ -13719,8 +13788,12 @@ def _author_section(
             ledger=sources,
             independence=independence,
             canonical=identity_detail["canonical"],
-            criteria=lesson_validation_criteria(recipe=recipe),
-            not_applicable=lesson_validation_waivers(recipe=recipe),
+            criteria=lesson_validation_criteria(
+                recipe=recipe, check=(candidate or {}).get("check")
+            ),
+            not_applicable=lesson_validation_waivers(
+                recipe=recipe, check=(candidate or {}).get("check")
+            ),
         )
         if verdict["verdict"] == "pass":
             lesson = candidate

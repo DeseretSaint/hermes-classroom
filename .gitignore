@@ -26,3 +26,6 @@ visual/node_modules/
 visual/baselines/
 visual/diffs/
 visual/frames/
+
+# local worktrees (never tracked)
+/wt/
