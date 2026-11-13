@@ -30,7 +30,7 @@
   },
   "lesson_rows": [
     {
-      "lesson_id": "000000000000002b",
+      "lesson_id": "000000000000002c",
       "page": {
         "check": {
           "assistance_policy": {
@@ -87,7 +87,7 @@
       "state": "validated"
     },
     {
-      "lesson_id": "000000000000002e",
+      "lesson_id": "000000000000002f",
       "page": {
         "check": {
           "assistance_policy": {
@@ -144,7 +144,7 @@
       "state": "validated"
     },
     {
-      "lesson_id": "0000000000000037",
+      "lesson_id": "0000000000000038",
       "page": {
         "check": {
           "assistance_policy": {
@@ -201,7 +201,7 @@
       "state": "validated"
     },
     {
-      "lesson_id": "000000000000003a",
+      "lesson_id": "000000000000003b",
       "page": {
         "check": {
           "assistance_policy": {
@@ -256,6 +256,63 @@
       },
       "section_id": "0000000000000025",
       "state": "validated"
+    },
+    {
+      "lesson_id": "000000000000003e",
+      "page": {
+        "check": {
+          "assistance_policy": {
+            "answer_marks_evidence_class": "none",
+            "hint": "available"
+          },
+          "evidence_target": "transfer",
+          "kind": "quiz",
+          "learner_instructions": "Answer in one short phrase, without notes.",
+          "scaffolds": [],
+          "stimulus": {
+            "choices": [],
+            "format": "text",
+            "items": [],
+            "prompt": "From memory — A song uses C, G, A minor and F. Which key is it in?"
+          }
+        },
+        "direction": "ltr",
+        "lang": "en-US",
+        "learner_explanation": "The circle shows which chords belong together, so a song's chord list becomes a key and a set of functions.",
+        "learner_explanation_short": "The circle shows which chords belong together.",
+        "lesson_intent": "Retrieve 'Use the circle of fifths to name the chords in a pop song' from memory with a new prompt; no new teaching and no second live check.",
+        "media": [],
+        "parent_notes": null,
+        "section_title": "Review: Use the circle of fifths to name the chords in a pop song",
+        "segments": [
+          {
+            "body": "Write the song's chords, find each root on the circle, and mark the home chord before naming the key. The circle is the map from chords to a key, and the home chord is the landmark you find first on that map.",
+            "heading": "Find each root on the circle",
+            "kind": "model",
+            "short": "Write the song's chords and find each root on the circle."
+          },
+          {
+            "body": "The home chord is the one the song resolves to; name it before the key. A song that never settles on its home chord is still analysable, because the circle still shows the neighbouring chords it borrows from.",
+            "heading": "Name the home chord first",
+            "kind": "guided",
+            "short": "Name the home chord before the key."
+          }
+        ],
+        "sources": [],
+        "supervision_notes": [],
+        "worked_example": {
+          "answer": "The step is done and checked. The home chord is the one the song resolves to; name it before the key.",
+          "prompt": "A worked example of Review: Use the circle of fifths to name the chords in a pop song",
+          "short": "The step is done and checked.",
+          "steps": [
+            "List the chords",
+            "Place the roots",
+            "Name the key"
+          ]
+        }
+      },
+      "section_id": "0000000000000026",
+      "state": "validated"
     }
   ],
   "observations": {
@@ -269,23 +326,23 @@
       "independent": true,
       "needs_review": false,
       "outcome": "independently_validated",
-      "prompt_version": "plan-prompt.v24",
+      "prompt_version": "plan-prompt.v25",
       "warning": null
     },
     "attempt_rows": [
       {
-        "check_id": "000000000000002c",
+        "check_id": "000000000000002d",
         "evidence_class": "cold",
         "grading_provenance_json": "{\"grader\":\"deterministic:exact\",\"reference_sha256\":\"sha256:0dc22ab9b0b5b6a81c38f48f085431aa3781495261260fcf81e4267e6ee6c95e\"}",
-        "id": "att_00000000000000000000000000000045",
+        "id": "att_0000000000000000000000000000004b",
         "state": "committed",
         "verdict": "pass"
       },
       {
-        "check_id": "000000000000002f",
+        "check_id": "0000000000000030",
         "evidence_class": "cold",
         "grading_provenance_json": "{\"grader\":\"deterministic:exact\",\"reference_sha256\":\"sha256:2538e74a9294c63a9d98bb35ae53263ee91d48a4af8013b6284fae9f5d33513e\"}",
-        "id": "att_0000000000000000000000000000004b",
+        "id": "att_00000000000000000000000000000051",
         "state": "committed",
         "verdict": "not_yet"
       }
@@ -295,29 +352,40 @@
         "objective_id": "000000000000000b",
         "reference_kind": "exact",
         "state": "closed",
-        "stimulus_format": "text"
+        "stimulus_format": "text",
+        "version": 1
       },
       {
         "objective_id": "000000000000000c",
         "reference_kind": "exact",
         "state": "open",
-        "stimulus_format": "text"
+        "stimulus_format": "text",
+        "version": 1
       },
       {
         "objective_id": "000000000000000d",
         "reference_kind": "exact",
         "state": "open",
-        "stimulus_format": "text"
+        "stimulus_format": "text",
+        "version": 1
       },
       {
         "objective_id": "000000000000000e",
         "reference_kind": "exact",
         "state": "open",
-        "stimulus_format": "text"
+        "stimulus_format": "text",
+        "version": 1
+      },
+      {
+        "objective_id": "000000000000000e",
+        "reference_kind": "exact",
+        "state": "closed",
+        "stimulus_format": "text",
+        "version": 2
       }
     ],
-    "checks": 4,
-    "lessons": 4,
+    "checks": 5,
+    "lessons": 5,
     "objectives": 4,
     "outline_units": [
       {
@@ -337,12 +405,14 @@
         "unmet": 2
       }
     ],
+    "owner_sections": 4,
     "plan_scope": "short",
     "plan_state_after_approval": "approved",
     "plan_state_before_approval": "draft",
-    "prompt_version": "plan-prompt.v24",
+    "prompt_version": "plan-prompt.v25",
+    "review_sections": 1,
     "schema_name": "coursebook_plan_v2",
-    "sections": 4,
+    "sections": 5,
     "units": 2,
     "validation_independence": "independent",
     "validation_outcome": "independently_validated",
@@ -465,7 +535,7 @@
         "prereq_unit_ordinals": [
           1
         ],
-        "target_lessons": 2,
+        "target_lessons": 3,
         "title": "Triads and the circle of fifths"
       }
     ]
@@ -549,13 +619,13 @@
     ],
     "approve": {
       "approval_provenance": null,
-      "plan_hash": "sha256:c58bcf1ff2a5bf91213b171f846a49462e90aa4f41fec429fe7d1577bd1deef3",
+      "plan_hash": "sha256:988263f19033fe9c58da852acd32330b72aa025da50c9e807ba2be7175dd5226",
       "revision": 1,
       "state_after": "approved"
     },
     "grading": [
       {
-        "check_id": "000000000000002c",
+        "check_id": "000000000000002d",
         "label": "correct",
         "objective_ordinal": 1,
         "open": {
@@ -566,9 +636,9 @@
         "submit": {
           "contract_version": 27,
           "ok": true,
-          "operation_id": "op-h40-attempt-submit-000044",
+          "operation_id": "op-h40-attempt-submit-00004a",
           "result": {
-            "attempt_id": "att_00000000000000000000000000000045",
+            "attempt_id": "att_0000000000000000000000000000004b",
             "criteria": [
               {
                 "id": "c1",
@@ -585,7 +655,7 @@
         }
       },
       {
-        "check_id": "000000000000002f",
+        "check_id": "0000000000000030",
         "label": "wrong",
         "objective_ordinal": 2,
         "open": {
@@ -596,9 +666,9 @@
         "submit": {
           "contract_version": 27,
           "ok": true,
-          "operation_id": "op-h40-attempt-submit-00004a",
+          "operation_id": "op-h40-attempt-submit-000050",
           "result": {
-            "attempt_id": "att_0000000000000000000000000000004b",
+            "attempt_id": "att_00000000000000000000000000000051",
             "criteria": [
               {
                 "id": "c1",
@@ -622,7 +692,7 @@
         {
           "attempt_count": 0,
           "audit_state": "passed",
-          "check_id": "000000000000002c",
+          "check_id": "000000000000002d",
           "evidence_target": "recall",
           "state": "open",
           "version": 1
@@ -645,7 +715,7 @@
             "source_ids": []
           },
           {
-            "check_id": "000000000000002c",
+            "check_id": "000000000000002d",
             "deep": "From C, the fifth note arrives after the same four-semitone step plus three more. If you count from the wrong start note the number still adds up, which is why you say the start note and the interval together.",
             "headline": "Check the count at the keyboard",
             "id": "blk_3a4ba5f3ceb53d6609b4",
@@ -675,10 +745,10 @@
             "source_ids": []
           }
         ],
-        "check_id": "000000000000002c",
-        "content_hash": "sha256:5a7990681bb0a348fd4b316108e47157ef3ed1c924ecae5669122fd82c950231",
+        "check_id": "000000000000002d",
+        "content_hash": "sha256:25475bef2bf531410aa628f1ef8bda7c07eae42b6c4ee1813d627273c504ea39",
         "direction": "ltr",
-        "document_id": "doc_5a7990681bb0a348fd4b",
+        "document_id": "doc_25475bef2bf531410aa6",
         "lang": "en-US",
         "objective_id": null,
         "schema_version": 1,
@@ -744,13 +814,13 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_0000000000000000000000000000002a",
+          "job_id": "job_0000000000000000000000000000002b",
           "job_kind": "lesson",
           "lessons": [
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "000000000000002c",
+              "check_id": "000000000000002d",
               "generation": {
                 "known": true,
                 "model": "recorded-transcript-h40",
@@ -758,7 +828,7 @@
                 "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
-              "lesson_id": "000000000000002b",
+              "lesson_id": "000000000000002c",
               "reused": false,
               "section_id": "000000000000001d",
               "state": "validated",
@@ -789,14 +859,14 @@
                 "waived_unknown_reasons": {},
                 "warning": null
               },
-              "validation_id": "000000000000002d",
+              "validation_id": "000000000000002e",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             },
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "000000000000002f",
+              "check_id": "0000000000000030",
               "generation": {
                 "known": true,
                 "model": "recorded-transcript-h40",
@@ -804,7 +874,7 @@
                 "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
-              "lesson_id": "000000000000002e",
+              "lesson_id": "000000000000002f",
               "reused": false,
               "section_id": "000000000000001e",
               "state": "validated",
@@ -835,14 +905,14 @@
                 "waived_unknown_reasons": {},
                 "warning": null
               },
-              "validation_id": "0000000000000030",
+              "validation_id": "0000000000000031",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             }
           ],
           "needs_review": [],
           "next_unit_ordinal": 2,
-          "plan_hash": "sha256:e4900f2bc9e290784ecaa05e3b331919f6f5e6fb504a12055a98f97f9b898b25",
+          "plan_hash": "sha256:e71d5565080253e991fc4940dc85ce9dc374532aab5d1b7cd0d102a2d796f569",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -882,7 +952,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 4880,
+            "input_tokens": 4953,
             "output_tokens": 1881,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -900,13 +970,13 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_00000000000000000000000000000036",
+          "job_id": "job_00000000000000000000000000000037",
           "job_kind": "lesson",
           "lessons": [
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "0000000000000038",
+              "check_id": "0000000000000039",
               "generation": {
                 "known": true,
                 "model": "recorded-transcript-h40",
@@ -914,7 +984,7 @@
                 "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
-              "lesson_id": "0000000000000037",
+              "lesson_id": "0000000000000038",
               "reused": false,
               "section_id": "0000000000000024",
               "state": "validated",
@@ -945,14 +1015,14 @@
                 "waived_unknown_reasons": {},
                 "warning": null
               },
-              "validation_id": "0000000000000039",
+              "validation_id": "000000000000003a",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             },
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "000000000000003b",
+              "check_id": "000000000000003c",
               "generation": {
                 "known": true,
                 "model": "recorded-transcript-h40",
@@ -960,7 +1030,7 @@
                 "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
-              "lesson_id": "000000000000003a",
+              "lesson_id": "000000000000003b",
               "reused": false,
               "section_id": "0000000000000025",
               "state": "validated",
@@ -991,14 +1061,62 @@
                 "waived_unknown_reasons": {},
                 "warning": null
               },
-              "validation_id": "000000000000003c",
+              "validation_id": "000000000000003d",
+              "validation_model": "recorded-validator-h40",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": false,
+              "check_id": "000000000000003f",
+              "generation": {
+                "known": true,
+                "model": "recorded-transcript-h40",
+                "pipeline_version": "cb.gen.v2",
+                "prompt_version": "lesson-prompt.v17",
+                "provider": "recorded"
+              },
+              "lesson_id": "000000000000003e",
+              "reused": false,
+              "review_check_open": true,
+              "review_check_state": "open",
+              "section_id": "0000000000000026",
+              "state": "validated",
+              "validation": {
+                "canonical": {
+                  "generator": "recorded-transcript-h40",
+                  "validator": "recorded-validator-h40"
+                },
+                "cost_usd": null,
+                "facts_unverified": false,
+                "generator": {
+                  "known": true,
+                  "model": "recorded-transcript-h40",
+                  "provider": "recorded"
+                },
+                "independence": "independent",
+                "independent": true,
+                "outcome": "independently_validated",
+                "research_status": "ok",
+                "shape_violations": 0,
+                "validator": {
+                  "known": true,
+                  "model": "recorded-validator-h40",
+                  "provider": "recorded"
+                },
+                "verdict": "pass",
+                "waived_unknown": [],
+                "waived_unknown_reasons": {},
+                "warning": null
+              },
+              "validation_id": "0000000000000040",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             }
           ],
           "needs_review": [],
           "next_unit_ordinal": null,
-          "plan_hash": "sha256:e4900f2bc9e290784ecaa05e3b331919f6f5e6fb504a12055a98f97f9b898b25",
+          "plan_hash": "sha256:e71d5565080253e991fc4940dc85ce9dc374532aab5d1b7cd0d102a2d796f569",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -1008,13 +1126,13 @@
             "fits_minimum": true,
             "max_calls": 400,
             "max_cost_usd": 100.0,
-            "maximum_calls": 24,
-            "maximum_cost_usd": 0.96,
-            "minimum_calls": 4,
-            "minimum_cost_usd": 0.16,
-            "section_count": 2
+            "maximum_calls": 36,
+            "maximum_cost_usd": 1.44,
+            "minimum_calls": 6,
+            "minimum_cost_usd": 0.24,
+            "section_count": 3
           },
-          "sections_total": 2,
+          "sections_total": 3,
           "stage": "lessons",
           "unit_ordinal": 2,
           "usage": {
@@ -1025,21 +1143,21 @@
             },
             "by_purpose": {
               "coursebook.lesson.generate": {
-                "calls": 2,
+                "calls": 3,
                 "cost_usd": 0.0,
                 "unknown_cost": false
               },
               "coursebook.lesson.validate": {
-                "calls": 2,
+                "calls": 3,
                 "cost_usd": 0.0,
                 "unknown_cost": false
               }
             },
-            "calls": 4,
+            "calls": 6,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5011,
-            "output_tokens": 1938,
+            "input_tokens": 7707,
+            "output_tokens": 2916,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -1085,7 +1203,7 @@
         },
         {
           "attempt_count": 0,
-          "check_state": "open",
+          "check_state": "closed",
           "evidence_target": "transfer",
           "independent": false,
           "last_opened_at": null,
@@ -1096,7 +1214,7 @@
         }
       ],
       "plan": {
-        "plan_hash": "sha256:c58bcf1ff2a5bf91213b171f846a49462e90aa4f41fec429fe7d1577bd1deef3",
+        "plan_hash": "sha256:988263f19033fe9c58da852acd32330b72aa025da50c9e807ba2be7175dd5226",
         "plan_id": "pln_00000000000000000000000000000003",
         "state": "approved",
         "units": [
@@ -1148,7 +1266,7 @@
               },
               {
                 "attempt_count": 0,
-                "check_state": "open",
+                "check_state": "closed",
                 "evidence_target": "transfer",
                 "independent": false,
                 "last_opened_at": null,
@@ -1203,7 +1321,7 @@
           3,
           6
         ],
-        "prompt_version": "plan-prompt.v24",
+        "prompt_version": "plan-prompt.v25",
         "schema_name": "coursebook_plan_v2",
         "unit_count_rule": [
           1,
@@ -1230,7 +1348,7 @@
           "independent": true,
           "needs_review": false,
           "outcome": "independently_validated",
-          "prompt_version": "plan-prompt.v24",
+          "prompt_version": "plan-prompt.v25",
           "warning": null
         },
         "course_id": "crs_00000000000000000000000000000002",
@@ -1245,7 +1363,7 @@
           "known": true,
           "model": "recorded-transcript-h40",
           "pipeline_version": "cb.gen.v2",
-          "prompt_version": "plan-prompt.v24",
+          "prompt_version": "plan-prompt.v25",
           "provider": "recorded"
         },
         "job_id": "job_00000000000000000000000000000007",
@@ -1254,8 +1372,8 @@
         "locale": "en-US",
         "next_unit_ordinal": 1,
         "objectives": 4,
-        "plan_content_hash": "sha256:c58bcf1ff2a5bf91213b171f846a49462e90aa4f41fec429fe7d1577bd1deef3",
-        "plan_hash": "sha256:e4900f2bc9e290784ecaa05e3b331919f6f5e6fb504a12055a98f97f9b898b25",
+        "plan_content_hash": "sha256:988263f19033fe9c58da852acd32330b72aa025da50c9e807ba2be7175dd5226",
+        "plan_hash": "sha256:e71d5565080253e991fc4940dc85ce9dc374532aab5d1b7cd0d102a2d796f569",
         "plan_id": "pln_00000000000000000000000000000003",
         "plan_schema": "coursebook.plan.v2",
         "plan_version": 1,
@@ -1373,7 +1491,7 @@
         {
           "ordinal": 2,
           "prereq_unit_ordinals_json": "[1]",
-          "target_lessons": 2,
+          "target_lessons": 3,
           "title": "Triads and the circle of fifths"
         }
       ],
@@ -1395,7 +1513,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": 2,
           "owners": 2,
-          "plan_hash": "sha256:e4900f2bc9e290784ecaa05e3b331919f6f5e6fb504a12055a98f97f9b898b25",
+          "plan_hash": "sha256:e71d5565080253e991fc4940dc85ce9dc374532aab5d1b7cd0d102a2d796f569",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -1454,16 +1572,17 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": null,
           "owners": 2,
-          "plan_hash": "sha256:e4900f2bc9e290784ecaa05e3b331919f6f5e6fb504a12055a98f97f9b898b25",
+          "plan_hash": "sha256:e71d5565080253e991fc4940dc85ce9dc374532aab5d1b7cd0d102a2d796f569",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
-          "reviews": 0,
+          "reviews": 1,
           "section_ids": [
             "0000000000000024",
-            "0000000000000025"
+            "0000000000000025",
+            "0000000000000026"
           ],
-          "sections": 2,
+          "sections": 3,
           "stage": "unit_sections",
           "state": "validated",
           "unit_ordinal": 2,
@@ -1488,12 +1607,12 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 1310,
-            "output_tokens": 558,
+            "input_tokens": 1458,
+            "output_tokens": 683,
             "unknown_calls": 0,
             "unknown_cost": false
           },
-          "validation_id": "0000000000000026",
+          "validation_id": "0000000000000027",
           "validation_verdict": "pass"
         },
         "unit_ordinal": 2

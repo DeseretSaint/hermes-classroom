@@ -243,7 +243,7 @@ PLAN_PROMPT_VERSION = "plan-prompt.v22"
 #: keys — and the shared sourcing rule no longer forbids a declared ``support: 'unverified'`` gap.
 #: v25 (E2E S1/S3): the plan prompt states that a full course's last owner section is its exit
 #: performance, that a performance course ends on the final objective (not just somewhere in the
-#: last unit), and that spaced review needs one review per four owner sections with a different
+#: last unit), and that spaced review needs one review per five owner sections with a different
 #: form of the same target.
 PLAN_PROMPT_VERSION_V2 = "plan-prompt.v25"
 #: The unit-sections authoring stage. One unit per call, so its own version. v2 (CP-015g) states the
@@ -5176,7 +5176,7 @@ def _plan_instructions_v2(
             "objective of the final unit) must declare evidence_target 'procedure' or 'transfer' "
             "and teach toward 'terminal_performance'. A full course that ends in recall, "
             "comprehension or discrimination is refused.",
-            "When 'spaced_review' is true, schedule at least one review section for every 4 owner "
+            "When 'spaced_review' is true, schedule at least one review section for every 5 owner "
             "sections: raise the units' target_lessons above their objective counts so the review "
             "slots exist. A review re-presents the same evidence target in a different form (new "
             "items, not a copy of the owner's check). A committed course with no review is "
@@ -6346,9 +6346,11 @@ PERFORMANCE_EXIT_DECLARATIONS: tuple[str, ...] = ("performance", "mixed")
 
 #: How many owner sections one review section must cover, at minimum. Spaced review is a
 #: *density* requirement, not a boolean label: a course that declares it must meet earlier
-#: material again before the end. Four keeps the review load near one session in five; the number
-#: is a scheduling heuristic, never an attainment claim (``docs/MASTERY-PATH-POLICY.md`` §7).
-SPACED_REVIEW_EVERY = 4
+#: material again before the end. Five keeps the review load near one session in six and fits the
+#: blueprint's own review allowance: a full course caps at 40 objectives and 8 review sections, and
+#: ceil(40 / 5) = 8. A tighter floor would demand more reviews than the plan may schedule. The
+#: number is a scheduling heuristic, never an attainment claim (``docs/MASTERY-PATH-POLICY.md`` §7).
+SPACED_REVIEW_EVERY = 5
 
 
 def required_review_count(owner_sections: int) -> int:
@@ -6385,6 +6387,11 @@ def review_density_reasons(
     (``target_lessons`` is where review slots live), so it is refused here, before authoring.
     The learned rule is a density floor: one review per :data:`SPACED_REVIEW_EVERY` owner
     sections, and at least one whenever the course has an owner section.
+
+    This is a v2 rule because ``target_lessons`` is the only place a plan can declare review
+    slots. A v1 plan has one section per objective and no review representation; refusing every
+    legacy committed v1 document would make its stored plans unreadable, so v1 stays legacy and
+    new blueprints (the path the create form uses) carry the floor.
     """
     if not plan.get("spaced_review"):
         return []
@@ -12314,8 +12321,9 @@ def _unit_sections_instructions(*, unit: dict[str, Any], objectives: Sequence[di
         lines.append(
             f"Author exactly {review_slots} review section(s) after the owner sections. A review "
             "section has role 'review', primary_objective_ref null, and reinforces one to four "
-            "earlier objective ordinals from this or an earlier unit. A review lesson reuses an "
-            "existing check; it authors no new check."
+            "earlier objective ordinals from this or an earlier unit. A review lesson retrieves the "
+            "same evidence target in a new form — new items, never a byte-identical copy of the "
+            "owner's check — and authors no second live check."
         )
     else:
         lines.append("Author no review sections: this unit targets exactly its owner lessons.")
@@ -14074,11 +14082,14 @@ def run_lesson_job(
 def _resolve_review_target(
     connection: sqlite3.Connection, plan_id: str, section: dict[str, Any]
 ) -> dict[str, Any]:
-    """The owner check a review section presents, or a typed refusal.
+    """The owner check a review section retrieves, or a parked/typed target.
 
-    A review lesson authors **no new check** (§5). It presents the existing owner check of the
-    objective it reinforces. Choosing the first reinforced ref that already has an open check is
-    deterministic; the caller stores the link and never inserts a ``checks`` row.
+    A review retrieves the owner objective's evidence target in a new form (§5): it authors its own
+    variant check and never rewrites the owner's check row. This resolver finds the owner's
+    scheduled check so the review can keep the same evidence target and so the stimulus-variant
+    gate has an owner to compare against. Choosing the first reinforced ref that already has a
+    check is deterministic; the caller stores the review's own variant and never overwrites this
+    row.
 
     CP-015j: a review is *authorable* while its owner page is parked ``needs_review``. That page
     exists, its check is closed, and the page may be approved or regenerated later — failing the
@@ -14178,11 +14189,11 @@ def _review_check_target(
     objective: dict[str, Any],
     row: dict[str, Any],
 ) -> dict[str, Any]:
-    """One owner check projected into the shape a review lesson reuses.
+    """One owner check projected into the shape a review variant is compared against.
 
-    The check is never re-authored and its row is never rewritten: the review lesson links this
-    exact check id. ``check_open`` is carried so the caller can park the review when the owner page
-    is still ``needs_review``.
+    The check is never re-authored and its row is never rewritten: the review authors its own
+    variant for the same objective. ``check_open`` is carried so the caller can park the review
+    when the owner page is still ``needs_review``.
     """
     stimulus = _load_json(row["stimulus_json"], {})
     reference = _load_json(row["reference_json"], {})

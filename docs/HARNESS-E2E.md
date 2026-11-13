@@ -54,8 +54,8 @@ Expected output of step 2:
 
 ```text
 bicycle_single: PASS  scope=single units=1 objectives=1 checks=1 lessons=1 validation=independently_validated
-music_short: PASS  scope=short units=2 objectives=4 checks=4 lessons=4 validation=independently_validated
-soldering_full: PASS  scope=full units=6 objectives=12 checks=12 lessons=12 validation=independently_validated
+music_short: PASS  scope=short units=2 objectives=4 checks=5 lessons=5 validation=independently_validated
+soldering_full: PASS  scope=full units=6 objectives=12 checks=15 lessons=15 validation=independently_validated
 partial_unit_batch (H-30b D1): unit state=needs_review persisted_sections=1 lesson_refusal=GenerationRejected page_state=not_started check_id=None
 overall: PASS  (3/3 scenarios)
 ```

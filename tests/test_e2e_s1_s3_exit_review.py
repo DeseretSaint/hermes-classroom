@@ -141,7 +141,7 @@ class SpacedReviewDensityTest(unittest.TestCase):
         )
         with self.assertRaises(gen._RuleViolation) as caught:
             enforce(plan, recipe="committed")
-        # 12 owners need ceil(12/4) = 3 reviews.
+        # 12 owners need ceil(12/5) = 3 reviews.
         self.assertTrue(
             any("at least 3" in reason for reason in caught.exception.reasons),
             caught.exception.reasons,

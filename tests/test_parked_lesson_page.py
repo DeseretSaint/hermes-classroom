@@ -148,11 +148,15 @@ class ParkedBlueprintPagesTest(FineTuneCase):
         states = {row["section_id"]: row["lesson_state"] for row in book["sections"]}
         self.assertEqual(states[section_id], "needs_review")
 
-        parked_objective = next(
-            row["objective_id"] for row in book["sections"] if row["section_id"] == section_id
+        # A review section reinforces several objectives and projects through the first of them,
+        # so objective_id is not unique across files. The section's ordinal in the title is.
+        parked_ordinal = next(
+            int(row["ordinal"]) for row in book["sections"] if row["section_id"] == section_id
         )
-        learner_pages = {file["objective_id"]: file for file in book["tabs"]["learner_pages"]}
-        parked_file = learner_pages[parked_objective]
+        marker = f"{parked_ordinal:02d} · "
+        parked_file = next(
+            file for file in book["tabs"]["learner_pages"] if marker in file["title"]
+        )
         self.assertTrue(
             parked_file["title"].startswith("Needs review · "),
             parked_file["title"],
@@ -160,16 +164,14 @@ class ParkedBlueprintPagesTest(FineTuneCase):
         # The marker travels with every tab that shows this section's authored text.
         for role in ("parent_guide", "answers", "narration"):
             titles = [
-                file["title"]
-                for file in book["tabs"].get(role, [])
-                if file["objective_id"] == parked_objective
+                file["title"] for file in book["tabs"].get(role, []) if marker in file["title"]
             ]
             for title in titles:
                 self.assertTrue(title.startswith("Needs review · "), title)
 
         # A served section's file is not marked.
-        for objective_id, file in learner_pages.items():
-            if objective_id == parked_objective:
+        for file in book["tabs"]["learner_pages"]:
+            if marker in file["title"]:
                 continue
             self.assertFalse(file["title"].startswith("Needs review"), file["title"])
 

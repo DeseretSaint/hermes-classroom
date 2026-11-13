@@ -155,7 +155,9 @@ SCENARIOS: dict[str, dict] = {
                     "title": "Triads and the circle of fifths",
                     "goal": "Build a triad from the circle and use it on a real song.",
                     "prereq_unit_ordinals": [1],
-                    "target_lessons": 2,
+                    # S3: one review slot. The committed plan must schedule at least one review
+                    # for its four owner sections.
+                    "target_lessons": 3,
                 },
             ],
             "objectives": [
@@ -299,13 +301,13 @@ SCENARIOS: dict[str, dict] = {
                  "target_lessons": 2},
                 {"ordinal": 3, "title": "Through-hole insertion",
                  "goal": "Form leads and seat a part flush.", "prereq_unit_ordinals": [2],
-                 "target_lessons": 2},
+                 "target_lessons": 3},
                 {"ordinal": 4, "title": "Soldering a joint",
                  "goal": "Heat and feed solder into a sound joint.", "prereq_unit_ordinals": [3],
-                 "target_lessons": 2},
+                 "target_lessons": 3},
                 {"ordinal": 5, "title": "Inspection and rework",
                  "goal": "Judge a joint and fix a bridge.", "prereq_unit_ordinals": [4],
-                 "target_lessons": 2},
+                 "target_lessons": 3},
                 {"ordinal": 6, "title": "Desoldering and final check",
                  "goal": "Remove a part without damage and prove continuity.",
                  "prereq_unit_ordinals": [5], "target_lessons": 2},

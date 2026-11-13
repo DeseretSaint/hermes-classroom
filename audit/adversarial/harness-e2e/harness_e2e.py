@@ -388,6 +388,34 @@ class RecordedLLM:
                     "audio": {"level": "none", "role": "none"},
                 },
             })
+        review_slots = int(unit.get("target_lessons", 0)) - len(payload["objectives"])
+        for slot in range(max(0, review_slots)):
+            # S3: a review re-presents the unit's latest owner target in a new form. One review
+            # per slot, reinforcing the unit's final objective; the recorded lesson supplies the
+            # teaching and the review check prefix makes the stimulus a variant.
+            objective = payload["objectives"][-1]
+            title = str(objective["title"])
+            if title not in by_title:
+                raise AssertionError(f"recording has no lesson for objective {title!r}")
+            sections.append({
+                "ordinal": int(objective["ordinal"]) + slot,
+                "unit_ref": ordinal,
+                "role": "review",
+                "primary_objective_ref": None,
+                "reinforces": [int(objective["ordinal"])],
+                "title": f"Review: {title}",
+                "lesson_intent": (
+                    f"Retrieve {title!r} from memory with a new prompt; no new teaching and no "
+                    "second live check."
+                ),
+                "context_needs": [],
+                "source_ids": [],
+                "media_need": {
+                    "construct": "",
+                    "image": {"level": "none", "role": "none"},
+                    "audio": {"level": "none", "role": "none"},
+                },
+            })
         return {"unit_ref": ordinal, "sections": sections}
 
     # ── lesson ──────────────────────────────────────────────────────────────
@@ -453,6 +481,16 @@ class RecordedLLM:
                 "assistance_policy": {"hint": "available", "answer_marks_evidence_class": "none"},
                 "scaffolds": {"romaji": False, "furigana": False, "english_meaning": False},
             }
+        if str(section.get("section_role") or "owner") == "review":
+            # S3: the review presents the same evidence target with a new stimulus. The recorded
+            # content supplies the teaching; the prompt prefix makes the check a variant rather
+            # than a byte-identical copy of the owner's.
+            check["stimulus"]["prompt"] = f"From memory — {check['stimulus']['prompt']}"
+            if check["stimulus"].get("items"):
+                check["stimulus"]["items"] = [
+                    {"id": item["id"], "label": f"From memory: {item['label']}"}
+                    for item in check["stimulus"]["items"]
+                ]
         return {
             "section_title": section["title"],
             "segments": [
@@ -914,6 +952,7 @@ def _run_scenario(name: str, *, home: Path) -> dict:
             "stimulus_format": (json.loads(row["stimulus_json"]).get("format")
                                 if row["stimulus_json"] else None),
             "state": row["state"],
+            "version": row["version"],
         }
         for row in check_rows
     ]
@@ -932,6 +971,12 @@ def _run_scenario(name: str, *, home: Path) -> dict:
         "checks": len(check_rows),
         "lessons": len(lesson_rows),
         "sections": len(section_rows),
+        "owner_sections": sum(
+            1 for row in section_rows if str(row["section_role"] or "owner") == "owner"
+        ),
+        "review_sections": sum(
+            1 for row in section_rows if str(row["section_role"] or "owner") == "review"
+        ),
         "outline_units": [
             {"ordinal": unit["ordinal"], "prereq_unit_ordinals": unit["prereq_unit_ordinals"],
              "prerequisite_state": unit["prerequisite_state"], "unmet": len(unit["unmet"]),
@@ -962,7 +1007,12 @@ def _assert_scenario(name: str, scenario: dict, evidence: dict) -> dict[str, boo
                     if row["label"] == "correct"), None) or {}
     wrong = next((result for row, result in zip(grading, results)
                   if row["label"] == "wrong"), None)
-    lanes = obs["check_lanes"]
+    # S3: a review authors its own variant check (closed). The objective's authority is the owner
+    # check, authored first and therefore the lowest version in the objective's lane group.
+    by_objective: dict[str, list[dict]] = {}
+    for lane in obs["check_lanes"]:
+        by_objective.setdefault(lane["objective_id"], []).append(lane)
+    lanes = [min(group, key=lambda lane: lane["version"]) for group in by_objective.values()]
     unit_rows = evidence["steps"]["stored_plan"]["unit_rows"]
     outline_units = obs["outline_units"]
     page_blob = json.dumps(evidence["steps"]["lesson_page"], ensure_ascii=False, sort_keys=True)
@@ -990,7 +1040,8 @@ def _assert_scenario(name: str, scenario: dict, evidence: dict) -> dict[str, boo
             not row["ok"] for row in evidence["steps"]["approval_refusals"]
         ),
         "every_lesson_validated": all(row["state"] == "validated" for row in evidence["lesson_rows"]),
-        "one_section_per_objective": obs["sections"] == obs["objectives"],
+        "one_section_per_objective": obs["owner_sections"] == obs["objectives"]
+        and obs["owner_sections"] + obs["review_sections"] == obs["sections"],
         "prerequisite_edges_point_backwards": edges_backwards,
         "outline_projects_prerequisite_state": outline_has_state,
         "units_user_enqueued_not_chained": all(
@@ -1105,21 +1156,32 @@ class CeilingLLM(RecordedLLM):
         document["time_estimate"]["sessions_per_week"] = 2
         per_unit = self.objectives_n // self.units_n
         remainder = self.objectives_n % self.units_n
+        owner_counts = [
+            per_unit + (1 if ordinal <= remainder else 0)
+            for ordinal in range(1, self.units_n + 1)
+        ]
+        # S3: a spaced-review plan schedules one review per five owner sections. The slots ride on
+        # the early units' target_lessons; the objective count — the thing the bound is about —
+        # is unchanged.
+        reviews_needed = gen.required_review_count(self.objectives_n)
+        review_counts = [0] * self.units_n
+        for index in range(min(reviews_needed, self.units_n)):
+            review_counts[index] = 1
         document["units"] = [
             {
                 "ordinal": ordinal,
                 "title": f"Cumulative unit {ordinal}",
                 "goal": f"Unit {ordinal} builds on the unit before it.",
                 "prereq_unit_ordinals": [ordinal - 1] if ordinal > 1 else [],
-                "target_lessons": per_unit + (1 if ordinal <= remainder else 0),
+                "target_lessons": owner_counts[ordinal - 1] + review_counts[ordinal - 1],
             }
             for ordinal in range(1, self.units_n + 1)
         ]
         document["objectives"] = []
         document["check_plan"] = []
         ordinal = 0
-        for unit in document["units"]:
-            for _ in range(unit["target_lessons"]):
+        for unit_index, unit in enumerate(document["units"]):
+            for _ in range(owner_counts[unit_index]):
                 ordinal += 1
                 # CP-015g/D1-F1: this brief's goal is a physical act, so the plan must declare the
                 # performance it teaches. Every fourth objective is the one the learner performs;
