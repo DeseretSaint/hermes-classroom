@@ -3575,13 +3575,6 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
             "objective_id": objective["id"],
             "title": objective["title"],
             "ordinal": int(objective["ordinal"]),
-            "sections_total": int(
-                connection.execute(
-                    "SELECT COUNT(*) FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
-                    f" WHERE pl.course_id = ? AND {_current_plan_sql()}",
-                    (course["id"],),
-                ).fetchone()[0]
-            ),
             "state": objective["state"],
             "evidence_target": objective["evidence_target"],
             "last_opened_at": run["last_opened_at"] if run else None,

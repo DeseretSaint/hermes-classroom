@@ -85,6 +85,23 @@ typed refusal that names the legal scope.
 `time_estimate.weeks`; on a violation after the last attempt, refuse with `SCOPE_BAND` naming the
 legal scopes and write no plan row.
 
+### G6 [ran] A stalled plan job stays `running` for half an hour, and cancelling it changes nothing
+The `short` probe's plan job never left `running`: no progress line, no heartbeat (`gen_call_waits`
+had `beats: 0` for thirty minutes), and at the worker's own 1800 s bound the job was *still*
+`running`. The worker then dispatched `jobs.cancel`, waited thirty seconds, and the row stayed
+`running`; the run only ended because `plan.approve` refused the empty plan
+(`reason: plan_empty`). A learner sees "Drafting…" with no end and no error, and the one control
+that should stop it does not.
+
+The cause was not reproduced: a targeted probe with a stalled host and a 0.2 s bound leaves a
+correctly failed job (`tests/test_e2e_stall.py`). What the evidence establishes is the contract
+violation, not the trigger: a job whose worker is gone must not remain `running`, and a requested
+cancel must reach `cancelled` even with no live worker.
+
+**Fix:** a liveness watchdog that fails a `running` job whose lease is expired and whose heartbeat
+has not moved for N seconds (typed `WORKER_LOST`), and make `jobs.cancel` settle a row whose lease
+is already expired.
+
 ## Serving and learning path
 
 ### L1 [read] A passed generated section can never be checked again
@@ -330,8 +347,10 @@ has an acceptance test that fails today.
 | 31 | Learner copy without pipeline words | U8 | diagnostic strings move behind settings | shipped-copy scan finds none of the banned words |
 | 32 | Wide Home scales to the route and offers See all | U9 | gate on width and height; below 1200 unchanged | fox's right edge ≤ scene width at 1250 |
 | 33 | Print an omission note, never an orphan caption | U10 | print spec already omits art; the note makes it honest | sheet says the figure is not printed |
+| 34 | Liveness watchdog: expired lease + stalled heartbeat -> typed `WORKER_LOST` | G6 | uses the lease the executor already renews; no new timer in the job path | a job whose thread is gone leaves `running` within N seconds |
+| 35 | `jobs.cancel` settles a row with no live worker | G6 | cancellation is a state transition, not a message to a thread | cancel on an orphaned row reaches `cancelled` |
 
-Thirty-three, not twenty; items 1–24 are committed to this wave, 25–33 are carded behind them.
+Thirty-five, not twenty; items 1–24 are committed to this wave, 25–35 are carded behind them.
 
 ## What held up
 

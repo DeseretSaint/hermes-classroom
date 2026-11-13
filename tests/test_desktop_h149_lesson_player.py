@@ -86,7 +86,7 @@ if (payload.kind === 'section') {
       sources: index,
       checkSlot: checkNode,
       checkLabels: payload.checkLabels || [],
-      section: { objective_id: payload.document.objective_id, title: payload.document.section_title, ordinal: 2, sections_total: 4, evidence_target: 'discrimination' },
+      section: { objective_id: payload.document.objective_id, title: payload.document.section_title, ordinal: 2, evidence_target: 'discrimination' },
       progress: payload.progress || { total_objectives: 4, independent: 2, review_due: 1 },
       playerState: payload.playerState || { phase: 'awaiting_input', canCheck: false, verdict: null },
       playerController: { current: null },
@@ -191,8 +191,12 @@ class PlayerSurfaceTest(H149RenderTest):
     def test_the_field_stop_header_names_the_stop_the_title_and_the_step(self) -> None:
         doc = document(guided=True, blocks=COMPLETE_BLOCKS, check_id="chk_0123456789abcdef")
         html = self.player(doc)
-        self.assertIn('data-cb-player-stop="2/4"', html)
-        self.assertIn("STOP 2 OF 4", html)
+        # The chip names the section's course position only: the course total is not in the
+        # lesson.page contract, and dividing by the block count read "STOP 2 OF 4" for a lesson
+        # with four blocks (E2E U3). The step readout owns "Step 1 of 4".
+        self.assertIn('data-cb-player-stop="2"', html)
+        self.assertIn("STOP 2", html)
+        self.assertNotIn("STOP 2 OF", html)
         self.assertIn('data-cb-player-title=""', html)
         self.assertIn("Affection and register", html)
         self.assertIn('data-cb-player-objective=""', html)
