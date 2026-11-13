@@ -209,8 +209,8 @@ process.stdout.write(out)
 """
 
 
-def _stop() -> dict:
-    return {
+def _stop(*, sections_total: int | None = 6) -> dict:
+    section = {
         "objective_id": "obj_0123456789abcdef",
         "title": "Affection and register",
         "ordinal": 2,
@@ -218,6 +218,9 @@ def _stop() -> dict:
         "evidence_target": "discrimination",
         "last_opened_at": None,
     }
+    if sections_total is not None:
+        section["sections_total"] = sections_total
+    return section
 
 
 def _two_step_doc() -> dict:
@@ -376,32 +379,59 @@ class Item40EnterDoesNotAdvanceTest(W213RenderTest):
 
 
 class Item42OneDenominatorTest(W213RenderTest):
-    """Item 42: the stop label and the step label share one denominator."""
+    """Item 42: one denominator per quantity — the stop divides by the course, the step by the page.
 
-    def test_the_two_denominators_agree_when_the_objective_count_differs(self) -> None:
-        # Four authored steps, five objectives: the two surfaces used to print /5 and /4.
+    The original defect was one number doing two jobs: the stop chip divided the section's course
+    position by the *block* count, so section 7 of a five-block lesson read "STOP 7 OF 5" beside
+    the step readout's "Step 1 of 5". Neither number was honest. `lesson.page.section` now carries
+    the course count (`sections_total`, cb.rpc v28), so each readout prints its own unit's
+    denominator and never the other's: "STOP 2 OF 6" beside "Step 1 of 4" is one denominator per
+    quantity, which is the W2-13 rule. Supplying a *different* count is the point of this test: a
+    six-section course with a four-block page must not make the two numbers agree by dropping one.
+    """
+
+    def render(self, *, sections_total: int | None) -> dict:
+        # Four authored steps; six sections in the plan. The stop's denominator is the course, the
+        # step's is the page, so they are allowed to differ — they must never be each other's.
         doc = document(guided=True, blocks=COMPLETE_BLOCKS, check_id="chk_0123456789abcdef")
-        case = json.loads(self.run_case({
+        return json.loads(self.run_case({
             "kind": "player-dom",
             "document": doc,
-            "section": _stop(),
-            "progress": {"total_objectives": 5, "independent": 2, "review_due": 1},
+            "section": _stop(sections_total=sections_total),
+            "progress": {"total_objectives": sections_total or 0, "independent": 2, "review_due": 1},
         }))
-        self.assertIsNotNone(case["stop"], case)
-        self.assertIsNotNone(case["step"], case)
-        stop_denominator = case["stop"].split("/")[-1]
-        step_denominator = case["step"].split("/")[-1]
-        self.assertTrue(stop_denominator.isdigit() and step_denominator.isdigit(), case)
+
+    def test_the_two_denominators_agree_when_the_objective_count_differs(self) -> None:
+        case = self.render(sections_total=6)
+        self.assertEqual(case["stop"], "2/6", case)
+        self.assertEqual(case["step"], "1/4", case)
+        # The chip states the course position over the course total, exactly once.
+        self.assertIn("STOP 2 OF 6", case["barText"], case)
+        # The step states the block position over the block count, exactly once.
+        self.assertIn("Step 1 of 4", case["barText"], case)
+        mentioned = re.findall(r"(?i)(?:OF|of)\s+(\d+)", case["barText"])
         self.assertEqual(
-            stop_denominator,
-            step_denominator,
-            f"the stop and the step still disagree: {case['stop']} vs {case['step']} ({case['barText']})",
+            sorted(mentioned),
+            ["4", "6"],
+            f"the player bar does not name each unit's own denominator once: {case['barText']}",
         )
-        mentioned = set(re.findall(r"(?:OF|of)\s+(\d+)", case["barText"]))
+        # The old lie — the stop dividing by the page — is impossible: neither readout borrows the
+        # other's count.
+        self.assertNotIn("STOP 2 OF 4", case["barText"], case)
+        self.assertNotIn("Step 1 of 6", case["barText"], case)
+
+    def test_a_page_without_the_course_total_prints_the_position_alone(self) -> None:
+        case = self.render(sections_total=None)
+        # A v27 server never sent the count: no denominator is invented and no empty "/" is
+        # printed. The step readout keeps its own honest denominator.
+        self.assertEqual(case["stop"], "2", case)
+        self.assertEqual(case["step"], "1/4", case)
+        self.assertIn("STOP 2", case["barText"], case)
+        self.assertNotIn("STOP 2 OF", case["barText"], case)
         self.assertEqual(
-            mentioned,
-            {stop_denominator},
-            f"a second, disagreeing denominator remains on the player bar: {case['barText']}",
+            re.findall(r"(?i)STOP[^A-Za-z0-9]*\d+[^A-Za-z0-9]*(?:OF)?\s*\d*", case["barText"]),
+            ["STOP 2"],
+            f"a missing course total produced a denominator: {case['barText']}",
         )
 
 

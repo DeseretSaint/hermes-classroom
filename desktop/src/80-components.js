@@ -3930,7 +3930,11 @@ function LessonPlayer({
     children: [
       jsxs('header', {
         'data-cb-player-bar': '',
-        'data-cb-player-stop': `${ordinal || ''}/${stopTotal || ''}`,
+        // The probe attribute carries the same fact as the chip: the position over the course
+        // total when the page projects one, and the bare position when it does not. A backend
+        // that predates `section.sections_total` must not read as "2/" — an empty denominator is
+        // a missing fact, not a zero.
+        'data-cb-player-stop': stopTotal ? `${ordinal || ''}/${stopTotal}` : (ordinal || ''),
         style: {
           display: 'flex',
           flexDirection: 'column',
