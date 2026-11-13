@@ -1906,19 +1906,27 @@ def _commit_attempt(
     return to_revision, result
 
 
-def _binding_refusal(connection, enrollment_id: str) -> None:
-    """Only an ``active`` binding may accept a submit. No binding means no chat is bound yet."""
+def _binding_refusal(connection, enrollment_id: str, objective_id: str) -> None:
+    """Only an ``active`` binding may accept a write for *its own* objective.
+
+    A binding is scoped to the objective its lesson run teaches. The gate used to read the whole
+    enrollment, so a detached chat left behind on section 1 refused a submit on section 2 even
+    though section 2 had a live chat (or none at all). Scope the read to the objective the write
+    names: no row for that objective means this write has no chat to answer to and is allowed; a
+    non-active row on this objective is the real refusal and names its status.
+    """
     row = _row(
         connection,
-        "SELECT status FROM bindings WHERE enrollment_id = ?"
+        "SELECT status FROM bindings WHERE enrollment_id = ? AND objective_id = ?"
         + bindings.GOVERNING_ORDER,
-        (enrollment_id,),
+        (enrollment_id, objective_id),
     )
     if row is not None and row["status"] != "active":
         raise RpcError.of(
             "BINDING_NOT_ACTIVE",
             f"the lesson session is {row['status']}; rebind before submitting.",
             status=row["status"],
+            objective_id=objective_id,
         )
 
 
@@ -1999,7 +2007,7 @@ def attempt_submit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
         # A source update pauses dependent generated checks pending review; grading against
         # changed content would manufacture evidence the plan no longer supports.
         source_ledger.assert_check_current(connection, str(check["id"]))
-        _binding_refusal(connection, enrollment["id"])
+        _binding_refusal(connection, enrollment["id"], str(objective["id"]))
         if int(enrollment["revision"]) != expected:
             raise _stale("the enrollment moved on before this answer was graded.", int(enrollment["revision"]))
         evidence_class = _classify_evidence(connection, enrollment["id"], check["id"])
@@ -2257,7 +2265,7 @@ def practice_end(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
                 "VALIDATION_FAILED", "there is no live practice session to end.",
                 reason="practice_not_open",
             )
-        _binding_refusal(connection, enrollment["id"])
+        _binding_refusal(connection, enrollment["id"], str(objective["id"]))
         if int(enrollment["revision"]) != expected:
             raise _stale("the enrollment moved on before this practice ended.", int(enrollment["revision"]))
         if int(check["version"]) != int(payload["check_version"]):
@@ -4608,7 +4616,7 @@ def lesson_assist(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[in
             raise RpcError.of(
                 "VALIDATION_FAILED", "there is no open check to assist.", reason="no_open_check"
             )
-        _binding_refusal(connection, enrollment["id"])
+        _binding_refusal(connection, enrollment["id"], str(objective_id))
         to_revision = _bump_enrollment(connection, enrollment_id, expected)
         event_id = evidence.record_assist(
             connection,

@@ -3930,7 +3930,7 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
   const viewLabel = (LEARNING_VIEWS.find((option) => option.id === view) || { label: view }).label
 
   const startLesson = useCallback(
-    async (mode, explicitObjectiveId) => {
+    async (mode, explicitObjectiveId, acknowledgePrerequisites = false) => {
       const target = explicitObjectiveId || objectiveId || pageObjectiveId || (row.evidence_summary && row.evidence_summary.current_objective_id)
       if (!target) {
         setNotice('This course has no current objective yet; approve the plan first.')
@@ -3943,7 +3943,8 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
         objectiveId: target,
         objectiveTitle: page.data && page.data.section ? page.data.section.title : null,
         mode,
-        profile: profile || currentScope().profile
+        profile: profile || currentScope().profile,
+        acknowledgePrerequisites
       })
       setBusy(false)
       if (outcome.ok && outcome.armed) {
@@ -3963,6 +3964,18 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
                 }
               }
         )
+        return
+      }
+      if (!outcome.ok && outcome.reason === 'prerequisite-unmet') {
+        // R6: the refusal is the learner's choice, so it ships with the control that takes it.
+        // "Start anyway" retries the same begin with `acknowledge_prerequisites: true`.
+        setNotice({
+          text: outcome.message,
+          action: {
+            label: 'Start anyway',
+            run: () => startLesson(mode, target, true)
+          }
+        })
         return
       }
       if (!outcome.ok && outcome.reason === 'no-binding') {
@@ -4591,13 +4604,22 @@ function LessonPaneBody({ binding, storedId }) {
   const [notice, setNotice] = useState(null)
   const [overrideOpen, setOverrideOpen] = useState(false)
 
-  const revision = page.data ? page.data.revision : row ? row.revision : 0
+  const [checkRevisionFloor, setCheckRevisionFloor] = useState(0)
+  const adoptCheckRevision = useCallback((value) => {
+    const next = Number(value)
+    if (Number.isFinite(next) && next > 0) setCheckRevisionFloor(next)
+  }, [])
+  const revision = Math.max(
+    page.data ? Number(page.data.revision) || 0 : row ? Number(row.revision) || 0 : 0,
+    checkRevisionFloor
+  )
   const check = useOpenCheck({
     enrollmentId: binding.enrollment_id,
     objectiveId,
     revision,
     enabled: Boolean(objectiveId) && backendSupports('check.open') && Boolean(page.data),
-    implemented: backendWire.implemented
+    implemented: backendWire.implemented,
+    onRevision: adoptCheckRevision
   })
 
   const section = page.data && page.data.section
@@ -4728,10 +4750,27 @@ function LessonPaneBody({ binding, storedId }) {
             children: page.error ? `${page.error.code}: ${describeError(page.error)}` : 'The lesson page could not be read.'
           })
         : check.status === 'error'
-          ? jsx('div', {
-              className: 'text-xs text-(--ui-text-secondary)',
-              children: check.error ? `${check.error.code}: ${describeError(check.error)}` : 'No check could be opened.'
-            })
+          ? check.error && check.error.code === 'PREREQUISITE_UNMET'
+            ? jsxs('div', {
+                className: 'flex flex-col gap-1',
+                'data-cb-check-refusal': 'PREREQUISITE_UNMET',
+                children: [
+                  jsx('div', {
+                    className: 'text-xs text-(--ui-text-secondary)',
+                    children: describeError(check.error)
+                  }),
+                  jsx(sdk.Button, {
+                    variant: 'secondary',
+                    size: 'sm',
+                    onClick: () => check.acknowledge(),
+                    children: 'Start anyway'
+                  })
+                ]
+              })
+            : jsx('div', {
+                className: 'text-xs text-(--ui-text-secondary)',
+                children: check.error ? `${check.error.code}: ${describeError(check.error)}` : 'No check could be opened.'
+              })
           : check.status === 'loading' && !check.check
             ? jsx(sdk.Loader, { label: 'Opening the current check' })
             : jsx(AttemptControls, {

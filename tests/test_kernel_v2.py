@@ -263,9 +263,9 @@ class BindingAbandonTest(KernelCase):
     def test_abandon_orphans_the_binding_and_blocks_submits(self) -> None:
         lesson = self.prepare_lesson()
         self.execute(
-            "INSERT INTO bindings (id, enrollment_id, profile, status, revision, updated_at)"
-            " VALUES ('bnd_abandon_01', ?, 'cinder', 'active', 0, '2026-01-01T00:00:00+00:00')",
-            (lesson["enrollment_id"],),
+            "INSERT INTO bindings (id, enrollment_id, profile, objective_id, status, revision, updated_at)"
+            " VALUES ('bnd_abandon_01', ?, 'cinder', ?, 'active', 0, '2026-01-01T00:00:00+00:00')",
+            (lesson["enrollment_id"], lesson["objective_id"]),
         )
         result = self.ok("binding.abandon", {"binding_id": "bnd_abandon_01", "reason": "new chat"},
                          expected_revision=0)["result"]

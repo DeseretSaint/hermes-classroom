@@ -912,7 +912,7 @@ async function startBoundLessonChat({ enrollmentId, objectiveId, lessonRunId, ti
  * `host.newChat` on the learner's behalf: that seam swaps the route to `#/` and would leave the
  * learner on a blank draft (H-64).
  */
-async function beginLessonFor({ row, objectiveId, objectiveTitle, mode, profile }) {
+async function beginLessonFor({ row, objectiveId, objectiveTitle, mode, profile, acknowledgePrerequisites = false }) {
   if (!row || !row.enrollment_id) return { ok: false, message: 'No course was read for this action.' }
   const target = objectiveId || (row.evidence_summary && row.evidence_summary.current_objective_id)
   if (!target) {
@@ -920,15 +920,34 @@ async function beginLessonFor({ row, objectiveId, objectiveTitle, mode, profile 
   }
   const response = await rpc(
     'lesson.begin',
-    { enrollment_id: row.enrollment_id, objective_id: target, mode },
+    {
+      enrollment_id: row.enrollment_id,
+      objective_id: target,
+      mode,
+      // R6: an unmet prerequisite edge refuses once, naming the learner's choice. "Start anyway"
+      // retries this same call with the acknowledgment, so the decision is the learner's and the
+      // response records it as `prerequisite_state: unmet_acknowledged`.
+      ...(acknowledgePrerequisites ? { acknowledge_prerequisites: true } : {})
+    },
     {
       idempotencyKey: `cb-lesson-${target}-${mode}-${
         mode === 'fresh' ? newOperationId('run') : 'resume'
-      }`
+      }${acknowledgePrerequisites ? '-ack' : ''}`
     }
   )
   if (!response.ok) {
-    return { ok: false, message: `${response.error.code}: ${describeError(response.error)}` }
+    const error = response.error || {}
+    // The refusal is actionable, so it travels as a reason the caller can turn into a control.
+    if (error.code === 'PREREQUISITE_UNMET') {
+      return {
+        ok: false,
+        reason: 'prerequisite-unmet',
+        objectiveId: target,
+        prerequisiteState: (error.details && error.details.prerequisite_state) || null,
+        message: describeError(error)
+      }
+    }
+    return { ok: false, message: `${error.code}: ${describeError(error)}` }
   }
   const outcome = response.result
   if (mode === 'resume') {

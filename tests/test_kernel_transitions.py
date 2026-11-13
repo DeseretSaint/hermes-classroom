@@ -178,9 +178,9 @@ class TransitionTest(KernelCase):
 
     def test_paused_binding_refuses_a_submit(self) -> None:
         self.execute(
-            "INSERT INTO bindings (id, enrollment_id, profile, status, revision, updated_at)"
-            " VALUES ('bnd_paused_0001', ?, 'cinder', 'paused', 0, '2026-01-01T00:00:00+00:00')",
-            (self.lesson["enrollment_id"],),
+            "INSERT INTO bindings (id, enrollment_id, profile, objective_id, status, revision, updated_at)"
+            " VALUES ('bnd_paused_0001', ?, 'cinder', ?, 'paused', 0, '2026-01-01T00:00:00+00:00')",
+            (self.lesson["enrollment_id"], self.lesson["objective_id"]),
         )
         error = self.err(
             "attempt.submit",
