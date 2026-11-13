@@ -660,7 +660,7 @@
         "prereq_unit_ordinals": [
           2
         ],
-        "target_lessons": 2,
+        "target_lessons": 3,
         "title": "Through-hole insertion"
       },
       {
@@ -669,7 +669,7 @@
         "prereq_unit_ordinals": [
           3
         ],
-        "target_lessons": 2,
+        "target_lessons": 3,
         "title": "Soldering a joint"
       },
       {
@@ -678,7 +678,7 @@
         "prereq_unit_ordinals": [
           4
         ],
-        "target_lessons": 2,
+        "target_lessons": 3,
         "title": "Inspection and rework"
       },
       {

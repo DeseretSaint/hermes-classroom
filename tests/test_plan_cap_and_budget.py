@@ -99,6 +99,9 @@ class PlanCutAnswerRepairTest(GenerationTestBase):
                 first = seen["n"] == 1
             if first:
                 return self.cut_answer(request)
+            # A committed single-session course: the committed recipe applies, but the band has no
+            # review slot (E2E S3), so the plan schedules none. The one-off variant would fail the
+            # committed recipe rule the job actually applies.
             return response(blueprint_plan(scope="single", recipe="committed"))
 
         llm = FakeLLM(

@@ -132,7 +132,7 @@ class LessonUnitPayloadTest(unittest.TestCase):
         self.assertIn("Build on what was already taught", request.instructions)
         # A payload change is a prompt change: the version is recorded in stored bindings.
         self.assertEqual(request.prompt_version, gen.LESSON_PROMPT_VERSION)
-        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v17")
+        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v18")
 
     def test_taught_so_far_is_bounded_to_the_most_recent_objectives(self) -> None:
         plan = _flat_plan()

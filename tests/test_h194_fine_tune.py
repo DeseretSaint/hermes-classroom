@@ -106,7 +106,11 @@ class FineTuneCase(KernelCase):
                 FakeLLM(
                     {
                         "coursebook.unit_sections.generate": blueprint_response(
-                            unit_sections_document(unit=unit, objectives=objectives)
+                            unit_sections_document(
+                                unit=unit,
+                                objectives=objectives,
+                                reviews=max(0, int(unit["target_lessons"]) - len(objectives)),
+                            )
                         ),
                         "coursebook.unit_sections.validate": blueprint_response(
                             validation_pass(), model="fake-independent-validator"

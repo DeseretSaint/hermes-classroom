@@ -198,7 +198,7 @@ class UnitSectionsPayloadTest(unittest.TestCase):
         # The merged tree carries CP-015g's unit-scope and CP-015h's construct-shape rules on the
         # same instruction text this card adds the citation rule to, so the label advanced to v3
         # rather than reusing v2 for a second, different text (docs/GENERATION.md §1).
-        self.assertEqual(gen.UNIT_SECTIONS_PROMPT_VERSION, "unit-sections-prompt.v3")
+        self.assertEqual(gen.UNIT_SECTIONS_PROMPT_VERSION, "unit-sections-prompt.v4")
         docs = (ROOT / "docs" / "GENERATION.md").read_text(encoding="utf-8")
         self.assertIn(
             f"| Unit-sections author | `coursebook.unit_sections.generate` | "

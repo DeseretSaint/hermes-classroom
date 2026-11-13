@@ -376,6 +376,15 @@ def lesson_from_request(name: str = "lesson_ja"):
         lesson = lesson_fixture(name, source_ids_from(request))
         lesson["section_title"] = section.get("title") or lesson["section_title"]
         check_for_objective(lesson, objective)
+        if str(section.get("section_role") or section.get("role") or "owner") == "review":
+            # S3: a review re-presents the same target with new items. The fake authors a variant
+            # the same way a real author must: same evidence target, a different stimulus.
+            stimulus = lesson["check"]["stimulus"]
+            stimulus["prompt"] = f"Review attempt — {stimulus.get('prompt') or ''}"
+            if stimulus.get("choices"):
+                stimulus["choices"] = list(reversed(stimulus["choices"]))
+            if stimulus.get("items"):
+                stimulus["items"] = [dict(item) for item in reversed(stimulus["items"])]
         return response(lesson, model="fake-author")
 
     return build
@@ -1518,7 +1527,7 @@ class LessonJobTest(GenerationTestBase):
         ]
         self.assertTrue(generation_requests)
         for request in generation_requests:
-            self.assertEqual(request.prompt_version, "lesson-prompt.v17")
+            self.assertEqual(request.prompt_version, "lesson-prompt.v18")
             self.assertIn("Capability policy", request.instructions)
             payload = json.loads(request.input_text)
             self.assertIn("capability_policy", payload)
@@ -1596,7 +1605,7 @@ class LessonJobTest(GenerationTestBase):
         text = gen._lesson_instructions(recipe="parent", locale=None, scaffold_note="")
         self.assertIn("3-6", text)
         self.assertIn("distinct observable", text)
-        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v17")
+        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v18")
 
     def test_a_lesson_with_fewer_than_three_rubric_criteria_is_retried_then_parked(self) -> None:
         plan_result = self.approved_plan()
@@ -2788,7 +2797,7 @@ class VagueBriefAimsAtTheGoalTest(unittest.TestCase):
 
     def test_a_correct_performance_plan_passes(self) -> None:
         plan = self._plan()
-        self._perform(plan, (1, 2, 3))
+        self._perform(plan, (1, 2, 3, 4))
         plan["exit_performance"] = "performance"
         plan["terminal_performance"] = "Replace the front brake pads and torque the caliper."
         self._rule_check(plan, goal=self.BRAKE_GOAL)
@@ -2828,7 +2837,7 @@ class VagueBriefAimsAtTheGoalTest(unittest.TestCase):
         # The title shares no words with the capability; the performance objective and the
         # detected action are what cover it.
         plan = self._plan()
-        self._perform(plan, (1, 2, 3))
+        self._perform(plan, (1, 2, 3, 4))
         plan["exit_performance"] = "performance"
         plan["goal_capabilities"] = ["replace the front brake pads"]
         self._rule_check(plan, goal=self.BRAKE_GOAL)

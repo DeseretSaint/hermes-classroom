@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import unittest
 
+from coursebook import curriculum
 from coursebook import generation as gen
 from coursebook import research
 
@@ -64,6 +65,12 @@ def _shape(plan: dict, per_unit: list[int]) -> dict:
     ``target_lessons`` stays honest. Nothing here relaxes a rule: the result is a document the
     gate still reads in full.
     """
+    # S1 (E2E S1/S3): trimming can drop the blueprint's exit objective. Whatever objective ends up
+    # last must still deliver the performance family the shape gave its final objective, or a full
+    # plan is refused for ending on a quiz about the exit rather than the exit itself.
+    exit_target = str(plan["objectives"][-1].get("evidence_target") or "")
+    if exit_target not in curriculum.PERFORMANCE_FAMILIES:
+        exit_target = ""
     kept: list[dict] = []
     for unit_ordinal, count in enumerate(per_unit, start=1):
         rows = [obj for obj in plan["objectives"] if int(obj["unit_ref"]) == unit_ordinal]
@@ -81,6 +88,13 @@ def _shape(plan: dict, per_unit: list[int]) -> dict:
     plan["units"] = plan["units"][: len(per_unit)]
     for unit, count in zip(plan["units"], per_unit):
         unit["target_lessons"] = count
+    if exit_target:
+        last = plan["objectives"][-1]
+        last["evidence_target"] = exit_target
+        for check in plan["check_plan"]:
+            if int(check["objective_ref"]) == int(last["ordinal"]):
+                check["evidence_target"] = exit_target
+                check["kind"] = "verification"
     return plan
 
 

@@ -248,12 +248,24 @@ PLAN_PROMPT_VERSION = "plan-prompt.v23"
 #: v25 (E2E S5/S6): the scope bullet states the band the gate enforces rather than the band's own
 #: numbers — the ledger's capability floor and the research cell's sourcing ceiling — and names
 #: the ``exclusions`` prefix that discloses a shortfall against the band.
-PLAN_PROMPT_VERSION_V2 = "plan-prompt.v25"
+#: v26 (E2E S1/S3, merged onto S5/S6): the plan prompt states that a full course's last owner
+#: section is its exit performance, that a performance course ends on the final objective (not
+#: just somewhere in the last unit), and that spaced review needs one review per five owner
+#: sections with a different form of the same target. The S1/S3 lane authored this under its own
+#: ``v25`` (off a base that predated S5/S6); both texts now sit in one prompt, so the label moves
+#: past S5/S6's v25 rather than wearing a number that already means the scope-bullet text.
+#: v27 (E2E S1/S3): a single-session course is one section with no review slot, so the prompt no
+#: longer tells the author that a committed course must schedule a review at that scope — the
+#: recipe rule allows a committed single course to carry `spaced_review: false`, and a true flag
+#: there is refused as unsatisfiable.
+PLAN_PROMPT_VERSION_V2 = "plan-prompt.v27"
 #: The unit-sections authoring stage. One unit per call, so its own version. v2 (CP-015g) states the
 #: unit scope and the construct shape its media gate enforces; v3 (CP-015g D3) adds the citation
 #: rule — an owner section copies its objective's source ids, a review section cites the union of
 #: the objectives it reinforces, and an uncited objective is not a licence to cite others.
-UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v3"
+#: v4 (E2E S1/S3): the final unit of a full course must end on its exit owner section, and every
+#: declared review slot must author a different form of the owner's target.
+UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v4"
 #: The lesson author prompt. H-06 adds the procedure header block to the instruction text; master's
 #: ``lesson-prompt.v7`` (the rubric-profile fix) shipped a *different* instruction text under the
 #: same label, and the label is recorded in stored validation bindings and the idempotency
@@ -311,7 +323,13 @@ UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v3"
 #: rubric band no checklist item covered; a stated rule is the first repair. A3 is a gate, not a
 #: prompt line — ``assert_no_answer_leak`` adds the paraphrase scan — and pays nothing per
 #: generation because the author is already told to refer to the answer by its function.
-LESSON_PROMPT_VERSION = "lesson-prompt.v17"
+#: v18 (E2E S1/S3 merged onto A2/A3/A4): the payload carries
+#: ``exit_performance``/``terminal_performance`` and the prompt tells the last owner section to
+#: deliver the exit; a review section is told to present the owner's evidence target in a new
+#: form, never the owner's exact stimulus. The S1/S3 lane also wore ``v17`` for this text, off a
+#: base that predated the A2/A3/A4 merge; both instruction sets now sit in one prompt, so the
+#: label moves past the shipped v17 rather than reusing a number that already means other text.
+LESSON_PROMPT_VERSION = "lesson-prompt.v18"
 #: The validator instruction text. H-191 §5: a validator answer was discarded because one
 #: ``item`` label was 81 characters against a ``maxLength`` of 80 the prompt never stated. The
 #: text now states the locator rule and the bound (read from :data:`ITEM_REFERENCE_MAX_CHARS`),
@@ -5688,8 +5706,19 @@ def _plan_instructions_v2(
             "a short phrase of 3 to 120 characters. Every entry must map to at least one "
             "objective, or be disclosed in 'exclusions'.",
             "State 'exit_performance' as knowledge, performance, mixed or unspecified, and one "
-            "sentence of 'terminal_performance'. When it is performance or mixed, at least one "
-            "objective in the last unit declares evidence_target 'procedure' or 'transfer'.",
+            "sentence of 'terminal_performance'. When it is performance or mixed, the last owner "
+            "section of the course declares evidence_target 'procedure' or 'transfer' and "
+            "delivers that exit; an objective somewhere earlier in the last unit is not enough.",
+            "A full course ends on its exit performance: its last owner section (the final "
+            "objective of the final unit) must declare evidence_target 'procedure' or 'transfer' "
+            "and teach toward 'terminal_performance'. A full course that ends in recall, "
+            "comprehension or discrimination is refused.",
+            "When 'spaced_review' is true, schedule at least one review section for every 5 owner "
+            "sections: raise the units' target_lessons above their objective counts so the review "
+            "slots exist. A review re-presents the same evidence target in a different form (new "
+            "items, not a copy of the owner's check). A committed course with no review is "
+            "refused, except a single-session course: it has one section and no review slot, so "
+            "it sets 'spaced_review' false.",
         ]
     )
     if level:
@@ -6861,6 +6890,80 @@ def goal_capability_coverage_reasons(
 #: Exit declarations that promise the learner ends the course able to do something.
 PERFORMANCE_EXIT_DECLARATIONS: tuple[str, ...] = ("performance", "mixed")
 
+#: How many owner sections one review section must cover, at minimum. Spaced review is a
+#: *density* requirement, not a boolean label: a course that declares it must meet earlier
+#: material again before the end. Five keeps the review load near one session in six and fits the
+#: blueprint's own review allowance: a full course caps at 40 objectives and 8 review sections, and
+#: ceil(40 / 5) = 8. A tighter floor would demand more reviews than the plan may schedule. The
+#: number is a scheduling heuristic, never an attainment claim (``docs/MASTERY-PATH-POLICY.md`` §7).
+SPACED_REVIEW_EVERY = 5
+
+
+def required_review_count(owner_sections: int) -> int:
+    """The minimum review sections a spaced-review course needs for its owner sections."""
+    if owner_sections <= 0:
+        return 0
+    return max(1, (owner_sections + SPACED_REVIEW_EVERY - 1) // SPACED_REVIEW_EVERY)
+
+
+def scheduled_review_count(
+    plan: Mapping[str, Any], objectives: Sequence[Mapping[str, Any]]
+) -> int:
+    """Review sections the plan has room for: ``target_lessons`` minus one owner per objective.
+
+    A v2 plan gives every objective exactly one owner section, so the sum of the units'
+    ``target_lessons`` above the objective count is the plan's own declaration of review lessons.
+    A negative value is a different rule's problem (target_lessons below the owner count); this
+    helper reports it as zero so the density refusal names the honest shortfall.
+    """
+    units = [unit for unit in plan.get("units") or [] if isinstance(unit, dict)]
+    if not units:
+        return 0
+    slots = sum(int(unit.get("target_lessons", 0) or 0) for unit in units)
+    return max(0, slots - len(objectives))
+
+
+def review_density_reasons(
+    plan: Mapping[str, Any], objectives: Sequence[Mapping[str, Any]]
+) -> list[str]:
+    """A spaced-review course schedules enough reviews to meet its owner sections again.
+
+    The flag used to be validated only for recipe consistency, so a committed plan could declare
+    ``spaced_review: true`` and schedule zero reviews. The count is knowable from the blueprint
+    (``target_lessons`` is where review slots live), so it is refused here, before authoring.
+    The learned rule is a density floor: one review per :data:`SPACED_REVIEW_EVERY` owner
+    sections, and at least one whenever the course has an owner section.
+
+    This is a v2 rule because ``target_lessons`` is the only place a plan can declare review
+    slots. A v1 plan has one section per objective and no review representation; refusing every
+    legacy committed v1 document would make its stored plans unreadable, so v1 stays legacy and
+    new blueprints (the path the create form uses) carry the floor.
+    """
+    if not plan.get("spaced_review"):
+        return []
+    # A single-session course is exactly one owner section and the scope band allows no review
+    # slot on top of it; requiring one would make the band unsatisfiable. The contradiction is a
+    # plan error the author can act on, so it is refused with that action named.
+    if str(plan.get("scope") or "") == "single":
+        return [
+            "plan.spaced_review is true but a 'single' course is one section and has no review "
+            "slot; set spaced_review false, or choose the 'short' scope if the learner needs to "
+            "revisit the material"
+        ]
+    owners = len(objectives)
+    required = required_review_count(owners)
+    if required == 0:
+        return []
+    scheduled = scheduled_review_count(plan, objectives)
+    if scheduled >= required:
+        return []
+    return [
+        f"plan.spaced_review is true but the plan schedules {scheduled} review section(s) for "
+        f"{owners} owner section(s); spaced review needs at least {required} "
+        f"(one review per {SPACED_REVIEW_EVERY} owner sections). Raise target_lessons on the "
+        "units so the review slots exist, or set spaced_review false."
+    ]
+
 
 def exit_performance_reasons(
     plan: Mapping[str, Any],
@@ -6868,6 +6971,7 @@ def exit_performance_reasons(
     *,
     goal: str | None,
     recipe: str,
+    scope: str | None = None,
 ) -> list[str]:
     """CP-015 (item 15) — a performance plan must say so and must end in the performance.
 
@@ -6913,7 +7017,46 @@ def exit_performance_reasons(
                 f"({last_unit or 'none'}) declares a 'procedure' or 'transfer' evidence target; "
                 "a performance course must end in the performance, not in a quiz about it"
             )
+        # A performance course must *end* in the performance: an objective earlier in the last
+        # unit is not the exit. The last owner section inherits the plan's final objective, so the
+        # blueprint can say this before any section is authored.
+        final_objective = _final_objective(objectives)
+        if final_objective is not None:
+            final_target = str(final_objective.get("evidence_target") or "")
+            if final_target not in curriculum.PERFORMANCE_FAMILIES:
+                reasons.append(
+                    f"plan.exit_performance is {declared!r} but the last owner section "
+                    f"({_final_section_label(final_objective)}) declares {final_target!r}; the "
+                    "last owner section must be the exit performance ('procedure' or 'transfer'), "
+                    "not an earlier objective in the same unit"
+                )
+    # S1: a full course ends on its exit performance even when the plan calls it knowledge. A
+    # full course that closes on recall/comprehension/discrimination is a course about the
+    # subject, not one that hands the learner the doing of it.
+    if str(scope or plan.get("scope") or "") == "full" and declared not in PERFORMANCE_EXIT_DECLARATIONS:
+        final_objective = _final_objective(objectives)
+        if final_objective is not None:
+            final_target = str(final_objective.get("evidence_target") or "")
+            if final_target not in curriculum.PERFORMANCE_FAMILIES:
+                reasons.append(
+                    "plan scope 'full' ends on its last owner section "
+                    f"({_final_section_label(final_objective)}) with evidence target "
+                    f"{final_target!r}; a full course's last owner section must be the exit "
+                    "performance ('procedure' or 'transfer'), not a quiz about it"
+                )
     return reasons
+
+
+def _final_objective(objectives: Sequence[Mapping[str, Any]]) -> Mapping[str, Any] | None:
+    """The objective the last owner section owns: the highest ordinal in the plan."""
+    return max(objectives, key=lambda item: int(item.get("ordinal", 0)), default=None)
+
+
+def _final_section_label(objective: Mapping[str, Any]) -> str:
+    """Name the final owner section by the objective it owns, for a readable refusal."""
+    ordinal = int(objective.get("ordinal", 0) or 0)
+    title = str(objective.get("title") or "").strip()
+    return f"objective {ordinal}: {title!r}" if title else f"objective {ordinal}"
 
 
 def _enforce_plan_tail(
@@ -7165,7 +7308,11 @@ def _enforce_plan_tail(
         if plan.get("delivery") == "parent_led":
             reasons.append("a one-off brief is not a parent-led lesson")
     elif recipe == "committed":
-        if not plan.get("spaced_review"):
+        # A single-session course has one section and no review slot by the blueprint band
+        # (``_section_caps``), so the committed recipe cannot demand the impossible there: the
+        # learner's commitment stands, and there is simply nothing to space yet. A spaced_review
+        # flag on that scope is refused by ``review_density_reasons`` instead.
+        if not plan.get("spaced_review") and str(plan.get("scope") or "") != "single":
             reasons.append("committed courses must schedule spaced review")
         if not any(item.get("kind") == "quiz" for item in check_plan):
             reasons.append("committed courses need graded checks")
@@ -7582,7 +7729,12 @@ def _enforce_plan_rules_v2(
     # only the v2 schema carries, so they live in this rule set and never in the shared tail. The
     # declaration is checked before the shared tail's per-objective rule so the refusal names the
     # contradiction ("knowledge" for a physical goal) rather than only its symptom.
-    reasons.extend(exit_performance_reasons(plan, objectives, goal=goal, recipe=recipe))
+    reasons.extend(
+        exit_performance_reasons(
+            plan, objectives, goal=goal, recipe=recipe, scope=expectation["scope"]
+        )
+    )
+    reasons.extend(review_density_reasons(plan, objectives))
     reasons.extend(goal_capability_coverage_reasons(plan, objectives, goal=goal))
 
     _enforce_plan_tail(
@@ -10332,6 +10484,11 @@ def build_lesson_request(
         "unit": unit_block,
         "taught_so_far": taught_so_far,
         "delivery": plan.get("delivery"),
+        # S1: the course's declared exit reaches the author, not just the plan rules. The lesson
+        # prompt cannot aim at an exit it never sees, and a `terminal_performance` stored on the
+        # plan but absent from every leaf request is write-only.
+        "exit_performance": plan.get("exit_performance"),
+        "terminal_performance": plan.get("terminal_performance"),
         "section": section,
         "objective": objective,
         "recipe": recipe,
@@ -10379,6 +10536,24 @@ def build_lesson_request(
         capability=capability,
         revision=feedback,
     )
+    terminal = str(plan.get("terminal_performance") or "").strip()
+    exit_kind = str(plan.get("exit_performance") or "").strip()
+    if terminal or exit_kind:
+        instructions += (
+            "\n\nThe course's declared exit is in the input's 'exit_performance' and "
+            "'terminal_performance'. If this section is the last owner section of the course, it "
+            "must teach and assess that exit performance: its check's evidence target is the "
+            "declared 'procedure' or 'transfer', and the lesson prepares the learner to do the "
+            "terminal performance, not merely to talk about it."
+        )
+    if str(section.get("section_role") or section.get("role") or "owner") == "review":
+        instructions += (
+            "\n\nThis section is a spaced review of an earlier objective, not a copy of its owner "
+            "lesson. Keep the owner's evidence target, but present a different form of the same "
+            "target with new items and a new stimulus: never repeat the owner check's exact "
+            "prompt, choices or item list. The independent validator refuses a review whose "
+            "stimulus is byte-identical to the owner's."
+        )
     if previous_draft is not None:
         instructions += (
             "\n\nThis is a repair of the previous draft in the input's 'previous_draft', not a new "
@@ -12902,7 +13077,10 @@ def review_check_overuse_reasons(
 
 
 def _unit_sections_instructions(*, unit: dict[str, Any], objectives: Sequence[dict[str, Any]],
-                                recipe: str, locale: str | None, feedback: str | None = None) -> str:
+                                recipe: str, locale: str | None,
+                                spaced_review: bool = False,
+                                final_unit_of_full: bool = False,
+                                feedback: str | None = None) -> str:
     lines = [
         "Design the sections for exactly one unit of an approved blueprint plan.",
         f"Unit {unit['ordinal']}: {unit['title']!r}. Goal: {unit['goal']}",
@@ -12916,11 +13094,25 @@ def _unit_sections_instructions(*, unit: dict[str, Any], objectives: Sequence[di
         lines.append(
             f"Author exactly {review_slots} review section(s) after the owner sections. A review "
             "section has role 'review', primary_objective_ref null, and reinforces one to four "
-            "earlier objective ordinals from this or an earlier unit. A review lesson reuses an "
-            "existing check; it authors no new check."
+            "earlier objective ordinals from this or an earlier unit. A review lesson retrieves the "
+            "same evidence target in a new form — new items, never a byte-identical copy of the "
+            "owner's check — and authors no second live check."
         )
     else:
         lines.append("Author no review sections: this unit targets exactly its owner lessons.")
+    if spaced_review:
+        lines.append(
+            "Spaced review is declared: each review section must re-present an earlier "
+            "objective's evidence target in a different form — new items for the same target, "
+            "never a copy of the owner's stimulus — and this unit must author every review slot "
+            "its target_lessons count declares."
+        )
+    if final_unit_of_full:
+        lines.append(
+            "This is the last unit of a full course. Its last owner section must own the plan's "
+            "final objective and deliver the course's exit performance: that objective's evidence "
+            "target is 'procedure' or 'transfer'. Do not end the unit on a recall section."
+        )
     lines.append(
         "Every section declares media_need with construct/image/audio; use level 'none' with role "
         "'none' and an empty construct when the text already carries the teaching."
@@ -13031,12 +13223,21 @@ def build_unit_sections_request(
     }
     if feedback:
         payload["revision_instructions"] = feedback
+    plan_units = [item for item in plan.get("units") or [] if isinstance(item, dict)]
+    final_unit_of_full = (
+        str(plan.get("scope") or "") == "full"
+        and bool(plan_units)
+        and int(unit["ordinal"]) == max(int(item.get("ordinal", 0)) for item in plan_units)
+    )
     return LLMRequest(
         purpose="coursebook.unit_sections.generate",
         prompt_version=UNIT_SECTIONS_PROMPT_VERSION,
         system_prompt=PLAN_SYSTEM_PROMPT,
         instructions=_unit_sections_instructions(
-            unit=unit, objectives=objectives, recipe=recipe, locale=locale, feedback=feedback
+            unit=unit, objectives=objectives, recipe=recipe, locale=locale,
+            spaced_review=bool(plan.get("spaced_review")),
+            final_unit_of_full=final_unit_of_full,
+            feedback=feedback,
         ),
         input_text=_bounded_input(
             payload, limit=_request_bound(plan.get("scope"))
@@ -13261,6 +13462,55 @@ def enforce_unit_section_rules(
             reasons.append(f"section {index + 1} has no title")
         if len(str(section.get("lesson_intent") or "")) < 10:
             reasons.append(f"section {index + 1} has no usable lesson_intent")
+
+    # S1: a full course ends on its exit performance. One owner section per objective means the
+    # last owner section owns the plan's final objective; when this is the final unit, the batch
+    # must place that objective last and its evidence target must be the exit performance. A
+    # review may follow the owners, so "last owner" ignores reviews.
+    plan_units = [item for item in plan.get("units") or [] if isinstance(item, dict)]
+    if str(plan.get("scope") or "") == "full" and plan_units:
+        final_unit = max(int(item.get("ordinal", 0)) for item in plan_units)
+        final_ref = max(
+            (int(obj.get("ordinal", 0)) for obj in plan.get("objectives") or [] if isinstance(obj, dict)),
+            default=0,
+        )
+        owner_positions = [
+            (index, section)
+            for index, section in enumerate(sections)
+            if str(section.get("role") or "") == "owner"
+        ]
+        if (
+            unit_ordinal == final_unit
+            and owner_positions
+            and final_ref in set(existing_owner_refs) | set(owners)
+        ):
+            index, last_owner = owner_positions[-1]
+            owned = int(last_owner.get("primary_objective_ref") or 0)
+            final_objective = next(
+                (
+                    obj
+                    for obj in plan.get("objectives") or []
+                    if isinstance(obj, dict) and int(obj.get("ordinal", 0)) == final_ref
+                ),
+                None,
+            )
+            if owned != final_ref:
+                reasons.append(
+                    f"unit {unit_ordinal} is the last unit of a full course; its last owner "
+                    f"section {index + 1} ({str(last_owner.get('title') or '')!r}) owns objective "
+                    f"{owned}, but the last owner section must own the final objective "
+                    f"{final_ref} and deliver the course's exit performance"
+                )
+            elif final_objective is not None and str(
+                final_objective.get("evidence_target") or ""
+            ) not in curriculum.PERFORMANCE_FAMILIES:
+                reasons.append(
+                    f"unit {unit_ordinal} is the last unit of a full course; its last owner "
+                    f"section {index + 1} ({str(last_owner.get('title') or '')!r}) owns objective "
+                    f"{final_ref} with evidence target "
+                    f"{str(final_objective.get('evidence_target') or '')!r}; the last owner "
+                    "section must be the exit performance ('procedure' or 'transfer')"
+                )
 
     expected = [ref for ref in objective_ordinals if ref not in set(existing_owner_refs)]
     for ordinal in expected:
@@ -14609,11 +14859,14 @@ def run_lesson_job(
 def _resolve_review_target(
     connection: sqlite3.Connection, plan_id: str, section: dict[str, Any]
 ) -> dict[str, Any]:
-    """The owner check a review section presents, or a typed refusal.
+    """The owner check a review section retrieves, or a parked/typed target.
 
-    A review lesson authors **no new check** (§5). It presents the existing owner check of the
-    objective it reinforces. Choosing the first reinforced ref that already has an open check is
-    deterministic; the caller stores the link and never inserts a ``checks`` row.
+    A review retrieves the owner objective's evidence target in a new form (§5): it authors its own
+    variant check and never rewrites the owner's check row. This resolver finds the owner's
+    scheduled check so the review can keep the same evidence target and so the stimulus-variant
+    gate has an owner to compare against. Choosing the first reinforced ref that already has a
+    check is deterministic; the caller stores the review's own variant and never overwrites this
+    row.
 
     CP-015j: a review is *authorable* while its owner page is parked ``needs_review``. That page
     exists, its check is closed, and the page may be approved or regenerated later — failing the
@@ -14633,11 +14886,28 @@ def _resolve_review_target(
             connection.execute(
                 # Prefer the open check, exactly like the practice and attempt lanes; fall back
                 # to the latest closed one so a parked owner page still names a real check.
-                "SELECT * FROM checks WHERE objective_id = ? "
-                "ORDER BY (state = 'open') DESC, version DESC LIMIT 1",
+                # S3: a review authors its own variant check row, so the owner's scheduled check
+                # is identified by its *owner-section* binding — the variant's binding names a
+                # review section and must never become the review's target (it would chase itself).
+                "SELECT c.* FROM checks c"
+                " JOIN gen_lesson_checks g ON g.check_id = c.id"
+                " JOIN gen_lessons l ON l.id = g.lesson_id"
+                " JOIN gen_plan_sections s ON s.id = l.section_id AND s.plan_id = l.plan_id"
+                " WHERE c.objective_id = ? AND s.section_role = 'owner'"
+                " ORDER BY (c.state = 'open') DESC, c.version DESC, l.version DESC LIMIT 1",
                 (str(objective["id"]),),
             ).fetchone()
         )
+        if row is None:
+            row = _row_dict(
+                connection.execute(
+                    # Legacy shape: an owner check written before section roles existed has no
+                    # owner binding, so the latest check for the objective is still the target.
+                    "SELECT * FROM checks WHERE objective_id = ? "
+                    "ORDER BY (state = 'open') DESC, version DESC LIMIT 1",
+                    (str(objective["id"]),),
+                ).fetchone()
+            )
         if row is None:
             continue
         target = _review_check_target(connection, ref, objective, row)
@@ -14656,11 +14926,31 @@ def _resolve_review_target(
             ]
             return target
     if not found:
-        raise GenerationRejected(
-            f"review section {section.get('ordinal')} reinforces objectives {refs} but no owner "
-            "lesson has authored a check for any of them; author the owner lessons for those "
-            "objectives first"
-        )
+        # A review may be authored before its owner lessons exist (the learner planned a unit out
+        # of order, or the owner batch is still parked). That is a *park*, not a failed unit: the
+        # review page is authored and stored needs_review so the owner work can land later, exactly
+        # as a closed owner check parks instead of failing (CP-015j/S4).
+        first_ref = int(refs[0]) if refs else None
+        objective = _objective_for(connection, plan_id, first_ref) if first_ref is not None else None
+        if objective is None:
+            raise GenerationRejected(
+                f"review section {section.get('ordinal')} reinforces objectives {refs} but none "
+                "of them exists in this plan; re-author the unit sections"
+            )
+        return {
+            "check_id": None,
+            "objective": objective,
+            "objective_ordinal": int(first_ref),
+            "check": None,
+            "check_state": None,
+            "check_open": False,
+            "owner_lesson_id": None,
+            "owner_lesson_state": None,
+            "closed_owner_checks": [],
+            "closed_refs": [],
+            "missing_refs": list(refs),
+            "unwritten_refs": list(refs),
+        }
     chosen = found[0]
     chosen["closed_refs"] = [item["objective_ordinal"] for item in found]
     chosen["missing_refs"] = [
@@ -14676,11 +14966,11 @@ def _review_check_target(
     objective: dict[str, Any],
     row: dict[str, Any],
 ) -> dict[str, Any]:
-    """One owner check projected into the shape a review lesson reuses.
+    """One owner check projected into the shape a review variant is compared against.
 
-    The check is never re-authored and its row is never rewritten: the review lesson links this
-    exact check id. ``check_open`` is carried so the caller can park the review when the owner page
-    is still ``needs_review``.
+    The check is never re-authored and its row is never rewritten: the review authors its own
+    variant for the same objective. ``check_open`` is carried so the caller can park the review
+    when the owner page is still ``needs_review``.
     """
     stimulus = _load_json(row["stimulus_json"], {})
     reference = _load_json(row["reference_json"], {})
@@ -14762,15 +15052,89 @@ def _review_park_reason(section: dict[str, Any], review_target: dict[str, Any]) 
             f"({item['check_state']}) from owner lesson {lesson} ({state})"
         )
     missing = review_target.get("missing_refs") or []
+    unwritten = review_target.get("unwritten_refs") or []
+    if unwritten and not review_target.get("closed_owner_checks"):
+        return (
+            f"review section {section.get('ordinal')} reinforces objectives {sorted(unwritten)} "
+            "but their owner lessons are not written yet. The review page is authored and parked; "
+            "author the owner lessons for those objectives, then regenerate this section so the "
+            "review binds to its owner's evidence target."
+        )
     if missing:
         details.append(f"objectives {sorted(missing)} have no owner check at all")
     return (
         f"review section {section.get('ordinal')} presents a closed owner check: "
         + "; ".join(details)
         + ". The review page is authored and parked; approve or regenerate the owner lessons, "
-        "then regenerate this section so the review binds to an open check."
+        "then regenerate this section so the review binds to an open owner check."
     )
 
+
+
+def review_variant_problems(
+    section: dict[str, Any],
+    check: Mapping[str, Any] | None,
+    review_target: Mapping[str, Any] | None,
+) -> list[str]:
+    """S3: a review re-presents the target in a different form, never a byte-identical copy.
+
+    The review keeps the owner's *evidence target* — it is the same capability being retrieved —
+    but its stimulus must be new items. A review that copies the owner's prompt, choices or item
+    list makes the learner answer the identical question and measures recognition of the item, not
+    retrieval of the target. When the owner lesson is unwritten there is nothing to compare yet;
+    the review is parked instead (see :func:`_review_park_reason`).
+    """
+    if not review_target:
+        return []
+    owner_check = review_target.get("check")
+    if not isinstance(owner_check, Mapping):
+        return []
+    if not isinstance(check, Mapping):
+        return [
+            f"review section {section.get('ordinal')} has no check; a review presents the owner's "
+            "evidence target in a new form"
+        ]
+    problems: list[str] = []
+    target = str(check.get("evidence_target") or "")
+    owner_target = str(owner_check.get("evidence_target") or "")
+    if target != owner_target:
+        problems.append(
+            f"review section {section.get('ordinal')} targets {target!r} but the owner check "
+            f"targets {owner_target!r}; a review retrieves the same evidence target"
+        )
+    owner_stimulus = _stimulus_fingerprint(owner_check.get("stimulus") or {})
+    review_stimulus = _stimulus_fingerprint(check.get("stimulus") or {})
+    if owner_stimulus == review_stimulus:
+        problems.append(
+            f"review section {section.get('ordinal')} repeats the owner check's exact stimulus; "
+            "author a different form of the same target with new items, not a copy of the owner's "
+            "prompt, choices or item list"
+        )
+    return problems
+
+
+def _stimulus_fingerprint(stimulus: Mapping[str, Any]) -> str:
+    """The question a learner answers: prompt, format, choices and item labels, nothing else.
+
+    Learner instructions and scaffolds may legitimately change on a review; the *items* are what
+    must be new. Comparing the whole stored payload would also count a locale or scaffold field
+    and let a byte-identical question pass as a variant.
+    """
+    items = [
+        {"id": str(item.get("id") or ""), "label": str(item.get("label") or "")}
+        for item in stimulus.get("items") or []
+        if isinstance(item, Mapping)
+    ]
+    return sha256_of_text(
+        canonical_json(
+            {
+                "prompt": str(stimulus.get("prompt") or ""),
+                "format": str(stimulus.get("format") or ""),
+                "choices": [str(choice) for choice in stimulus.get("choices") or []],
+                "items": items,
+            }
+        )
+    )
 
 
 def _author_section(
@@ -14901,10 +15265,11 @@ def _author_section(
         # the stored and validated lesson can only carry the deterministic decision.
         candidate["policy"] = capability.to_dict()
         if review_target is not None:
-            # A review lesson presents the owner check. The drafted check is discarded before any
-            # rule or page is built, so the learner can never receive a second check authority.
-            candidate["check"] = dict(review_target["check"])
-            candidate["check_mode"] = "reuse"
+            # S3: a review authors its own *variant* of the owner's evidence target. Copying the
+            # owner's check made the learner answer byte-identical items; the variant is judged by
+            # ``review_variant_problems`` before validation and stored as the review's own check
+            # row (the owner's scheduled check is never overwritten).
+            candidate["check_mode"] = "review_variant"
             candidate["reuse_objective_ref"] = objective_ordinal
         else:
             candidate["check_mode"] = "new"
@@ -14918,6 +15283,10 @@ def _author_section(
         # with these reasons and the final attempt (``LESSON_ATTEMPTS``) parks the lesson
         # needs_review (never a served lesson).
         problems.extend(teaching_quality_problems(candidate))
+        if review_target is not None:
+            problems.extend(
+                review_variant_problems(section, candidate.get("check"), review_target)
+            )
         try:
             enforce_lesson_rules(
                 candidate,
@@ -15082,7 +15451,9 @@ def _author_section(
         practice_check_already=_plan_has_practice(connection, plan_id),
     )
     lesson_id = _new_id()
-    check_id = str(review_target["check_id"]) if review_target is not None else _new_id()
+    # A review authors its own variant check (S3): the owner's scheduled check row is never
+    # rewritten or replaced, and the review's stimulus is new items for the same target.
+    check_id = _new_id()
     timestamp = _now_iso(now)
     objective_id = str(objective["id"]) if objective else plan_id
 
@@ -15115,30 +15486,34 @@ def _author_section(
             "SELECT COALESCE(MAX(version), 0) AS v FROM checks WHERE objective_id = ?", (objective_id,)
         ).fetchone()
         check_version = int((version_row["v"] if isinstance(version_row, sqlite3.Row) else version_row[0]) or 0) + 1
-        if review_target is None:
-            connection.execute(
-                "INSERT INTO checks (id, objective_id, version, evidence_target, stimulus_json, rubric_json, "
-                "reference_json, locale, audit_state, state, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                (
-                    check_id,
-                    objective_id,
-                    check_version,
-                    str(lesson["check"]["evidence_target"]),
-                    _json(check_payloads["stimulus"]),
-                    _json(check_payloads["rubric"]),
-                    _json(check_payloads["reference"]),
-                    locale,
-                    "passed" if state == "validated" else ("pending" if state == "model_assessed" else "failed"),
-                    # H-185: a model_assessed lesson's check is *usable* (the learner may open and
-                    # answer it) while its audit stays `pending` — no same-model pass is recorded as
-                    # an independent audit. The attempt lane in `domain.attempt.submit` admits a
-                    # pending audit only for a check bound to a `model_assessed` lesson, and the
-                    # served page carries the model-assessed provenance warning.
-                    "open" if state in ("validated", "model_assessed") else "closed",
-                    timestamp,
-                ),
-            )
-        # A review lesson links the existing owner check and writes no ``checks`` row (§5).
+        # A review variant is authored content for revision, not a second scheduled check: the
+        # objective's owner check remains the live authority and ``lesson.page`` must not switch
+        # to a review's items. Store the variant closed so the objective's active check never
+        # flips, and name that in the summary.
+        check_servable = state in ("validated", "model_assessed") and review_target is None
+        connection.execute(
+            "INSERT INTO checks (id, objective_id, version, evidence_target, stimulus_json, rubric_json, "
+            "reference_json, locale, audit_state, state, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                check_id,
+                objective_id,
+                check_version,
+                str(lesson["check"]["evidence_target"]),
+                _json(check_payloads["stimulus"]),
+                _json(check_payloads["rubric"]),
+                _json(check_payloads["reference"]),
+                locale,
+                "passed" if state == "validated" else ("pending" if state == "model_assessed" else "failed"),
+                # H-185: a model_assessed lesson's check is *usable* (the learner may open and
+                # answer it) while its audit stays `pending` — no same-model pass is recorded as
+                # an independent audit. The attempt lane in `domain.attempt.submit` admits a
+                # pending audit only for a check bound to a `model_assessed` lesson, and the
+                # served page carries the model-assessed provenance warning.
+                "open" if check_servable else "closed",
+                timestamp,
+            ),
+        )
+        # The review lesson links its own variant check; the owner check row is untouched.
         connection.execute(
             "INSERT INTO gen_lesson_checks (lesson_id, check_id, objective_ref) VALUES (?,?,?)",
             (lesson_id, check_id, objective_ordinal),
@@ -15165,10 +15540,10 @@ def _author_section(
         "lesson_id": lesson_id,
         "check_id": check_id,
         "state": state,
-        # A review lesson presents its owner's check: the page is only usable when that check is
-        # open. A parked review keeps the page but never claims an enabled check.
-        "check_enabled": state in ("validated", "model_assessed")
-        and (review_target is None or bool(review_target.get("check_open", True))),
+        # A review lesson presents its own variant check, which is authored content and never the
+        # objective's scheduled check. It stays closed so ``lesson.page`` cannot switch the
+        # objective's live check to the review's items; the owner check remains the authority.
+        "check_enabled": check_servable,
         "audit_state": "passed" if state == "validated" else ("pending" if state == "model_assessed" else "failed"),
         "validation_id": validation_id,
         "validation_verdict": verdict["verdict"],
@@ -15224,7 +15599,7 @@ def learner_page(connection: sqlite3.Connection, lesson_id: str) -> dict[str, An
     if _leaks(page):
         raise LessonNotAvailable("stored lesson page contains answer material; refusing to serve it")
     check_rows = connection.execute(
-        "SELECT c.id AS check_id, c.reference_json, c.rubric_json"
+        "SELECT c.id AS check_id, c.reference_json, c.rubric_json, c.state AS check_state"
         " FROM checks c JOIN gen_lesson_checks l ON l.check_id = c.id"
         " WHERE l.lesson_id = ? ORDER BY c.version DESC",
         (lesson_id,),
@@ -15250,6 +15625,23 @@ def learner_page(connection: sqlite3.Connection, lesson_id: str) -> dict[str, An
     # A model-assessed page is readable, but the warning travels with it: a learner or parent
     # must not read a same-model / no-research pass as validation.
     page["provenance"] = lesson_provenance(connection, row["state"], row.get("validation_id"))
+    # A spaced-review section authors its own variant check, stored closed so the objective's
+    # scheduled check stays the owner's. The page must not advertise that check as enabled (an
+    # attempt against it would be refused as closed), and the learner must be told where the
+    # evidence-bearing check lives.
+    section_row = connection.execute(
+        "SELECT section_role FROM gen_plan_sections WHERE id = ?", (row["section_id"],)
+    ).fetchone()
+    is_review = section_row is not None and str(section_row["section_role"] or "owner") == "review"
+    if is_review and not any(
+        str(dict(item).get("check_state") or "") == "open" for item in check_rows
+    ):
+        page["provenance"]["check_enabled"] = False
+        page["provenance"]["warning"] = (
+            "spaced review: these items are a new form of an earlier objective's target, but this "
+            "page's check is not the objective's scheduled check. Answer the owner lesson's check "
+            "for evidence; these items are revision practice and are not graded here."
+        )
     return page
 
 

@@ -19,7 +19,7 @@
   "persisted_sections": [],
   "unit_result": null,
   "unit_stage_refusal": {
-    "message": "unit 2 sections failed validation: objective 4 has no owner section; author exactly one owner section per objective; unit 2 targets 2 lesson(s); this batch would leave 1 section(s)",
+    "message": "unit 2 sections failed validation: unit 2 targets 3 lesson(s); this batch would leave 2 section(s)",
     "type": "GenerationRejected"
   }
 }

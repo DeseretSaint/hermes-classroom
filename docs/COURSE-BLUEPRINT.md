@@ -213,31 +213,33 @@ must distinguish an owner lesson from a review lesson:
 
 | field | type and bounds | invariant |
 |---|---|---|
-| `check_mode` | enum: `new`, `reuse` | required; `new` on an owner section, `reuse` on a review section |
-| `check` | the existing check object | required when `check_mode` is `new`; forbidden when it is `reuse` |
-| `reuse_objective_ref` | integer 1 to 40 or null | required when `check_mode` is `reuse`; must be one of the section's `reinforces` refs |
+| `check_mode` | enum: `new`, `review_variant` | required; `new` on an owner section, `review_variant` on a review section |
+| `check` | the existing check object | required on both modes; a review's check must keep the owner's evidence target and carry new items |
+| `reuse_objective_ref` | integer 1 to 40 or null | required when `check_mode` is `review_variant`; must be one of the section's `reinforces` refs |
 
-A review lesson authors no new check. It presents the existing owner check of the objective it
-reinforces, so a cold pass there is the delayed retrieval evidence the kernel already records,
-and a hinted or answer_shown pass stays non-independent. This is how a section can serve more
-than one objective without inventing a second check authority or a practice-only evidence class.
+A review lesson **retrieves the same evidence target in a different form**. It authors its own
+variant check — new prompt, choices or item list for the owner's target — and stores that variant
+as its own `checks` row, closed so it can never replace the objective's scheduled owner check.
+Copying the owner check verbatim made the learner answer byte-identical items, which measures
+recognition of the item rather than retrieval of the target; the deterministic gate refuses a
+review whose stimulus fingerprint equals its owner's. A hint or an answer_shown pass stays
+non-independent exactly as before.
 
 A review section is **authorable while its owner pages are parked `needs_review`**. A parked
 owner page is authored content whose check is closed; failing the whole unit job on it would mean
 a unit whose owners need review can never author its review section, and a re-run cannot satisfy
 "author the owner lessons first" any differently. The review page is authored and stored
 `needs_review` with the closed owner checks named (objective, check id, owner lesson and its
-state); it is not servable until an owner check is open, and regenerating the review section then
-binds the open check. An objective with **no owner lesson at all** is still a structural
-refusal — the review names the objectives and asks for the owner lessons.
+state). A review whose reinforced objectives have **no owner lesson at all** is parked the same
+way — the page is stored `needs_review`, the missing objectives are named, and the unit job
+completes rather than failing. Neither park makes the review servable; approving or regenerating
+the owners and then regenerating the review is the next action.
 
 Check plan v2 removes `count` and `independent_evidence`. Both were decorative: the lesson
 pipeline writes exactly one check per owner section and independence is an evidence-class
 property, not a plan promise. The v2 entry is `objective_ref`, `kind`, `evidence_target`,
-optional `notes`. The invariant is one new check per owner section, and therefore one check per
-objective; a review section reuses an owner check and adds none. A future card that wants several
-distinct checks per objective must add a real `checks[]` array plus grading support; it must not
-reintroduce a number the pipeline ignores.
+optional `notes`. The owner check is the scheduled authority; a review adds one closed variant
+check for the same objective, never a second live check.
 
 Deterministic plan rules, replacing the current `enforce_plan_rules` body:
 
@@ -268,6 +270,17 @@ Deterministic plan rules, replacing the current `enforce_plan_rules` body:
    unverified, one-off has no quiz and no spaced review and needs a verification checklist,
    committed needs spaced review and graded checks, casual labels its evidence, parent stays
    parent-led with supervision and hazards, locale scaffolds are task-mandated.
+10. A full course's **last owner section** owns the plan's final objective and delivers the exit
+    performance: that objective's evidence target is `procedure` or `transfer`. A full course
+    that ends on recall, comprehension or discrimination is refused, naming the final section.
+    A `performance`/`mixed` declaration requires the same final section at every scope.
+11. When `spaced_review` is true the plan schedules at least one review per five owner sections
+    (and at least one whenever the course has an owner): the units' `target_lessons` must leave
+    that many review slots. A committed plan with zero reviews is refused — except a `single`
+    course, which is one section with no review slot by the scope band: that scope may not declare
+    `spaced_review`, and its committed recipe does not demand one. Each review section
+    re-presents the same evidence target in a new form; a byte-identical owner stimulus is
+    refused, and a review over unwritten owners parks rather than failing the unit.
 
 ## 6. Token limits, cost and stage boundaries
 

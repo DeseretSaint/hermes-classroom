@@ -109,9 +109,11 @@ class PlanSourcingRulesTest(unittest.TestCase):
         # same rule text, so both plan labels advance rather than reusing v17/v18. W2-9 then
         # deletes the declared-gap prohibition from the shared sourcing rule, advancing both again;
         # E2E S5 then limits the licensed split to two sub-performances and names the shortfall
-        # disclosure prefix, advancing both a third time.
+        # disclosure prefix, advancing both a third time; E2E S1/S3 then adds the exit-performance
+        # ending, the review-per-five-owner-sections rule and the single-session review exemption,
+        # which advance the v2 label only (the v1 prompt never carried those bullets).
         self.assertEqual(generation.PLAN_PROMPT_VERSION, "plan-prompt.v23")
-        self.assertEqual(generation.PLAN_PROMPT_VERSION_V2, "plan-prompt.v25")
+        self.assertEqual(generation.PLAN_PROMPT_VERSION_V2, "plan-prompt.v27")
 
 
 class SourceBriefFitsTheRequestTest(unittest.TestCase):
