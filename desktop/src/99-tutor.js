@@ -2255,6 +2255,7 @@ export {
   learnerEvidenceTarget,
   objectiveProgress,
   progressStatement,
+  sectionSemanticFor,
   lessonViewOptions,
   lessonViewChoices,
   mainlineObjective,

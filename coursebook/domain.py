@@ -2797,12 +2797,70 @@ def _current_objective(connection, course_id: str) -> Any:
     )
 
 
-def _library_next_step(connection, enrollment, course) -> dict[str, str]:
+def _authored_lesson_identity(connection, objective) -> dict[str, Any] | None:
+    """The objective's authored section and its newest lesson revision, as stored facts.
+
+    ``section_id`` is the fence ``lesson.regenerate`` compares, and the newest ``gen_lessons``
+    row is the revision a repair would replace. ``state == 'needs_review'`` is the one state that
+    means the page could not be written; every other state is either servable or absent. This is
+    read-only: it never promotes a parked page and never touches a check.
+
+    A profile with no ``gen_*`` tables (a pack or chat-only course) answers ``None`` exactly as
+    :func:`_authored_lesson_rows` does, so a missing pipeline is not an error.
+    """
+    try:
+        document = connection.execute(
+            "SELECT plan_hash FROM gen_plan_documents WHERE plan_id = ?"
+            " ORDER BY created_at DESC, rowid DESC LIMIT 1",
+            (str(objective["plan_id"]),),
+        ).fetchone()
+        if document is None:
+            return None
+        section = connection.execute(
+            "SELECT id FROM gen_plan_sections WHERE plan_id = ? AND plan_hash = ?"
+            " AND json_extract(objective_refs_json, '$[0]') = ? ORDER BY ordinal LIMIT 1",
+            (str(objective["plan_id"]), str(document["plan_hash"]), int(objective["ordinal"])),
+        ).fetchone()
+        if section is None:
+            return None
+        lesson = connection.execute(
+            "SELECT id, state, version, rejection_reasons_json FROM gen_lessons"
+            " WHERE section_id = ? AND plan_hash = ? ORDER BY version DESC, rowid DESC LIMIT 1",
+            (str(section["id"]), str(document["plan_hash"])),
+        ).fetchone()
+    except sqlite3.OperationalError:
+        return None
+    identity: dict[str, Any] = {
+        "section_id": str(section["id"]),
+        "lesson_id": None,
+        "version": None,
+        "state": None,
+        "reasons": [],
+    }
+    if lesson is not None:
+        reasons = _json_load(lesson["rejection_reasons_json"], [])
+        identity.update(
+            {
+                "lesson_id": str(lesson["id"]),
+                "version": int(lesson["version"]),
+                "state": str(lesson["state"]),
+                "reasons": [str(reason) for reason in reasons][:20]
+                if isinstance(reasons, list)
+                else [],
+            }
+        )
+    return identity
+
+
+def _library_next_step(connection, enrollment, course) -> dict[str, Any]:
+    # A spaced review is an objective whose own state is ``review_due``. ``needs_review`` is a
+    # failed attempt or a page that could not be written; counting it here made a rejection look
+    # like a scheduled review and sent the learner to a review surface with nothing to review.
     review_due = _row(
         connection,
         "SELECT COUNT(*) AS n FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
         f" WHERE pl.course_id = ? AND {_current_plan_sql()}"
-        " AND o.state IN ('review_due', 'needs_review')",
+        " AND o.state = 'review_due'",
         (course["id"],),
     )
     if review_due and int(review_due["n"]) > 0:
@@ -2814,6 +2872,19 @@ def _library_next_step(connection, enrollment, course) -> dict[str, str]:
     # lands Resume on the last section of the pack.
     objective = _current_objective(connection, course["id"])
     if objective is not None:
+        # A page the validator parked is not a lesson to start: repairing it is the only action
+        # that can produce a servable page, and the reasons travel with it so the caller never
+        # invents why. A real spaced review already returned above, so this never replaces one.
+        lesson = _authored_lesson_identity(connection, objective)
+        if lesson is not None and lesson["state"] == "needs_review":
+            title = str(objective["title"])
+            return {
+                "kind": "repair_lesson",
+                "label": f"Repair the lesson for {title}",
+                "objective_id": str(objective["id"]),
+                "section_id": lesson["section_id"],
+                "reasons": lesson["reasons"],
+            }
         run = _row(
             connection,
             "SELECT * FROM lesson_runs WHERE enrollment_id = ? AND objective_id = ?"
@@ -2830,19 +2901,27 @@ def _library_next_step(connection, enrollment, course) -> dict[str, str]:
             # exist, so the next step is honestly a Start.
             return {"kind": "start_lesson", "label": f"Start {title}"}
         return {"kind": "resume_lesson", "label": f"Continue {title}"}
+    counts = _row(
+        connection,
+        "SELECT COUNT(*) AS n,"
+        " SUM(CASE WHEN o.state IN ('independent_evidence','delayed_evidence') THEN 1 ELSE 0 END)"
+        "   AS settled"
+        " FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
+        f" WHERE pl.course_id = ? AND {_current_plan_sql()}",
+        (course["id"],),
+    )
+    total = int(counts["n"] or 0)
+    settled = int(counts["settled"] or 0)
+    if total == 0:
+        # An approved plan with no objectives is not a finished course; it has nothing to finish.
+        return {"kind": "review_plan", "label": "The plan has no sections yet"}
+    if settled == total:
+        # Terminal state: every objective in the current plan holds evidence and none is due.
+        return {"kind": "complete", "label": "You have finished this course"}
     pack = _row(connection, "SELECT state FROM packs WHERE id = ?", (course["pack_id"],)) if course["pack_id"] else None
     if pack is not None and pack["state"] == "frozen":
         return {"kind": "review_pack", "label": "Review the frozen imported pack"}
-    nxt = _row(
-        connection,
-        "SELECT title FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
-        f" WHERE pl.course_id = ? AND {_current_plan_sql()}"
-        " AND o.state = 'not_started' ORDER BY o.ordinal LIMIT 1",
-        (course["id"],),
-    )
-    if nxt is None:
-        return {"kind": "review_plan", "label": "All sections have evidence; review the plan"}
-    return {"kind": "start_lesson", "label": f"Start {nxt['title']}"}
+    return {"kind": "review_plan", "label": "Review the plan"}
 
 
 def _library_warning(connection, enrollment, course, pack_row) -> str | None:
@@ -2994,7 +3073,7 @@ def library_list(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
             clauses.append(
                 "EXISTS (SELECT 1 FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
                 f" WHERE pl.course_id = c.id AND {_current_plan_sql()}"
-                " AND o.state IN ('review_due', 'needs_review'))"
+                " AND o.state = 'review_due')"
             )
     if payload.get("recipe"):
         clauses.append("c.recipe = ?")
@@ -3009,7 +3088,7 @@ def library_list(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
         "next_step": (
             "(SELECT COUNT(*) FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
             f" WHERE pl.course_id = c.id AND {_current_plan_sql()}"
-            " AND o.state IN ('review_due','needs_review')) DESC, e.updated_at DESC, e.rowid DESC"
+            " AND o.state = 'review_due') DESC, e.updated_at DESC, e.rowid DESC"
         ),
         "recent": "e.updated_at DESC, e.rowid DESC",
     }.get(payload.get("sort") or "recent", "e.updated_at DESC, e.rowid DESC")
@@ -3041,7 +3120,7 @@ def library_list(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
             summary = connection.execute(
                 "SELECT"
                 " SUM(CASE WHEN o.state IN ('independent_evidence','delayed_evidence') THEN 1 ELSE 0 END) AS independent,"
-                " SUM(CASE WHEN o.state IN ('review_due','needs_review') THEN 1 ELSE 0 END) AS review_due,"
+                " SUM(CASE WHEN o.state = 'review_due' THEN 1 ELSE 0 END) AS review_due,"
                 " COUNT(*) AS total"
                 " FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
                 f" WHERE pl.course_id = ? AND {_current_plan_sql()}",
@@ -3517,6 +3596,9 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
         # page that no one approved. `_authored_lesson_page` correctly refuses it; remember that
         # so the empty document can name the real state instead of claiming nothing was authored.
         parked = _parked_lesson_page(connection, objective) if authored is None else None
+        # cb.rpc v28: the section record names the authored identity even when the page is
+        # parked, so the surface can show the validator's own reasons and offer one repair.
+        lesson_identity = _authored_lesson_identity(connection, objective)
         if authored is not None:
             page = dict(authored["page"])
             # H-194: a pending authored edit (`needs_review`) is never returned by
@@ -3578,6 +3660,11 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
             "state": objective["state"],
             "evidence_target": objective["evidence_target"],
             "last_opened_at": run["last_opened_at"] if run else None,
+            # Additive in cb.rpc v28. `lesson_state == 'needs_review'` is the page that could
+            # not be written; `rejection_reasons` are the validator's own words.
+            "section_id": lesson_identity["section_id"] if lesson_identity is not None else None,
+            "lesson_state": lesson_identity["state"] if lesson_identity is not None else None,
+            "rejection_reasons": lesson_identity["reasons"] if lesson_identity is not None else [],
         },
         "runtime": {
             "lesson_run_id": run["id"],
@@ -4368,21 +4455,31 @@ def course_outline(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
             " FROM objectives o WHERE o.plan_id = ? ORDER BY o.ordinal LIMIT ?",
             (enrollment_id, enrollment_id, plan["id"], limit),
         ).fetchall()
-    objectives = [
-        {
-            "objective_id": row["id"],
-            "ordinal": int(row["ordinal"]),
-            "title": row["title"],
-            "evidence_target": row["evidence_target"],
-            "state": row["state"],
-            "check_state": row["check_state"] or "none",
-            "attempt_count": int(row["attempt_count"]),
-            # A view of the state, not a second claim: independence is what the row says.
-            "independent": row["state"] in ("independent_evidence", "delayed_evidence"),
-            "last_opened_at": row["last_opened_at"],
-        }
-        for row in rows
-    ]
+        # One identity read per objective, inside this read so the true section/revision is
+        # resolved against the same snapshot the outline was built from.
+        identities = {row["id"]: _authored_lesson_identity(connection, row) for row in rows}
+    objectives = []
+    for row in rows:
+        lesson = identities.get(row["id"])
+        objectives.append(
+            {
+                "objective_id": row["id"],
+                "ordinal": int(row["ordinal"]),
+                "title": row["title"],
+                "evidence_target": row["evidence_target"],
+                "state": row["state"],
+                "check_state": row["check_state"] or "none",
+                "attempt_count": int(row["attempt_count"]),
+                # A view of the state, not a second claim: independence is what the row says.
+                "independent": row["state"] in ("independent_evidence", "delayed_evidence"),
+                "last_opened_at": row["last_opened_at"],
+                # cb.rpc v28: the authored section's own identity and its newest revision. A
+                # parked page is named as such here so the index cannot present it as a review.
+                "section_id": lesson["section_id"] if lesson is not None else None,
+                "lesson_state": lesson["state"] if lesson is not None else None,
+                "lesson_rejection_reasons": lesson["reasons"] if lesson is not None else [],
+            }
+        )
     with db.read() as connection:
         units = _outline_units(
             connection,
@@ -6003,6 +6100,25 @@ def lesson_regenerate(payload: dict[str, Any], envelope: dict[str, Any]) -> tupl
         if section["unit_id"] is not None:
             unit = _row(connection, "SELECT ordinal FROM plan_units WHERE id = ?", (section["unit_id"],))
             unit_ordinal = int(unit["ordinal"]) if unit is not None else None
+        # cb.rpc v28: a caller may send the reasons it displayed. The kernel never takes them as
+        # authority — it reads the parked revision's own stored reasons and refuses a repair whose
+        # reasons no longer match, so a stale screen cannot repair a revision the parent did not
+        # see. A request with no reasons (Studio's plain regenerate) is unchanged.
+        repair_reasons: list[str] = []
+        provided = payload.get("reasons")
+        if provided is not None:
+            identity = _authored_lesson_identity(connection, objective)
+            stored = identity["reasons"] if identity is not None else []
+            if sorted(str(item) for item in provided) != sorted(stored):
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    "this section's refusal reasons changed; read the section again before repairing it.",
+                    field="reasons",
+                    reason="repair_reasons_changed",
+                    section_id=str(payload["section_id"]),
+                    current_reasons=stored,
+                )
+            repair_reasons = stored
         brief: dict[str, Any] = {
             "stage": "lessons",
             "plan_id": str(plan["id"]),
@@ -6010,6 +6126,8 @@ def lesson_regenerate(payload: dict[str, Any], envelope: dict[str, Any]) -> tupl
             "section_id": str(payload["section_id"]),
             "regenerate": True,
         }
+        if repair_reasons:
+            brief["repair_reasons"] = repair_reasons
         if unit_ordinal is not None:
             brief["unit_ordinal"] = unit_ordinal
         if payload.get("budget_usd") is not None:

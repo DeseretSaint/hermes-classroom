@@ -4327,6 +4327,15 @@ function lessonReadiness({ outline, page, jobs, pageStatus, planStatus } = {}) {
     blockCount: blocks.length,
     segmentCount: segments.length,
     error,
+    // E2E L5: the authored page's own state. A parked page could not be written; its stored
+    // reasons are the repair's target, never prose this surface derives.
+    section: (page && page.section) || null,
+    sectionId: (page && page.section && page.section.section_id) || null,
+    lessonState: (page && page.section && page.section.lesson_state) || null,
+    reasons:
+      page && page.section && Array.isArray(page.section.rejection_reasons)
+        ? page.section.rejection_reasons.filter((reason) => typeof reason === 'string')
+        : [],
     // H-183: the typed reason is evidence, not learner copy. The readiness panel puts this behind
     // its own `Technical detail` disclosure; no default sentence carries the code.
     technical: error,
@@ -4388,6 +4397,21 @@ function lessonReadiness({ outline, page, jobs, pageStatus, planStatus } = {}) {
       detail:
         'Coursebook writes one page for each approved section. This page appears here as soon as it is ready; nothing on screen is invented while you wait.',
       action: { kind: 'check', label: 'Check again' },
+      secondary: { kind: 'plan', label: 'View the plan' }
+    }
+  }
+  if (base.lessonState === 'needs_review') {
+    // The authored page was refused by its validator. No run can start and no check is open, so
+    // the only useful action is one repair aimed at the stored reasons. The check must not appear
+    // here for a spaced review: a `review_due` objective has no `lesson_state` of its own.
+    return {
+      ...base,
+      state: 'unwritten',
+      headline: 'This lesson page could not be written',
+      detail:
+        'The validator refused the page written for this section. Its reasons are below; ' +
+        'repairing it writes one new page for this section and leaves every attempt untouched.',
+      action: { kind: 'repair', label: 'Repair this lesson page' },
       secondary: { kind: 'plan', label: 'View the plan' }
     }
   }
@@ -4455,6 +4479,7 @@ function LessonReadinessPanel({
   onOpenPlan,
   onCheckAgain,
   onRetryLessonsJob,
+  onRepairLesson,
   busy = false,
   compact = false
 }) {
@@ -4462,7 +4487,8 @@ function LessonReadinessPanel({
   const handlers = {
     plan: onOpenPlan,
     check: onCheckAgain,
-    retry: onRetryLessonsJob
+    retry: onRetryLessonsJob,
+    repair: onRepairLesson
   }
   const actionFor = (descriptor) => {
     if (!descriptor) return null
@@ -4529,6 +4555,37 @@ function LessonReadinessPanel({
               color: compact ? 'var(--cb-ink-soft)' : 'var(--cb-ink)'
             },
             children: body
+          })
+        : null,
+      readiness.reasons && readiness.reasons.length
+        ? jsxs('div', {
+            'data-cb-lesson-repair-reasons': String(readiness.reasons.length),
+            style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', margin: 0 },
+            children: [
+              jsx('span', {
+                style: {
+                  fontFamily: CB_SANS,
+                  fontSize: CB_TYPE.caption,
+                  fontWeight: 600,
+                  color: 'var(--cb-ink)'
+                },
+                children: readiness.reasons.length === 1 ? 'The validator’s reason' : 'The validator’s reasons'
+              }),
+              ...readiness.reasons.map((reason, index) =>
+                jsx('p', {
+                  style: {
+                    margin: 0,
+                    fontFamily: CB_SANS,
+                    fontSize: compact ? CB_TYPE.caption : CB_TYPE.meta,
+                    lineHeight: 1.5,
+                    color: 'var(--cb-ink-soft)',
+                    paddingLeft: '0.7rem',
+                    borderLeft: '1px solid var(--cb-rule)'
+                  },
+                  children: reason
+                }, `reason-${index}`)
+              )
+            ]
           })
         : null,
       // H-183: a typed failure reason is inspection evidence, never the sentence a learner reads.
@@ -4751,6 +4808,47 @@ function SectionPage({
     [row, objectiveId, section, onChanged]
   )
 
+  // E2E L5: one repair action, keyed on the section id the backend reported and fenced on the
+  // stored reasons. No client-derived hash, no invented reason, no plan-wide rebuild.
+  const repairLesson = useCallback(async () => {
+    const planId = outline && outline.plan ? outline.plan.plan_id : null
+    const sectionId = page && page.section ? page.section.section_id : null
+    const reasons =
+      page && page.section && Array.isArray(page.section.rejection_reasons)
+        ? page.section.rejection_reasons
+        : []
+    if (!planId || !sectionId) {
+      setNotice(
+        'This build cannot name the authored section for this objective, so it cannot repair it from here.'
+      )
+      return
+    }
+    setBusy(true)
+    setNotice(null)
+    const payload = {
+      enrollment_id: row.enrollment_id,
+      plan_id: planId,
+      section_id: sectionId
+    }
+    if (reasons.length) payload.reasons = reasons
+    const response = await rpc('lesson.regenerate', payload, {
+      idempotencyKey: newOperationId('lesson-repair')
+    })
+    setBusy(false)
+    if (!response.ok) {
+      setNotice(
+        response.error
+          ? `${response.error.code}: ${describeError(response.error)}`
+          : 'The repair could not be queued.'
+      )
+      return
+    }
+    setNotice(
+      'Queued one new page for this section. Other sections, their media and every attempt are untouched.'
+    )
+    if (onChanged) onChanged()
+  }, [outline, page, row, onChanged])
+
   const saveSegment = useCallback((segment) => {
     setSaveSeed({
       course_title: row.title || null,
@@ -4890,6 +4988,7 @@ function SectionPage({
                 onOpenPlan,
                 onCheckAgain: onRetryPage,
                 onRetryLessonsJob,
+                onRepairLesson: repairLesson,
                 busy
               })
   } else {
@@ -4952,6 +5051,7 @@ function SectionPage({
               onOpenPlan,
               onCheckAgain: onRetryPage,
               onRetryLessonsJob,
+              onRepairLesson: repairLesson,
               busy
             })
           : null,

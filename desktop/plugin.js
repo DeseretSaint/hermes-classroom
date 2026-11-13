@@ -3122,7 +3122,7 @@ const DESK_STATE_WORD = {
   independent_evidence: 'Evidence',
   delayed_evidence: 'Delayed evidence',
   review_due: 'Review due',
-  needs_review: 'Needs review',
+  needs_review: 'Could not be written',
   overridden: 'Overridden'
 }
 
@@ -3133,7 +3133,7 @@ const DESK_STATE_TONE = {
   independent_evidence: 'done',
   delayed_evidence: 'done',
   review_due: 'due',
-  needs_review: 'due',
+  needs_review: 'attention',
   overridden: 'quiet'
 }
 
@@ -3143,7 +3143,10 @@ const DESK_PRIMARY_LABEL = {
   resolve_review_due: 'Start the review',
   rebind_session: 'Reconnect the chat',
   review_plan: 'Review the plan',
-  review_pack: 'Review the pack'
+  review_pack: 'Review the pack',
+  // E2E L4/L5: a finished course and a page that could not be written each get their own word.
+  complete: 'Course complete',
+  repair_lesson: 'Repair this lesson'
 }
 
 function deskToneColor(tone) {
@@ -3163,8 +3166,16 @@ function mainlineObjective(row, objectives) {
   if (list.length === 0) return null
   const kind = row && row.next_step ? row.next_step.kind : null
   if (kind === 'resolve_review_due') {
-    const due = list.find((entry) => entry.state === 'review_due' || entry.state === 'needs_review')
+    const due = list.find((entry) => entry.state === 'review_due')
     if (due) return due
+  }
+  if (kind === 'repair_lesson') {
+    // The backend names the objective its parked section belongs to; never guess by recency.
+    const named = row.next_step.objective_id
+      ? list.find((entry) => entry.objective_id === row.next_step.objective_id)
+      : null
+    const parked = named || list.find((entry) => entry.lesson_state === 'needs_review')
+    if (parked) return parked
   }
   const currentId = row && row.evidence_summary ? row.evidence_summary.current_objective_id : null
   const byId = currentId ? list.find((entry) => entry.objective_id === currentId) : null
@@ -4638,9 +4649,7 @@ function buildDeskModel({ library, outline, estimate, selectedCourseId = null, o
   const current = mainlineObjective(row, objectives) || (readState !== 'ready' ? rowFallbackCurrent(row) : null)
   const total = outline && Number(outline.total) ? Number(outline.total) : objectives.length
   const settled = objectives.filter((entry) => entry.independent).length
-  const dueCount = objectives.filter(
-    (entry) => entry.state === 'review_due' || entry.state === 'needs_review'
-  ).length
+  const dueCount = objectives.filter((entry) => entry.state === 'review_due').length
   const next = row.next_step || {}
   return {
     rows,
@@ -5925,6 +5934,8 @@ function cbNextStopSentence(kind) {
   if (kind === 'start_lesson') return '. Work through this section, then finish its check.'
   if (kind === 'review_plan') return '. Read the recorded plan before the first lesson starts.'
   if (kind === 'review_pack') return '. Check the imported pack before it becomes a course.'
+  if (kind === 'repair_lesson') return '. The page could not be written; repair it from the reasons it names.'
+  if (kind === 'complete') return '. Every section has evidence and nothing is due.'
   return '. Open it to see what this course records next.'
 }
 
@@ -5970,14 +5981,24 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onSeePlan, onRetry
 
   // A lesson start needs a section id. Plan/review/pack next steps open Course Detail and do not,
   // so a failed outline read never disables the one primary action.
-  const needsSection = desk.primaryKind === 'start_lesson' || desk.primaryKind === 'resume_lesson'
+  const needsSection =
+    desk.primaryKind === 'start_lesson' ||
+    desk.primaryKind === 'resume_lesson' ||
+    desk.primaryKind === 'repair_lesson'
   const canPrimary = Boolean(desk.row) && (Boolean(current) || !needsSection)
   // A parent-authored classroom is still a classroom: the plate takes the plum seal and the
   // same composition. The companion is the adult's own pet, never an invented child avatar.
   const isParent = Boolean(desk.row && desk.row.recipe === 'parent')
   const pet = useStudyCompanion(companionEnabled !== false)
   const companion = pet ? jsx(StudyCompanion, { info: pet, size: compact ? 44 : 64 }, 'companion') : null
-  const label = desk.primaryKind === 'resolve_review_due' ? 'THE REVIEW IS DUE' : 'CONTINUE THE TRAIL'
+  const label =
+    desk.primaryKind === 'resolve_review_due'
+      ? 'THE REVIEW IS DUE'
+      : desk.primaryKind === 'complete'
+        ? 'COURSE COMPLETE'
+        : desk.primaryKind === 'repair_lesson'
+          ? 'THE PAGE COULD NOT BE WRITTEN'
+          : 'CONTINUE THE TRAIL'
   const sentence = cbNextStopSentence(desk.primaryKind)
   const plateField = isParent ? 'var(--cb-plum-soft)' : 'var(--cb-lamp-soft)'
   const plateEdge = isParent ? 'var(--cb-plum)' : 'var(--cb-lamp)'
@@ -8759,7 +8780,12 @@ function FieldDesk({
       if (!outcome.ok && outcome.reason === 'no-binding') onOpen(desk.row, desk.current.objective_id)
       return
     }
-    // Review, plan and pack states are course-detail actions, not a second lesson path.
+    if (kind === 'repair_lesson') {
+      // The section owns the reasons and the one Repair control; open it instead of a second path.
+      if (desk.current) onOpen(desk.row, desk.current.objective_id)
+      return
+    }
+    // Review, plan, pack and completion states are course-detail actions, not a second lesson path.
     onOpen(desk.row)
   }, [desk, profile, onOpen, library])
 
@@ -13545,7 +13571,9 @@ const OBJECTIVE_STATE_COPY = {
   independent_evidence: 'Independent evidence',
   delayed_evidence: 'Delayed evidence',
   review_due: 'Review due',
-  needs_review: 'Needs review',
+  // E2E L5: a failed attempt or a page the validator parked is not a spaced review. The word
+  // says what happened, not when it is next due.
+  needs_review: 'Could not be written',
   overridden: 'Overridden'
 }
 
@@ -13704,7 +13732,9 @@ const SECTION_STATE_SEMANTIC = {
   independent_evidence: { key: 'complete', label: 'Complete', icon: 'pass' },
   delayed_evidence: { key: 'complete', label: 'Complete', icon: 'pass' },
   review_due: { key: 'review', label: 'Review due', icon: 'history' },
-  needs_review: { key: 'review', label: 'Review needed', icon: 'history' },
+  // E2E L5: its own key, word and icon. It shares nothing with `review_due`, so a rejected or
+  // unwritten page can never be painted as a spaced-review card.
+  needs_review: { key: 'unwritten', label: 'Could not be written', icon: 'warning' },
   overridden: { key: 'moved_on', label: 'Moved on without a grade', icon: 'dash' }
 }
 
@@ -13712,6 +13742,20 @@ function sectionStateSemantic(state, isNext) {
   const settled = state === 'independent_evidence' || state === 'delayed_evidence'
   if (isNext && !settled) return { key: 'next', label: 'Next', icon: 'chevron-right' }
   return SECTION_STATE_SEMANTIC[state] || SECTION_STATE_SEMANTIC.not_started
+}
+
+/**
+ * The state a row should paint, including the authored page's own state.
+ *
+ * A section whose newest authored page is parked (`lesson_state == 'needs_review'`) could not be
+ * written, whatever the objective's evidence state says. The backend records that fact; the row
+ * shows it instead of guessing from the check state.
+ */
+function sectionSemanticFor(entry, isNext) {
+  if (entry && entry.lesson_state === 'needs_review') {
+    return { key: 'unwritten', label: 'Could not be written', icon: 'warning' }
+  }
+  return sectionStateSemantic(entry ? entry.state : null, isNext)
 }
 
 /**
@@ -13734,7 +13778,7 @@ function objectiveProgress(objectives, totalFallback) {
   const list = Array.isArray(objectives) ? objectives.filter(Boolean) : []
   const total = list.length > 0 ? list.length : Math.max(0, Number(totalFallback) || 0)
   const independent = list.filter((entry) => entry.independent).length
-  const due = list.filter((entry) => entry.state === 'review_due' || entry.state === 'needs_review').length
+  const due = list.filter((entry) => entry.state === 'review_due').length
   return { total, independent, due, statement: progressStatement(independent, total) }
 }
 
@@ -24034,6 +24078,15 @@ function lessonReadiness({ outline, page, jobs, pageStatus, planStatus } = {}) {
     blockCount: blocks.length,
     segmentCount: segments.length,
     error,
+    // E2E L5: the authored page's own state. A parked page could not be written; its stored
+    // reasons are the repair's target, never prose this surface derives.
+    section: (page && page.section) || null,
+    sectionId: (page && page.section && page.section.section_id) || null,
+    lessonState: (page && page.section && page.section.lesson_state) || null,
+    reasons:
+      page && page.section && Array.isArray(page.section.rejection_reasons)
+        ? page.section.rejection_reasons.filter((reason) => typeof reason === 'string')
+        : [],
     // H-183: the typed reason is evidence, not learner copy. The readiness panel puts this behind
     // its own `Technical detail` disclosure; no default sentence carries the code.
     technical: error,
@@ -24095,6 +24148,21 @@ function lessonReadiness({ outline, page, jobs, pageStatus, planStatus } = {}) {
       detail:
         'Coursebook writes one page for each approved section. This page appears here as soon as it is ready; nothing on screen is invented while you wait.',
       action: { kind: 'check', label: 'Check again' },
+      secondary: { kind: 'plan', label: 'View the plan' }
+    }
+  }
+  if (base.lessonState === 'needs_review') {
+    // The authored page was refused by its validator. No run can start and no check is open, so
+    // the only useful action is one repair aimed at the stored reasons. The check must not appear
+    // here for a spaced review: a `review_due` objective has no `lesson_state` of its own.
+    return {
+      ...base,
+      state: 'unwritten',
+      headline: 'This lesson page could not be written',
+      detail:
+        'The validator refused the page written for this section. Its reasons are below; ' +
+        'repairing it writes one new page for this section and leaves every attempt untouched.',
+      action: { kind: 'repair', label: 'Repair this lesson page' },
       secondary: { kind: 'plan', label: 'View the plan' }
     }
   }
@@ -24162,6 +24230,7 @@ function LessonReadinessPanel({
   onOpenPlan,
   onCheckAgain,
   onRetryLessonsJob,
+  onRepairLesson,
   busy = false,
   compact = false
 }) {
@@ -24169,7 +24238,8 @@ function LessonReadinessPanel({
   const handlers = {
     plan: onOpenPlan,
     check: onCheckAgain,
-    retry: onRetryLessonsJob
+    retry: onRetryLessonsJob,
+    repair: onRepairLesson
   }
   const actionFor = (descriptor) => {
     if (!descriptor) return null
@@ -24236,6 +24306,37 @@ function LessonReadinessPanel({
               color: compact ? 'var(--cb-ink-soft)' : 'var(--cb-ink)'
             },
             children: body
+          })
+        : null,
+      readiness.reasons && readiness.reasons.length
+        ? jsxs('div', {
+            'data-cb-lesson-repair-reasons': String(readiness.reasons.length),
+            style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', margin: 0 },
+            children: [
+              jsx('span', {
+                style: {
+                  fontFamily: CB_SANS,
+                  fontSize: CB_TYPE.caption,
+                  fontWeight: 600,
+                  color: 'var(--cb-ink)'
+                },
+                children: readiness.reasons.length === 1 ? 'The validator’s reason' : 'The validator’s reasons'
+              }),
+              ...readiness.reasons.map((reason, index) =>
+                jsx('p', {
+                  style: {
+                    margin: 0,
+                    fontFamily: CB_SANS,
+                    fontSize: compact ? CB_TYPE.caption : CB_TYPE.meta,
+                    lineHeight: 1.5,
+                    color: 'var(--cb-ink-soft)',
+                    paddingLeft: '0.7rem',
+                    borderLeft: '1px solid var(--cb-rule)'
+                  },
+                  children: reason
+                }, `reason-${index}`)
+              )
+            ]
           })
         : null,
       // H-183: a typed failure reason is inspection evidence, never the sentence a learner reads.
@@ -24458,6 +24559,47 @@ function SectionPage({
     [row, objectiveId, section, onChanged]
   )
 
+  // E2E L5: one repair action, keyed on the section id the backend reported and fenced on the
+  // stored reasons. No client-derived hash, no invented reason, no plan-wide rebuild.
+  const repairLesson = useCallback(async () => {
+    const planId = outline && outline.plan ? outline.plan.plan_id : null
+    const sectionId = page && page.section ? page.section.section_id : null
+    const reasons =
+      page && page.section && Array.isArray(page.section.rejection_reasons)
+        ? page.section.rejection_reasons
+        : []
+    if (!planId || !sectionId) {
+      setNotice(
+        'This build cannot name the authored section for this objective, so it cannot repair it from here.'
+      )
+      return
+    }
+    setBusy(true)
+    setNotice(null)
+    const payload = {
+      enrollment_id: row.enrollment_id,
+      plan_id: planId,
+      section_id: sectionId
+    }
+    if (reasons.length) payload.reasons = reasons
+    const response = await rpc('lesson.regenerate', payload, {
+      idempotencyKey: newOperationId('lesson-repair')
+    })
+    setBusy(false)
+    if (!response.ok) {
+      setNotice(
+        response.error
+          ? `${response.error.code}: ${describeError(response.error)}`
+          : 'The repair could not be queued.'
+      )
+      return
+    }
+    setNotice(
+      'Queued one new page for this section. Other sections, their media and every attempt are untouched.'
+    )
+    if (onChanged) onChanged()
+  }, [outline, page, row, onChanged])
+
   const saveSegment = useCallback((segment) => {
     setSaveSeed({
       course_title: row.title || null,
@@ -24597,6 +24739,7 @@ function SectionPage({
                 onOpenPlan,
                 onCheckAgain: onRetryPage,
                 onRetryLessonsJob,
+                onRepairLesson: repairLesson,
                 busy
               })
   } else {
@@ -24659,6 +24802,7 @@ function SectionPage({
               onOpenPlan,
               onCheckAgain: onRetryPage,
               onRetryLessonsJob,
+              onRepairLesson: repairLesson,
               busy
             })
           : null,
@@ -26788,7 +26932,7 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
       }
   const nextEntry = mainlineObjective(row, objectives)
   const nextTitle = section ? section.title : nextEntry ? nextEntry.title : next.label || null
-  const nextSemantic = nextEntry ? sectionStateSemantic(nextEntry.state, true) : null
+  const nextSemantic = nextEntry ? sectionSemanticFor(nextEntry, true) : null
   const currentId = section ? section.objective_id : nextEntry ? nextEntry.objective_id : null
   const phone = cbLayoutFor(useCbViewportWidth()) === 'phone'
 
@@ -27057,6 +27201,7 @@ function FieldNoteMark({ title, compact }) {
 function sectionToneColor(key) {
   if (key === 'complete') return 'var(--cb-field)'
   if (key === 'review') return 'var(--cb-ochre)'
+  if (key === 'unwritten') return 'var(--cb-coral)'
   if (key === 'next') return 'var(--cb-accent)'
   return 'var(--cb-ink-soft)'
 }
@@ -27343,7 +27488,7 @@ function TextbookView({ row, page, pageState, review, notebooks, outline, planSt
         due: Number(summary.review_due) || 0
       }
   const nextEntry = mainlineObjective(row, objectives) || rows.find((entry) => !entry.independent) || null
-  const nextSemantic = nextEntry ? sectionStateSemantic(nextEntry.state, true) : null
+  const nextSemantic = nextEntry ? sectionSemanticFor(nextEntry, true) : null
   const nextTitle = nextEntry ? nextEntry.title : null
 
   // A plan with more than one unit groups its sections. One implicit unit (a legacy or pack plan)
@@ -27398,7 +27543,7 @@ function TextbookView({ row, page, pageState, review, notebooks, outline, planSt
       SectionRow,
       {
         entry,
-        semantic: sectionStateSemantic(entry.state, isNext),
+        semantic: sectionSemanticFor(entry, isNext),
         isNext,
         onOpen: onOpenSection
       },
@@ -29777,7 +29922,8 @@ function CourseHomeAside({
   busy,
   onContinue,
   onOpenPlan,
-  onOpenOther
+  onOpenOther,
+  onBack
 }) {
   const nextStep = (row && row.next_step) || {}
   const motion = useCbMotion()
@@ -29795,7 +29941,13 @@ function CourseHomeAside({
       ? CB3_COURSE_COPY.planReviewBody
       : null
   const run = () => {
-    if (planReview || complete) {
+    if (complete) {
+      // A finished course has no next lesson and no plan to re-open. The one honest action is
+      // back to the library, where the next course can be chosen.
+      if (typeof onBack === 'function') onBack()
+      return
+    }
+    if (planReview) {
       if (typeof onOpenPlan === 'function') onOpenPlan()
       return
     }
@@ -30238,7 +30390,8 @@ function CourseHomeV3({
             busy,
             onContinue,
             onOpenPlan,
-            onOpenOther
+            onOpenOther,
+            onBack
           }, 'aside')
         ]
       }, 'body')
@@ -30888,6 +31041,43 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
     planStatus: outline.status
   })
   const heroReadable = heroReadiness.state === 'readable'
+  // E2E L5: the hero's repair action, identical in shape to the section page's. It is offered
+  // only when the backend reports a parked page, and it carries the stored reasons as the fence.
+  const repairHeroLesson = useCallback(async () => {
+    const planId = outline.data && outline.data.plan ? outline.data.plan.plan_id : null
+    const sectionId = page.data && page.data.section ? page.data.section.section_id : null
+    const reasons =
+      page.data && page.data.section && Array.isArray(page.data.section.rejection_reasons)
+        ? page.data.section.rejection_reasons
+        : []
+    if (!planId || !sectionId) {
+      setNotice(
+        'This build cannot name the authored section for this objective, so it cannot repair it from here.'
+      )
+      return
+    }
+    setBusy(true)
+    setNotice(null)
+    const payload = { enrollment_id: row.enrollment_id, plan_id: planId, section_id: sectionId }
+    if (reasons.length) payload.reasons = reasons
+    const response = await rpc('lesson.regenerate', payload, {
+      idempotencyKey: newOperationId('lesson-repair')
+    })
+    setBusy(false)
+    if (!response.ok) {
+      setNotice(
+        response.error
+          ? `${response.error.code}: ${describeError(response.error)}`
+          : 'The repair could not be queued.'
+      )
+      return
+    }
+    setNotice(
+      'Queued one new page for this section. Other sections, their media and every attempt are untouched.'
+    )
+    refresh()
+    if (onChanged) onChanged()
+  }, [outline.data, page.data, row.enrollment_id, refresh, onChanged])
   const heroPlan = lessonHeroPlan(heroReadiness, {
     overview: view === 'overview',
     sectionOpen: Boolean(openSectionId)
@@ -31152,7 +31342,8 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
               jobs.reload()
               outline.reload()
             },
-            onRetryLessonsJob: retryLessonsJob
+            onRetryLessonsJob: retryLessonsJob,
+            onRepairLesson: repairHeroLesson
           }),
 
       jsx(NoticeLine, { notice, busy }),
@@ -45585,6 +45776,7 @@ export {
   learnerEvidenceTarget,
   objectiveProgress,
   progressStatement,
+  sectionSemanticFor,
   lessonViewOptions,
   lessonViewChoices,
   mainlineObjective,
