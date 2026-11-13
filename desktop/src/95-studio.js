@@ -2135,6 +2135,10 @@ h2 { margin: 0 0 1.5mm; font-size: 13pt; line-height: 1.25; font-weight: 600; }
 p { margin: 0 0 2.5mm; }
 .caption { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 9pt; color: ${soft};
   border-left: 1.5pt solid ${rule}; padding-left: 3mm; }
+/* E2E U10 — paper prints no figure, so it never presents a description as a caption under one. The
+   omission line is its own element, not a caption ruled like a picture that is above it. */
+.figure-note { margin: 0 0 1.5mm; font-family: "Helvetica Neue", Arial, sans-serif;
+  font-size: 9pt; font-style: italic; color: ${soft}; }
 section.check { border-top: 1pt solid ${ink}; padding-top: 4mm; }
 .note { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 8.5pt; color: ${soft}; }
 footer { margin-top: 8mm; border-top: 1pt solid ${rule}; padding-top: 3mm;
@@ -2162,10 +2166,28 @@ function cbPrintParagraphs(text) {
     .join('')
 }
 
-/** One media child's caption: the text equivalent the lesson already shows, else its label. */
+/**
+ * E2E U10 — what paper says where a figure would be.
+ *
+ * The sheet prints text, never an image, so a caption under nothing ("A cutaway of the brake
+ * caliper") claims a picture the reader does not have. Each media child therefore prints one
+ * explicit omission line, and its text equivalent only as a description of what is missing.
+ */
+const CB_PRINT_FIGURE_OMITTED = 'Figure not printed - see the lesson screen.'
+
+function cbPrintMediaOmission(child) {
+  const audio = child && typeof child === 'object' && child.kind === 'audio'
+  return audio ? 'Audio not printed - see the lesson screen.' : CB_PRINT_FIGURE_OMITTED
+}
+
+/**
+ * One media child's text equivalent for paper: the description the lesson screen shows beside the
+ * media. `label` is structural ("Figure", "Narration") and is never printed — a role word under no
+ * picture is the orphan caption this replaced.
+ */
 function cbPrintMediaCaption(child) {
   if (!child || typeof child !== 'object') return ''
-  const values = [child.text_equivalent, child.purpose, child.label]
+  const values = [child.text_equivalent, child.purpose]
   for (const value of values) {
     if (typeof value === 'string' && value.trim()) return value.trim()
   }
@@ -2189,15 +2211,24 @@ function cbLessonPrintHtml(lesson, options) {
     const headline = typeof block.headline === 'string' ? block.headline.trim() : ''
     const prose = withoutCheckLabels(typeof block.deep === 'string' ? block.deep : '', labels)
     const media = Array.isArray(block.media) ? block.media : []
-    const captions = media.map(cbPrintMediaCaption).filter(Boolean)
-    if (!headline && !prose && captions.length === 0) return
+    const mediaChildren = media.filter((child) => child && typeof child === 'object')
+    // A block whose only content is a figure still prints: its omission line is real content.
+    if (!headline && !prose && mediaChildren.length === 0) return
     const isCheck = block.role === 'practice'
     const roleWord = CB_LESSON_PRINT_ROLE_WORD[block.role] || ''
     const parts = ['<section class="' + (isCheck ? 'block check' : 'block') + '">']
     if (headline) parts.push(`<h2>${cbPrintEscape(headline)}${cbPrintEnd('h2')}`)
     if (roleWord) parts.push(`<p class="role">${cbPrintEscape(roleWord)}${cbPrintEnd('p')}`)
     if (prose) parts.push(cbPrintParagraphs(prose))
-    for (const caption of captions) parts.push(`<p class="caption">${cbPrintEscape(caption)}${cbPrintEnd('p')}`)
+    for (const child of mediaChildren) {
+      parts.push(
+        `<p class="figure-note" data-cb-print-media-omitted="">${cbPrintEscape(cbPrintMediaOmission(child))}${cbPrintEnd('p')}`
+      )
+      const caption = cbPrintMediaCaption(child)
+      if (caption) {
+        parts.push(`<p class="caption" data-cb-print-media-description="">${cbPrintEscape(caption)}${cbPrintEnd('p')}`)
+      }
+    }
     if (isCheck) {
       if (prose) checkPrinted = true
       parts.push(`<p class="note">Answer this on the lesson screen. The answer key is not printed here.${cbPrintEnd('p')}`)

@@ -219,15 +219,31 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 /* CP-053 — the wide Home is a room: one canvas, a shelf of collectible cards, a lower ledge.
    Every position is a pixel on the binding reference frame (1344x768), so this block is authored
    geometry while the paint and type still come from the token contract. Nothing here may carry a
-   raw colour, a shadow outside the elevation tokens, or a font size outside the type scale. */
-[data-cb-v3] [data-cb-home-scene] {
+   raw colour, a shadow outside the elevation tokens, or a font size outside the type scale.
+
+   E2E U9 — the scene is selected from 1200 px of route width up, so between 1200 and 1344 the
+   authored frame is wider than the room it stands in. The stage therefore fits instead of clipping:
+   the fit box is measured and the scene is one plate scaled by the property the component sets on
+   that box. A fixed frame plus overflow hidden cut the fox's right half at 1250, so the scale is
+   the composition, not a crop. */
+[data-cb-v3] [data-cb-home-scene-fit] {
   position: relative;
   width: 100%;
+  max-width: 1344px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+[data-cb-v3] [data-cb-home-scene] {
+  position: relative;
+  width: 1344px;
   max-width: 1344px;
   height: 768px;
   margin: 0 auto;
   overflow: hidden;
   isolation: isolate;
+  transform: scale(var(--cb-home-scene-scale, 1));
+  transform-origin: top left;
   /* D-007 — the room's ground is the approved hero plate (data-cb-home-scene-backdrop), a full
      bleed painted backdrop. The token canvas stays as the ground under it so a plate that fails to
      decode leaves the canvas, never a blank route. */
@@ -573,6 +589,31 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   left: 1110px;
   top: 481px;
   z-index: 5;
+}
+
+/* E2E U9 — the shelf shows four cards; with a fifth course the room needs its own door to the rest.
+   It sits on the shelf's own right edge (the plank ends at 219 + 915 = 1134, so 210 px from the
+   frame's right edge), in the 48 px band between the hero and the first card row. A bare button
+   rather than a hosted or pill primitive: those carry inline type, and the scene paints only from
+   this stylesheet and the token contract. */
+[data-cb-v3] [data-cb-home-scene-see-all] {
+  position: absolute;
+  top: 336px;
+  right: 210px;
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--cb3-rule);
+  border-radius: var(--cb3-radius-pill);
+  background-color: var(--cb3-card-stock);
+  font-family: var(--cb3-font-ui);
+  font-size: var(--cb3-text-meta);
+  font-weight: 600;
+  color: var(--cb3-ink);
+  cursor: pointer;
 }
 `
 
