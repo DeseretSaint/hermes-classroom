@@ -356,6 +356,7 @@
           "audit_state": "passed",
           "check_id": "000000000000001f",
           "evidence_target": "procedure",
+          "revisit": false,
           "state": "open",
           "version": 1
         }
@@ -444,6 +445,7 @@
         "ordinal": 1,
         "rejection_reasons": [],
         "section_id": "0000000000000018",
+        "sections_total": 1,
         "state": "not_started",
         "title": "Remove the rear wheel, replace the inner tube and check the brakes"
       },

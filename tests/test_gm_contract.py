@@ -254,8 +254,8 @@ class GmMigrationTest(unittest.TestCase):
         self.assertEqual(v13["x-contract-version"], 13)
         self.assertEqual(v13["$id"], "https://contracts.coursebook.hermes/db/v13")
         self.assertEqual(v13["x-supersedes"], "https://contracts.coursebook.hermes/db/v12")
-        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v14.json",
-                         "v13 stays on disk as immutable history; the inventory is v14")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v15.json",
+                         "v13 stays on disk as immutable history; the inventory is v15")
 
         self.assertEqual(set(v13["tables"]) - set(v12["tables"]), set(gm.GM_TABLES))
         self.assertEqual(set(v12["tables"]) - set(v13["tables"]), set(), "v13 dropped a table")
@@ -357,7 +357,7 @@ class GmMigrationTest(unittest.TestCase):
                 columns = {row["name"] for row in connection.execute("PRAGMA table_info(courses)")}
                 self.assertNotIn("presentation_mode", columns,
                                  "the legacy shape must be a real pre-0013 table")
-            self.assertEqual(db.migrate(), 14)
+            self.assertEqual(db.migrate(), 15)
             with db.read() as connection:
                 row = connection.execute(
                     "SELECT presentation_mode FROM courses WHERE id = 'crs_legacygm01'"
@@ -382,20 +382,28 @@ class GmMigrationTest(unittest.TestCase):
         os.environ["HERMES_HOME"] = home
         try:
             self._build_v12_with_legacy_rows()
-            before_attempts = self._rows("SELECT * FROM attempts ORDER BY id")
-            before_evidence = self._rows("SELECT * FROM evidence ORDER BY id")
-            before_lessons = self._rows("SELECT * FROM checks ORDER BY id")
+            # Project the legacy column list: cb.db v15 adds `checks.revisit` (migration 0015),
+            # and a later additive column must not read as the migration rewriting a stored row.
+            with db.read() as connection:
+                legacy_columns = {
+                    table: [row["name"] for row in connection.execute(f"PRAGMA table_info({table})")]
+                    for table in ("attempts", "evidence", "checks")
+                }
+            select = {table: ", ".join(cols) for table, cols in legacy_columns.items()}
+            before_attempts = self._rows(f"SELECT {select['attempts']} FROM attempts ORDER BY id")
+            before_evidence = self._rows(f"SELECT {select['evidence']} FROM evidence ORDER BY id")
+            before_lessons = self._rows(f"SELECT {select['checks']} FROM checks ORDER BY id")
             self.assertEqual(len(before_attempts), 1)
             self.assertEqual(len(before_evidence), 1)
 
-            self.assertEqual(db.migrate(), 14)
+            self.assertEqual(db.migrate(), 15)
 
-            self.assertEqual(self._rows("SELECT * FROM attempts ORDER BY id"), before_attempts)
-            self.assertEqual(self._rows("SELECT * FROM evidence ORDER BY id"), before_evidence)
-            self.assertEqual(self._rows("SELECT * FROM checks ORDER BY id"), before_lessons)
+            self.assertEqual(self._rows(f"SELECT {select['attempts']} FROM attempts ORDER BY id"), before_attempts)
+            self.assertEqual(self._rows(f"SELECT {select['evidence']} FROM evidence ORDER BY id"), before_evidence)
+            self.assertEqual(self._rows(f"SELECT {select['checks']} FROM checks ORDER BY id"), before_lessons)
 
             applied = [row[0] for row in self._rows("SELECT version FROM schema_migrations ORDER BY version")]
-            self.assertEqual(applied[-1], 14)
+            self.assertEqual(applied[-1], 15)
             self.assertIn(13, applied)
         finally:
             if previous is None:
@@ -497,7 +505,8 @@ class GmTakeHomeRevisionScopeTest(unittest.TestCase):
         self.assertEqual(v14["x-contract-version"], 14)
         self.assertEqual(v14["$id"], "https://contracts.coursebook.hermes/db/v14")
         self.assertEqual(v14["x-supersedes"], "https://contracts.coursebook.hermes/db/v13")
-        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v14.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v15.json",
+                         "v14 stays on disk as immutable history; the inventory is v15")
         self.assertEqual(set(v14["tables"]), set(v13["tables"]), "v14 added or dropped a table")
         for table, spec in v13["tables"].items():
             with self.subTest(table=table):
@@ -541,7 +550,7 @@ class GmTakeHomeRevisionScopeTest(unittest.TestCase):
             before = self._rows(query)
             self.assertEqual(len(before), 3)
 
-            self.assertEqual(db.migrate(), 14)
+            self.assertEqual(db.migrate(), 15)
             self.assertEqual(self._rows(query), before, "0014 must not rewrite a pack row")
 
             # The same source slot may now hold a second draft at revision 0; the old key made

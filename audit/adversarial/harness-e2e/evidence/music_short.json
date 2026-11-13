@@ -624,6 +624,7 @@
           "audit_state": "passed",
           "check_id": "000000000000002c",
           "evidence_target": "recall",
+          "revisit": false,
           "state": "open",
           "version": 1
         }
@@ -712,6 +713,7 @@
         "ordinal": 1,
         "rejection_reasons": [],
         "section_id": "000000000000001d",
+        "sections_total": 4,
         "state": "not_started",
         "title": "Count the semitones in a major third and a perfect fifth"
       },

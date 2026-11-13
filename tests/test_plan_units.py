@@ -93,13 +93,15 @@ class PlanUnitsSchemaTest(KernelCase):
         # for migration 0014, which rebuilds takehome_packs without the per-source-slot
         # revision key so a re-opened lesson's second pack can be approved and exported.
         # Migrations 0007 (plan_units) and 0008 (syllabus) are unchanged.
-        self.assertEqual(db.DB_SCHEMA_VERSION, 14)
-        self.assertEqual(db.target_schema_version(), 14)
-        self.assertEqual(contract("cb.db")["schema_version"], 14)
-        self.assertEqual(db.applied_schema_version(), 14)
+        # E2E L1 (the revisit lane) took it to v15 for migration 0015, which adds
+        # `checks.revisit` so a passed generated section reopens as a review.
+        self.assertEqual(db.DB_SCHEMA_VERSION, 15)
+        self.assertEqual(db.target_schema_version(), 15)
+        self.assertEqual(contract("cb.db")["schema_version"], 15)
+        self.assertEqual(db.applied_schema_version(), 15)
         with db.read() as connection:
             recorded = connection.execute("SELECT MAX(version) FROM schema_migrations").fetchone()[0]
-        self.assertEqual(recorded, 14)
+        self.assertEqual(recorded, 15)
 
     def test_unit_columns_match_the_contract_exactly(self) -> None:
         spec = contract("cb.db")["tables"]

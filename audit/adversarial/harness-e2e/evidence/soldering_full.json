@@ -1454,6 +1454,7 @@
           "audit_state": "passed",
           "check_id": "000000000000005c",
           "evidence_target": "recall",
+          "revisit": false,
           "state": "open",
           "version": 1
         }
@@ -1542,6 +1543,7 @@
         "ordinal": 1,
         "rejection_reasons": [],
         "section_id": "0000000000000031",
+        "sections_total": 12,
         "state": "not_started",
         "title": "Name the three burn and fume hazards at the bench"
       },
