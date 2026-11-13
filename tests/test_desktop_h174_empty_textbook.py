@@ -440,7 +440,15 @@ class H174SourceTest(unittest.TestCase):
 
     def test_the_section_start_action_is_gated_on_a_readable_page(self) -> None:
         # The chat run is the section's primary only after the approved page exists (H-174).
-        self.assertIn("pageReadable\n          ? jsxs('div', {", self.shipped)
+        # U5 widened the guard to "and this section owns the screen" (a player surface only offers
+        # the action once a binding is active), so read the gate that ships rather than one
+        # literal: the guard must still be pageReadable-first and its consequent must be the
+        # section-actions block.
+        guard = "pageReadable && (!playerSurface || bindingActive)"
+        self.assertIn(guard, self.shipped)
+        after = self.shipped.split(guard, 1)[1][:400]
+        self.assertIn("? jsxs('div', {", after)
+        self.assertIn("'data-cb-section-actions'", after)
         self.assertIn("!bindingActive && pageReadable", self.shipped)
 
     def test_the_hero_primary_is_gated_on_the_readiness_model(self) -> None:
