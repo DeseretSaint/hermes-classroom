@@ -298,6 +298,28 @@ def validation_from_fixture(name: str = "validation_pass"):
 
 
 
+def rubric_for_checklist(labels: list[str]) -> list[dict]:
+    """A 3-6 criterion rubric whose bands the migrated checklist items can actually earn.
+
+    E2E A2 refuses a rubric criterion no item label covers, and a fixture that reuses the
+    greeting rubric for a drink-ordering checklist is exactly that mismatch. The migrated check
+    is shape-only test data, so its rubric is authored from the same labels the items were cut
+    from; a real author writes both sides together.
+    """
+    criteria = [
+        {"criterion": label[:120], "weight": 1.0, "description": label[:300]}
+        for label in labels
+    ]
+    aspects = ("completed", "checked in order", "reported to the parent")
+    index = 0
+    while len(criteria) < 3 and labels:
+        label = labels[index % len(labels)]
+        text = f"{label} {aspects[index % len(aspects)]}"
+        criteria.append({"criterion": text[:120], "weight": 1.0, "description": text[:300]})
+        index += 1
+    return criteria[:6]
+
+
 def check_for_objective(lesson: dict, objective: dict) -> dict:
     """Author the check shape the objective's evidence target can honestly be measured by.
 
@@ -342,6 +364,7 @@ def check_for_objective(lesson: dict, objective: dict) -> dict:
         "Tick each item only after you have done it. This is a self-report of what you did, "
         "never an independently verified pass."
     )
+    check["rubric"] = rubric_for_checklist(labels)
     return lesson
 
 
@@ -1495,7 +1518,7 @@ class LessonJobTest(GenerationTestBase):
         ]
         self.assertTrue(generation_requests)
         for request in generation_requests:
-            self.assertEqual(request.prompt_version, "lesson-prompt.v16")
+            self.assertEqual(request.prompt_version, "lesson-prompt.v17")
             self.assertIn("Capability policy", request.instructions)
             payload = json.loads(request.input_text)
             self.assertIn("capability_policy", payload)
@@ -1573,7 +1596,7 @@ class LessonJobTest(GenerationTestBase):
         text = gen._lesson_instructions(recipe="parent", locale=None, scaffold_note="")
         self.assertIn("3-6", text)
         self.assertIn("distinct observable", text)
-        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v16")
+        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v17")
 
     def test_a_lesson_with_fewer_than_three_rubric_criteria_is_retried_then_parked(self) -> None:
         plan_result = self.approved_plan()

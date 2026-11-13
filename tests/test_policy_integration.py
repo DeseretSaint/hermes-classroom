@@ -295,7 +295,7 @@ class PromptPolicyTest(unittest.TestCase):
                 self.assertEqual(plan.audio, row["audio"])
 
                 instructions = request_for(row).instructions
-                self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v16")
+                self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v17")
                 self.assertIn("Capability policy", instructions)
                 self.assertIn(f"check angle: {row['angle']}", instructions)
                 statements = [

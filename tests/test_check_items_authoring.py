@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import unittest
 from datetime import datetime, timezone
+from typing import Any
 
 from jsonschema import Draft202012Validator
 
@@ -64,8 +65,13 @@ class ChecklistAuthoringCase(KernelCase):
         super().tearDown()
 
     # ── pipeline helpers ────────────────────────────────────────────────────
-    def author_one_off(self, lesson: dict) -> tuple[dict, str, dict, FakeLLM]:
-        """Plan + approve + author lessons for the one-off (verification checklist) recipe."""
+    def author_one_off(self, lesson: Any) -> tuple[dict, str, dict, FakeLLM]:
+        """Plan + approve + author lessons for the one-off (verification checklist) recipe.
+
+        ``lesson`` is a draft dict, a list of successive drafts, or a callable ``FakeLLM``
+        returns — the script accepts all three, so a repair case can hand the same helper a
+        first draft the deterministic gate refuses and a second it accepts.
+        """
         llm = FakeLLM(
             {
                 "coursebook.plan.generate": plan_from_fixture("plan_one_off"),

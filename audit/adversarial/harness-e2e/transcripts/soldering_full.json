@@ -155,7 +155,7 @@
         "the ball"
       ],
       "check_prompt": "Which joint needs rework?",
-      "counter": "A balled joint is the clearest fail and the easiest to under-call, because it looks like extra solder rather than a bad joint.",
+      "counter": "The fail shape is the one people under-call, because extra solder reads as a fix rather than a fault, and the criterion is what settles it.",
       "criterion": "A sound joint is shiny, concave and covers the pad without a ball.",
       "criterion_short": "A sound joint is shiny, concave and covers the pad.",
       "example_steps": [
@@ -167,7 +167,7 @@
       "explanation_short": "Applying one criterion to many joints is the skill.",
       "headings": [
         "Judge every joint by one criterion",
-        "A balled joint is a fail"
+        "Judge the shape, not the amount of solder"
       ],
       "intent": "Apply the criterion to a real joint.",
       "items": null,
@@ -356,9 +356,9 @@
         "once the solder flows"
       ],
       "check_prompt": "When do you lift the wick?",
-      "counter": "Lifting the wick early leaves solder behind and pulls on a solid joint, so the wick comes up only after the solder has flowed into it.",
-      "criterion": "Heat through the wick and stop as soon as the bridge disappears.",
-      "criterion_short": "Heat through the wick and stop.",
+      "counter": "Lifting early leaves a smear and pulls on a joint that is still solid, so wait for the braid to do the work and keep the iron resting on the braid while it does.",
+      "criterion": "The pad stays flat and the two points are no longer joined by metal.",
+      "criterion_short": "The pad stays flat and the points come apart.",
       "example_steps": [
         "Add flux",
         "Lay the wick",
@@ -368,7 +368,7 @@
       "explanation_short": "Pulling the wick while the solder is solid lifts pads.",
       "headings": [
         "Lay the wick over the bridge",
-        "Lift only after the solder flows"
+        "Lift once the braid has drawn the solder away"
       ],
       "intent": "Teach bridge removal.",
       "items": [

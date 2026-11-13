@@ -620,8 +620,8 @@
             "short": "Judge each joint on the board against the fillet criterion."
           },
           {
-            "body": "A sound joint is shiny, concave and covers the pad without a ball. A balled joint is the clearest fail and the easiest to under-call, because it looks like extra solder rather than a bad joint.",
-            "heading": "A balled joint is a fail",
+            "body": "A sound joint is shiny, concave and covers the pad without a ball. The fail shape is the one people under-call, because extra solder reads as a fix rather than a fault, and the criterion is what settles it.",
+            "heading": "Judge the shape, not the amount of solder",
             "kind": "guided",
             "short": "A sound joint is shiny, concave and covers the pad."
           }
@@ -690,16 +690,16 @@
             "short": "Add flux and lay the wick over the bridge."
           },
           {
-            "body": "Heat through the wick and stop as soon as the bridge disappears. Lifting the wick early leaves solder behind and pulls on a solid joint, so the wick comes up only after the solder has flowed into it.",
-            "heading": "Lift only after the solder flows",
+            "body": "The pad stays flat and the two points are no longer joined by metal. Lifting early leaves a smear and pulls on a joint that is still solid, so wait for the braid to do the work and keep the iron resting on the braid while it does.",
+            "heading": "Lift once the braid has drawn the solder away",
             "kind": "guided",
-            "short": "Heat through the wick and stop."
+            "short": "The pad stays flat and the points come apart."
           }
         ],
         "sources": [],
         "supervision_notes": [],
         "worked_example": {
-          "answer": "The step is done and checked. Heat through the wick and stop as soon as the bridge disappears.",
+          "answer": "The step is done and checked. The pad stays flat and the two points are no longer joined by metal.",
           "prompt": "A worked example of Wick a solder bridge without lifting the pad",
           "short": "The step is done and checked.",
           "steps": [
@@ -1670,7 +1670,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000005b",
@@ -1716,7 +1716,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000005e",
@@ -1826,7 +1826,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000067",
@@ -1872,7 +1872,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000006a",
@@ -1982,7 +1982,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000073",
@@ -2028,7 +2028,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000076",
@@ -2138,7 +2138,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000007f",
@@ -2184,7 +2184,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000082",
@@ -2294,7 +2294,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000008b",
@@ -2340,7 +2340,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000008e",
@@ -2421,8 +2421,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 8572,
-            "output_tokens": 1930,
+            "input_tokens": 8596,
+            "output_tokens": 1953,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -2450,7 +2450,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000097",
@@ -2496,7 +2496,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000009a",
