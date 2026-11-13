@@ -1653,6 +1653,7 @@ Documented sub-reasons at v4 (not exhaustive of every emitter, but the ones a cl
 | `plan_empty`, `plan_not_validated` | `VALIDATION_FAILED` | plan approval and edit fences in `domain.py`. |
 | `course_not_pack_backed`, `export_not_exportable` | `POLICY_VIOLATION` | `pack_flow` export gates; `problems` carries the per-question detail. |
 | `course_has_revisions` | `POLICY_VIOLATION` | `pack.export` when the course's own edits (objectives or a lesson revision) are not in the installed pack; `changed[]`, `lesson_revisions` and the pack identity ride along, and the message names `plan.undo` as the way back (CP-015g residual, no wire change). |
+| `scope_band` | `VALIDATION_FAILED` | `generation.run_plan_job` when the authored plan's own objectives, units or weeks leave its declared scope band after the final authoring attempt (G5: `generation.ScopeBandRefused`). Non-retryable; the message names the legal bands and the learner's action, `details` also carries `scope`, `objectives`, `units`, `legal_scopes`, `objective_band`, `unit_band`, `max_weeks`, `rule_reasons` (and `weeks` when the plan declared a week estimate), and no plan row and no plan document are written. A violation carrying any non-band reason keeps the parked `needs_review` path. |
 
 The same naming rule applies to `jobs.checkpoint` labels, which are also an open object
 (`maxProperties: 40`): `cost_ceiling_exceeded`, `checkpoint_serializer_failed`.
