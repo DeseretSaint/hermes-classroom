@@ -7,6 +7,12 @@ Auditor: sentinel (independent). Date: 2026-11-07.
 > H-46b section at the end.** The H-40/H-45 numbers below are kept as history; the packet on disk
 > and the focused/full counts in that section are the current ones.
 
+> **Suite logs (H-213, 2026-11-12):** `evidence/full-suite.txt` and `evidence/focused-tests.txt`
+> were re-recorded on base **`e8ad509c`** — full suite **4458 tests, OK (skipped=12)**, focused
+> **26 tests, OK** — and re-pinned in `manifest.json`. Older counts in the sections below (1422,
+> 1494, 1521, 1524, 4198) describe the bases their own sections name and are history. See the
+> **H-213** section at the end.
+
 This packet replaces H-09's `wt/harness-e2e-proof` packet, which measured a harness three
 generations old (`00b502f`-era: before H-21 blueprint v2 units, before H-36 validator independence,
 before H-19's review queue and before H-27/H-26b). Nothing from that branch was merged; this packet
@@ -491,7 +497,7 @@ The diff is `contract_version: 21 -> 22` at the same 5 sites (1 `bicycle_single.
 `music_short.json`, 2 `soldering_full.json`) plus the 3 `manifest.json` hashes. No transcript,
 verdict, lesson text, check, grading row or assertion changed.
 
-## W2-8 — the full-course scenario re-recorded against the procedure rule (base `a708711b`)
+## W2-8 — the full-course scenario re-recorded against the procedure rule (base `a708711b`, historical)
 
 `tests/test_harness_e2e.py` was skipped by `setUpModule`: `soldering_full`'s five procedure
 objectives were measured by `quiz` checks, and the product now refuses a quiz as the measure of a
@@ -566,10 +572,54 @@ evidence 4541faa8add4f0b66f784130743f93760b042d121e08e11b232b5034004a4d8e  evide
 evidence ea566e9a1f0d195fdfef9f054894820aa640d955d8f46305839003730c687a87  evidence/summary.json
 ```
 
-The full suite on this tree: **4198 tests, 0 failures, 12 skipped** in 1346.017 s
-(`evidence/full-suite.txt`, regenerated here and pinned above). One earlier run during this card
-reported a single failure in `test_the_committed_packet_verifies_clean`; that run started before
+**Historical (superseded by H-213).** The full suite on the W2-8 tree (`a708711b`) was
+**4198 tests, 0 failures, 12 skipped** in 1346.017 s. Those were the bytes of
+`evidence/full-suite.txt` and `evidence/focused-tests.txt` until H-213 re-recorded both logs on base
+`e8ad509c`; the current logs and their pins are in the H-213 section at the end of this file. One
+earlier run during this card reported a single failure in
+`test_the_committed_packet_verifies_clean`; that run started before
 the packet's final `manifest.json` re-pin and read the intermediate harness/log hashes. It is not a
 product or packet defect, and the re-run above (with the final pin in place) is clean. No product
 rule, schema or product test changed in this card.
 
+
+## H-213 — the two suite logs re-recorded on the integrated tree (base `e8ad509c`, 2026-11-12)
+
+`manifest.json` content-addresses `evidence/full-suite.txt` and `evidence/focused-tests.txt`, and a
+content hash only proves that the bytes did not change — never that they describe the tree on disk.
+Both logs still carried the W2-8 header — `base a708711b` at 4198 tests, a superseded value — several waves later, so
+`--verify` reported the packet FRESH while the logs described code the repository no longer had.
+
+Both logs were re-recorded by running the commands they name on base **`e8ad509c`**
+(`wt/t_4b796266`) on **2026-11-12**, and the packet was re-pinned by its own runner — `harness_e2e.py`
+rewrote `manifest.json` and left every `evidence/*.json` byte-identical:
+
+| log | command (as recorded in its header) | result on `e8ad509c` |
+|---|---|---|
+| `evidence/full-suite.txt` | `python3 -m unittest discover -s tests -t .` | Ran **4458 tests in 910.542s** — OK (skipped=12) |
+| `evidence/focused-tests.txt` | `python3 -m unittest tests.test_harness_e2e -v` | Ran **26 tests** — OK |
+
+The suite count each log quotes is the count this tree actually runs. The previous values are kept
+as labelled history rather than deleted: the W2-8 section above still records 4198 tests on
+`a708711b` and is marked historical there.
+
+### Verification (real output)
+
+```text
+PYTHONPATH=. python3 audit/adversarial/harness-e2e/harness_e2e.py
+  overall: PASS  (3/3 scenarios)
+  packet: 8 evidence file(s) content-addressed in manifest.json; 3 transcript input(s)
+PYTHONPATH=. python3 audit/adversarial/harness-e2e/harness_e2e.py --verify
+  packet: FRESH — every evidence file and harness input matches manifest.json
+```
+
+Current pins for the two re-recorded logs:
+
+```text
+evidence 36fc53f317b6bfa1b82db23edc1fb11fa4f82bab864ac747cb245fe15ea6dc7a  evidence/focused-tests.txt
+evidence 7e703d84e55ec1b5a6b3f3d5ff261ea54f6c446970978debcb6c727f58bf390e  evidence/full-suite.txt
+```
+
+Every other pin is unchanged from the re-record that produced `evidence/run-output.txt` and the
+canonical independence pair. No provider call, no spend, no network, no live Desktop window and no
+CDP: the logs are the two local unittest runs above, and the packet's recorded half is untouched.
