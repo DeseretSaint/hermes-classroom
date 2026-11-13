@@ -143,7 +143,12 @@ class LessonStartTest(unittest.TestCase):
         # The detached notice is not hidden behind a runtime read succeeding. H-174 also gates it on
         # a readable approved page, so a section whose page the lessons job has not written yet is
         # explained by the readiness panel instead of by a chat sentence.
-        self.assertIn("        !bindingActive && pageReadable\n          ? jsx('div', {", self.source)
+        # The player owns its own exit, so the notice and the start strip are hidden while it is
+        # mounted (E2E U5); everywhere else the notice is still not gated on a runtime read.
+        self.assertIn(
+            "        !bindingActive && pageReadable && !playerSurface\n          ? jsx('div', {",
+            self.source,
+        )
 
     def test_learner_copy_has_no_internal_vocabulary(self) -> None:
         # Source comments and diagnostics keep the machine words on purpose; the copy a learner can
