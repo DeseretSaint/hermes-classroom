@@ -17,14 +17,14 @@ Three different calls, three different prompts, three different schemas:
 | Pass | Purpose string | Prompt version | Schema |
 |---|---|---|---|
 | Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v22` | `PLAN_SCHEMA` |
-| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v24` | `PLAN_SCHEMA_V2` |
-| Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v3` | `UNIT_SECTIONS_SCHEMA` |
+| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v25` | `PLAN_SCHEMA_V2` |
+| Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v4` | `UNIT_SECTIONS_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
 | Unit-sections validator | `coursebook.unit_sections.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
-| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v16` | `LESSON_SCHEMA` |
+| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v17` | `LESSON_SCHEMA` |
 | Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
 
-`build_plan_request()` selects the v2 schema and `plan-prompt.v24` when the brief declares a scope
+`build_plan_request()` selects the v2 schema and `plan-prompt.v25` when the brief declares a scope
 (`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v22` otherwise. The rounds that
 advanced these labels, in order: CP-015's ledger-grounding, single-defensible-answer,
 evidence-target-fit, goal-coverage and check-covers-criteria rules; CP-015a's exclusions /
@@ -784,7 +784,7 @@ read seam's own normalisation (`domain._check_label_key`, imported rather than r
 Both raise `_RuleViolation`: attempt 1 is retried with the reasons, the final attempt
 (`LESSON_ATTEMPTS`, 3) parks the lesson `needs_review` with the check closed, and `check.get`
 would refuse the same duplicate anyway. The prompt change is one of the reasons
-`LESSON_PROMPT_VERSION` is versioned; `lesson-prompt.v16` is the current label.
+`LESSON_PROMPT_VERSION` is versioned; `lesson-prompt.v17` is the current label.
 
 **Repair pass (CP-015g).** A lesson that the independent validator refused is re-authored with
 the refusal in two places: the request payload's `revision_instructions` (the itemised reasons,
@@ -815,7 +815,7 @@ established without re-teaching it, and name the earlier objective it extends. `
 is authoring context only: it is never a learner surface and no learner copy claims what is
 "already known".
 
-**Answer-leak surfaces (CP-015c follow-up).** `lesson-prompt.v16` states the rule
+**Answer-leak surfaces (CP-015c follow-up).** `lesson-prompt.v17` states the rule
 `assert_no_answer_leak` and `assert_check_payload_does_not_announce_answer` enforce: a `model`
 segment (and narration media that reads it) is the one surface where the target form, its reading
 and its function appear together; every other learner surface is scanned (non-model segments, the
@@ -830,7 +830,7 @@ validation payload carries the stored key in its own `answer_key` block, marked
 `learner_facing: false`, because `learner_page` never serializes it; the current validation label
 (§1's table) states that split so a validator does not read the key's presence as a shipped answer.
 
-**Rubric floor.** The lesson prompt (`lesson-prompt.v16`) asks for 3–6 criteria, each a distinct
+**Rubric floor.** The lesson prompt (`lesson-prompt.v17`) asks for 3–6 criteria, each a distinct
 observable aspect of the response. `enforce_lesson_rules` refuses fewer than
 `packs.MIN_RUBRIC_CRITERIA` (3) with a typed reason, so attempt 1 is retried with that reason in
 `revision_instructions` and the final attempt (`LESSON_ATTEMPTS`, 3) parks the lesson
@@ -864,7 +864,7 @@ construct. `enforce_plan_rules` refuses a missing declaration and hands each dec
 (a required illustration, an illustration on a symbolic lesson, audio outside a language lesson).
 The declaration is stored in `gen_plan_sections.media_need_json`. Before the lesson prompt is built,
 the pipeline computes one immutable plan from the recipe, the objective's evidence target, the
-section's declaration, the locale/level and an advisory subject domain. `lesson-prompt.v16`
+section's declaration, the locale/level and an advisory subject domain. `lesson-prompt.v17`
 receives exactly that plan — the check angle, the rubric profile and the *permitted* media roles —
 instead of a generic invitation to add media. A lesson whose policy sets image or audio to `none`
 is told to emit no item of that kind at all, and one whose plan requires an item must produce it.
@@ -887,7 +887,7 @@ default profile. The profile's own criteria are then validated (3–6 distinct o
 mental-state claims, no restated aspect).
 
 **Procedure header (H-06).** A technical procedure lesson carries an optional typed `procedure`
-object in `LESSON_SCHEMA`; `lesson-prompt.v16` asks the author for it whenever the check's evidence
+object in `LESSON_SCHEMA`; `lesson-prompt.v17` asks the author for it whenever the check's evidence
 target is `procedure` or the lesson's construct is a technical procedure, and forbids it
 everywhere else. The label is versioned rather than frozen: it is recorded in stored validation
 bindings and the idempotency fingerprint, so a different instruction text under a reused label
@@ -1119,7 +1119,7 @@ Two stored shapes project into the same `$defs/lesson_document`:
 
 Rules the projection cannot bend:
 
-* `short` is authored, never synthesised from `deep`. The lesson writer (`lesson-prompt.v16`)
+* `short` is authored, never synthesised from `deep`. The lesson writer (`lesson-prompt.v17`)
   authors `segments[].short`, `worked_example.short` and `learner_explanation_short`; the
   projection publishes exactly those strings and never slices a deep field. `_enforce_lesson_document`
   runs before the independent validator: it builds the document, re-runs `validate_blocks`

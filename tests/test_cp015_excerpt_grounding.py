@@ -109,7 +109,7 @@ class PlanSourcingRulesTest(unittest.TestCase):
         # same rule text, so both plan labels advance rather than reusing v17/v18. W2-9 then
         # deletes the declared-gap prohibition from the shared sourcing rule, advancing both again.
         self.assertEqual(generation.PLAN_PROMPT_VERSION, "plan-prompt.v22")
-        self.assertEqual(generation.PLAN_PROMPT_VERSION_V2, "plan-prompt.v24")
+        self.assertEqual(generation.PLAN_PROMPT_VERSION_V2, "plan-prompt.v25")
 
 
 class SourceBriefFitsTheRequestTest(unittest.TestCase):

@@ -1665,7 +1665,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000005b",
@@ -1711,7 +1711,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000005e",
@@ -1821,7 +1821,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000067",
@@ -1867,7 +1867,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000006a",
@@ -1977,7 +1977,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000073",
@@ -2023,7 +2023,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000076",
@@ -2133,7 +2133,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000007f",
@@ -2179,7 +2179,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000082",
@@ -2289,7 +2289,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000008b",
@@ -2335,7 +2335,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000008e",
@@ -2445,7 +2445,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000097",
@@ -2491,7 +2491,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000009a",

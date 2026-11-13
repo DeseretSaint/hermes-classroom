@@ -43,6 +43,11 @@ def blueprint_plan(
         check_kind = "verification" if recipe == "one_off" else "quiz"
     if spaced_review is None:
         spaced_review = recipe == "committed"
+    if spaced_review and not reviews:
+        # S3: a spaced-review course schedules at least one review per unit. The plan rule
+        # requires one per SPACED_REVIEW_EVERY owners; one per unit is the simplest fixture that
+        # satisfies it without changing any unit's owner count.
+        reviews = tuple(1 for _ in range(units))
     unit_rows: list[dict[str, Any]] = []
     objective_rows: list[dict[str, Any]] = []
     check_rows: list[dict[str, Any]] = []
@@ -119,6 +124,16 @@ def blueprint_plan(
         plan["evidence_note"] = (
             "A casual/one-off course: checks are self-reported and never independent evidence."
         )
+    if scope == "full":
+        # S1: a full course ends on its exit performance. The fixture's last owner section owns
+        # the final objective, so that objective carries the procedure family and its check the
+        # verification kind a procedure needs.
+        final = plan["objectives"][-1]
+        final["evidence_target"] = "procedure"
+        for item in plan["check_plan"]:
+            if int(item["objective_ref"]) == int(final["ordinal"]):
+                item["evidence_target"] = "procedure"
+                item["kind"] = "verification"
     return plan
 
 

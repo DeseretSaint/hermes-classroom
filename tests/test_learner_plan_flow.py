@@ -411,7 +411,11 @@ class LearnerPlanFlowTest(KernelCase):
                 FakeLLM(
                     {
                         "coursebook.unit_sections.generate": blueprint_response(
-                            unit_sections_document(unit=unit, objectives=objectives)
+                            unit_sections_document(
+                                unit=unit,
+                                objectives=objectives,
+                                reviews=max(0, int(unit["target_lessons"]) - len(objectives)),
+                            )
                         ),
                         "coursebook.unit_sections.validate": blueprint_response(
                             validation_pass(), model="fake-independent-validator"
@@ -586,8 +590,8 @@ class LearnerBlueprintLessonPathTest(KernelCase):
         run = self.job(job_id)
         self.assertEqual(run["state"], "completed", run.get("error"))
         self.assertEqual(run["checkpoint"]["unit_ordinal"], 1)
-        self.assertEqual(run["checkpoint"]["sections_total"], 3)
-        self.assertEqual(run["checkpoint"]["lessons"], 3)
+        self.assertEqual(run["checkpoint"]["sections_total"], 4)
+        self.assertEqual(run["checkpoint"]["lessons"], 4)
         self.assertEqual(run["checkpoint"]["next_unit_ordinal"], None)
         self.assertTrue(run["checkpoint"]["units_complete_all"])
         self.assertEqual(run["checkpoint"]["last_stage"], "lessons")
@@ -595,7 +599,7 @@ class LearnerBlueprintLessonPathTest(KernelCase):
         self.assertEqual(run["progress"]["steps_total"], 2)
 
         lessons = self.stored_lessons(flow["plan_id"])
-        self.assertEqual(len(lessons), 3)
+        self.assertEqual(len(lessons), 4)
         for lesson in lessons:
             page = json.loads(str(lesson["page_json"]))
             self.assertTrue(page.get("segments"), "the authored page has no content")
@@ -658,7 +662,7 @@ class LearnerBlueprintLessonPathTest(KernelCase):
         self.assertEqual(first["checkpoint"]["units_total"], 2)
         self.assertFalse(first["checkpoint"]["units_complete_all"])
         self.assertEqual(first["checkpoint"]["next_unit_to_author"], 2)
-        self.assertEqual(len(self.stored_lessons(flow["plan_id"])), 3)
+        self.assertEqual(len(self.stored_lessons(flow["plan_id"])), 4)
 
         # The next unit is a fresh job with a fresh key — exactly what the path surface offers.
         second_id = self.ok(
@@ -673,7 +677,7 @@ class LearnerBlueprintLessonPathTest(KernelCase):
         self.assertEqual(second["checkpoint"]["next_unit_ordinal"], None)
         self.assertEqual(second["checkpoint"]["units_complete"], [1, 2])
         self.assertTrue(second["checkpoint"]["units_complete_all"])
-        self.assertEqual(len(self.stored_lessons(flow["plan_id"])), 6)
+        self.assertEqual(len(self.stored_lessons(flow["plan_id"])), 8)
 
         # A plan whose every unit is authored is an honest no-op, not a failure or a fake pass.
         third_id = self.ok(
@@ -688,7 +692,7 @@ class LearnerBlueprintLessonPathTest(KernelCase):
         self.assertEqual(no_calls.requests, [], "a complete course must spend nothing")
         self.assertTrue(third["checkpoint"]["units_complete_all"])
         self.assertEqual(third["checkpoint"]["units_complete"], [1, 2])
-        self.assertEqual(int(self.scalar("SELECT COUNT(*) FROM gen_lessons")), 6)
+        self.assertEqual(int(self.scalar("SELECT COUNT(*) FROM gen_lessons")), 8)
 
     # ── retry: the failed unit resumes instead of skipping ahead ─────────────
     def test_a_timed_out_lesson_stage_resumes_the_same_unit_on_retry(self) -> None:
@@ -707,7 +711,7 @@ class LearnerBlueprintLessonPathTest(KernelCase):
         self.assertEqual(failed["state"], "failed")
         self.assertEqual(failed["checkpoint"]["unit_ordinal"], 1)
         self.assertEqual(len(self.stored_lessons(flow["plan_id"])), 1, "the first lesson is durable")
-        self.assertEqual(int(self.scalar("SELECT COUNT(*) FROM gen_plan_sections")), 3)
+        self.assertEqual(int(self.scalar("SELECT COUNT(*) FROM gen_plan_sections")), 4)
 
         retry_llm = self.path_llm(plan, [1])
         retry_id = self.ok(
@@ -720,8 +724,8 @@ class LearnerBlueprintLessonPathTest(KernelCase):
         self.assertEqual(retried["state"], "completed", retried.get("error"))
         # The retry resumed unit 1, not unit 2, and re-authored only the two missing lessons.
         self.assertEqual(retried["checkpoint"]["unit_ordinal"], 1)
-        self.assertEqual(retry_llm.calls_for("coursebook.lesson.generate"), 2)
-        self.assertEqual(len(self.stored_lessons(flow["plan_id"])), 3)
+        self.assertEqual(retry_llm.calls_for("coursebook.lesson.generate"), 3)
+        self.assertEqual(len(self.stored_lessons(flow["plan_id"])), 4)
 
     # ── no unit dimension: a pre-blueprint plan still authors every section ───
     def test_a_legacy_plan_without_units_keeps_the_one_stage_path(self) -> None:

@@ -229,8 +229,8 @@ class EveryOwnerParkedTest(ClosedOwnerCheckCase):
         self.assertEqual(stored["state"], "needs_review")
         reasons = json.loads(stored["rejection_reasons_json"])
         self.assertTrue(reasons and reasons[0].startswith("review section 4 presents a closed owner check"))
-        self.assertEqual(int(checks), 3, "a review authors no new check")
-        self.assertEqual(int(links), 4, "the review links the owner check it presents")
+        self.assertEqual(int(checks), 4, "a review authors its own variant check")
+        self.assertEqual(int(links), 4, "the review links the variant it authored")
         with self.assertRaises(gen.LessonNotAvailable):
             gen.learner_page(db.connect(), stored["id"])
 
@@ -266,12 +266,12 @@ class OneOwnerApprovedTest(ClosedOwnerCheckCase):
     def test_the_review_binds_the_open_owner_check_and_is_servable(self) -> None:
         result = self.run_lessons(self.lessons_llm())
         review = next(item for item in result["lessons"] if item["section_id"] == "sec_4")
-        self.assertEqual(review["check_id"], "chk_owner_1")
-        self.assertTrue(review["check_enabled"])
+        # S3: the review authors its own variant check; the owner check stays the scheduled one.
+        self.assertNotEqual(review["check_id"], "chk_owner_1")
+        self.assertFalse(review["check_enabled"])
         self.assertTrue(review["review_check_open"])
         self.assertNotIn("parked", review)
-        # The fixture run has no research, so a pass is `model_assessed`, never `validated`: the
-        # point under test is that an open owner check makes the review servable at all.
+        # The fixture run has no research, so a pass is `model_assessed`, never `validated`.
         self.assertEqual(review["state"], "model_assessed")
         with db.read() as connection:
             row = connection.execute(
@@ -328,17 +328,20 @@ class FullAuthoringPathTest(ClosedOwnerCheckCase):
 
 
 class NoOwnerLessonTest(ClosedOwnerCheckCase):
-    """A review that predates its owners is still a structural refusal, with an honest message."""
+    """A review that predates its owners is parked, never a failed unit (S4/S3)."""
 
     def test_a_review_with_no_owner_check_names_the_missing_owner_lessons(self) -> None:
         with db.read() as connection:
-            with self.assertRaises(gen.GenerationRejected) as caught:
-                gen._resolve_review_target(
-                    connection, self.plan_id, {"ordinal": 4, "objective_refs": [1, 2, 3]}
-                )
-        message = str(caught.exception)
-        self.assertIn("no owner lesson has authored a check", message)
-        self.assertIn("author the owner lessons", message)
+            target = gen._resolve_review_target(
+                connection, self.plan_id, {"ordinal": 4, "objective_refs": [1, 2, 3]}
+            )
+        self.assertIsNone(target["check_id"])
+        self.assertIsNone(target["check"])
+        self.assertFalse(target["check_open"])
+        self.assertEqual(target["unwritten_refs"], [1, 2, 3])
+        reason = gen._review_park_reason({"ordinal": 4}, target)
+        self.assertIn("owner lessons are not written yet", reason)
+        self.assertIn("[1, 2, 3]", reason)
 
     def test_a_section_scoped_review_names_the_missing_objectives(self) -> None:
         """An owner with no check at all is named in the park reason, not hidden.
