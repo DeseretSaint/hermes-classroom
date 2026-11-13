@@ -491,7 +491,7 @@
     "declared": {
       "full": {
         "objectives": [
-          12,
+          9,
           40
         ],
         "units": [
@@ -501,8 +501,8 @@
       },
       "short": {
         "objectives": [
-          3,
-          6
+          2,
+          10
         ],
         "units": [
           1,
@@ -1230,7 +1230,7 @@
       "request": {
         "objective_count_rule": [
           1,
-          6
+          10
         ],
         "prompt_version": "plan-prompt.v25",
         "schema_name": "coursebook_plan_v2",
@@ -1314,8 +1314,8 @@
         "units": 2,
         "usage": {
           "budget": {
-            "max_calls": 16,
-            "max_cost_usd": 0.75,
+            "max_calls": 20,
+            "max_cost_usd": 0.8,
             "source": "declared"
           },
           "by_purpose": {

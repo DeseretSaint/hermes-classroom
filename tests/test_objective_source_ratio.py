@@ -337,14 +337,15 @@ class CeilingFollowsTheResearchCellTest(unittest.TestCase):
         # ceiling becomes 32, so the 35-objective plan is refused on the cell's number.
         self._set_sources("full", "deep", 16)
         expectation = {**gen.SCOPE_EXPECTATIONS["full"], "scope": "full"}
+        band_floor = int(expectation["blueprint_objectives"][0])
         ledger = self._ledger(20)
         floor, ceiling = gen._scope_objective_band(expectation, ledger)
-        self.assertEqual((floor, ceiling), (12, 32))
+        self.assertEqual((floor, ceiling), (band_floor, 32))
         plan = self._sourced_prefix(self._plan([5, 5, 5, 5, 5, 5, 5]), 20)
         with self.assertRaises(gen._RuleViolation) as caught:
             _rules(plan, ledger, "full")
         reasons = " ".join(caught.exception.reasons)
-        self.assertIn("requires 12 to 32 objective(s)", reasons)
+        self.assertIn(f"requires {band_floor} to 32 objective(s)", reasons)
 
 
 class PlanRequestStatesTheDerivedBandTest(unittest.TestCase):
@@ -362,11 +363,14 @@ class PlanRequestStatesTheDerivedBandTest(unittest.TestCase):
             scope="full",
         )
         self.assertIn("Produce 2 to 12 unit(s) and 5 to 40 objective(s)", request.instructions)
-        self.assertIn("The 'full' band is 12 to 40 objective(s)", request.instructions)
+        band_low, band_high = gen.SCOPE_EXPECTATIONS["full"]["blueprint_objectives"]
+        self.assertIn(
+            f"The 'full' band is {band_low} to {band_high} objective(s)", request.instructions
+        )
         self.assertIn("carry 5 distinct capabilities", request.instructions)
         payload = json.loads(request.input_text)
         self.assertEqual(payload["rules"]["objective_count"], [5, 40])
-        self.assertEqual(payload["rules"]["objective_band"], [12, 40])
+        self.assertEqual(payload["rules"]["objective_band"], [band_low, band_high])
 
 
 class TheBandInvariantTest(unittest.TestCase):

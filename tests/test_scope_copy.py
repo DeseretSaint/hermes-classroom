@@ -80,10 +80,14 @@ class ScopeCopyInTheRenderedPromptsTest(unittest.TestCase):
         self.assertEqual(request.prompt_version, gen.PLAN_PROMPT_VERSION_V2)
         text = request.instructions
         self.assertIn("Scope: full", text)
-        # E2E S6: the number the prompt asks for is the one the gate enforces. For ``full`` that is
-        # still 12 to 40 because ``effective_depth`` raises every full course to ``deep``, and the
-        # deep cell now fetches the 20 sources a 40-objective ceiling needs.
-        self.assertIn("Produce 2 to 12 unit(s) and 12 to 40 objective(s)", text)
+        expectation = gen.SCOPE_EXPECTATIONS["full"]
+        unit_low, unit_high = expectation["blueprint_units"]
+        band_low, band_high = expectation["blueprint_objectives"]
+        self.assertIn(
+            f"Produce {unit_low} to {unit_high} unit(s) and "
+            f"{band_low} to {band_high} objective(s)",
+            text,
+        )
         self.assertNotIn(self.STALE, text)
         self.assertNotIn(self.STALE, gen.SCOPE_EXPECTATIONS["full"]["note"])
 

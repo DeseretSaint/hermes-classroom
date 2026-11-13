@@ -12,8 +12,8 @@
  * one-line consequence, and the two numbers that are actually enforced:
  *
  *   sections  `coursebook/generation.py` authors one section per blueprint objective, so the
- *             section band is `SCOPE_EXPECTATIONS[key]["blueprint_objectives"]`: (1,1), (3,6),
- *             (12,40). `tests/test_desktop_create_flow` re-reads that Python table and refuses
+ *             section band is `SCOPE_EXPECTATIONS[key]["blueprint_objectives"]`: (1,1), (2,10),
+ *             (9,40). `tests/test_desktop_create_flow` re-reads that Python table and refuses
  *             drift, so this is a checked copy rather than a second authority.
  *   trail     how many stops the card's schematic draws. It is the band's floor, capped at six so
  *             the miniature stays a trail; `full` carries a dashed tail because its band is open.
@@ -32,14 +32,14 @@ const COURSE_SCOPES = [
   {
     id: 'short',
     label: 'Short course',
-    sections: [3, 6],
+    sections: [2, 10],
     trail: 3,
     consequence: 'A few stops that build on each other, each with its own check.'
   },
   {
     id: 'full',
     label: 'Full course',
-    sections: [12, 40],
+    sections: [9, 40],
     trail: 6,
     consequence: 'A long trail split into units, planned in full before a lesson is written.'
   }

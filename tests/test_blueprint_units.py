@@ -60,7 +60,10 @@ class PlanSchemaV2RulesTest(unittest.TestCase):
             ("short", 4, 1, False),
             ("full", 2, 6, True),
             ("full", 1, 12, False),
-            ("full", 2, 5, False),
+            ("full", 2, 4, False),
+            # G5: 10 objectives is a legal short course as well as a legal full one.
+            ("short", 2, 5, True),
+            ("full", 2, 5, True),
         ]
         for scope, units, per_unit, accepted in cases:
             with self.subTest(scope=scope, units=units, per_unit=per_unit):
@@ -124,7 +127,7 @@ class ScopeSectionCapTest(unittest.TestCase):
         with self.assertRaises(gen._RuleViolation) as caught:
             _plan_rules(plan, scope="short")
         reasons = " ".join(caught.exception.reasons)
-        self.assertIn("caps the plan at 8 section(s)", reasons)
+        self.assertIn("caps the plan at 12 section(s)", reasons)
         self.assertIn("it carries 24", reasons)
 
     def test_a_short_plan_inside_the_section_cap_passes(self) -> None:
@@ -147,9 +150,10 @@ class ScopeSectionCapTest(unittest.TestCase):
             scope: gen._section_caps({**gen.SCOPE_EXPECTATIONS[scope], "scope": scope})
             for scope in ("single", "short", "full")
         }
-        # docs/COURSE-BLUEPRINT.md §1: single 1, short 3-8, full 12-48 authored sections.
+        # docs/COURSE-BLUEPRINT.md §1 as amended by G5: single 1, short 2-12, full 9-48 authored
+        # sections. Every count from 1 to 48 now has a scope; 9-11 was the hole the old table left.
         self.assertEqual(caps["single"], (1, 1))
-        self.assertEqual(caps["short"], (8, 8))
+        self.assertEqual(caps["short"], (8, 12))
         self.assertEqual(caps["full"], (8, 48))
 
 

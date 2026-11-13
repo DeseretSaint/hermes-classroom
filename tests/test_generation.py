@@ -3439,8 +3439,9 @@ class ObjectiveFloorTest(unittest.TestCase):
         self.assertIn("does not appear", " ".join(caught.exception.reasons))
 
     def test_short_scope_prompt_states_the_split_without_lowering_the_floor(self) -> None:
-        # The rule lives with the never-pad rule, so both plan prompts carry it. The floor itself
-        # is unchanged: 3 to 6 objectives for a short plan.
+        # The rule lives with the never-pad rule, so both plan prompts carry it. The band was
+        # widened by G5 (2 to 10, contiguous with single and overlapping full); the never-pad rule
+        # is what keeps the floor honest at any width.
         prompts = [
             gen._plan_instructions(
                 recipe="casual", dials={}, locale=None, research_status="ok", scope="short"
@@ -3458,8 +3459,8 @@ class ObjectiveFloorTest(unittest.TestCase):
             # with the one prefix the gate matches.
             self.assertIn("Two is the limit", prompt)
             self.assertIn(gen.SHORTFALL_PREFIX, prompt)
-        self.assertIn("and 3 to 6 objective(s)", prompts[1])
-        self.assertEqual(gen.SCOPE_EXPECTATIONS["short"]["blueprint_objectives"], (3, 6))
+        self.assertIn("and 2 to 10 objective(s)", prompts[1])
+        self.assertEqual(gen.SCOPE_EXPECTATIONS["short"]["blueprint_objectives"], (2, 10))
 
 
 class ObjectiveFloorPipelineTest(GenerationTestBase):

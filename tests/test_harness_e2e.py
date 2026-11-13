@@ -179,7 +179,7 @@ class ScopeBoundsContractTest(unittest.TestCase):
         self.assertEqual(tuple(declared["contract_scopes"]), ("single", "short", "full"))
         self.assertEqual(declared["schema_objectives"], (1, 40))
         self.assertEqual(declared["schema_units"], (1, 12))
-        self.assertEqual(declared["expectations"]["full"]["objectives"], (12, 40))
+        self.assertEqual(declared["expectations"]["full"]["objectives"], (9, 40))
         self.assertEqual(declared["expectations"]["single"]["objectives"], (1, 1))
 
     def test_an_out_of_band_full_plan_fails_the_assertion(self) -> None:

@@ -1321,7 +1321,7 @@
     "declared": {
       "full": {
         "objectives": [
-          12,
+          9,
           40
         ],
         "units": [
@@ -1331,8 +1331,8 @@
       },
       "short": {
         "objectives": [
-          3,
-          6
+          2,
+          10
         ],
         "units": [
           1,
