@@ -15206,6 +15206,70 @@ function AssistUsedFlag({ kind, children }) {
 }
 
 /**
+ * L7 — one award path for every lesson surface.
+ *
+ * `engagement.award` pays for one real committed attempt, so the surface that commits must not
+ * own the pricing and no surface may be the only one that pays. This hook is that one caller:
+ * the desk classroom's own check card and the shared `AttemptControls` (the reader, the Field
+ * player, the course page's section and the bound pane) all hand their graded result here, so a
+ * pass committed on the reading path pays exactly like a pass committed at the desk.
+ *
+ * The gate is the durable Game mode the surface already read from `world.read` (never the device
+ * preference and never the recipe alone) plus the backend advertising `engagement.award`. The
+ * backend re-checks both, so a surface that is wrong here is refused rather than paid.
+ *
+ * Idempotency is doubled: the envelope key names this attempt, and the backend owns one
+ * `(enrollment_id, action_kind, action_id)` row, so a re-render, a Retry grading on the same
+ * nonce, or a double click that lands twice cannot pay twice. A typed refusal, a zero-point
+ * answer or an already-awarded replay is silence: no sentence and no animation. Only a real
+ * award paints — and it paints the backend's own `points` and `basis`, never a local price.
+ */
+function useCheckAward({ courseId, enrollmentId, gameMode, implemented, reloadEngagement }) {
+  const [award, setAward] = useState(null)
+  const resetAward = useCallback(() => setAward(null), [])
+  const awardCheck = useCallback(
+    (graded) => {
+      if (!graded || graded.verdict !== 'pass' || !graded.attempt_id) return
+      if (!gameMode || !courseId || !enrollmentId) return
+      // Support is read when the attempt commits, not when the card rendered: a probe that lands
+      // after the first paint must still let a real pass pay.
+      const supported = Boolean(
+        implemented && typeof implemented.has === 'function' && implemented.has('engagement.award')
+      )
+      if (!supported) return
+      rpc(
+        'engagement.award',
+        {
+          course_id: courseId,
+          enrollment_id: enrollmentId,
+          action_kind: 'check_submitted',
+          action_id: String(graded.attempt_id)
+        },
+        { idempotencyKey: `cb-award-${enrollmentId}-${graded.attempt_id}` }
+      )
+        .then((response) => {
+          if (!response || !response.ok) return
+          const result = response.result || {}
+          if (result.awarded !== true) return
+          const points = Number(result.points)
+          if (!Number.isFinite(points) || points <= 0) return
+          setAward({
+            points,
+            basis:
+              typeof result.basis === 'string' && result.basis.trim() ? result.basis.trim() : null
+          })
+          if (reloadEngagement) reloadEngagement()
+        })
+        .catch(() => {
+          // A failed award is not the learner's verdict: it never replaces the graded feedback.
+        })
+    },
+    [gameMode, courseId, enrollmentId, implemented, reloadEngagement]
+  )
+  return { award, resetAward, awardCheck }
+}
+
+/**
  * One attempt, started and finished in the pane or on the lesson page.
  *
  * Idempotency is enrollment + check + a per-view nonce: retrying a failed grade re-sends the SAME
@@ -15221,6 +15285,10 @@ function AttemptControls({
   implemented,
   bindingState,
   onCommitted,
+  // L7: the course this check belongs to and whether that course is durably in Game mode. Both
+  // are the surface's own read; `null`/`false` means "unknown", and unknown never pays.
+  courseId = null,
+  gameMode = false,
   parentLed = false,
   stimulusStatus = null,
   stimulusError = null,
@@ -15264,6 +15332,10 @@ function AttemptControls({
   const assistGroupRef = useRef(null)
   const assistRecordedNow = useRef(false)
   const detached = Boolean(bindingState && bindingState !== 'active')
+  // L7: every surface that commits through this card pays through the one shared award hook.
+  // The hook owns the Game-mode gate, the backend-support gate, the attempt-keyed idempotency
+  // and the silence on refusal; this card only reports the graded attempt it already has.
+  const { awardCheck } = useCheckAward({ courseId, enrollmentId, gameMode, implemented })
 
   // What this card is asking for. A `verification` stimulus with declared items is a checklist and
   // is answered with the item ids; a practice stimulus is a bounded conversation and is never
@@ -15420,8 +15492,9 @@ function AttemptControls({
     setPhase(graded.verdict === 'needs_retry' ? 'needs_retry' : 'graded')
     cbPlayCheckCue(graded.verdict)
     if (graded.verdict === 'needs_retry') void resolveNeedsRetryLane(graded.attempt_id)
+    awardCheck(graded)
     if (onCommitted) onCommitted(graded)
-  }, [check, text, ticked, checklist, choiceMode, selectedChoice, enrollmentId, fenceRevision, onCommitted, resolveNeedsRetryLane])
+  }, [check, text, ticked, checklist, choiceMode, selectedChoice, enrollmentId, fenceRevision, onCommitted, resolveNeedsRetryLane, awardCheck])
 
   const retryGrading = useCallback(async () => {
     if (!check || !nonceRef.current) return
@@ -15452,8 +15525,9 @@ function AttemptControls({
     setPhase(response.result.verdict === 'needs_retry' ? 'needs_retry' : 'graded')
     cbPlayCheckCue(response.result.verdict)
     if (response.result.verdict === 'needs_retry') void resolveNeedsRetryLane(response.result.attempt_id)
+    awardCheck(response.result)
     if (onCommitted) onCommitted(response.result)
-  }, [check, text, ticked, checklist, choiceMode, selectedChoice, enrollmentId, fenceRevision, onCommitted, resolveNeedsRetryLane])
+  }, [check, text, ticked, checklist, choiceMode, selectedChoice, enrollmentId, fenceRevision, onCommitted, resolveNeedsRetryLane, awardCheck])
 
   const moveOn = useCallback(async () => {
     if (!check) return
@@ -18211,17 +18285,26 @@ function ClassroomV3Surface({
   const feedbackVisible =
     typeof cbGameFeedbackVisible === 'function' ? cbGameFeedbackVisible(homePrefs, engagement.data) : true
   const [revisionFloor, setRevisionFloor] = useState(0)
-  const [award, setAward] = useState(null)
   // CREATE-EXPERIENCE item 38: the last check's pass is the door to the ending, and the learner
   // opens it with the card's own primary — the verdict and its observation are the teaching beat,
   // so the ending may not erase them. `pass` is what the commit said; `ended` is the learner having
   // read it and closed the section.
   const [pass, setPass] = useState(null)
   const [ended, setEnded] = useState(false)
+  // L7: the desk classroom and every reading surface pay through one hook. It owns the Game-mode
+  // gate, the `engagement.award` support gate, the attempt-keyed idempotency and the silence on a
+  // typed refusal; this surface only paints the backend's own points/basis and re-reads the chip.
+  const { award, resetAward, awardCheck } = useCheckAward({
+    courseId,
+    enrollmentId,
+    gameMode: mode === 'game',
+    implemented: backendWire.implemented,
+    reloadEngagement: engagement.reload
+  })
   // A new section starts with no award line from the previous section.
   useEffect(() => {
-    setAward(null)
-  }, [objectiveId])
+    resetAward()
+  }, [objectiveId, resetAward])
   useEffect(() => {
     setPass(null)
     setEnded(false)
@@ -18241,48 +18324,6 @@ function ClassroomV3Surface({
     enabled: Boolean(objectiveId) && Boolean(page.data) && backendSupports('check.open'),
     implemented: backendWire.implemented
   })
-  const reloadEngagement = engagement.reload
-  // WIRE-9: one XP event per committed passing attempt. `check_submitted` is the contract's own
-  // action kind and `attempt_id` is the real committed row the backend prices — never a click, a
-  // page view or a check-in. Idempotency is doubled: this envelope key and the backend's own
-  // `(enrollment_id, action_kind, action_id)` row, so a re-render cannot pay twice. The award
-  // response's own `points` and (when present) `basis` are what the surface paints; nothing here
-  // computes XP, and the chip re-reads `engagement.read` so the total is the backend's too.
-  const awardCheck = useCallback(
-    (graded) => {
-      if (!graded || graded.verdict !== 'pass' || !graded.attempt_id) return
-      if (mode !== 'game' || !courseId || !enrollmentId) return
-      if (!backendSupports('engagement.award')) return
-      rpc(
-        'engagement.award',
-        {
-          course_id: courseId,
-          enrollment_id: enrollmentId,
-          action_kind: 'check_submitted',
-          action_id: String(graded.attempt_id)
-        },
-        { idempotencyKey: `cb-award-${enrollmentId}-${graded.attempt_id}` }
-      )
-        .then((response) => {
-          // Rule from the owner: a typed refusal (no real action) or an already-awarded replay
-          // is silence — no sentence and no animation. Only a real award paints the backend's own
-          // points, plus its own basis sentence when it supplies one.
-          if (!response || !response.ok) return
-          const result = response.result || {}
-          if (result.awarded !== true) return
-          const points = Number(result.points)
-          if (!Number.isFinite(points) || points <= 0) return
-          setAward({
-            points,
-            basis:
-              typeof result.basis === 'string' && result.basis.trim() ? result.basis.trim() : null
-          })
-          if (reloadEngagement) reloadEngagement()
-        })
-        .catch(() => {})
-    },
-    [mode, courseId, enrollmentId, reloadEngagement]
-  )
   const sectionId = page.data && page.data.section ? page.data.section.objective_id : objectiveId
   const scene = classroomSceneFromWorld(world.data, sectionId, (row && row.title) || '')
   const lastSection = classroomLastSection(outline.data, page.data)
@@ -24282,7 +24323,11 @@ function SectionPage({
   // The Home settings sheet (H-147) owns the learner's default presentation mode (Game / Guided /
   // Textbook, docs/EXPERIENCE-QUALITY-BAR.md §7.2) and passes it here. H-149 makes the player the
   // default surface; a preference naming a view this document cannot render falls back to it.
-  defaultLessonView = 'player'
+  defaultLessonView = 'player',
+  // L7: whether this course is durably in Game mode, read from `world.read` by the host that owns
+  // the course (Course Detail). It is the only thing that turns a passing commit into a paid award;
+  // a reading surface paints no play chrome, so `SectionPage` stays free of it either way.
+  gameMode = false
 }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const section = page && page.section
@@ -24375,6 +24420,10 @@ function SectionPage({
           implemented,
           bindingState: runtime ? runtime.binding_status : 'detached',
           parentLed,
+          // L7: the reading path pays through the same award path as the desk. `gameMode` is the
+          // durable course mode its host read from `world.read`; unknown (`false`) never pays.
+          courseId: row.course_id || null,
+          gameMode,
           stimulusStatus: check.stimulusStatus,
           stimulusError: check.stimulusError,
           onRetryStimulus: check.reload,
@@ -24398,6 +24447,9 @@ function SectionPage({
           implemented,
           bindingState: runtime ? runtime.binding_status : 'detached',
           parentLed,
+          // L7: the Field player is the same commit path as the reader, so it pays identically.
+          courseId: row.course_id || null,
+          gameMode,
           stimulusStatus: check.stimulusStatus,
           stimulusError: check.stimulusError,
           onRetryStimulus: check.reload,
@@ -27340,7 +27392,7 @@ function TextbookIndexDetails({ rows }) {
 }
 
 /** Textbook — a scannable section list, not one endless thread. */
-function TextbookView({ row, page, pageState, review, notebooks, outline, planStatus, jobs, implemented, defaultLessonView, openSectionId, onOpenSection, onCloseSection, onChanged, onOpenPlan, onRetryLessonsJob, targetBlockId }) {
+function TextbookView({ row, page, pageState, review, notebooks, outline, planStatus, jobs, implemented, defaultLessonView, openSectionId, onOpenSection, onCloseSection, onChanged, onOpenPlan, onRetryLessonsJob, targetBlockId, gameMode = false }) {
   const rows = sectionRows({ row, review, notebooks, outline, page })
   const hasOutline = Boolean(outline && Array.isArray(outline.objectives))
   const objectives = hasOutline ? outline.objectives.filter(Boolean) : []
@@ -27398,7 +27450,10 @@ function TextbookView({ row, page, pageState, review, notebooks, outline, planSt
       onChanged,
       targetBlockId: targetBlockId || null,
       // Inside Course Detail the page hero owns the primary; the embedded section does not repeat it.
-      embedded: true
+      embedded: true,
+      // L7: the course page commits through the same check card as the reader, so it needs the
+      // same Game gate to pay.
+      gameMode
     })
   }
 
@@ -30830,7 +30885,9 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
       onChanged: refresh,
       onOpenPlan: () => selectView('plan'),
       onRetryLessonsJob: retryLessonsJob,
-      targetBlockId
+      targetBlockId,
+      // L7: a pass committed inside a section pays when the course itself is in Game mode.
+      gameMode: courseGame
     })
   } else if (view === 'notebook') {
     body = notebooks.status === 'error' && !notebooks.data
@@ -31371,6 +31428,11 @@ function LessonPaneBody({ binding, storedId }) {
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
   const [overrideOpen, setOverrideOpen] = useState(false)
+  // L7: the pane's check card is the same commit path as the reader, so it needs the same Game
+  // gate to pay. The mode is the durable `world.read` answer, never the device preference; a
+  // failed or unsupported read is "not known" and pays nothing.
+  const world = useWorldRead(row ? row.course_id : null, Boolean(row && row.course_id))
+  const courseGame = cbGameCourse(row, world.data ? world.data.presentation_mode : null)
 
   const revision = page.data ? page.data.revision : row ? row.revision : 0
   const check = useOpenCheck({
@@ -31522,6 +31584,9 @@ function LessonPaneBody({ binding, storedId }) {
                 revision,
                 implemented: backendWire.implemented,
                 bindingState: bindingStatus,
+                // L7: a pass committed in the bound pane pays on the same terms as the reader.
+                courseId: row ? row.course_id || null : null,
+                gameMode: courseGame,
                 parentLed: Boolean(row && row.recipe === 'parent'),
                 stimulusStatus: check.stimulusStatus,
                 stimulusError: check.stimulusError,

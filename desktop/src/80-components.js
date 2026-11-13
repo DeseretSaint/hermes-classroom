@@ -4575,7 +4575,11 @@ function SectionPage({
   // The Home settings sheet (H-147) owns the learner's default presentation mode (Game / Guided /
   // Textbook, docs/EXPERIENCE-QUALITY-BAR.md §7.2) and passes it here. H-149 makes the player the
   // default surface; a preference naming a view this document cannot render falls back to it.
-  defaultLessonView = 'player'
+  defaultLessonView = 'player',
+  // L7: whether this course is durably in Game mode, read from `world.read` by the host that owns
+  // the course (Course Detail). It is the only thing that turns a passing commit into a paid award;
+  // a reading surface paints no play chrome, so `SectionPage` stays free of it either way.
+  gameMode = false
 }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const section = page && page.section
@@ -4668,6 +4672,10 @@ function SectionPage({
           implemented,
           bindingState: runtime ? runtime.binding_status : 'detached',
           parentLed,
+          // L7: the reading path pays through the same award path as the desk. `gameMode` is the
+          // durable course mode its host read from `world.read`; unknown (`false`) never pays.
+          courseId: row.course_id || null,
+          gameMode,
           stimulusStatus: check.stimulusStatus,
           stimulusError: check.stimulusError,
           onRetryStimulus: check.reload,
@@ -4691,6 +4699,9 @@ function SectionPage({
           implemented,
           bindingState: runtime ? runtime.binding_status : 'detached',
           parentLed,
+          // L7: the Field player is the same commit path as the reader, so it pays identically.
+          courseId: row.course_id || null,
+          gameMode,
           stimulusStatus: check.stimulusStatus,
           stimulusError: check.stimulusError,
           onRetryStimulus: check.reload,

@@ -559,7 +559,7 @@ function TextbookIndexDetails({ rows }) {
 }
 
 /** Textbook — a scannable section list, not one endless thread. */
-function TextbookView({ row, page, pageState, review, notebooks, outline, planStatus, jobs, implemented, defaultLessonView, openSectionId, onOpenSection, onCloseSection, onChanged, onOpenPlan, onRetryLessonsJob, targetBlockId }) {
+function TextbookView({ row, page, pageState, review, notebooks, outline, planStatus, jobs, implemented, defaultLessonView, openSectionId, onOpenSection, onCloseSection, onChanged, onOpenPlan, onRetryLessonsJob, targetBlockId, gameMode = false }) {
   const rows = sectionRows({ row, review, notebooks, outline, page })
   const hasOutline = Boolean(outline && Array.isArray(outline.objectives))
   const objectives = hasOutline ? outline.objectives.filter(Boolean) : []
@@ -617,7 +617,10 @@ function TextbookView({ row, page, pageState, review, notebooks, outline, planSt
       onChanged,
       targetBlockId: targetBlockId || null,
       // Inside Course Detail the page hero owns the primary; the embedded section does not repeat it.
-      embedded: true
+      embedded: true,
+      // L7: the course page commits through the same check card as the reader, so it needs the
+      // same Game gate to pay.
+      gameMode
     })
   }
 
@@ -4049,7 +4052,9 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
       onChanged: refresh,
       onOpenPlan: () => selectView('plan'),
       onRetryLessonsJob: retryLessonsJob,
-      targetBlockId
+      targetBlockId,
+      // L7: a pass committed inside a section pays when the course itself is in Game mode.
+      gameMode: courseGame
     })
   } else if (view === 'notebook') {
     body = notebooks.status === 'error' && !notebooks.data
@@ -4590,6 +4595,11 @@ function LessonPaneBody({ binding, storedId }) {
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
   const [overrideOpen, setOverrideOpen] = useState(false)
+  // L7: the pane's check card is the same commit path as the reader, so it needs the same Game
+  // gate to pay. The mode is the durable `world.read` answer, never the device preference; a
+  // failed or unsupported read is "not known" and pays nothing.
+  const world = useWorldRead(row ? row.course_id : null, Boolean(row && row.course_id))
+  const courseGame = cbGameCourse(row, world.data ? world.data.presentation_mode : null)
 
   const revision = page.data ? page.data.revision : row ? row.revision : 0
   const check = useOpenCheck({
@@ -4741,6 +4751,9 @@ function LessonPaneBody({ binding, storedId }) {
                 revision,
                 implemented: backendWire.implemented,
                 bindingState: bindingStatus,
+                // L7: a pass committed in the bound pane pays on the same terms as the reader.
+                courseId: row ? row.course_id || null : null,
+                gameMode: courseGame,
                 parentLed: Boolean(row && row.recipe === 'parent'),
                 stimulusStatus: check.stimulusStatus,
                 stimulusError: check.stimulusError,
