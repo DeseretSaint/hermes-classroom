@@ -357,34 +357,6 @@ const CREATE_RESULT_COPY = {
   details: 'Technical detail'
 }
 
-/** A price the backend sent, printed verbatim. The UI never computes a price of its own. */
-function planMoney(value) {
-  return `$${Number(value || 0).toFixed(2)}`
-}
-
-/**
- * The price the queued job reported, rendered exactly where the regenerate door renders its own.
- * The numbers come from the command result; when the contract returns none, this line does not
- * exist and the caller says plainly that no price has arrived yet.
- *
- * U8: the learner reads a price, not the pipeline's own count of model calls — that count is
- * neither theirs to act on nor something this screen can explain in their words.
- */
-function CreatePriceEstimateLine({ estimate }) {
-  if (!estimate) return null
-  return jsx(
-    'div',
-    {
-      className: 'text-xs text-(--ui-text-secondary)',
-      'data-cb-create-price-estimate': String(estimate.minimum_cost_usd),
-      children:
-        `Estimated price: ${planMoney(estimate.minimum_cost_usd)}–` +
-        `${planMoney(estimate.maximum_cost_usd)}`
-    },
-    'create-price-estimate'
-  )
-}
-
 /** Dials are chosen as enum ids; the review panel shows the label the learner actually picked. */
 function dialLabel(dial, value) {
   const options = (DIALS[dial] && DIALS[dial].options) || []
@@ -492,12 +464,7 @@ async function startLearnerPlan({ call, key, title, goal, outcome, recipe, dials
     planId,
     enrollmentId,
     jobId: job.result.job_id,
-    jobState: job.result.state,
-    // The backend's own price when this contract returns one with the queued job. It is carried
-    // verbatim, never recomputed here; absent means the screen states that no price has been
-    // returned yet, not that the course is free. The command result's field is read here and only
-    // here, under the contract's own name, so the rest of this file can speak about a price.
-    priceEstimate: (job.result && job.result.preflight) || null
+    jobState: job.result.state
   }
 }
 
@@ -840,7 +807,9 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
           className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
           children: CREATE_RESULT_COPY.body
         }, 'body'),
-        jsx(CreatePriceEstimateLine, { estimate: result.priceEstimate }, 'price-estimate'),
+        // No price line: a plan job's create result carries `{job_id, state}` only — the contract
+        // prices a lesson job, not this one — so this screen shows nothing rather than promising
+        // a figure the next screen cannot supply.
         jsxs('details', {
           'data-cb-create-receipt': '',
           className: 'text-xs text-(--ui-text-secondary)',
@@ -1562,14 +1531,14 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
               jsx('p', {
                 'data-cb-create-price-waiting': scopeSectionBand(scope) || 'unknown',
                 className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
-                // U8: the learner is told what happens and when they see a price, in their own
-                // terms. The sizing rule survives ("once we know how big the course is"); the
-                // pipeline vocabulary that carried it does not — none of it is something the
-                // learner can act on here.
+                // U8: the learner is told what happens before they press Create, in their own
+                // terms. No promise of a price appears here, because the create flow shows none:
+                // the plan job's result carries no figure. The sizing rule survives as a plain
+                // statement of when a price would be worked out; the pipeline vocabulary that
+                // carried it does not — none of it is something the learner can act on here.
                 children:
                   `Creating this course writes ${scopeSectionBand(scope) || 'the sections the plan proposes'}. ` +
-                  'You see the price with the draft plan, once we know how big the course is — ' +
-                  'nothing is priced yet.'
+                  'Nothing is priced yet — we price it once we know how big the course is.'
               }, 'price-waiting'),
               jsx('div', {
                 className: 'text-xs leading-relaxed text-(--ui-text-secondary)',

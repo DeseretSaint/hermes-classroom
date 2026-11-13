@@ -455,11 +455,13 @@ class CreateFlowSequenceTest(unittest.TestCase):
         self.assertIn("data-cb-create-preview-shape", html)
 
     def test_the_review_step_prices_the_course_in_learner_words(self) -> None:
-        """E2E U8: what happens, and when a price appears — with no pipeline noun in the sentence.
+        """E2E U8: what happens, with no pipeline noun and no price promise the flow cannot keep.
 
-        The fact the old line carried that a learner needs (a price comes only once the course is
-        sized) survives in their own words; the words they cannot act on — a cost band, a call
-        band, a priced preflight, backend sizing, a "run" — are gone.
+        The fact the old line carried that a learner needs (a price is worked out only once the
+        course is sized) survives in their own words; the words they cannot act on — a cost band, a
+        call band, a priced preflight, backend sizing, a "run" — are gone. The create flow shows no
+        price at all (a plan job's result carries `{job_id, state}`), so the sentence must not
+        promise one the next screen never supplies.
         """
         html = self.run_case({"kind": "render", "step": 3})["html"]
         self.assertIn("data-cb-create-price-waiting", html)
@@ -468,10 +470,12 @@ class CreateFlowSequenceTest(unittest.TestCase):
         text = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", paragraph[: paragraph.index("</p>")]))
         self.assertIn("Creating this course writes 3–6 sections.", text)
         self.assertIn(
-            "You see the price with the draft plan, once we know how big the course is — "
-            "nothing is priced yet.",
+            "Nothing is priced yet — we price it once we know how big the course is.",
             text,
         )
+        # No promise of a visible price; the flow has none to show.
+        self.assertNotIn("You see the price", text)
+        self.assertNotIn("draft plan", text)
         for banned in ("band", "preflight", "backend", "routing", "run"):
             self.assertNotRegex(text, rf"\b{banned}\b")
         self.assertNotRegex(text, r"\$\d")

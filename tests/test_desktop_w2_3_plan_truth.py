@@ -4,10 +4,11 @@ CREATE-EXPERIENCE items 3, 4 and 5, driven through the shipped module:
 
 * a waiting plan render a ticking elapsed clock, the job's own `progress.stage` wording and the
   scope's honest band — and a job with no progress shows the band, never a percentage;
-* a queued job's price reaches `startLearnerPlan`'s returned outcome and renders on the result
-  screen as a plain "Estimated price" from backend numbers only;
+* a queued plan job returns only `{job_id, state}` (the contract sizes a price on the lessons
+  stage, not this one), so `startLearnerPlan` carries no price and the result screen renders none —
+  the flow never promises a figure it cannot show;
 * the create review step states how many sections are written before Create and says plainly that
-  a price appears once the course is sized (no invented dollar figure);
+  nothing is priced yet (no invented dollar figure, no promise of a price the flow never shows);
 * the learner surface gets **Adjust this plan** (title/evidence, remove, reorder) and **Ask for a
   change**, while **Approve plan** stays the single primary action. A saved learner edit sends the
   full ordered id list, is versioned, and the screen names the new plan version.
@@ -59,7 +60,7 @@ assert "export const Input = (props)" in STUB, "the SDK stub did not gain a real
 STATIC_HARNESS = r"""
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { CreatePriceEstimateLine, StudioPlanView, startLearnerPlan } from './plugin.js'
+import { StudioPlanView, startLearnerPlan } from './plugin.js'
 
 const fs = await import('node:fs')
 const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
@@ -131,15 +132,6 @@ out.unknownScope = renderToStaticMarkup(
   })
 )
 
-const preflight = {
-  minimum_cost_usd: 0.12,
-  maximum_cost_usd: 0.48,
-  minimum_calls: 3,
-  maximum_calls: 12
-}
-out.priceEstimateLine = renderToStaticMarkup(React.createElement(CreatePriceEstimateLine, { estimate: preflight }))
-out.priceEstimateAbsent = renderToStaticMarkup(React.createElement(CreatePriceEstimateLine, { estimate: null }))
-
 const DECISION = {
   title: 'Coffee in Kyoto',
   goal: 'Order coffee and ask for the bill in Kyoto, politely.',
@@ -156,7 +148,9 @@ const call = async (method, body, options = {}) => {
   if (method === 'course.create') return { ok: true, result: { course_id: 'course_1', plan_id: 'plan_draft_1' } }
   if (method === 'enrollment.create') return { ok: true, result: { enrollment_id: 'enr_1' } }
   if (method === 'jobs.create') {
-    return { ok: true, result: { job_id: 'job_plan_1', state: 'queued', preflight } }
+    // The real handler's answer for a plan-stage brief, cb.rpc v27: a queued job and nothing
+    // else. The contract sizes a price on the lessons stage, so there is no figure to carry.
+    return { ok: true, result: { job_id: 'job_plan_1', state: 'queued' } }
   }
   throw new Error(`unexpected method ${method}`)
 }
@@ -467,33 +461,31 @@ class PlanWaitTruth(unittest.TestCase):
         # A queued job's stage is the job's own state, in words.
         self.assertIn("Waiting to start", text)
 
-    # -- item 2: the price survives and renders -------------------------------------------------
-    def test_a_queued_job_price_survives_start_learner_plan(self) -> None:
+    # -- item 2: a plan job has no price, and the flow invents none ------------------------------
+    def test_a_plan_job_result_carries_no_price_and_the_flow_invents_none(self) -> None:
         outcome = self.out["outcome"]
         self.assertTrue(outcome["ok"], outcome)
-        self.assertEqual(
-            outcome["priceEstimate"],
-            {
-                "minimum_cost_usd": 0.12,
-                "maximum_cost_usd": 0.48,
-                "minimum_calls": 3,
-                "maximum_calls": 12,
-            },
-        )
+        self.assertNotIn("priceEstimate", outcome)
         self.assertEqual(
             [call["method"] for call in self.out["calls"]],
             ["course.create", "enrollment.create", "jobs.create"],
         )
+        # The flow asks for the plan stage, the stage the contract does not price — this is why
+        # no figure can exist here, not an accident of the stub.
+        job = next(call for call in self.out["calls"] if call["method"] == "jobs.create")
+        self.assertEqual(job["payload"]["brief"]["stage"], "plan")
 
-    def test_the_price_estimate_is_rendered_from_backend_numbers(self) -> None:
-        # E2E U8: the learner reads a price, not the pipeline's count of model calls.
-        text = visible_text(self.out["priceEstimateLine"])
-        self.assertIn("Estimated price:", text)
-        self.assertIn("$0.12–$0.48", text)
-        self.assertNotIn("Preflight", text)
-        self.assertNotIn("call", text.lower())
-        # Absent means absent: no invented dollar figure.
-        self.assertEqual(visible_text(self.out["priceEstimateAbsent"]), "")
+    def test_the_result_screen_renders_no_price_because_none_arrives(self) -> None:
+        # E2E U8: the create result shows what happened, never a price the next screen cannot
+        # supply. The read of the contract's price field and the component that printed it are gone.
+        source = SOURCE_50.read_text(encoding="utf-8")
+        for absent in (
+            "CreatePriceEstimateLine",
+            "priceEstimate",
+            "job.result.preflight",
+            "Estimated price",
+        ):
+            self.assertNotIn(absent, source)
 
     # -- item 3 (before Create): the review step prices it only once it is sized ---------------
     def test_the_review_step_names_the_sections_and_says_when_a_price_appears(self) -> None:
@@ -502,7 +494,9 @@ class PlanWaitTruth(unittest.TestCase):
         block = block[: block.index("planTimingCopy(scope)")]
         self.assertIn("scopeSectionBand(scope)", block)
         # E2E U8: the sizing rule survives in the learner's own words…
-        self.assertIn("once we know how big the course is", block)
+        self.assertIn("Nothing is priced yet — we price it once we know how big the course is.", block)
+        # …with no promise of a price the flow never shows…
+        self.assertNotIn("You see the price", block)
         # …and no pipeline noun reaches the learner.
         for banned in ("band", "preflight", "backend", "routing"):
             self.assertNotRegex(block, rf"\b{banned}\b")
