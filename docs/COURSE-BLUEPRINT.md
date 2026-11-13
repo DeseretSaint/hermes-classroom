@@ -229,7 +229,15 @@ reintroduce a number the pipeline ignores.
 Deterministic plan rules, replacing the current `enforce_plan_rules` body:
 
 1. Scope bounds hold: single has 1 unit and 1 objective; short has 1 to 3 units and 3 to 6
-   objectives; full has 2 to 12 units and 12 to 40 objectives.
+   objectives; full has 2 to 12 units and 12 to 40 objectives. Two of those numbers are derived
+   from the run rather than the band (E2E S5/S6, `docs/GENERATION.md`):
+   * the ceiling is `min(band ceiling, max_sources × OBJECTIVES_PER_SOURCE)` for the research cell
+     `research.effective_depth()` selects — every `sourced` objective needs its own verbatim quote,
+     so a cell can only source two objectives per source it may fetch;
+   * the floor is `min(band floor, distinct quotable capabilities)` whenever the ledger carries at
+     least one capability. A plan shorter than the band is accepted only when its `exclusions`
+     disclose the shortfall with the prefix `Scope shortfall — fewer supporting capabilities:`, and
+     one capability may carry at most two objectives (recognise, then unaided).
 2. Unit ordinals are contiguous; objective ordinals are contiguous; objective `unit_ref` and
    section `unit_ref` name existing units.
 3. Every unit has 2 to 6 objectives for full, 1 to 6 for short, exactly 1 for single.
