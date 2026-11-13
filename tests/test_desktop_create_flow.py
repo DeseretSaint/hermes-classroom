@@ -454,6 +454,28 @@ class CreateFlowSequenceTest(unittest.TestCase):
         self.assertIn("Create course", html)
         self.assertIn("data-cb-create-preview-shape", html)
 
+    def test_the_review_step_prices_the_course_in_learner_words(self) -> None:
+        """E2E U8: what happens, and when a price appears — with no pipeline noun in the sentence.
+
+        The fact the old line carried that a learner needs (a price comes only once the course is
+        sized) survives in their own words; the words they cannot act on — a cost band, a call
+        band, a priced preflight, backend sizing, a "run" — are gone.
+        """
+        html = self.run_case({"kind": "render", "step": 3})["html"]
+        self.assertIn("data-cb-create-price-waiting", html)
+        self.assertNotIn("data-cb-create-preflight-waiting", html)
+        paragraph = html[html.index("data-cb-create-price-waiting"):]
+        text = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", paragraph[: paragraph.index("</p>")]))
+        self.assertIn("Creating this course writes 3–6 sections.", text)
+        self.assertIn(
+            "You see the price with the draft plan, once we know how big the course is — "
+            "nothing is priced yet.",
+            text,
+        )
+        for banned in ("band", "preflight", "backend", "routing", "run"):
+            self.assertNotRegex(text, rf"\b{banned}\b")
+        self.assertNotRegex(text, r"\$\d")
+
     def test_the_name_is_optional_and_never_blocks_continue(self) -> None:
         source = _source()
         self.assertIn("children: 'Name (optional)'", source)

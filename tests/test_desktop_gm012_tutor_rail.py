@@ -42,7 +42,9 @@ import {
   cbTutorGlossary,
   cbTutorTurns,
   cbTutorLearnerTurnCount,
-  tutorRailLayout
+  tutorRailLayout,
+  skillDisplayName,
+  skillNoteCopy
 } from './plugin.js'
 
 const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
@@ -63,6 +65,15 @@ if (payload.kind === 'rail') {
   json(cbTutorLearnerTurnCount(payload.transcript || []))
 } else if (payload.kind === 'layout') {
   json(tutorRailLayout(payload.width))
+} else if (payload.kind === 'skill-note') {
+  json({
+    lesson: skillNoteCopy({ skill: 'coursebook:lesson-tutoring', reason: 'lesson_binding' }),
+    coach: skillNoteCopy({ skill: 'coursebook:learner-coach', reason: 'coursebook_chat_without_live_binding' }),
+    bare: skillNoteCopy({ skill: 'lesson_tutoring', reason: 'lesson_binding' }),
+    none: skillNoteCopy(null),
+    emptySkill: skillNoteCopy({ skill: '', reason: 'lesson_binding' }),
+    name: skillDisplayName('coursebook:lesson-tutoring')
+  })
 } else {
   throw new Error(`unknown case ${payload.kind}`)
 }
@@ -315,6 +326,44 @@ class TutorRailRenderTest(unittest.TestCase):
         pane = function_body(self.source, "function CoursebookPane(")
         self.assertIn("jsx(TutorRailPane, { binding: state.binding })", pane)
         self.assertNotIn("jsx(LessonPaneBody,", pane)
+
+    # -- E2E U8: the pane names the skill, and never prints its identifier --------------------
+    def test_the_skill_note_names_the_skill_and_never_prints_a_slug(self) -> None:
+        """The backend answers with `coursebook:lesson-tutoring`; a learner must not read that.
+
+        The two sentences are asserted literally, the anchored slug pattern the card names is
+        refused, and the pane is shown to render this function's answer rather than the id.
+        """
+        out = json.loads(self.run_case({"kind": "skill-note"}))
+        self.assertEqual(out["name"], "Lesson Tutoring")
+        self.assertEqual(
+            out["lesson"],
+            "Tutor: Lesson Tutoring — it reads this chat’s section from your next message on.",
+        )
+        self.assertEqual(
+            out["coach"],
+            "Coach: Learner Coach — no lesson is open for this chat, so it coaches in general terms.",
+        )
+        # The words after the last colon are title-cased, so an underscored id reads as words.
+        self.assertEqual(out["bare"], "Tutor: Lesson Tutoring — it reads this chat’s section from your next message on.")
+        # Nothing to say, nothing printed.
+        self.assertIsNone(out["none"])
+        self.assertIsNone(out["emptySkill"])
+        slug = re.compile(r"^[a-z0-9]+_[a-z0-9_]+$")
+        for key in ("lesson", "coach", "bare"):
+            text = out[key]
+            self.assertIsNone(slug.match(text), text)
+            self.assertNotIn("coursebook:", text)
+            self.assertNotIn("lesson-tutoring", text)
+            self.assertNotIn("learner-coach", text)
+        # No routing apology reaches the learner: the pane's status line names what may not work
+        # and the one action, not the connection plumbing.
+        pane = function_body(self.source, "function CoursebookPane(")
+        self.assertIn("children: skillNoteCopy(skillNote)", pane)
+        self.assertNotIn("skillNote.skill}`", pane)
+        self.assertIn("Reopen the pane", pane)
+        self.assertNotIn("Routing unavailable", pane)
+        self.assertNotIn("profile routes", pane)
 
     # -- practice ----------------------------------------------------------------------------
     def test_practice_mode_only_grades_learner_turns(self) -> None:

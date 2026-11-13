@@ -357,28 +357,31 @@ const CREATE_RESULT_COPY = {
   details: 'Technical detail'
 }
 
-/** A backend cost band, printed verbatim. The UI never computes a price of its own. */
+/** A price the backend sent, printed verbatim. The UI never computes a price of its own. */
 function planMoney(value) {
   return `$${Number(value || 0).toFixed(2)}`
 }
 
 /**
- * The queued job's preflight, rendered exactly where the regenerate door renders its own. The
- * numbers come from the command result; when the contract returns none, this line does not exist
- * and the caller says plainly that the exact preflight has not arrived.
+ * The price the queued job reported, rendered exactly where the regenerate door renders its own.
+ * The numbers come from the command result; when the contract returns none, this line does not
+ * exist and the caller says plainly that no price has arrived yet.
+ *
+ * U8: the learner reads a price, not the pipeline's own count of model calls — that count is
+ * neither theirs to act on nor something this screen can explain in their words.
  */
-function CreatePreflightLine({ preflight }) {
-  if (!preflight) return null
+function CreatePriceEstimateLine({ estimate }) {
+  if (!estimate) return null
   return jsx(
     'div',
     {
       className: 'text-xs text-(--ui-text-secondary)',
-      'data-cb-create-preflight': String(preflight.minimum_cost_usd),
+      'data-cb-create-price-estimate': String(estimate.minimum_cost_usd),
       children:
-        `Preflight: ${planMoney(preflight.minimum_cost_usd)}–${planMoney(preflight.maximum_cost_usd)} · ` +
-        `${preflight.minimum_calls}–${preflight.maximum_calls} call(s)`
+        `Estimated price: ${planMoney(estimate.minimum_cost_usd)}–` +
+        `${planMoney(estimate.maximum_cost_usd)}`
     },
-    'create-preflight'
+    'create-price-estimate'
   )
 }
 
@@ -490,10 +493,11 @@ async function startLearnerPlan({ call, key, title, goal, outcome, recipe, dials
     enrollmentId,
     jobId: job.result.job_id,
     jobState: job.result.state,
-    // The backend's own cost/call band when this contract returns one with the queued job. It is
-    // carried verbatim, never recomputed here; absent means the screen states that the exact
-    // preflight has not been returned, not that the run is free.
-    preflight: (job.result && job.result.preflight) || null
+    // The backend's own price when this contract returns one with the queued job. It is carried
+    // verbatim, never recomputed here; absent means the screen states that no price has been
+    // returned yet, not that the course is free. The command result's field is read here and only
+    // here, under the contract's own name, so the rest of this file can speak about a price.
+    priceEstimate: (job.result && job.result.preflight) || null
   }
 }
 
@@ -836,7 +840,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
           className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
           children: CREATE_RESULT_COPY.body
         }, 'body'),
-        jsx(CreatePreflightLine, { preflight: result.preflight }, 'preflight'),
+        jsx(CreatePriceEstimateLine, { estimate: result.priceEstimate }, 'price-estimate'),
         jsxs('details', {
           'data-cb-create-receipt': '',
           className: 'text-xs text-(--ui-text-secondary)',
@@ -1556,13 +1560,17 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                   'approve, and no lesson is written until you do.'
               }, 'facts'),
               jsx('p', {
-                'data-cb-create-preflight-waiting': scopeSectionBand(scope) || 'unknown',
+                'data-cb-create-price-waiting': scopeSectionBand(scope) || 'unknown',
                 className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+                // U8: the learner is told what happens and when they see a price, in their own
+                // terms. The sizing rule survives ("once we know how big the course is"); the
+                // pipeline vocabulary that carried it does not — none of it is something the
+                // learner can act on here.
                 children:
-                  `This run will author ${scopeSectionBand(scope) || 'the sections the plan proposes'}. ` +
-                  'The exact preflight — a cost band and a call band — arrives with the plan job; ' +
-                  'nothing here is priced before the backend has sized the run.'
-              }, 'preflight-waiting'),
+                  `Creating this course writes ${scopeSectionBand(scope) || 'the sections the plan proposes'}. ` +
+                  'You see the price with the draft plan, once we know how big the course is — ' +
+                  'nothing is priced yet.'
+              }, 'price-waiting'),
               jsx('div', {
                 className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                 children: planTimingCopy(scope)

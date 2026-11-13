@@ -1588,6 +1588,40 @@ function TutorRailPane({ binding }) {
   })
 }
 
+/**
+ * The human name of a skill the pane was told about.
+ *
+ * The backend answers with the registered id — `coursebook:lesson-tutoring` — which is an internal
+ * identifier, so it is never printed. The pane has no display-name table: a second copy of a name
+ * that already lives in the skill's own frontmatter would be one more thing to drift, and the
+ * bundle does not carry a label anywhere else. The words after the last `:` are title-cased
+ * instead, so `coursebook:lesson-tutoring` reads as "Lesson Tutoring" and an unregistered skill
+ * still reads as words rather than a slug.
+ */
+function skillDisplayName(skill) {
+  const raw = String(skill || '').trim()
+  if (!raw) return ''
+  const bare = raw.slice(raw.lastIndexOf(':') + 1)
+  return bare
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
+}
+
+/**
+ * The line the rail shows about the skill that will answer this chat. U8: it names the skill in
+ * human words and says what the learner gets, and says nothing about how the plugin chose it —
+ * that is infrastructure the learner cannot act on.
+ */
+function skillNoteCopy(note) {
+  const name = skillDisplayName(note && note.skill)
+  if (!name) return null
+  return note.reason === 'lesson_binding'
+    ? `Tutor: ${name} — it reads this chat’s section from your next message on.`
+    : `Coach: ${name} — no lesson is open for this chat, so it coaches in general terms.`
+}
+
 function CoursebookPane() {
   const { state, storedId, reload } = useSessionBinding()
   // The pane is part of the same scoped surface as the route: same token table, same mode, and
@@ -1737,22 +1771,20 @@ function CoursebookPane() {
             className: 'pb-2 text-xs text-(--ui-text-secondary)',
             role: 'status',
             'data-cb-routing': 'unavailable',
+            // U8: same fault, said to the learner rather than about the plumbing — what may not
+            // work, and the one action that fixes it. The marker stays for the state test.
             children:
-              'Routing unavailable: Coursebook could not read this window’s profile routes, so ' +
-              'requests go without a connection id. Reopen the pane or restart Desktop; on a ' +
-              'single-connection install nothing is lost.'
+              'Coursebook cannot see this window’s saved setup, so the tutor may not reach your ' +
+              'courses. Reopen the pane; if it still cannot, restart Desktop.'
           })
         : null,
       bindNote ? jsx('div', { className: 'pb-2 text-xs text-(--ui-text-secondary)', children: bindNote }) : null,
-      skillNote
+      skillNoteCopy(skillNote)
         ? jsx('div', {
             className: 'pb-2 text-xs text-(--ui-text-secondary)',
             'data-cb-skill': skillNote.skill,
             'data-cb-skill-reason': skillNote.reason || '',
-            children:
-              skillNote.reason === 'lesson_binding'
-                ? `Tutor skill: ${skillNote.skill} — loads on this chat's next message.`
-                : `Coach skill: ${skillNote.skill} — no live lesson run for this chat.`
+            children: skillNoteCopy(skillNote)
           })
         : null,
       body
@@ -2270,7 +2302,9 @@ export {
   questMissions,
   missionBriefLine,
   planJobBrief,
-  CreatePreflightLine,
+  CreatePriceEstimateLine,
+  skillDisplayName,
+  skillNoteCopy,
   plural,
   COURSE_PRIMARY_TABS,
   courseMoreTabs,

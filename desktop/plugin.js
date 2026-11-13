@@ -10109,28 +10109,31 @@ const CREATE_RESULT_COPY = {
   details: 'Technical detail'
 }
 
-/** A backend cost band, printed verbatim. The UI never computes a price of its own. */
+/** A price the backend sent, printed verbatim. The UI never computes a price of its own. */
 function planMoney(value) {
   return `$${Number(value || 0).toFixed(2)}`
 }
 
 /**
- * The queued job's preflight, rendered exactly where the regenerate door renders its own. The
- * numbers come from the command result; when the contract returns none, this line does not exist
- * and the caller says plainly that the exact preflight has not arrived.
+ * The price the queued job reported, rendered exactly where the regenerate door renders its own.
+ * The numbers come from the command result; when the contract returns none, this line does not
+ * exist and the caller says plainly that no price has arrived yet.
+ *
+ * U8: the learner reads a price, not the pipeline's own count of model calls — that count is
+ * neither theirs to act on nor something this screen can explain in their words.
  */
-function CreatePreflightLine({ preflight }) {
-  if (!preflight) return null
+function CreatePriceEstimateLine({ estimate }) {
+  if (!estimate) return null
   return jsx(
     'div',
     {
       className: 'text-xs text-(--ui-text-secondary)',
-      'data-cb-create-preflight': String(preflight.minimum_cost_usd),
+      'data-cb-create-price-estimate': String(estimate.minimum_cost_usd),
       children:
-        `Preflight: ${planMoney(preflight.minimum_cost_usd)}–${planMoney(preflight.maximum_cost_usd)} · ` +
-        `${preflight.minimum_calls}–${preflight.maximum_calls} call(s)`
+        `Estimated price: ${planMoney(estimate.minimum_cost_usd)}–` +
+        `${planMoney(estimate.maximum_cost_usd)}`
     },
-    'create-preflight'
+    'create-price-estimate'
   )
 }
 
@@ -10242,10 +10245,11 @@ async function startLearnerPlan({ call, key, title, goal, outcome, recipe, dials
     enrollmentId,
     jobId: job.result.job_id,
     jobState: job.result.state,
-    // The backend's own cost/call band when this contract returns one with the queued job. It is
-    // carried verbatim, never recomputed here; absent means the screen states that the exact
-    // preflight has not been returned, not that the run is free.
-    preflight: (job.result && job.result.preflight) || null
+    // The backend's own price when this contract returns one with the queued job. It is carried
+    // verbatim, never recomputed here; absent means the screen states that no price has been
+    // returned yet, not that the course is free. The command result's field is read here and only
+    // here, under the contract's own name, so the rest of this file can speak about a price.
+    priceEstimate: (job.result && job.result.preflight) || null
   }
 }
 
@@ -10588,7 +10592,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
           className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
           children: CREATE_RESULT_COPY.body
         }, 'body'),
-        jsx(CreatePreflightLine, { preflight: result.preflight }, 'preflight'),
+        jsx(CreatePriceEstimateLine, { estimate: result.priceEstimate }, 'price-estimate'),
         jsxs('details', {
           'data-cb-create-receipt': '',
           className: 'text-xs text-(--ui-text-secondary)',
@@ -11308,13 +11312,17 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                   'approve, and no lesson is written until you do.'
               }, 'facts'),
               jsx('p', {
-                'data-cb-create-preflight-waiting': scopeSectionBand(scope) || 'unknown',
+                'data-cb-create-price-waiting': scopeSectionBand(scope) || 'unknown',
                 className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+                // U8: the learner is told what happens and when they see a price, in their own
+                // terms. The sizing rule survives ("once we know how big the course is"); the
+                // pipeline vocabulary that carried it does not — none of it is something the
+                // learner can act on here.
                 children:
-                  `This run will author ${scopeSectionBand(scope) || 'the sections the plan proposes'}. ` +
-                  'The exact preflight — a cost band and a call band — arrives with the plan job; ' +
-                  'nothing here is priced before the backend has sized the run.'
-              }, 'preflight-waiting'),
+                  `Creating this course writes ${scopeSectionBand(scope) || 'the sections the plan proposes'}. ` +
+                  'You see the price with the draft plan, once we know how big the course is — ' +
+                  'nothing is priced yet.'
+              }, 'price-waiting'),
               jsx('div', {
                 className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                 children: planTimingCopy(scope)
@@ -44918,6 +44926,40 @@ function TutorRailPane({ binding }) {
   })
 }
 
+/**
+ * The human name of a skill the pane was told about.
+ *
+ * The backend answers with the registered id — `coursebook:lesson-tutoring` — which is an internal
+ * identifier, so it is never printed. The pane has no display-name table: a second copy of a name
+ * that already lives in the skill's own frontmatter would be one more thing to drift, and the
+ * bundle does not carry a label anywhere else. The words after the last `:` are title-cased
+ * instead, so `coursebook:lesson-tutoring` reads as "Lesson Tutoring" and an unregistered skill
+ * still reads as words rather than a slug.
+ */
+function skillDisplayName(skill) {
+  const raw = String(skill || '').trim()
+  if (!raw) return ''
+  const bare = raw.slice(raw.lastIndexOf(':') + 1)
+  return bare
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
+}
+
+/**
+ * The line the rail shows about the skill that will answer this chat. U8: it names the skill in
+ * human words and says what the learner gets, and says nothing about how the plugin chose it —
+ * that is infrastructure the learner cannot act on.
+ */
+function skillNoteCopy(note) {
+  const name = skillDisplayName(note && note.skill)
+  if (!name) return null
+  return note.reason === 'lesson_binding'
+    ? `Tutor: ${name} — it reads this chat’s section from your next message on.`
+    : `Coach: ${name} — no lesson is open for this chat, so it coaches in general terms.`
+}
+
 function CoursebookPane() {
   const { state, storedId, reload } = useSessionBinding()
   // The pane is part of the same scoped surface as the route: same token table, same mode, and
@@ -45067,22 +45109,20 @@ function CoursebookPane() {
             className: 'pb-2 text-xs text-(--ui-text-secondary)',
             role: 'status',
             'data-cb-routing': 'unavailable',
+            // U8: same fault, said to the learner rather than about the plumbing — what may not
+            // work, and the one action that fixes it. The marker stays for the state test.
             children:
-              'Routing unavailable: Coursebook could not read this window’s profile routes, so ' +
-              'requests go without a connection id. Reopen the pane or restart Desktop; on a ' +
-              'single-connection install nothing is lost.'
+              'Coursebook cannot see this window’s saved setup, so the tutor may not reach your ' +
+              'courses. Reopen the pane; if it still cannot, restart Desktop.'
           })
         : null,
       bindNote ? jsx('div', { className: 'pb-2 text-xs text-(--ui-text-secondary)', children: bindNote }) : null,
-      skillNote
+      skillNoteCopy(skillNote)
         ? jsx('div', {
             className: 'pb-2 text-xs text-(--ui-text-secondary)',
             'data-cb-skill': skillNote.skill,
             'data-cb-skill-reason': skillNote.reason || '',
-            children:
-              skillNote.reason === 'lesson_binding'
-                ? `Tutor skill: ${skillNote.skill} — loads on this chat's next message.`
-                : `Coach skill: ${skillNote.skill} — no live lesson run for this chat.`
+            children: skillNoteCopy(skillNote)
           })
         : null,
       body
@@ -45600,7 +45640,9 @@ export {
   questMissions,
   missionBriefLine,
   planJobBrief,
-  CreatePreflightLine,
+  CreatePriceEstimateLine,
+  skillDisplayName,
+  skillNoteCopy,
   plural,
   COURSE_PRIMARY_TABS,
   courseMoreTabs,
