@@ -3833,83 +3833,134 @@ function HomeSceneCard({ slot, index, cover, onOpen }) {
   })
 }
 
-function HomeScene({ slots, canCreate, onStartCreate, onBrowseLibrary, onOpenCourse }) {
+/**
+ * E2E U9 — the measured box the wide Home scene is scaled into.
+ *
+ * The route width includes the route's own gutters, so the box the scene actually stands in can be
+ * narrower than `useCbViewportWidth()` reports. Measure the fit box itself; a render with no layout
+ * (jsdom, a static proof) leaves this at 0 and the caller falls back to the route width so the
+ * scale is still deterministic.
+ */
+function useHomeSceneFit() {
+  const ref = useRef(null)
+  const [width, setWidth] = useState(0)
+  useEffect(() => {
+    const node = ref.current
+    if (!node) return undefined
+    const read = () => {
+      if (!node.isConnected) return
+      const rect = node.getBoundingClientRect()
+      if (rect.width > 0) setWidth(Math.round(rect.width))
+    }
+    read()
+    if (typeof ResizeObserver !== 'function') return undefined
+    const observer = new ResizeObserver(read)
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+  return [ref, width]
+}
+
+function HomeScene({ slots, canCreate, onStartCreate, onBrowseLibrary, onOpenCourse, onShowAll, overflow }) {
   const wood = cb3ObjectSource('shelf-plank')
   const clock = cb3ObjectSource('clock')
   const tagObject = cb3ObjectSource('tag')
   const heroPlate = cb3KitSource('home-hero')
   const woodImage = wood ? { backgroundImage: `url(${wood})` } : undefined
   const coverPlan = homeCoverPlan(slots)
-  return jsxs('div', {
-    'data-cb-home': 'scene',
-    'data-cb-home-scene': '',
-    children: [
-      heroPlate
-        ? jsx('img', { 'data-cb-home-scene-backdrop': '', src: heroPlate, alt: '', 'aria-hidden': 'true' }, 'backdrop')
-        : null,
-      jsx('div', {
-        'data-cb-home-scene-hero': '',
-        children: jsxs('div', {
-          'data-cb-home-scene-panel': '',
-          children: [
-            jsx('h1', {
-              'data-cb-home-question': '',
-              'data-cb-home-scene-question': '',
-              children: CB_HOME_V3_COPY.title
-            }, 'question'),
-            jsx('p', { 'data-cb-home-scene-subline': '', children: CB_HOME_V3_COPY.sub }, 'subline'),
-            jsxs('div', {
-              'data-cb-home-scene-cta': '',
-              children: [
-                canCreate
-                  ? jsx('button', {
-                      type: 'button',
-                      'data-cb-home-scene-primary': '',
-                      onClick: onStartCreate,
-                      children: CB_HOME_V3_COPY.primary
-                    }, 'create')
-                  : null,
-                jsx('button', {
-                  type: 'button',
-                  'data-cb-home-scene-secondary': '',
-                  onClick: onBrowseLibrary,
-                  children: CB_HOME_V3_COPY.secondary
-                }, 'browse')
-              ]
-            }, 'cta')
-          ]
-        }, 'panel')
-      }, 'hero'),
-      jsx('div', {
-        'data-cb-home-scene-cards': '',
-        role: 'list',
-        'aria-label': CB_HOME_COPY.shelf,
-        children: slots.slice(0, 4).map((slot, index) =>
-          jsx(HomeSceneCard, { slot, index, cover: coverPlan[index], onOpen: onOpenCourse }, (slot && slot.course_id) || `scene-${index}`)
-        )
-      }, 'cards'),
-      jsx('div', {
-        'data-cb-home-scene-plank-one': '',
-        'aria-hidden': 'true',
-        style: woodImage,
-        children: jsx('i', {})
-      }, 'plank-one'),
-      jsx('div', {
-        'data-cb-home-scene-tag': '',
-        style: tagObject ? { backgroundImage: `url(${tagObject})` } : undefined,
-        children: CB_HOME_V3_COPY.tagNew
-      }, 'tag'),
-      clock
-        ? jsx('img', { 'data-cb-home-scene-clock': '', src: clock, alt: '', 'aria-hidden': 'true' }, 'clock')
-        : null,
-      jsx('div', { 'data-cb-home-scene-fox': '', children: jsx(FoxPose, { pose: 'clock', size: CB_HOME_SCENE.fox.size }, 'fox') }, 'fox-wrap'),
-      jsx('div', {
-        'data-cb-home-scene-plank-two': '',
-        'aria-hidden': 'true',
-        style: woodImage,
-        children: jsx('i', {})
-      }, 'plank-two')
-    ]
+  // E2E U9: the authored frame is 1344x768 and the scene is chosen from 1200 px up, so a narrower
+  // room scales the whole plate instead of cropping the fox and the ledge off its right edge.
+  const routeWidth = useCbViewportWidth()
+  const [fitRef, fitWidth] = useHomeSceneFit()
+  const stageWidth = fitWidth > 0 ? fitWidth : routeWidth
+  const scale = stageWidth > 0 ? Math.min(1, stageWidth / CB_HOME_SCENE.canvas.width) : 1
+  return jsx('div', {
+    'data-cb-home-scene-fit': '',
+    'data-cb-home-scene-scale': String(Math.round(scale * 10000) / 10000),
+    ref: fitRef,
+    style: { height: `${Math.round(CB_HOME_SCENE.canvas.height * scale)}px` },
+    children: jsxs('div', {
+      'data-cb-home': 'scene',
+      'data-cb-home-scene': '',
+      style: { '--cb-home-scene-scale': String(scale) },
+      children: [
+        heroPlate
+          ? jsx('img', { 'data-cb-home-scene-backdrop': '', src: heroPlate, alt: '', 'aria-hidden': 'true' }, 'backdrop')
+          : null,
+        jsx('div', {
+          'data-cb-home-scene-hero': '',
+          children: jsxs('div', {
+            'data-cb-home-scene-panel': '',
+            children: [
+              jsx('h1', {
+                'data-cb-home-question': '',
+                'data-cb-home-scene-question': '',
+                children: CB_HOME_V3_COPY.title
+              }, 'question'),
+              jsx('p', { 'data-cb-home-scene-subline': '', children: CB_HOME_V3_COPY.sub }, 'subline'),
+              jsxs('div', {
+                'data-cb-home-scene-cta': '',
+                children: [
+                  canCreate
+                    ? jsx('button', {
+                        type: 'button',
+                        'data-cb-home-scene-primary': '',
+                        onClick: onStartCreate,
+                        children: CB_HOME_V3_COPY.primary
+                      }, 'create')
+                    : null,
+                  jsx('button', {
+                    type: 'button',
+                    'data-cb-home-scene-secondary': '',
+                    onClick: onBrowseLibrary,
+                    children: CB_HOME_V3_COPY.secondary
+                  }, 'browse')
+                ]
+              }, 'cta')
+            ]
+          }, 'panel')
+        }, 'hero'),
+        jsx('div', {
+          'data-cb-home-scene-cards': '',
+          role: 'list',
+          'aria-label': CB_HOME_COPY.shelf,
+          children: slots.slice(0, 4).map((slot, index) =>
+            jsx(HomeSceneCard, { slot, index, cover: coverPlan[index], onOpen: onOpenCourse }, (slot && slot.course_id) || `scene-${index}`)
+          )
+        }, 'cards'),
+        jsx('div', {
+          'data-cb-home-scene-plank-one': '',
+          'aria-hidden': 'true',
+          style: woodImage,
+          children: jsx('i', {})
+        }, 'plank-one'),
+        jsx('div', {
+          'data-cb-home-scene-tag': '',
+          style: tagObject ? { backgroundImage: `url(${tagObject})` } : undefined,
+          children: CB_HOME_V3_COPY.tagNew
+        }, 'tag'),
+        clock
+          ? jsx('img', { 'data-cb-home-scene-clock': '', src: clock, alt: '', 'aria-hidden': 'true' }, 'clock')
+          : null,
+        jsx('div', { 'data-cb-home-scene-fox': '', children: jsx(FoxPose, { pose: 'clock', size: CB_HOME_SCENE.fox.size }, 'fox') }, 'fox-wrap'),
+        jsx('div', {
+          'data-cb-home-scene-plank-two': '',
+          'aria-hidden': 'true',
+          style: woodImage,
+          children: jsx('i', {})
+        }, 'plank-two'),
+        // The shelf shows four cards; a fifth course is reached through this door, on the shelf's
+        // own right edge rather than through a cropped fifth card nobody can click.
+        overflow && onShowAll
+          ? jsx('button', {
+              type: 'button',
+              'data-cb-home-scene-see-all': '',
+              onClick: onShowAll,
+              children: CB_HOME_V3_COPY.seeAll
+            }, 'seeAll')
+          : null
+      ]
+    })
   })
 }
 
@@ -4375,7 +4426,9 @@ function CoursebookHome({
       canCreate,
       onStartCreate,
       onBrowseLibrary,
-      onOpenCourse
+      onOpenCourse,
+      onShowAll,
+      overflow
     }, 'scene')
   }
 
@@ -19196,15 +19249,31 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 /* CP-053 — the wide Home is a room: one canvas, a shelf of collectible cards, a lower ledge.
    Every position is a pixel on the binding reference frame (1344x768), so this block is authored
    geometry while the paint and type still come from the token contract. Nothing here may carry a
-   raw colour, a shadow outside the elevation tokens, or a font size outside the type scale. */
-[data-cb-v3] [data-cb-home-scene] {
+   raw colour, a shadow outside the elevation tokens, or a font size outside the type scale.
+
+   E2E U9 — the scene is selected from 1200 px of route width up, so between 1200 and 1344 the
+   authored frame is wider than the room it stands in. The stage therefore fits instead of clipping:
+   the fit box is measured and the scene is one plate scaled by the property the component sets on
+   that box. A fixed frame plus overflow hidden cut the fox's right half at 1250, so the scale is
+   the composition, not a crop. */
+[data-cb-v3] [data-cb-home-scene-fit] {
   position: relative;
   width: 100%;
+  max-width: 1344px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+[data-cb-v3] [data-cb-home-scene] {
+  position: relative;
+  width: 1344px;
   max-width: 1344px;
   height: 768px;
   margin: 0 auto;
   overflow: hidden;
   isolation: isolate;
+  transform: scale(var(--cb-home-scene-scale, 1));
+  transform-origin: top left;
   /* D-007 — the room's ground is the approved hero plate (data-cb-home-scene-backdrop), a full
      bleed painted backdrop. The token canvas stays as the ground under it so a plate that fails to
      decode leaves the canvas, never a blank route. */
@@ -19525,6 +19594,31 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   left: 1110px;
   top: 481px;
   z-index: 5;
+}
+
+/* E2E U9 — the shelf shows four cards; with a fifth course the room needs its own door to the rest.
+   It sits on the shelf's own right edge (the plank ends at 219 + 915 = 1134, so 210 px from the
+   frame's right edge), in the 48 px band between the hero and the first card row. A bare button
+   rather than a hosted or pill primitive: those carry inline type, and the scene paints only from
+   this stylesheet and the token contract. */
+[data-cb-v3] [data-cb-home-scene-see-all] {
+  position: absolute;
+  top: 336px;
+  right: 210px;
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--cb3-rule);
+  border-radius: var(--cb3-radius-pill);
+  background-color: var(--cb3-card-stock);
+  font-family: var(--cb3-font-ui);
+  font-size: var(--cb3-text-meta);
+  font-weight: 600;
+  color: var(--cb3-ink);
+  cursor: pointer;
 }
 `
 
@@ -33719,6 +33813,10 @@ h2 { margin: 0 0 1.5mm; font-size: 13pt; line-height: 1.25; font-weight: 600; }
 p { margin: 0 0 2.5mm; }
 .caption { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 9pt; color: ${soft};
   border-left: 1.5pt solid ${rule}; padding-left: 3mm; }
+/* E2E U10 — paper prints no figure, so it never presents a description as a caption under one. The
+   omission line is its own element, not a caption ruled like a picture that is above it. */
+.figure-note { margin: 0 0 1.5mm; font-family: "Helvetica Neue", Arial, sans-serif;
+  font-size: 9pt; font-style: italic; color: ${soft}; }
 section.check { border-top: 1pt solid ${ink}; padding-top: 4mm; }
 .note { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 8.5pt; color: ${soft}; }
 footer { margin-top: 8mm; border-top: 1pt solid ${rule}; padding-top: 3mm;
@@ -33746,10 +33844,28 @@ function cbPrintParagraphs(text) {
     .join('')
 }
 
-/** One media child's caption: the text equivalent the lesson already shows, else its label. */
+/**
+ * E2E U10 — what paper says where a figure would be.
+ *
+ * The sheet prints text, never an image, so a caption under nothing ("A cutaway of the brake
+ * caliper") claims a picture the reader does not have. Each media child therefore prints one
+ * explicit omission line, and its text equivalent only as a description of what is missing.
+ */
+const CB_PRINT_FIGURE_OMITTED = 'Figure not printed - see the lesson screen.'
+
+function cbPrintMediaOmission(child) {
+  const audio = child && typeof child === 'object' && child.kind === 'audio'
+  return audio ? 'Audio not printed - see the lesson screen.' : CB_PRINT_FIGURE_OMITTED
+}
+
+/**
+ * One media child's text equivalent for paper: the description the lesson screen shows beside the
+ * media. `label` is structural ("Figure", "Narration") and is never printed — a role word under no
+ * picture is the orphan caption this replaced.
+ */
 function cbPrintMediaCaption(child) {
   if (!child || typeof child !== 'object') return ''
-  const values = [child.text_equivalent, child.purpose, child.label]
+  const values = [child.text_equivalent, child.purpose]
   for (const value of values) {
     if (typeof value === 'string' && value.trim()) return value.trim()
   }
@@ -33773,15 +33889,24 @@ function cbLessonPrintHtml(lesson, options) {
     const headline = typeof block.headline === 'string' ? block.headline.trim() : ''
     const prose = withoutCheckLabels(typeof block.deep === 'string' ? block.deep : '', labels)
     const media = Array.isArray(block.media) ? block.media : []
-    const captions = media.map(cbPrintMediaCaption).filter(Boolean)
-    if (!headline && !prose && captions.length === 0) return
+    const mediaChildren = media.filter((child) => child && typeof child === 'object')
+    // A block whose only content is a figure still prints: its omission line is real content.
+    if (!headline && !prose && mediaChildren.length === 0) return
     const isCheck = block.role === 'practice'
     const roleWord = CB_LESSON_PRINT_ROLE_WORD[block.role] || ''
     const parts = ['<section class="' + (isCheck ? 'block check' : 'block') + '">']
     if (headline) parts.push(`<h2>${cbPrintEscape(headline)}${cbPrintEnd('h2')}`)
     if (roleWord) parts.push(`<p class="role">${cbPrintEscape(roleWord)}${cbPrintEnd('p')}`)
     if (prose) parts.push(cbPrintParagraphs(prose))
-    for (const caption of captions) parts.push(`<p class="caption">${cbPrintEscape(caption)}${cbPrintEnd('p')}`)
+    for (const child of mediaChildren) {
+      parts.push(
+        `<p class="figure-note" data-cb-print-media-omitted="">${cbPrintEscape(cbPrintMediaOmission(child))}${cbPrintEnd('p')}`
+      )
+      const caption = cbPrintMediaCaption(child)
+      if (caption) {
+        parts.push(`<p class="caption" data-cb-print-media-description="">${cbPrintEscape(caption)}${cbPrintEnd('p')}`)
+      }
+    }
     if (isCheck) {
       if (prose) checkPrinted = true
       parts.push(`<p class="note">Answer this on the lesson screen. The answer key is not printed here.${cbPrintEnd('p')}`)

@@ -1,0 +1,57 @@
+{
+  "surface": "desktop/plugin.js CoursebookHome at route width 1200, 5 courses",
+  "capture": "chromium --headless=new --window-size=1200,900 --force-device-scale-factor=1",
+  "render": "scripts/gen-home-proof.py at the same width (design/home-scene.html path)",
+  "screenshot": "audit/e2e-u9-u10/home-1200.png",
+  "windowWidth": 1200,
+  "documentScrollWidth": 1200,
+  "documentClientWidth": 1200,
+  "fit": {
+    "left": 0,
+    "right": 1200,
+    "top": 0,
+    "bottom": 686,
+    "width": 1200,
+    "height": 686
+  },
+  "scene": {
+    "left": 0,
+    "right": 1200,
+    "top": 0,
+    "bottom": 685.71,
+    "width": 1200,
+    "height": 685.71
+  },
+  "sceneCssWidth": "1344px",
+  "sceneTransform": "matrix(0.892857, 0, 0, 0.892857, 0, 0)",
+  "fox": {
+    "left": 991.07,
+    "right": 1198.21,
+    "top": 429.46,
+    "bottom": 615.18,
+    "width": 207.14,
+    "height": 185.71
+  },
+  "foxRightInsideScene": true,
+  "sceneContentMaxRight": 1200,
+  "sceneContentOverflows": false,
+  "cardCount": 4,
+  "lastCard": {
+    "left": 779.49,
+    "right": 940.4,
+    "top": 340.98,
+    "bottom": 501.03,
+    "width": 160.91,
+    "height": 160.04
+  },
+  "seeAll": {
+    "left": 942.52,
+    "right": 1012.5,
+    "top": 300,
+    "bottom": 335.71,
+    "width": 69.98,
+    "height": 35.71
+  },
+  "seeAllText": "See all",
+  "seeAllInsideScene": true
+}

@@ -729,83 +729,134 @@ function HomeSceneCard({ slot, index, cover, onOpen }) {
   })
 }
 
-function HomeScene({ slots, canCreate, onStartCreate, onBrowseLibrary, onOpenCourse }) {
+/**
+ * E2E U9 — the measured box the wide Home scene is scaled into.
+ *
+ * The route width includes the route's own gutters, so the box the scene actually stands in can be
+ * narrower than `useCbViewportWidth()` reports. Measure the fit box itself; a render with no layout
+ * (jsdom, a static proof) leaves this at 0 and the caller falls back to the route width so the
+ * scale is still deterministic.
+ */
+function useHomeSceneFit() {
+  const ref = useRef(null)
+  const [width, setWidth] = useState(0)
+  useEffect(() => {
+    const node = ref.current
+    if (!node) return undefined
+    const read = () => {
+      if (!node.isConnected) return
+      const rect = node.getBoundingClientRect()
+      if (rect.width > 0) setWidth(Math.round(rect.width))
+    }
+    read()
+    if (typeof ResizeObserver !== 'function') return undefined
+    const observer = new ResizeObserver(read)
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+  return [ref, width]
+}
+
+function HomeScene({ slots, canCreate, onStartCreate, onBrowseLibrary, onOpenCourse, onShowAll, overflow }) {
   const wood = cb3ObjectSource('shelf-plank')
   const clock = cb3ObjectSource('clock')
   const tagObject = cb3ObjectSource('tag')
   const heroPlate = cb3KitSource('home-hero')
   const woodImage = wood ? { backgroundImage: `url(${wood})` } : undefined
   const coverPlan = homeCoverPlan(slots)
-  return jsxs('div', {
-    'data-cb-home': 'scene',
-    'data-cb-home-scene': '',
-    children: [
-      heroPlate
-        ? jsx('img', { 'data-cb-home-scene-backdrop': '', src: heroPlate, alt: '', 'aria-hidden': 'true' }, 'backdrop')
-        : null,
-      jsx('div', {
-        'data-cb-home-scene-hero': '',
-        children: jsxs('div', {
-          'data-cb-home-scene-panel': '',
-          children: [
-            jsx('h1', {
-              'data-cb-home-question': '',
-              'data-cb-home-scene-question': '',
-              children: CB_HOME_V3_COPY.title
-            }, 'question'),
-            jsx('p', { 'data-cb-home-scene-subline': '', children: CB_HOME_V3_COPY.sub }, 'subline'),
-            jsxs('div', {
-              'data-cb-home-scene-cta': '',
-              children: [
-                canCreate
-                  ? jsx('button', {
-                      type: 'button',
-                      'data-cb-home-scene-primary': '',
-                      onClick: onStartCreate,
-                      children: CB_HOME_V3_COPY.primary
-                    }, 'create')
-                  : null,
-                jsx('button', {
-                  type: 'button',
-                  'data-cb-home-scene-secondary': '',
-                  onClick: onBrowseLibrary,
-                  children: CB_HOME_V3_COPY.secondary
-                }, 'browse')
-              ]
-            }, 'cta')
-          ]
-        }, 'panel')
-      }, 'hero'),
-      jsx('div', {
-        'data-cb-home-scene-cards': '',
-        role: 'list',
-        'aria-label': CB_HOME_COPY.shelf,
-        children: slots.slice(0, 4).map((slot, index) =>
-          jsx(HomeSceneCard, { slot, index, cover: coverPlan[index], onOpen: onOpenCourse }, (slot && slot.course_id) || `scene-${index}`)
-        )
-      }, 'cards'),
-      jsx('div', {
-        'data-cb-home-scene-plank-one': '',
-        'aria-hidden': 'true',
-        style: woodImage,
-        children: jsx('i', {})
-      }, 'plank-one'),
-      jsx('div', {
-        'data-cb-home-scene-tag': '',
-        style: tagObject ? { backgroundImage: `url(${tagObject})` } : undefined,
-        children: CB_HOME_V3_COPY.tagNew
-      }, 'tag'),
-      clock
-        ? jsx('img', { 'data-cb-home-scene-clock': '', src: clock, alt: '', 'aria-hidden': 'true' }, 'clock')
-        : null,
-      jsx('div', { 'data-cb-home-scene-fox': '', children: jsx(FoxPose, { pose: 'clock', size: CB_HOME_SCENE.fox.size }, 'fox') }, 'fox-wrap'),
-      jsx('div', {
-        'data-cb-home-scene-plank-two': '',
-        'aria-hidden': 'true',
-        style: woodImage,
-        children: jsx('i', {})
-      }, 'plank-two')
-    ]
+  // E2E U9: the authored frame is 1344x768 and the scene is chosen from 1200 px up, so a narrower
+  // room scales the whole plate instead of cropping the fox and the ledge off its right edge.
+  const routeWidth = useCbViewportWidth()
+  const [fitRef, fitWidth] = useHomeSceneFit()
+  const stageWidth = fitWidth > 0 ? fitWidth : routeWidth
+  const scale = stageWidth > 0 ? Math.min(1, stageWidth / CB_HOME_SCENE.canvas.width) : 1
+  return jsx('div', {
+    'data-cb-home-scene-fit': '',
+    'data-cb-home-scene-scale': String(Math.round(scale * 10000) / 10000),
+    ref: fitRef,
+    style: { height: `${Math.round(CB_HOME_SCENE.canvas.height * scale)}px` },
+    children: jsxs('div', {
+      'data-cb-home': 'scene',
+      'data-cb-home-scene': '',
+      style: { '--cb-home-scene-scale': String(scale) },
+      children: [
+        heroPlate
+          ? jsx('img', { 'data-cb-home-scene-backdrop': '', src: heroPlate, alt: '', 'aria-hidden': 'true' }, 'backdrop')
+          : null,
+        jsx('div', {
+          'data-cb-home-scene-hero': '',
+          children: jsxs('div', {
+            'data-cb-home-scene-panel': '',
+            children: [
+              jsx('h1', {
+                'data-cb-home-question': '',
+                'data-cb-home-scene-question': '',
+                children: CB_HOME_V3_COPY.title
+              }, 'question'),
+              jsx('p', { 'data-cb-home-scene-subline': '', children: CB_HOME_V3_COPY.sub }, 'subline'),
+              jsxs('div', {
+                'data-cb-home-scene-cta': '',
+                children: [
+                  canCreate
+                    ? jsx('button', {
+                        type: 'button',
+                        'data-cb-home-scene-primary': '',
+                        onClick: onStartCreate,
+                        children: CB_HOME_V3_COPY.primary
+                      }, 'create')
+                    : null,
+                  jsx('button', {
+                    type: 'button',
+                    'data-cb-home-scene-secondary': '',
+                    onClick: onBrowseLibrary,
+                    children: CB_HOME_V3_COPY.secondary
+                  }, 'browse')
+                ]
+              }, 'cta')
+            ]
+          }, 'panel')
+        }, 'hero'),
+        jsx('div', {
+          'data-cb-home-scene-cards': '',
+          role: 'list',
+          'aria-label': CB_HOME_COPY.shelf,
+          children: slots.slice(0, 4).map((slot, index) =>
+            jsx(HomeSceneCard, { slot, index, cover: coverPlan[index], onOpen: onOpenCourse }, (slot && slot.course_id) || `scene-${index}`)
+          )
+        }, 'cards'),
+        jsx('div', {
+          'data-cb-home-scene-plank-one': '',
+          'aria-hidden': 'true',
+          style: woodImage,
+          children: jsx('i', {})
+        }, 'plank-one'),
+        jsx('div', {
+          'data-cb-home-scene-tag': '',
+          style: tagObject ? { backgroundImage: `url(${tagObject})` } : undefined,
+          children: CB_HOME_V3_COPY.tagNew
+        }, 'tag'),
+        clock
+          ? jsx('img', { 'data-cb-home-scene-clock': '', src: clock, alt: '', 'aria-hidden': 'true' }, 'clock')
+          : null,
+        jsx('div', { 'data-cb-home-scene-fox': '', children: jsx(FoxPose, { pose: 'clock', size: CB_HOME_SCENE.fox.size }, 'fox') }, 'fox-wrap'),
+        jsx('div', {
+          'data-cb-home-scene-plank-two': '',
+          'aria-hidden': 'true',
+          style: woodImage,
+          children: jsx('i', {})
+        }, 'plank-two'),
+        // The shelf shows four cards; a fifth course is reached through this door, on the shelf's
+        // own right edge rather than through a cropped fifth card nobody can click.
+        overflow && onShowAll
+          ? jsx('button', {
+              type: 'button',
+              'data-cb-home-scene-see-all': '',
+              onClick: onShowAll,
+              children: CB_HOME_V3_COPY.seeAll
+            }, 'seeAll')
+          : null
+      ]
+    })
   })
 }
 
@@ -1271,7 +1322,9 @@ function CoursebookHome({
       canCreate,
       onStartCreate,
       onBrowseLibrary,
-      onOpenCourse
+      onOpenCourse,
+      onShowAll,
+      overflow
     }, 'scene')
   }
 
