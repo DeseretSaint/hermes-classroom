@@ -321,6 +321,42 @@ function cbTutorHintAvailable(check) {
   return false
 }
 
+/**
+ * The one sentence a failed tutor action says to the learner (U8-follow2).
+ *
+ * Present tense, second person, and the one thing still open to them — never the code the pipeline
+ * returned. `TUTOR_FAILURE_COPY` is the whole vocabulary so a new failure cannot quietly invent a
+ * fourth phrasing, and `tutorFailureDetail` is the only place a code is spelled.
+ */
+const TUTOR_FAILURE_COPY = {
+  hint: 'Your hint could not be recorded. Try again.',
+  practice: 'Your practice could not start. Try again.',
+  ask: 'Your question could not be sent. Try again.',
+  bind: 'This chat could not be linked to your lesson. Open Coursebook and choose the section again.'
+}
+
+/** The closed `Technical detail` line for a failed action: the code and the message, diagnosable. */
+function tutorFailureDetail(error) {
+  if (!error) return null
+  const code = error.code ? String(error.code) : ''
+  const message = describeError(error)
+  if (code && message) return `${code} · ${message}`
+  return code || message || null
+}
+
+/** The disclosure that keeps a code out of the sentence but inside the same card. */
+function TutorTechnicalDetail({ marker, children }) {
+  if (!children) return null
+  return jsxs('details', {
+    [marker]: '',
+    className: 'mt-1 text-xs text-(--ui-text-secondary)',
+    children: [
+      jsx('summary', { className: 'cursor-pointer', children: 'Technical detail' }, 'summary'),
+      jsx('div', { className: 'mt-1', style: { overflowWrap: 'anywhere' }, children }, 'detail')
+    ]
+  })
+}
+
 /** One tutor or learner turn in the rail's notebook margin. */
 function TutorTurn({ turn, blockIndex, sourceIndex, onCitation }) {
   const learner = turn.role === 'learner'
@@ -543,6 +579,7 @@ function TutorRail({
   draft = '',
   busy = false,
   notice = null,
+  noticeDetail = null,
   detached = false,
   practice = null,
   practiceAvailable = false,
@@ -581,6 +618,22 @@ function TutorRail({
         action || null
       ]
     })
+
+  const noticeCard = notice
+    ? jsxs(
+        'div',
+        {
+          'data-cb-tutor-notice': '',
+          style: muted,
+          children: [
+            // The live region holds only the sentence; the disclosure is a control, not news.
+            jsx('p', { role: 'status', 'data-cb-tutor-notice-line': '', style: { margin: 0 }, children: notice }, 'line'),
+            jsx(TutorTechnicalDetail, { marker: 'data-cb-tutor-notice-detail', children: noticeDetail }, 'detail')
+          ]
+        },
+        'notice'
+      )
+    : null
 
   let body
   if (state === 'no-lesson') {
@@ -855,7 +908,7 @@ function TutorRail({
         : jsxs('div', {
             'data-cb-tutor-body': 'practice',
             style: { display: 'flex', flexDirection: 'column', gap: '0.6rem' },
-            children: [modeBody, practiceState === 'active' ? composer : null]
+            children: [noticeCard, modeBody, practiceState === 'active' ? composer : null]
           })
     } else {
       body = jsxs('div', {
@@ -864,7 +917,7 @@ function TutorRail({
         children: [
           jsx(TutorGlossary, { entries: glossary, onTermQuote }),
           thread,
-          notice ? jsx('div', { role: 'status', 'data-cb-tutor-notice': '', style: muted, children: notice }) : null,
+          noticeCard,
           checkOpen
             ? jsx('p', {
                 'data-cb-tutor-check-open': '',
@@ -1120,6 +1173,7 @@ function TutorRailPane({ binding }) {
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
+  const [noticeDetail, setNoticeDetail] = useState(null)
   const [failure, setFailure] = useState(null)
   const [localTurns, setLocalTurns] = useState([])
   const [fenced, setFenced] = useState(0)
@@ -1128,6 +1182,15 @@ function TutorRailPane({ binding }) {
   const rootRef = useRef(null)
   const endNonce = useRef(null)
   const autoPractice = useRef(false)
+
+  /**
+   * One learner sentence per action outcome, with its technical detail set and cleared together.
+   * Clearing in one place is the invariant: a code can never outlive the news it belonged to.
+   */
+  const showNotice = useCallback((message, detail = null) => {
+    setNotice(message || null)
+    setNoticeDetail(message && detail ? detail : null)
+  }, [])
 
   // The pane is not the route: measure the rail itself, so a 460 px window and a 1049 px window
   // with a chat beside it both choose the sheet/side layout from the space the rail really has.
@@ -1241,7 +1304,7 @@ function TutorRailPane({ binding }) {
   const performAsk = useCallback(
     async (payload) => {
       setBusy(true)
-      setNotice(null)
+      showNotice(null)
       setFailure(null)
       const response = await rpc('tutor.ask', payload, {
         idempotencyKey: newOperationId(`tutor-${payload.mode}`),
@@ -1251,7 +1314,9 @@ function TutorRailPane({ binding }) {
       if (!response.ok) {
         const code = response.error && response.error.code
         setFailure(code === 'HOST_UNAVAILABLE' ? 'unavailable' : 'provider')
-        setNotice(response.error ? `${code || 'ERROR'}: ${describeError(response.error)}` : null)
+        // The rail already shows its own unavailable plate for this failure; the line under it is
+        // the learner's, and the code stays in the closed disclosure.
+        showNotice(TUTOR_FAILURE_COPY.ask, tutorFailureDetail(response.error))
         return false
       }
       adoptRevision(response.revision)
@@ -1282,7 +1347,7 @@ function TutorRailPane({ binding }) {
       setDraft('')
       clearTutorQuote()
       if (result.state === 'answer_withheld') {
-        setNotice('The answer stays hidden while the check is open. The hint path is the way forward.')
+        showNotice('The answer stays hidden while the check is open. The hint path is the way forward.')
       }
       if (payload.mode === 'practice') practiceRead.reload()
       else history.reload()
@@ -1303,7 +1368,7 @@ function TutorRailPane({ binding }) {
     })
     if (!payload || busy) return
     if (quote && quote.blockId && !blockIndex[quote.blockId]) {
-      setNotice('That excerpt belongs to another section. Select it again in this one.')
+      showNotice('That excerpt belongs to another section. Select it again in this one.')
       return
     }
     await performAsk(payload)
@@ -1312,7 +1377,7 @@ function TutorRailPane({ binding }) {
   const askHint = useCallback(async () => {
     if (!hintAvailable || busy || hintUsed) return
     setBusy(true)
-    setNotice(null)
+    showNotice(null)
     const recorded = await rpc(
       'lesson.assist',
       { enrollment_id: binding.enrollment_id, objective_id: objectiveId, kind: 'hint_request' },
@@ -1320,7 +1385,7 @@ function TutorRailPane({ binding }) {
     )
     if (!recorded.ok) {
       setBusy(false)
-      setNotice(recorded.error ? `${recorded.error.code}: ${describeError(recorded.error)}` : 'The hint could not be recorded.')
+      showNotice(TUTOR_FAILURE_COPY.hint, tutorFailureDetail(recorded.error))
       return
     }
     adoptRevision((recorded.result && recorded.result.revision) || recorded.revision)
@@ -1339,7 +1404,7 @@ function TutorRailPane({ binding }) {
       return
     }
     setBusy(true)
-    setNotice('Hint recorded. This answer is marked hinted; the check still owns the verdict.')
+    showNotice('Hint recorded. This answer is marked hinted; the check still owns the verdict.')
     await performAsk(payload)
   }, [
     hintAvailable,
@@ -1382,14 +1447,14 @@ function TutorRailPane({ binding }) {
     consumeTutorHint(hintRequest.id)
     setMode('ask')
     setHintUsed(true)
-    setNotice('Hint recorded. This answer is marked hinted; the check still owns the verdict.')
+    showNotice('Hint recorded. This answer is marked hinted; the check still owns the verdict.')
     performAsk(payload)
   }, [hintRequest, busy, courseId, binding.enrollment_id, objectiveId, runId, performAsk])
 
   const startPractice = useCallback(async () => {
     if (!practiceAvailable || busy) return
     setBusy(true)
-    setNotice(null)
+    showNotice(null)
     const response = await rpc(
       'practice.start',
       { enrollment_id: binding.enrollment_id, objective_id: objectiveId },
@@ -1397,7 +1462,7 @@ function TutorRailPane({ binding }) {
     )
     setBusy(false)
     if (!response.ok) {
-      setNotice(response.error ? `${response.error.code}: ${describeError(response.error)}` : 'The practice could not start.')
+      showNotice(TUTOR_FAILURE_COPY.practice, tutorFailureDetail(response.error))
       return
     }
     adoptRevision((response.result && response.result.revision) || response.revision)
@@ -1411,12 +1476,12 @@ function TutorRailPane({ binding }) {
     const checkId = (session && session.check_id) || (check.check && check.check.check_id)
     const checkVersion = (session && session.check_version) || (check.check && check.check.check_version)
     if (!checkId || !checkVersion) {
-      setNotice('The practice check could not be named, so nothing was graded.')
+      showNotice('The practice check could not be named, so nothing was graded.')
       return
     }
     if (!endNonce.current) endNonce.current = newOperationId('tutor-practice-end')
     setBusy(true)
-    setNotice(null)
+    showNotice(null)
     const response = await rpc(
       'practice.end',
       {
@@ -1429,7 +1494,7 @@ function TutorRailPane({ binding }) {
     )
     setBusy(false)
     if (!response.ok) {
-      setNotice(practiceRefusalCopy(response.error) || (response.error ? describeError(response.error) : 'The practice could not be ended.'))
+      showNotice(practiceRefusalCopy(response.error) || (response.error ? describeError(response.error) : 'The practice could not be ended.'))
       return
     }
     adoptRevision(response.revision)
@@ -1479,7 +1544,7 @@ function TutorRailPane({ binding }) {
 
   const retry = useCallback(() => {
     setFailure(null)
-    setNotice(null)
+    showNotice(null)
     library.reload()
     page.reload()
     history.reload()
@@ -1497,7 +1562,7 @@ function TutorRailPane({ binding }) {
       autoPractice.current = true
       setMode(next)
       setFailure(null)
-      setNotice(null)
+      showNotice(null)
     },
     [practiceAvailable]
   )
@@ -1548,6 +1613,7 @@ function TutorRailPane({ binding }) {
     draft,
     busy,
     notice,
+    noticeDetail,
     detached: Boolean(binding.status && binding.status !== 'active'),
     practice:
       mode === 'practice'
@@ -1649,6 +1715,7 @@ function CoursebookPane() {
   const scopeProfile = currentScope().profile
   const routingUnavailable = profileRouteState.status === 'unavailable'
   const [bindNote, setBindNote] = useState(null)
+  const [bindDetail, setBindDetail] = useState(null)
   const attemptedBind = useRef(null)
   // Which bundled learner skill this chat's next turn loads. Read from the backend's own rule
   // (`GET /sessions/skill` -> coursebook.lesson_skills), the same function the pre_llm_call hook
@@ -1687,9 +1754,13 @@ function CoursebookPane() {
       if (cancelled || !response) return
       if (response.ok) {
         setBindNote('This lesson is bound to this chat.')
+        setBindDetail(null)
         reload()
       } else {
-        setBindNote(`${response.code}: ${response.message || 'this chat could not be bound.'}`)
+        // The seam refused the bind. The learner reads what did not happen and where to go; the
+        // seam's own code and message stay closed under Technical detail.
+        setBindNote(TUTOR_FAILURE_COPY.bind)
+        setBindDetail(tutorFailureDetail(response))
       }
     })
     return () => {
@@ -1822,7 +1893,20 @@ function CoursebookPane() {
               'courses. Reopen the pane; if it still cannot, restart Desktop.'
           })
         : null,
-      bindNote ? jsx('div', { className: 'pb-2 text-xs text-(--ui-text-secondary)', children: bindNote }) : null,
+      bindNote
+        ? jsxs(
+            'div',
+            {
+              'data-cb-tutor-bind-note': '',
+              className: 'pb-2 text-xs text-(--ui-text-secondary)',
+              children: [
+                jsx('span', { children: bindNote }, 'note'),
+                jsx(TutorTechnicalDetail, { marker: 'data-cb-tutor-bind-detail', children: bindDetail }, 'detail')
+              ]
+            },
+            'bind-note'
+          )
+        : null,
       skillNoteCopy(skillNote)
         ? jsx('div', {
             className: 'pb-2 text-xs text-(--ui-text-secondary)',
@@ -2023,6 +2107,9 @@ export {
   tutorRailLayout,
   armTutorQuote,
   clearTutorQuote,
+  // Test seam: the pending-bind arming is otherwise only reachable through a lesson start, so a
+  // render test of the refused-bind note has to arm the exact run before it mounts the pane.
+  armPendingBind,
   AttemptControls,
   TakeHomeStudio,
   TakeHomeShelf,

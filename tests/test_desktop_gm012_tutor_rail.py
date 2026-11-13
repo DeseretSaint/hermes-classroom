@@ -942,5 +942,435 @@ class TutorPaneUnavailableCopyTest(unittest.TestCase):
         self.assertNotIn("description: code ?", pane)
 
 
+# -- U8-follow2: a failed hint, start or bind says it in the learner's words ----------------------
+#
+# U8-follow fixed the two *binding-panel* sentences. The three action notices next door still put the
+# pipeline's code in front of the learner's sentence, and the practice one was not even rendered in
+# the practice body. Both are proved here by driving the real pane: click the control, let the fake
+# backend refuse, then read the DOM a learner gets.
+
+HINT_FAILURE_SENTENCE = "Your hint could not be recorded. Try again."
+PRACTICE_FAILURE_SENTENCE = "Your practice could not start. Try again."
+BIND_FAILURE_SENTENCE = (
+    "This chat could not be linked to your lesson. Open Coursebook and choose the section again."
+)
+
+ACTION_FAILURE_HARNESS = r"""
+import React, { act } from 'react'
+import { JSDOM } from 'jsdom'
+import fs from 'node:fs'
+
+const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
+
+const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
+  url: 'http://127.0.0.1/',
+  pretendToBeVisual: true
+})
+globalThis.window = dom.window
+globalThis.document = dom.window.document
+globalThis.HTMLElement = dom.window.HTMLElement
+globalThis.Node = dom.window.Node
+globalThis.Event = dom.window.Event
+globalThis.IS_REACT_ACT_ENVIRONMENT = true
+
+const mod = await import('./plugin.js')
+
+const IMPLEMENTED = [
+  'library.list',
+  'lesson.page',
+  'check.open',
+  'check.get',
+  'practice.state',
+  'practice.start',
+  'practice.end',
+  'tutor.history',
+  'lesson.assist'
+]
+
+const declaration = {
+  prompt: 'Say the line to the shopkeeper.',
+  sentences: [],
+  scenario: 'A small shop in Kyoto.',
+  tutor_role: 'shopkeeper',
+  learner_role: 'customer'
+}
+const stimulus = { assistance_policy: { hint: 'available' }, practice: declaration }
+const ok = (result) => Promise.resolve({ ok: true, result })
+
+const fakeRest = (path, options) => {
+  const base = String(path).split('?')[0]
+  if (base === '/runtime') {
+    return Promise.resolve({ wire_version: 25, implemented_methods: IMPLEMENTED, single_home_host: false })
+  }
+  if (base === '/rpc') {
+    const method = options && options.body ? options.body.method : null
+    if (method === 'library.list') {
+      return ok({
+        items: [
+          {
+            enrollment_id: 'enr_1',
+            course_id: 'crs_1',
+            title: 'Japanese, first steps',
+            revision: 3,
+            evidence_summary: { current_objective_id: 'obj_1' }
+          }
+        ]
+      })
+    }
+    if (method === 'lesson.page') {
+      return ok({
+        revision: 3,
+        course: { title: 'Japanese, first steps' },
+        section: { title: 'Affection and register', ordinal: 2 },
+        sources: []
+      })
+    }
+    if (method === 'tutor.history') return ok({ turns: [] })
+    if (method === 'check.open') return ok({ check_id: 'chk_1', stimulus })
+    if (method === 'check.get') return ok({ check_id: 'chk_1', state: 'open', stimulus })
+    if (method === 'practice.state') return ok({ state: 'none' })
+    if (method === 'lesson.assist') {
+      return Promise.resolve({ ok: false, error: payload.hintError })
+    }
+    if (method === 'practice.start') {
+      return Promise.resolve({ ok: false, error: payload.practiceError })
+    }
+    return ok({})
+  }
+  return Promise.resolve({})
+}
+
+mod.default.register({ rest: fakeRest, register: () => {}, onDispose: () => {} })
+
+const { createRoot } = await import('react-dom/client')
+const root = createRoot(document.getElementById('root'))
+const binding = {
+  enrollment_id: 'enr_1',
+  objective_id: 'obj_1',
+  lesson_run_id: 'run_1',
+  profile: 'default',
+  status: 'active',
+  stored_session_id: 'sess_1'
+}
+const settle = async (ms = 80) => {
+  await act(async () => {
+    await new Promise((done) => setTimeout(done, ms))
+  })
+}
+const readNotice = () => {
+  const card = document.querySelector('[data-cb-tutor-notice]')
+  if (!card) return null
+  const line = card.querySelector('[data-cb-tutor-notice-line]')
+  const detail = card.querySelector('[data-cb-tutor-notice-detail]')
+  return {
+    full: card.textContent,
+    // What the learner reads before opening anything: the sentence only.
+    sentence: line ? line.textContent : '',
+    roleStatus: line ? line.getAttribute('role') : null,
+    detail: detail ? detail.textContent : null,
+    detailOpen: detail ? detail.hasAttribute('open') : null
+  }
+}
+
+const out = { error: null, hint: null, practice: null, hintButton: false, startButton: false, hintMode: null, practiceMode: null, practiceBody: null }
+try {
+  await act(async () => {
+    root.render(React.createElement(mod.TutorRailPane, { binding }))
+  })
+  await settle(200)
+
+  const modeNow = () => {
+    const rail = document.querySelector('[data-cb-tutor-mode]')
+    return rail ? rail.getAttribute('data-cb-tutor-mode') : null
+  }
+  const bodyNow = () => {
+    const body = document.querySelector('[data-cb-tutor-body]')
+    return body ? body.getAttribute('data-cb-tutor-body') : null
+  }
+
+  const hintButton = document.querySelector('[data-cb-tutor-hint="available"]')
+  out.hintButton = Boolean(hintButton)
+  if (hintButton) {
+    await act(async () => {
+      hintButton.click()
+    })
+    await settle(120)
+    out.hintMode = modeNow()
+    out.hint = readNotice()
+  }
+
+  const practiceTab = document.querySelector('[data-cb-tab="practice"]')
+  if (practiceTab) {
+    await act(async () => {
+      practiceTab.click()
+    })
+    await settle(120)
+  }
+  const start = document.querySelector('[data-cb-tutor-practice-start]')
+  out.startButton = Boolean(start)
+  if (start) {
+    await act(async () => {
+      start.click()
+    })
+    await settle(120)
+    out.practiceMode = modeNow()
+    out.practiceBody = bodyNow()
+    out.practice = readNotice()
+  }
+} catch (error) {
+  out.error = { name: error.name, message: String(error.message || error), stack: String(error.stack || '').split('\n').slice(0, 6) }
+}
+process.stdout.write(JSON.stringify(out))
+"""
+
+BIND_FAILURE_HARNESS = r"""
+import React, { act } from 'react'
+import { JSDOM } from 'jsdom'
+import fs from 'node:fs'
+
+const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
+
+const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
+  url: 'http://127.0.0.1/',
+  pretendToBeVisual: true
+})
+globalThis.window = dom.window
+globalThis.document = dom.window.document
+globalThis.HTMLElement = dom.window.HTMLElement
+globalThis.Node = dom.window.Node
+globalThis.Event = dom.window.Event
+globalThis.IS_REACT_ACT_ENVIRONMENT = true
+
+// The focused chat is durable and on screen; the SDK stub reads this atom through the pane.
+globalThis.__CB_STORED_ATOM__ = { get: () => 'sess_1', subscribe: () => () => {} }
+
+const mod = await import('./plugin.js')
+
+const rest = (path, options) => {
+  const base = String(path).split('?')[0]
+  if (base === '/runtime') {
+    return Promise.resolve({ wire_version: 25, implemented_methods: [], single_home_host: false })
+  }
+  if (base === '/rpc') {
+    const method = options && options.body ? options.body.method : null
+    if (method === 'binding.get') {
+      // A ready read with no binding for this chat: the pane is free to bind the armed run.
+      return Promise.resolve({ ok: true, result: { binding: null } })
+    }
+    return Promise.resolve({ ok: true, result: {} })
+  }
+  if (base === '/sessions/skill') return Promise.resolve({})
+  if (base === '/sessions/bind') {
+    return Promise.resolve({ ok: false, code: payload.code, message: payload.message })
+  }
+  return Promise.resolve({ ok: true, result: {} })
+}
+
+// The run this Desktop opened, armed by the click that started it, before the pane mounts.
+mod.armPendingBind({
+  enrollmentId: 'enr_1',
+  objectiveId: 'obj_1',
+  objectiveTitle: 'Affection and register',
+  lessonRunId: 'run_1',
+  profile: null
+})
+
+const registered = []
+mod.default.register({ rest, register: (contribution) => registered.push(contribution), onDispose: () => {} })
+const pane = registered.find((contribution) => contribution && contribution.id === 'pane')
+if (!pane || typeof pane.render !== 'function') {
+  process.stdout.write(JSON.stringify({ error: 'the plugin registered no pane contribution' }))
+  process.exit(0)
+}
+
+const { createRoot } = await import('react-dom/client')
+const root = createRoot(document.getElementById('root'))
+const out = { error: null }
+try {
+  await act(async () => {
+    root.render(React.createElement(pane.render))
+  })
+  await act(async () => {
+    await new Promise((done) => setTimeout(done, 200))
+  })
+  const note = document.querySelector('[data-cb-tutor-bind-note]')
+  const detail = document.querySelector('[data-cb-tutor-bind-detail]')
+  out.noteText = note ? note.textContent : null
+  out.sentence = note ? (note.querySelector('span') || {}).textContent || null : null
+  out.detail = detail ? detail.textContent : null
+  out.detailOpen = detail ? detail.hasAttribute('open') : null
+} catch (error) {
+  out.error = { name: error.name, message: String(error.message || error), stack: String(error.stack || '').split('\n').slice(0, 6) }
+}
+process.stdout.write(JSON.stringify(out))
+"""
+
+# Every code shape the backend can answer with: an E_-style catalogue code, the two host constants,
+# and a plain validation code. None of them may reach the sentence.
+FAILURE_CODES = ("E_ASSIST_RECORD", "HOST_UNAVAILABLE", "NOT_IMPLEMENTED", "VALIDATION_FAILED")
+CODE_SHAPE = re.compile(r"\b[A-Z][A-Z0-9]*_[A-Z0-9_]+\b")
+
+
+class TutorActionNoticeCopyTest(unittest.TestCase):
+    """A failed Hint, Start practice or automatic bind is said to the learner, not about the API.
+
+    The pane is mounted for real and the control is clicked; the assertions are on the rendered
+    notice and bind note. The raw code and message have to survive inside the closed Technical
+    detail disclosure, so the failure stays diagnosable without becoming the sentence.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        if shutil.which("node") is None:
+            raise unittest.SkipTest("node is required to render a runtime desktop plugin")
+        modules = _desktop_node_modules()
+        if modules is None:
+            raise unittest.SkipTest("react/react-dom are not installed beside the desktop app")
+        cls.tmp = tempfile.TemporaryDirectory(prefix="coursebook-tutor-action-notice-")
+        root = Path(cls.tmp.name)
+        (root / "plugin.js").write_text(PLUGIN_JS.read_text(encoding="utf-8"), encoding="utf-8")
+        (root / "action-failure.mjs").write_text(ACTION_FAILURE_HARNESS, encoding="utf-8")
+        (root / "bind-failure.mjs").write_text(BIND_FAILURE_HARNESS, encoding="utf-8")
+        node_modules = root / "node_modules"
+        node_modules.mkdir()
+        for name in ("react", "react-dom", "scheduler", "jsdom"):
+            source = modules / name
+            if source.is_dir():
+                (node_modules / name).symlink_to(source, target_is_directory=True)
+        sdk = node_modules / "@hermes" / "plugin-sdk"
+        sdk.mkdir(parents=True)
+        (sdk / "package.json").write_text(
+            json.dumps({"name": "@hermes/plugin-sdk", "type": "module", "main": "index.js"}), encoding="utf-8"
+        )
+        stub = SDK_STUB.replace(
+            "focusedStoredSessionId: atom(null),",
+            "focusedStoredSessionId: (globalThis.__CB_STORED_ATOM__ || atom(null)),",
+        )
+        if stub == SDK_STUB:
+            raise AssertionError("the shared SDK stub's focused-session atom changed shape; re-check this test")
+        (sdk / "index.js").write_text(stub, encoding="utf-8")
+        cls.root = root
+        cls.source = PLUGIN_JS.read_text(encoding="utf-8")
+        # The acceptance grep is scoped to this segment, not the whole built module: the same
+        # concatenation still exists in unrelated segments that this card does not own.
+        cls.tutor_source = (ROOT / "desktop" / "src" / "99-tutor.js").read_text(encoding="utf-8")
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        if hasattr(cls, "tmp"):
+            cls.tmp.cleanup()
+
+    def _run(self, harness: str, case: dict) -> dict:
+        path = self.root / "case.json"
+        path.write_text(json.dumps(case), encoding="utf-8")
+        result = subprocess.run(
+            ["node", str(self.root / harness), str(path)],
+            cwd=self.root,
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr[-3000:])
+        out = json.loads(result.stdout)
+        self.assertIsNone(out.get("error"), out)
+        return out
+
+    def action_failure(self, code: str = "E_ASSIST_RECORD", practice_code: str = "E_PRACTICE_START") -> dict:
+        return self._run(
+            "action-failure.mjs",
+            {
+                "hintError": {"code": code, "message": "the assist write was refused"},
+                "practiceError": {"code": practice_code, "message": "practice could not be opened"},
+            },
+        )
+
+    def bind_failure(self, code: str = "BIND_REFUSED") -> dict:
+        return self._run(
+            "bind-failure.mjs",
+            {"code": code, "message": "the run already belongs to another chat"},
+        )
+
+    # -- the three sentences ------------------------------------------------------------------
+    def test_failed_hint_says_what_happened_and_what_is_open(self) -> None:
+        out = self.action_failure()
+        self.assertTrue(out["hintButton"], "the Hint control was never reachable; the path was not rendered")
+        hint = out["hint"]
+        self.assertIsNotNone(hint, "a refused hint rendered no notice at all")
+        self.assertEqual(out["hintMode"], "ask")
+        self.assertEqual(hint["sentence"], HINT_FAILURE_SENTENCE)
+        self.assertEqual(hint["roleStatus"], "status", "the sentence must stay the live-region text")
+        # The code and message survive, closed, for diagnosis.
+        self.assertIn("E_ASSIST_RECORD", hint["detail"])
+        self.assertIn("the assist write was refused", hint["detail"])
+        self.assertFalse(hint["detailOpen"], "the technical detail must not be expanded by default")
+        self.assertNotIn("E_ASSIST_RECORD", hint["sentence"])
+
+    def test_failed_practice_start_is_rendered_in_the_practice_body(self) -> None:
+        out = self.action_failure()
+        self.assertTrue(out["startButton"], "Start practice was never reachable; the path was not rendered")
+        practice = out["practice"]
+        self.assertIsNotNone(practice, "a refused practice start rendered no notice at all")
+        self.assertEqual(out["practiceMode"], "practice")
+        self.assertEqual(
+            out["practiceBody"], "practice", "the notice has to live in the body the learner is looking at"
+        )
+        self.assertEqual(practice["sentence"], PRACTICE_FAILURE_SENTENCE)
+        self.assertIn("E_PRACTICE_START", practice["detail"])
+        self.assertIn("practice could not be opened", practice["detail"])
+        self.assertFalse(practice["detailOpen"])
+        self.assertNotIn("E_PRACTICE_START", practice["sentence"])
+
+    def test_refused_bind_says_what_happened_and_where_to_go(self) -> None:
+        out = self.bind_failure()
+        self.assertIsNotNone(out["noteText"], "a refused bind rendered no note at all")
+        self.assertEqual(out["sentence"], BIND_FAILURE_SENTENCE)
+        self.assertIn("BIND_REFUSED", out["detail"])
+        self.assertIn("the run already belongs to another chat", out["detail"])
+        self.assertFalse(out["detailOpen"], "the technical detail must not be expanded by default")
+        self.assertNotIn("BIND_REFUSED", out["sentence"])
+
+    # -- and no code shape reaches the sentence, whatever the backend answered -------------------
+    def test_no_raw_code_reaches_any_action_sentence(self) -> None:
+        banned = ("NOT_IMPLEMENTED", "HOST_UNAVAILABLE")
+        for code in FAILURE_CODES:
+            out = self.action_failure(code, code)
+            for stage in ("hint", "practice"):
+                sentence = out[stage]["sentence"]
+                self.assertTrue(sentence, f"{code}/{stage}: no sentence was rendered")
+                self.assertNotIn(code, sentence, f"{code}/{stage}: the raw code is in the sentence")
+                for word in banned:
+                    self.assertNotIn(word, sentence, f"{code}/{stage}: '{word}' reached the learner")
+                self.assertIsNone(CODE_SHAPE.search(sentence), f"{code}/{stage}: {sentence!r}")
+                self.assertIn(code, out[stage]["detail"], f"{code}/{stage}: the code must survive for diagnosis")
+            out = self.bind_failure(code)
+            self.assertEqual(out["sentence"], BIND_FAILURE_SENTENCE)
+            self.assertNotIn(code, out["sentence"])
+            self.assertIn(code, out["detail"])
+        self.assertNotIn("ERROR:", out["sentence"])
+
+    # -- the same shapes, pinned in source ------------------------------------------------------
+    def test_the_source_no_longer_concatenates_a_code_in_front_of_a_sentence(self) -> None:
+        # The card's acceptance grep, as a test: each old concatenation is named so a regression is
+        # reported by the exact string someone re-introduced. Scoped to this segment, which is what
+        # `git grep … desktop/src/99-tutor.js` covers.
+        for old in (
+            "`${recorded.error.code}: ",
+            "`${response.error.code}: ",
+            "`${response.code}: ",
+            "`${code || 'ERROR'}: ",
+        ):
+            self.assertNotIn(old, self.tutor_source, f"a raw code is concatenated in front of a sentence: {old}")
+        pane = function_body(self.tutor_source, "function TutorRailPane(")
+        self.assertIn("showNotice(TUTOR_FAILURE_COPY.hint, tutorFailureDetail(recorded.error))", pane)
+        self.assertIn("showNotice(TUTOR_FAILURE_COPY.practice, tutorFailureDetail(response.error))", pane)
+        self.assertIn("showNotice(TUTOR_FAILURE_COPY.ask, tutorFailureDetail(response.error))", pane)
+        self.assertIn("data-cb-tutor-notice-detail", self.tutor_source)
+        coursebook_pane = function_body(self.tutor_source, "function CoursebookPane(")
+        self.assertIn("setBindNote(TUTOR_FAILURE_COPY.bind)", coursebook_pane)
+        self.assertIn("setBindDetail(tutorFailureDetail(response))", coursebook_pane)
+        self.assertIn("data-cb-tutor-bind-detail", coursebook_pane)
+        self.assertNotIn("this chat could not be bound.'", coursebook_pane)
+
+
 if __name__ == "__main__":
     unittest.main()
