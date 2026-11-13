@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: 1200px 600px; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 600px; overflow: hidden; }
+  body {
+    background: #0e0c09;
+    font-family: "Noto Sans", "DejaVu Sans", Arial, sans-serif;
+    color: #f5e3c8;
+    -webkit-font-smoothing: antialiased;
+  }
+  .stage { position: relative; width: 1200px; height: 600px; overflow: hidden; }
+
+  /* the lesson world, bled to the right edge */
+  .art {
+    position: absolute; top: 0; right: 0; width: 660px; height: 600px;
+    background: url("../../assets/visual-kits/field_atlas/hero/home-hero@2x.png") center 42% / cover no-repeat;
+    z-index: 0;
+  }
+  /* ink dissolving into the art, so there is no seam */
+  .blend {
+    position: absolute; top: 0; left: 300px; width: 640px; height: 600px; z-index: 2;
+    background: linear-gradient(90deg, #0e0c09 0%, #0e0c09 30%, rgba(14,12,9,0.90) 48%, rgba(14,12,9,0.62) 66%, rgba(14,12,9,0.30) 82%, rgba(14,12,9,0.10) 92%, rgba(14,12,9,0) 100%);
+  }
+  /* warm floor light, the way the app's own panels sit on the art */
+  .warm {
+    position: absolute; top: 0; right: 0; width: 660px; height: 600px;
+    background: radial-gradient(120% 80% at 78% 18%, rgba(255,214,150,0.10), rgba(14,12,9,0) 62%);
+  }
+  .vignette {
+    position: absolute; inset: 0;
+    background: radial-gradient(140% 120% at 18% 50%, rgba(14,12,9,0) 40%, rgba(6,5,4,0.55) 100%);
+  }
+
+  .copy { position: absolute; left: 74px; top: 0; height: 600px; width: 500px; z-index: 5;
+          display: flex; flex-direction: column; justify-content: center; }
+
+  .eyebrow {
+    font-size: 12.5px; letter-spacing: 0.36em; text-transform: uppercase;
+    color: #e0794f; font-weight: 600;
+  }
+  h1 {
+    font-family: "Noto Serif", Georgia, serif;
+    font-weight: 500; font-size: 82px; line-height: 0.98; letter-spacing: -0.025em;
+    margin-top: 18px; color: #f7ecd8;
+  }
+  .sub {
+    margin-top: 22px; font-size: 19.5px; line-height: 1.55; color: #c2b096; max-width: 440px;
+  }
+  .chips { display: flex; gap: 9px; margin-top: 30px; flex-wrap: wrap; }
+  .chip {
+    border: 1px solid rgba(245,227,200,0.20); border-radius: 999px;
+    padding: 7px 13px 8px; font-size: 12px; letter-spacing: 0.07em;
+    text-transform: uppercase; color: #d8c5a6;
+  }
+  .foot {
+    position: absolute; left: 74px; bottom: 52px; display: flex; align-items: center; gap: 12px;
+    font-size: 12.5px; letter-spacing: 0.06em; color: #a2927a; z-index: 3;
+  }
+  .rule { width: 34px; height: 1px; background: rgba(224,121,79,0.65); }
+
+  .fox { position: absolute; right: 58px; bottom: 18px; width: 152px; z-index: 3; opacity: 0.97;
+         filter: drop-shadow(0 10px 22px rgba(0,0,0,0.55)); }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="art"></div>
+    <div class="blend"></div>
+    <div class="warm"></div>
+    <div class="vignette"></div>
+
+    <div class="copy">
+      <div class="eyebrow">Coursebook</div>
+      <h1>Learn anything.</h1>
+      <div class="sub">Any topic, any length — planned, taught, and checked one objective at a time.</div>
+      <div class="chips">
+        <div class="chip">Sourced lessons</div>
+        <div class="chip">Typed checks</div>
+        <div class="chip">Spaced review</div>
+      </div>
+    </div>
+
+    <div class="foot"><span class="rule"></span>A native Hermes Desktop learning workspace</div>
+    <img class="fox" src="../../assets/art/fox/fox-read-512.png" alt="">
+  </div>
+</body>
+</html>
