@@ -34,6 +34,7 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any, Iterable, Mapping, Sequence
 
+from . import wording
 from .policy import (
     EVIDENCE_TARGETS,
     MIN_RUBRIC_CRITERIA,
@@ -529,6 +530,81 @@ def validate_rubric(
             )
         else:
             seen[key] = index
+    return problems
+
+
+#: The registry's own aspect labels, normalised. A criterion that is the profile's named aspect
+#: (rather than a band the author invented) is the construct's vocabulary, and the checklist as a
+#: whole is its evidence; ``rubric_item_coverage_problems`` does not judge it.
+_REGISTRY_ASPECT_LABELS: frozenset[str] = frozenset(
+    _normalise(criterion.label)
+    for profile in RUBRICS.values()
+    for criterion in profile.criteria
+)
+
+
+def rubric_item_coverage_problems(
+    criteria: Any,
+    items: Any,
+) -> list[str]:
+    """Every rubric criterion must be earnable from at least one check item (E2E A2).
+
+    ``validate_rubric`` proves the rubric's own shape; it cannot see the check the learner is
+    handed. A verification checklist is scored by ticking its items and its ``pass_rule``, so a
+    criterion no item covers is a band no learner can earn — and the only reader that caught it
+    was the expensive validator, after a full generation (measured: three refusals, ~39 k output
+    tokens, no servable lesson). This is the deterministic pre-validation rule.
+
+    The match is a content-word overlap, in either direction of wording: an item covers a
+    criterion when its label shares a content word with the criterion's label or description.
+    The rule refuses only when *no* item shares anything, so ordinary paraphrase between an
+    author's criterion and the checklist step is not a refusal; a band whose obligation appears
+    nowhere in the checklist is.
+
+    Two scopes keep the rule from refusing a sound lesson:
+
+    * the registry's own aspect labels (``ordered steps``, ``safety stop condition``, ``target
+      phrase``, …) are the profile's named vocabulary, not a band the author invented; a
+      checklist of the steps is their evidence, and they are not judged here;
+    * a bespoke band — the shape the A1 validator refused ("Safety stop", weight 0.25) — is
+      judged, and the repair is to put the obligation in an item label.
+
+    ``items`` is the checklist's ``{id, label}`` array. An empty list is not judged here —
+    ``_check_item_problems`` already refuses a verification check that enumerates nothing.
+    """
+    labels: list[tuple[int, str]] = []
+    for index, item in enumerate(items or ()):
+        if isinstance(item, Mapping):
+            label = str(item.get("label") or "")
+        else:
+            label = str(item or "")
+        if label.strip():
+            labels.append((index, label))
+    if not labels:
+        return []
+
+    problems: list[str] = []
+    declared = list(criteria or ()) if isinstance(criteria, (list, tuple)) else []
+    for index, criterion in enumerate(declared, start=1):
+        text = criterion_text(criterion)
+        label = _criterion_label(criterion)
+        if label and _normalise(label) in _REGISTRY_ASPECT_LABELS:
+            continue
+        wanted = wording.content_words(label) | wording.content_words(text)
+        if not wanted:
+            continue
+        covered = any(wording.content_words(item_label) & wanted for _, item_label in labels)
+        if covered:
+            continue
+        aspects = ", ".join(sorted(wanted)[:6])
+        problems.append(
+            f"rubric criterion {index} ({text or label!r}) is not earnable from the check's "
+            f"items: no check.stimulus.items label shares a content word with its aspects "
+            f"({aspects}). The confirmation lane scores the items, not the weighted bands, so "
+            "a learner cannot earn this criterion from the checklist as posed. Put the step "
+            "the band scores into check.stimulus.items (one item per confirmable step), or "
+            "drop the criterion"
+        )
     return problems
 
 

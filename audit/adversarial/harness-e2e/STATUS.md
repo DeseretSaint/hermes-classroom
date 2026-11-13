@@ -3,6 +3,19 @@
 Status: **3/3 scenarios PASS** on `wt/h09-e2e-rerun`, base `origin/master` **`c588e4a`**.
 Auditor: sentinel (independent). Date: 2026-11-07.
 
+> **Latest re-record: E2E A2/A3/A4 merged onto the S5/S6 trunk (commit `9cd9659a`,
+> 2026-11-12).** The lesson prompt label advanced to `lesson-prompt.v17` (the union of S2's
+> unit-context paragraphs with A2's rubric-coverage and A4's per-segment-ceiling lines), so the
+> recorded packet's `prompt_version` and request token counts were stale. Re-ran
+> `harness_e2e.py`: **3/3 scenarios PASS**, 8 evidence files content-addressed in
+> `manifest.json`. The re-record also caught a real defect the new gate exists for: under A3
+> (the paraphrase scan in `assert_no_answer_leak`) two recorded `soldering_full` lessons
+> announced their own check key — the guided heading "A balled joint is a fail" against the key
+> `the balled joint`, and "the wick comes up only after the solder has flowed into it" against
+> `after the solder flows into it`. Both recordings were re-authored to teach the criterion
+> without restating the answer, which is what the prompt already requires of a non-presenting
+> surface.
+
 > **Latest re-run: H-46b (base `cd818fa`, the H-46 validator line, with H-45 merged) — see the
 > H-46b section at the end.** The H-40/H-45 numbers below are kept as history; the packet on disk
 > and the focused/full counts in that section are the current ones.

@@ -760,7 +760,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000002b",
@@ -806,7 +806,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000002e",
@@ -916,7 +916,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000037",
@@ -962,7 +962,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v16",
+                "prompt_version": "lesson-prompt.v17",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000003a",
