@@ -132,6 +132,12 @@ STATE_WORDS = (
 
 COMMENT_RE = re.compile(r"/\*.*?\*/", re.S)
 
+#: A counted section label — ``Section 2``, ``Section 2 of 6``, ``Sections 6`` — is authored by
+#: ``CB_COPY.sectionLabel`` and nowhere else. The pattern deliberately catches template
+#: interpolations, numeric literals and quote-then-concat forms, so a surface cannot rebuild the
+#: count by hand even when it never types the finished sentence.
+COUNTED_SECTION_RE = re.compile(r"\bSections?\s+(?:\$\{|[0-9]|['\"]\s*\+)")
+
 
 def strip_comments(source: str) -> str:
     """Comments are prose about the words; only rendered strings are the contract."""
@@ -202,7 +208,7 @@ class LearnerCopyMapTest(DesktopHarness):
         self.assertEqual(out["label"][1], "Section 3")
         self.assertEqual(out["label"][2], "Section")
         self.assertEqual(out["stateWord"][0], "Independent evidence")
-        self.assertEqual(out["stateWord"][1], "Not started")
+        self.assertEqual(out["stateWord"][1], "State not recorded")
         self.assertEqual(out["checkWord"][0], "Check closed")
         self.assertEqual(out["checkWord"][1], "Check state not recorded")
 
@@ -232,6 +238,31 @@ class LearnerCopyMapTest(DesktopHarness):
                     if match.group(1) == word:
                         self.fail(f"{name} maps {key!r} to its own copy of {word!r} at offset {match.start()}")
         self.assertIn("const CB_COPY", files["00-header.js"])
+
+    def test_counted_section_labels_are_authored_only_by_the_map(self) -> None:
+        """The noun the finding is about may not be re-counted by hand on any surface."""
+        files = segments()
+        for name, body in files.items():
+            if name == "00-header.js":
+                continue
+            for match in COUNTED_SECTION_RE.finditer(body):
+                start = max(0, match.start() - 40)
+                self.fail(
+                    f"{name} spells a counted section label instead of CB_COPY.sectionLabel: "
+                    f"{body[start:match.end() + 60]!r}"
+                )
+
+    def test_every_counted_section_surface_reads_the_map(self) -> None:
+        files = segments()
+        for name in ("30-home.js", "80-components.js", "90-course.js", "99-tutor.js"):
+            self.assertIn(
+                "CB_COPY.sectionLabel(", files[name], f"{name} does not route its section label through the map"
+            )
+        self.assertEqual(
+            files["00-header.js"].count("sectionLabel(ordinal, total)"),
+            1,
+            "the map must define exactly one counted-section helper",
+        )
 
     def test_banned_internal_words_are_not_rendered_as_copy(self) -> None:
         files = segments()

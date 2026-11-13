@@ -88,9 +88,11 @@ const CB_COPY = (() => {
       if (!ordinal) return section.one
       return total ? `${section.one} ${ordinal} of ${total}` : `${section.one} ${ordinal}`
     },
-    /** A stored objective/section state as the learner reads it; an unknown id is never printed. */
+    /** A stored objective/section state as the learner reads it. An id this map does not know is
+     * not evidence that nothing happened, so the fallback says the state was not recorded rather
+     * than claiming "Not started". */
     stateWord(value) {
-      return state[value] || state.not_started
+      return state[value] || 'State not recorded'
     },
     /** The check row's learner word. `none` means no check was authored — a fact, not a lock. */
     checkWord(value) {
@@ -8126,7 +8128,7 @@ function GameJournal({ objectives, compact }) {
                       color: cb3Role('ink-soft'),
                       letterSpacing: '0.04em'
                     },
-                    children: card.ordinal ? `Section ${card.ordinal}` : 'Section'
+                    children: CB_COPY.sectionLabel(card.ordinal, null)
                   }, 'ordinal'),
                   jsx('span', {
                     style: {
@@ -23552,7 +23554,7 @@ function PlayerClose({ section, progress, onBack, onReadSection, evidenceClass, 
           color: 'var(--cb-ink)',
           overflowWrap: 'anywhere'
         },
-        children: ordinal ? `You finished Section ${ordinal}` : 'You finished this section'
+        children: ordinal ? `You finished ${CB_COPY.sectionLabel(ordinal)}` : 'You finished this section'
       }),
       jsx(EvidenceChip, { value: evidenceClass || null }),
       facts.length > 0
@@ -23692,12 +23694,14 @@ function LessonPlayer({
     action.run()
   }
   const ordinal = section && section.ordinal ? String(section.ordinal) : null
-  // Item 42: one denominator for the whole lesson surface. The session's own step count is the
-  // only total a learner can act on here ("how much of this stop is left"), and it is the number
-  // the step readout advances. The course's objective total is a trail fact and is printed once,
-  // as "Section n of m" — printing it here too gave one session two disagreeing totals.
-  const stopTotal = steps.length > 0 ? String(steps.length) : null
-  const stopLabel = CB_COPY.sectionLabel(ordinal, stopTotal)
+  // U6: a section label counts *sections*, so its denominator is the course total — the same
+  // `progress.total_objectives` the section shell prints. The lesson's own block count is the
+  // step readout ("Step 1 of 4"), a different unit and a different line. Pairing the section noun
+  // with the block count printed "Section 2 of 4" beside "Step 1 of 4" and told the learner the
+  // course had four sections, contradicting the shell's "Section 2 of 6" for the same section.
+  const sectionTotal =
+    progress && Number(progress.total_objectives) > 0 ? String(Number(progress.total_objectives)) : null
+  const stopLabel = CB_COPY.sectionLabel(ordinal, sectionTotal)
   // One objective sentence, composed only from recorded fields: the section's own evidence target,
   // in learner words. A section that records no target gets the title alone rather than a slogan.
   const objective =
@@ -23715,7 +23719,7 @@ function LessonPlayer({
     children: [
       jsxs('header', {
         'data-cb-player-bar': '',
-        'data-cb-player-stop': `${ordinal || ''}/${stopTotal || ''}`,
+        'data-cb-player-stop': `${ordinal || ''}/${sectionTotal || ''}`,
         style: {
           display: 'flex',
           flexDirection: 'column',
@@ -25028,7 +25032,7 @@ function SectionPage({
   // The section's place in the course, printed only where the shell header is shown.
   const ordinal = section && section.ordinal ? String(section.ordinal) : null
   const total = row.evidence_summary && row.evidence_summary.total_objectives ? String(row.evidence_summary.total_objectives) : null
-  const place = ordinal && total ? `Section ${ordinal} of ${total}` : ordinal ? `Section ${ordinal}` : null
+  const place = ordinal ? CB_COPY.sectionLabel(ordinal, total) : null
   const metaLine = section
     ? [
         crumbAction,
@@ -30986,7 +30990,9 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
   const heroFacts = [
     sectionTotal
       ? {
-          value: sectionOrdinal ? `Section ${sectionOrdinal} of ${sectionTotal}` : `${sectionTotal} ${sectionTotal === 1 ? 'section' : 'sections'}`,
+          value: sectionOrdinal
+            ? CB_COPY.sectionLabel(sectionOrdinal, sectionTotal)
+            : `${sectionTotal} ${sectionTotal === 1 ? CB_COPY.section.one.toLowerCase() : CB_COPY.section.many.toLowerCase()}`,
           label: (section && section.title) || 'In this course'
         }
       : null,
@@ -44603,7 +44609,7 @@ function TutorRailPane({ binding }) {
   const section = page.data && page.data.section
   const runtime = page.data && page.data.runtime
   const objectiveTitle = section ? section.title : (history.data && history.data.context ? history.data.context.objective_title : null)
-  const contextChip = section && section.ordinal ? `Section ${section.ordinal}` : objectiveId ? 'This section' : ''
+  const contextChip = section && section.ordinal ? CB_COPY.sectionLabel(section.ordinal, null) : objectiveId ? 'This section' : ''
   const lessonChanged = Boolean(
     runtime && runtime.lesson_run_id && runId && String(runtime.lesson_run_id) !== String(runId)
   )

@@ -4137,7 +4137,9 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
   const heroFacts = [
     sectionTotal
       ? {
-          value: sectionOrdinal ? `Section ${sectionOrdinal} of ${sectionTotal}` : `${sectionTotal} ${sectionTotal === 1 ? 'section' : 'sections'}`,
+          value: sectionOrdinal
+            ? CB_COPY.sectionLabel(sectionOrdinal, sectionTotal)
+            : `${sectionTotal} ${sectionTotal === 1 ? CB_COPY.section.one.toLowerCase() : CB_COPY.section.many.toLowerCase()}`,
           label: (section && section.title) || 'In this course'
         }
       : null,

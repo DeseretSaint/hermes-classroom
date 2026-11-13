@@ -375,11 +375,18 @@ class Item40EnterDoesNotAdvanceTest(W213RenderTest):
         self.assertEqual(case["after"], "Step 1 of 2", "Enter on [role=button] advanced the lesson step")
 
 
-class Item42OneDenominatorTest(W213RenderTest):
-    """Item 42: the stop label and the step label share one denominator."""
+class SectionTotalVsStepCountTest(W213RenderTest):
+    """U6: the section label counts sections; the step label counts this lesson's blocks.
 
-    def test_the_two_denominators_agree_when_the_objective_count_differs(self) -> None:
-        # Four authored steps, five objectives: the two surfaces used to print /5 and /4.
+    Item 42's earlier assertion required the two denominators to be the *same* number, and the
+    player satisfied it by giving the section noun the lesson's block count. That printed
+    ``Section 2 of 4`` beside ``Step 1 of 4`` and told the learner a six-section course had four
+    sections, disagreeing with the section shell. A section and a step are two units on two lines;
+    each must carry its own honest total, so this test pins them apart.
+    """
+
+    def test_the_section_label_uses_the_course_total_not_the_block_count(self) -> None:
+        # Four authored blocks, five objectives: the two numbers must be distinguishable.
         doc = document(guided=True, blocks=COMPLETE_BLOCKS, check_id="chk_0123456789abcdef")
         case = json.loads(self.run_case({
             "kind": "player-dom",
@@ -387,22 +394,11 @@ class Item42OneDenominatorTest(W213RenderTest):
             "section": _stop(),
             "progress": {"total_objectives": 5, "independent": 2, "review_due": 1},
         }))
-        self.assertIsNotNone(case["stop"], case)
-        self.assertIsNotNone(case["step"], case)
-        stop_denominator = case["stop"].split("/")[-1]
-        step_denominator = case["step"].split("/")[-1]
-        self.assertTrue(stop_denominator.isdigit() and step_denominator.isdigit(), case)
-        self.assertEqual(
-            stop_denominator,
-            step_denominator,
-            f"the stop and the step still disagree: {case['stop']} vs {case['step']} ({case['barText']})",
-        )
-        mentioned = set(re.findall(r"(?:OF|of)\s+(\d+)", case["barText"]))
-        self.assertEqual(
-            mentioned,
-            {stop_denominator},
-            f"a second, disagreeing denominator remains on the player bar: {case['barText']}",
-        )
+        self.assertEqual(case["stop"], "2/5", case["barText"])
+        self.assertEqual(case["step"], "1/4", case["barText"])
+        self.assertIn("Section 2 of 5", case["barText"])
+        self.assertIn("Step 1 of 4", case["barText"])
+        self.assertNotIn("Section 2 of 4", case["barText"], "the section noun borrowed the block count")
 
 
 class Item42ProvenanceTest(W213RenderTest):

@@ -190,9 +190,13 @@ class PlayerSurfaceTest(H149RenderTest):
 
     def test_the_field_stop_header_names_the_stop_the_title_and_the_step(self) -> None:
         doc = document(guided=True, blocks=COMPLETE_BLOCKS, check_id="chk_0123456789abcdef")
-        html = self.player(doc)
-        self.assertIn('data-cb-player-stop="2/4"', html)
-        self.assertIn("Section 2 of 4", html)
+        # U6: four blocks in this lesson, six sections in the course. The header counts sections
+        # (the course total), the readout counts this lesson's blocks; the two must not collide,
+        # so this fixture keeps them different.
+        html = self.player(doc, progress={"total_objectives": 6, "independent": 2, "review_due": 1})
+        self.assertIn('data-cb-player-stop="2/6"', html)
+        self.assertIn("Section 2 of 6", html)
+        self.assertNotIn("Section 2 of 4", html, "the section label used the lesson's block count")
         self.assertIn('data-cb-player-title=""', html)
         self.assertIn("Affection and register", html)
         self.assertIn('data-cb-player-objective=""', html)

@@ -88,9 +88,11 @@ const CB_COPY = (() => {
       if (!ordinal) return section.one
       return total ? `${section.one} ${ordinal} of ${total}` : `${section.one} ${ordinal}`
     },
-    /** A stored objective/section state as the learner reads it; an unknown id is never printed. */
+    /** A stored objective/section state as the learner reads it. An id this map does not know is
+     * not evidence that nothing happened, so the fallback says the state was not recorded rather
+     * than claiming "Not started". */
     stateWord(value) {
-      return state[value] || state.not_started
+      return state[value] || 'State not recorded'
     },
     /** The check row's learner word. `none` means no check was authored — a fact, not a lock. */
     checkWord(value) {

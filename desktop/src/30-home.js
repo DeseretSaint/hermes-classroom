@@ -4969,7 +4969,7 @@ function GameJournal({ objectives, compact }) {
                       color: cb3Role('ink-soft'),
                       letterSpacing: '0.04em'
                     },
-                    children: card.ordinal ? `Section ${card.ordinal}` : 'Section'
+                    children: CB_COPY.sectionLabel(card.ordinal, null)
                   }, 'ordinal'),
                   jsx('span', {
                     style: {
