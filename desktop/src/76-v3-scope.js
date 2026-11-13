@@ -346,6 +346,7 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 }
 
 [data-cb-v3] [data-cb-home-scene-card] {
+  position: relative;
   width: 176px;
   height: 175px;
   flex: 0 0 176px;
@@ -356,6 +357,30 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   cursor: pointer;
   color: var(--cb3-ink);
   transform-origin: 50% 100%;
+}
+
+/* U1 — the card's one control. The overlay button covers the whole card, so the wide Home keeps
+ * the same keyboard reach as the narrow shelf: Tab stops here and Enter/Space open the course.
+ * It paints nothing itself (the card and its cover own the material); the ring is the identity's
+ * :focus-visible rule, moved inside the card because the card clips its own overflow. */
+[data-cb-v3] [data-cb-home-scene-open] {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+[data-cb-v3] [data-cb-home-scene-open]:focus-visible {
+  outline-offset: -2px;
 }
 
 [data-cb-v3] [data-cb-home-scene-card]:nth-child(1) { transform: rotate(-1.6deg); }

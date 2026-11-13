@@ -46,7 +46,7 @@ const CB_GRAMMAR_ONE_LINE = Object.freeze({
 })
 
 const CB_WORLD_STATE_WORD = Object.freeze({
-  not_requested: 'Not started',
+  not_requested: CB_COPY.state.not_started,
   concepts_generating: 'Choosing directions',
   concepts_ready: 'Three directions',
   style_selected: 'Direction chosen',

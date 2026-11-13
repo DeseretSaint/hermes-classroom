@@ -329,14 +329,15 @@ class LibraryShelfRenderTest(unittest.TestCase):
     # -- the shelf never prints a backend contract placeholder -------------------------------
     def test_the_row_resolves_the_backend_plural_placeholder(self) -> None:
         html = self.render({"kind": "row", "nextLabel": "Review 2 objective(s)"})
-        self.assertIn("Review 2 objectives", html)
+        # U6: the contract's own word is `objective`; the learner reads `section`.
+        self.assertIn("Review 2 sections", html)
         self.assertNotIn("objective(s)", html)
 
     def test_a_label_outside_the_review_form_is_still_scrubbed(self) -> None:
         # The backend's placeholder is a contract string, not a template: any sentence that
         # carries it must read as a plural count on the shelf.
         html = self.render({"kind": "row", "nextLabel": "2 objective(s) remain in this unit"})
-        self.assertIn("2 objectives remain in this unit", html)
+        self.assertIn("2 sections remain in this unit", html)
         self.assertNotIn("objective(s)", html)
 
     # -- the preview is not an inspector -----------------------------------------------------
@@ -543,7 +544,7 @@ class LibraryShelfSourceTest(unittest.TestCase):
     def test_backend_plural_placeholder_never_reaches_the_shelf(self) -> None:
         placeholder = _function_body("learnerNextLabel")
         self.assertIn(r"objective\(s\)", placeholder)
-        self.assertIn("plural(Number(match[1]), 'objective', 'objectives')", placeholder)
+        self.assertIn("CB_COPY.section.one.toLowerCase(), CB_COPY.section.many.toLowerCase()", placeholder)
         self.assertIn("learnerNextLabel(row && row.next_step", SOURCE)
         self.assertIn("learnerNextLabel(next.label)", self.facts)
 

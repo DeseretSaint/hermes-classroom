@@ -330,9 +330,9 @@ class EngagementIntegrityTest(unittest.TestCase):
 
     def test_progress_sentence_is_counts_and_says_so_when_empty(self):
         statement = self.out["progress"]["statement"]
-        self.assertEqual("1 of 4 objectives have independent evidence", statement)
+        self.assertEqual("1 of 4 sections have independent evidence", statement)
         self.assertNotIn("%", statement)
-        self.assertEqual("No objectives recorded yet", self.out["statementEmpty"])
+        self.assertEqual("No sections recorded yet", self.out["statementEmpty"])
 
     # ── vocabulary ──────────────────────────────────────────────────────────
 

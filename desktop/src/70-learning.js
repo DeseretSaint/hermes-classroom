@@ -55,18 +55,8 @@ function courseMoreTabs(supports) {
   ].filter(Boolean)
 }
 
-/** A section or quiz row is never colour-only: this is the text that carries the state. */
-const OBJECTIVE_STATE_COPY = {
-  not_started: 'Not started',
-  introduced: 'Introduced',
-  independent_evidence: 'Independent evidence',
-  delayed_evidence: 'Delayed evidence',
-  review_due: 'Review due',
-  // E2E L5: a failed attempt or a page the validator parked is not a spaced review. The word
-  // says what happened, not when it is next due.
-  needs_review: 'Could not be written',
-  overridden: 'Overridden'
-}
+/** A section or quiz row is never colour-only: this is the text that carries the state. The words
+ * are `CB_COPY.state` (00-header.js) — this file carries no state word of its own. */
 
 const EVIDENCE_CLASS_COPY = {
   // The backend's `cold` class means *independent*: no hint and no shown answer. The learner reads
@@ -218,21 +208,27 @@ function learnerEvidenceTarget(value) {
  * next step, and it wins over the stored state only while that section is still open.
  */
 const SECTION_STATE_SEMANTIC = {
-  not_started: { key: 'not_started', label: 'Not started', icon: 'circle-outline' },
-  introduced: { key: 'started', label: 'Started', icon: 'circle-filled' },
-  independent_evidence: { key: 'complete', label: 'Complete', icon: 'pass' },
-  delayed_evidence: { key: 'complete', label: 'Complete', icon: 'pass' },
-  review_due: { key: 'review', label: 'Review due', icon: 'history' },
-  // E2E L5: its own key, word and icon. It shares nothing with `review_due`, so a rejected or
+  not_started: { key: 'not_started', icon: 'circle-outline' },
+  introduced: { key: 'started', icon: 'circle-filled' },
+  independent_evidence: { key: 'complete', icon: 'pass' },
+  delayed_evidence: { key: 'complete', icon: 'pass' },
+  review_due: { key: 'review', icon: 'history' },
+  // E2E L5: its own key and icon. It shares nothing with `review_due`, so a rejected or
   // unwritten page can never be painted as a spaced-review card.
-  needs_review: { key: 'unwritten', label: 'Could not be written', icon: 'warning' },
-  overridden: { key: 'moved_on', label: 'Moved on without a grade', icon: 'dash' }
+  needs_review: { key: 'unwritten', icon: 'warning' },
+  overridden: { key: 'moved_on', icon: 'dash' }
 }
 
+/**
+ * The icon and machine key are this surface's own; the word is always `CB_COPY.state`, so the
+ * index cannot call the same stored state "Complete" while the desk calls it "Independent
+ * evidence". `next` is projected, not stored, so it names its own word.
+ */
 function sectionStateSemantic(state, isNext) {
   const settled = state === 'independent_evidence' || state === 'delayed_evidence'
   if (isNext && !settled) return { key: 'next', label: 'Next', icon: 'chevron-right' }
-  return SECTION_STATE_SEMANTIC[state] || SECTION_STATE_SEMANTIC.not_started
+  const row = SECTION_STATE_SEMANTIC[state] || SECTION_STATE_SEMANTIC.not_started
+  return { ...row, label: CB_COPY.stateWord(state) }
 }
 
 /**
@@ -244,7 +240,7 @@ function sectionStateSemantic(state, isNext) {
  */
 function sectionSemanticFor(entry, isNext) {
   if (entry && entry.lesson_state === 'needs_review') {
-    return { key: 'unwritten', label: 'Could not be written', icon: 'warning' }
+    return { key: 'unwritten', label: CB_COPY.state.needs_review, icon: 'warning' }
   }
   return sectionStateSemantic(entry ? entry.state : null, isNext)
 }
@@ -259,8 +255,8 @@ function sectionSemanticFor(entry, isNext) {
 function progressStatement(independent, total) {
   const done = Math.max(0, Number(independent) || 0)
   const all = Math.max(0, Number(total) || 0)
-  if (all === 0) return 'No objectives recorded yet'
-  const noun = all === 1 ? 'objective' : 'objectives'
+  if (all === 0) return `No ${CB_COPY.section.many.toLowerCase()} recorded yet`
+  const noun = all === 1 ? CB_COPY.section.one.toLowerCase() : CB_COPY.section.many.toLowerCase()
   return `${done} of ${all} ${noun} ${all === 1 ? 'has' : 'have'} independent evidence`
 }
 
@@ -401,7 +397,7 @@ const WARNING_COPY_LEARNING = {
 }
 
 function StateText({ state }) {
-  return jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: OBJECTIVE_STATE_COPY[state] || state || 'unknown' })
+  return jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: CB_COPY.stateWord(state) })
 }
 
 function EvidenceClassText({ value }) {
@@ -2937,7 +2933,7 @@ function NotebookSaveDialog({ open, onClose, enrollmentId, objectiveId, lessonRu
 
   const provenance = []
   if (seed && seed.course_title) provenance.push({ label: 'Course', value: seed.course_title })
-  if (seed && seed.objective_title) provenance.push({ label: 'Objective', value: seed.objective_title })
+  if (seed && seed.objective_title) provenance.push({ label: CB_COPY.section.one, value: seed.objective_title })
   if (seed && seed.block_headline) provenance.push({ label: 'Saved from', value: seed.block_headline })
   const sourceNames = (seed && (seed.source_titles || seed.source_ids)) || []
   if (sourceNames.length > 0) {
