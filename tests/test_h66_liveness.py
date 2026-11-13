@@ -419,6 +419,24 @@ class ReaperThreadTest(KernelCase):
             executor.start_tick(self._Ctx())
         self.assertTrue(_threads("coursebook-job-reaper"), "the reaper must run beside the pump")
 
+    def test_a_dashboard_only_context_starts_the_watchdog_without_a_pump(self) -> None:
+        """G6: no ``spawn_task`` means no pump, but a real plugin context still gets the watchdog."""
+
+        class NoPumpContext:
+            def __init__(self) -> None:
+                self.unloads: list = []
+
+            def on_unload(self, callback) -> None:  # noqa: ANN001
+                self.unloads.append(callback)
+
+        context = NoPumpContext()
+        self.assertIsNone(executor.start_tick(context), "a host with no loop gets no pump")
+        self.assertTrue(
+            _threads("coursebook-job-reaper"),
+            "an expired job must not wait for a process restart just because there is no pump",
+        )
+        self.assertEqual(_threads("coursebook-job-tick"), [])
+
     def test_reaper_fixes_an_expired_job_without_a_restart(self) -> None:
         job_id = job_service.create("plan", {"goal": "x"})["job_id"]
         job_service.claim(job_id, owner="dead-worker", now=T0)
