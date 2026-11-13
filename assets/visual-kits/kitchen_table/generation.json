@@ -1,0 +1,46 @@
+[
+  {
+    "asset": "kitchen-table",
+    "role": "hero",
+    "raw": "kitchen-table.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21261/R4yPWa4HEnkrdS63CZ3M3_Iz9zECba.png",
+    "attempt": 1,
+    "verdict": "accepted",
+    "prompt_delta": "palette line extended with: \"All metal is warm brass or copper, never steel, never chrome, never grey.\"",
+    "vision": "overhead warm table, wide blank ochre board across the top, mixing bowl, jug, jar, oranges, spring onions, flour bowl, herb bundle, shelf of cream crockery",
+    "residual": "the far shelf carries plain cream cups and a lidded jar with no lettering; the top band holds the window and shelf rather than bare wall, so the measured quiet band sits lower"
+  },
+  {
+    "asset": "tabletop-3x2",
+    "role": "cover",
+    "raw": "tabletop-3x2.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21262/BHdGQ-RAXsLKyppzcMkHX_31iW8fQx.png",
+    "attempt": 1,
+    "verdict": "accepted",
+    "prompt_delta": "palette line extended with the warm-metal sentence",
+    "vision": "board with two bowls of flour, a jug of milk, eggs, oranges, herbs, a knife and a folded cloth; every vessel plain",
+    "residual": "none observed on the plate itself; the wall behind is pale and plain"
+  },
+  {
+    "asset": "ingredient-board",
+    "role": "section",
+    "raw": "ingredient-board.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21263/7vLmTqrN8qojaNdISiN1d_jATN8yz7.png",
+    "attempt": 1,
+    "verdict": "accepted",
+    "prompt_delta": "palette line extended with the warm-metal sentence",
+    "vision": "open cupboard doors, tiled splashback, copper pan on a rail, bowl of flour with a spoon, eggs, jar, folded linen, flour dust",
+    "residual": "the cupboard doors show panelled joinery but no marking"
+  },
+  {
+    "asset": "mixing-lesson",
+    "role": "lesson_scene",
+    "raw": "mixing-lesson.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21265/pmrb9lfVyoQQASopFk1Z9_S4CY67Hh.png",
+    "attempt": 1,
+    "verdict": "accepted",
+    "prompt_delta": "palette line extended with the warm-metal sentence",
+    "vision": "kitchen table with a deep cream bowl and spoon, jug, folded cloth, blank plates; tall window at the left; chair back in the foreground",
+    "residual": "the tap and sink are visible at the left edge as warm brass and cream ceramic, not chrome"
+  }
+]
