@@ -15292,6 +15292,12 @@ function AttemptControls({
   // in-flight label names the one that was pressed ("Asking…" vs "Recording…").
   const [assistIntent, setAssistIntent] = useState(null)
   const assistBusy = assistPending !== null
+  // U2: "I saw the answer" is one-way. It changes what this attempt can ever count for, so the
+  // first press only opens a consequence sentence and a confirm; no `lesson.assist` leaves this
+  // card until the learner confirms. Cancel throws nothing away because nothing was written.
+  const [answerConfirmOpen, setAnswerConfirmOpen] = useState(false)
+  const answerConfirmRef = useRef(null)
+  const answerConfirmTouched = useRef(false)
   // H-178: `lesson.assist` bumps the enrollment revision (`docs/CONTRACTS.md` §lesson.assist), and
   // its response states the new revision. Adopting it locally means pressing "I used a hint" and
   // then "Check" inside the refresh window still carries the current fence instead of losing the
@@ -15363,6 +15369,14 @@ function AttemptControls({
     const node = assistGroupRef.current
     if (node && typeof node.focus === 'function') node.focus({ preventScroll: true })
   }, [hintUsed, answerUsed])
+  // U2: opening the confirm moves focus into it; closing it returns focus to the assist group that
+  // holds the trigger again. Only a real open or cancel sets the flag, so a card that mounts with
+  // the confirm closed never steals focus from the page.
+  useEffect(() => {
+    if (!answerConfirmTouched.current) return
+    const node = answerConfirmOpen ? answerConfirmRef.current : assistGroupRef.current
+    if (node && typeof node.focus === 'function') node.focus({ preventScroll: true })
+  }, [answerConfirmOpen])
   // The fence this card submits against. See `assistRevision`.
   const fenceRevision = Math.max(Number(revision) || 0, Number(assistRevision) || 0)
 
@@ -15383,6 +15397,7 @@ function AttemptControls({
     setTicked([])
     setSelected(-1)
     setAssistClass(null)
+    setAnswerConfirmOpen(false)
     setPhase('awaiting_input')
     setResult(null)
     setResultCheck(null)
@@ -15438,6 +15453,9 @@ function AttemptControls({
     }
     answerRef.current = answer
     if (!nonceRef.current) nonceRef.current = newOperationId('attempt')
+    // U2: submitting an answer closes an open disclosure. The learner chose to answer, so the
+    // confirm that never wrote anything must not survive past the attempt it was about.
+    setAnswerConfirmOpen(false)
     setPhase('submitting')
     setError(null)
     const response = await rpc(
@@ -15535,6 +15553,7 @@ function AttemptControls({
     setText('')
     setTicked([])
     setSelected(-1)
+    setAnswerConfirmOpen(false)
     setResult(null)
     setResultCheck(null)
     setError(null)
@@ -15606,6 +15625,36 @@ function AttemptControls({
     setAssistIntent('record')
     await recordAssist('hint_request')
     setAssistIntent(null)
+  }, [recordAssist])
+
+  /**
+   * U2: the answer disclosure asks first.
+   *
+   * "I saw the answer" is the only control here that takes something away from the learner — the
+   * next committed attempt can never be `independent` again — so the first press writes nothing at
+   * all. It opens one sentence saying what the click costs and a confirm; only the confirm reaches
+   * `lesson.assist(kind:'answer_shown')`. A failed write keeps the confirm open with the refusal
+   * beside its buttons, so the learner sees it and can decide again; cancelling writes nothing and
+   * leaves the attempt exactly as it was.
+   */
+  const openAnswerConfirm = useCallback(() => {
+    answerConfirmTouched.current = true
+    setError(null)
+    setAnswerConfirmOpen(true)
+  }, [])
+
+  const cancelAnswerConfirm = useCallback(() => {
+    answerConfirmTouched.current = true
+    setError(null)
+    setAnswerConfirmOpen(false)
+  }, [])
+
+  const confirmAnswerShown = useCallback(async () => {
+    const recorded = await recordAssist('answer_shown')
+    // Only a stored event closes the confirm. A refusal leaves it open with `error` beside the
+    // buttons, so the learner is not told a write happened when it did not.
+    if (recorded) setAnswerConfirmOpen(false)
+    return recorded
   }, [recordAssist])
 
   /** Radio-group keys: 1–8 pick by number, arrows move and select, Home/End jump. */
@@ -16039,14 +16088,86 @@ function AttemptControls({
                           }),
                       answerUsed
                         ? jsx(AssistUsedFlag, { kind: 'answer_shown', children: 'Answer shown' })
-                        : jsx(sdk.Button, {
-                            variant: 'text',
-                            size: 'sm',
-                            disabled: locked || assistBusy,
-                            'data-cb-assist-pending': assistPending === 'answer_shown' ? '' : undefined,
-                            onClick: () => recordAssist('answer_shown'),
-                            children: assistPending === 'answer_shown' ? 'Recording…' : 'I saw the answer'
-                          }),
+                        : answerConfirmOpen
+                          ? jsxs('div', {
+                              'data-cb-assist-confirm': 'answer_shown',
+                              id: 'cb-answer-confirm',
+                              role: 'group',
+                              'aria-label': 'Confirm that you saw the answer',
+                              ref: answerConfirmRef,
+                              tabIndex: -1,
+                              onKeyDown: (event) => {
+                                if (event.key !== 'Escape') return
+                                event.stopPropagation()
+                                cancelAnswerConfirm()
+                              },
+                              style: {
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '0.35rem',
+                                flexBasis: '100%',
+                                minWidth: 0,
+                                padding: '0.5rem 0.6rem',
+                                border: '1px solid var(--cb-ochre)',
+                                background: 'var(--cb-lamp-soft)',
+                                boxSizing: 'border-box',
+                                outlineOffset: '2px'
+                              },
+                              children: [
+                                jsx('p', {
+                                  id: 'cb-answer-confirm-note',
+                                  style: {
+                                    margin: 0,
+                                    fontFamily: CB_SANS,
+                                    fontSize: CB_TYPE.caption,
+                                    lineHeight: 1.45,
+                                    color: 'var(--cb-ink)'
+                                  },
+                                  children:
+                                    'This marks the attempt "answer shown". The answer you send next cannot count as independent evidence, and this cannot be undone.'
+                                }, 'note'),
+                                jsxs('div', {
+                                  style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem 0.6rem' },
+                                  children: [
+                                    jsx(sdk.Button, {
+                                      variant: 'secondary',
+                                      size: 'sm',
+                                      'data-cb-answer-confirm-yes': '',
+                                      'aria-describedby': 'cb-answer-confirm-note',
+                                      disabled: locked || assistBusy,
+                                      onClick: confirmAnswerShown,
+                                      children: assistPending === 'answer_shown' ? 'Recording…' : 'Yes, record that I saw the answer'
+                                    }, 'yes'),
+                                    jsx(sdk.Button, {
+                                      variant: 'text',
+                                      size: 'sm',
+                                      'data-cb-answer-confirm-cancel': '',
+                                      disabled: assistBusy,
+                                      onClick: cancelAnswerConfirm,
+                                      children: 'Cancel'
+                                    }, 'cancel')
+                                  ]
+                                }, 'actions'),
+                                // A refused write keeps this confirm exactly where it is and prints
+                                // the refusal beside the buttons that caused it.
+                                error
+                                  ? jsx('div', {
+                                      role: 'alert',
+                                      'data-cb-answer-confirm-error': '',
+                                      children: jsx(ErrorLine, { error })
+                                    })
+                                  : null
+                              ]
+                            })
+                          : jsx(sdk.Button, {
+                              variant: 'text',
+                              size: 'sm',
+                              disabled: locked || assistBusy,
+                              'data-cb-assist-answer': '',
+                              'data-cb-assist-pending': assistPending === 'answer_shown' ? '' : undefined,
+                              onClick: openAnswerConfirm,
+                              children: assistPending === 'answer_shown' ? 'Recording…' : 'I saw the answer'
+                            }),
                       jsx('span', {
                         'data-cb-assist-note': '',
                         style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
@@ -16230,7 +16351,9 @@ function AttemptControls({
           })
         : null,
 
-      error && phase !== 'needs_retry' && phase !== 'stale' ? jsx(ErrorLine, { error }) : null,
+      // U2: while the answer confirm is open it prints its own refusal beside its buttons, so the
+      // same sentence must not also appear at the foot of the card.
+      error && !answerConfirmOpen && phase !== 'needs_retry' && phase !== 'stale' ? jsx(ErrorLine, { error }) : null,
 
       playerMode
         ? null
