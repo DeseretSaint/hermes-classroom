@@ -14,8 +14,9 @@ What this proves, against the shipped module:
   `lesson.revise` for the authored page title, fenced on the `page_hash` the blueprint served
   (never a digest computed in the Desktop half), with `confirm_evidence_consequence` only after
   the refusal named the stored attempts;
-* `Regenerate this section` prints `1 section: <title>` and the cost before the click, then sends
-  `lesson.regenerate` with that section id and surfaces the queued job, its scope and its preflight;
+* `Regenerate this section` prints `1 section: <title>` and the price before the click, then sends
+  `lesson.regenerate` with that section id and surfaces the queued job and its price — dollars only,
+  never a call count or a preflight;
 * the provenance chip reads the lesson state the blueprint serves (`needs_review` /
   `parent_approved`) and the revision rows, and never upgrades an edit to an approval;
 * the review diff is read from `parent.review.read`, prints the backend's `blocked_reason`
@@ -381,14 +382,24 @@ const regenButton = document.querySelector('[data-cb-finetune-regenerate]')
 await click(byText(row('obj_a'), 'Regenerate this section'))
 const scopeLine = text(document.querySelector('[data-cb-regenerate-scope]'))
 const costBeforeClick = text(document.querySelector('[data-cb-regenerate-cost]'))
+const priceBeforeClickMarker = document.querySelector('[data-cb-regenerate-cost]').getAttribute('data-cb-regenerate-cost')
 await click(document.querySelector('[data-cb-regenerate-queue]'))
+const priceEstimateNode = document.querySelector('[data-cb-regenerate-price-estimate]')
 facts.regenerate = {
   button: regenButton ? regenButton.getAttribute('data-cb-finetune-regenerate') : null,
   buttonDisabled: Boolean(regenButton && regenButton.disabled),
   scopeLine,
   costBeforeClick,
+  priceBeforeClickMarker,
   call: calls.filter((c) => c.method === 'lesson.regenerate').at(-1) || null,
-  result: text(document.querySelector('[data-cb-regenerate-result]'))
+  result: text(document.querySelector('[data-cb-regenerate-result]')),
+  // The queued receipt's price line. The old pipeline receipt said `Preflight: $a-$b · n-m call(s)`;
+  // the learner now reads dollars only. The marker carries the backend's minimum cost verbatim.
+  priceEstimate: priceEstimateNode ? text(priceEstimateNode) : null,
+  priceEstimateMarker: priceEstimateNode
+    ? priceEstimateNode.getAttribute('data-cb-regenerate-price-estimate')
+    : null,
+  legacyPreflightMarker: Boolean(document.querySelector('[data-cb-regenerate-preflight]'))
 }
 
 // 4e — a course whose blueprint serves no section identity withholds the actions and says why.
@@ -694,13 +705,43 @@ class FineTuneRenderTest(unittest.TestCase):
         self.assertEqual(regen["button"], "sec_a")
         self.assertFalse(regen["buttonDisabled"])
         self.assertEqual(regen["scopeLine"], "1 section: Alpha")
-        self.assertIn("Estimated", regen["costBeforeClick"])
+        self.assertIn("costs about $0.02–$0.04", regen["costBeforeClick"])
+        self.assertNotIn("call(s)", regen["costBeforeClick"])
         call = regen["call"]
         self.assertEqual(call["method"], "lesson.regenerate")
         self.assertEqual(call["payload"]["section_id"], "sec_a")
         self.assertEqual(call["payload"]["plan_id"], "pln_1")
         self.assertIn("job_regen", regen["result"])
         self.assertIn("1 section: Alpha", regen["result"])
+
+    def test_the_regenerate_door_speaks_learner_words_not_pipeline(self) -> None:
+        """The learner reads dollars and what happens next — never a call count or a preflight."""
+        regen = self.facts["regenerate"]
+        self.assertEqual(regen["priceBeforeClickMarker"], "estimated")
+        self.assertIn(
+            "Regenerating this section costs about $0.02–$0.04, based on what writing lessons "
+            "for this course has cost so far. The price for this section appears here once you queue it.",
+            regen["costBeforeClick"],
+        )
+        self.assertEqual(regen["priceEstimate"], "This section costs $0.02–$0.04 to regenerate.")
+        # The marker still carries the backend's own minimum cost, under its new leaner name.
+        self.assertEqual(regen["priceEstimateMarker"], "0.02")
+        self.assertFalse(regen["legacyPreflightMarker"])
+        for surface in (regen["costBeforeClick"], regen["priceEstimate"]):
+            for banned in ("Preflight", "preflight", "call(s)", "call band", "band", "backend", "routing"):
+                self.assertNotIn(banned, surface)
+        self.assertNotIn("Preflight:", regen["result"])
+        self.assertNotIn("call(s)", regen["result"])
+
+    def test_the_unpriced_regenerate_branch_speaks_learner_words_too(self) -> None:
+        """A course with no earlier lesson run gets the same words, and the old marker is gone."""
+        module = PLUGIN_JS.read_text(encoding="utf-8")
+        self.assertIn(
+            "We work out what one section costs when you queue it — this course has no earlier lesson run to go by yet.",
+            module,
+        )
+        self.assertNotIn("data-cb-regenerate-preflight", module)
+        self.assertIn("data-cb-regenerate-price-estimate", module)
 
     def test_a_course_without_section_identity_withholds_the_actions(self) -> None:
         missing = self.facts["noSection"]
