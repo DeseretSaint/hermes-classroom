@@ -454,6 +454,41 @@ class CreateFlowSequenceTest(unittest.TestCase):
         self.assertIn("Create course", html)
         self.assertIn("data-cb-create-preview-shape", html)
 
+    def test_the_review_step_prices_the_course_in_learner_words(self) -> None:
+        """E2E U8: what happens, with no pipeline noun and no price promise the flow cannot keep.
+
+        The fact the old line carried that a learner needs (a price is worked out only once the
+        course is sized) survives in their own words; the words they cannot act on — a cost band, a
+        call band, a priced preflight, backend sizing, a "run" — are gone. The create flow shows no
+        price at all (a plan job's result carries `{job_id, state}`), so the sentence must not
+        promise one the next screen never supplies.
+        """
+        html = self.run_case({"kind": "render", "step": 3})["html"]
+        self.assertIn("data-cb-create-price-waiting", html)
+        self.assertNotIn("data-cb-create-preflight-waiting", html)
+        paragraph = html[html.index("data-cb-create-price-waiting"):]
+        text = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", paragraph[: paragraph.index("</p>")]))
+        # The band the sentence quotes is the scope card's own band, not a number copied into the
+        # test: the create flow and the card must not drift apart again.
+        written = re.search(r"Creating this course writes (\d+)[–-](\d+) sections\.", text)
+        self.assertIsNotNone(written, text)
+        declared = re.search(
+            r"id: 'short',\s*label: 'Short course',\s*sections: \[(\d+), (\d+)\]", _source()
+        )
+        self.assertIsNotNone(declared)
+        assert written is not None and declared is not None
+        self.assertEqual((written.group(1), written.group(2)), (declared.group(1), declared.group(2)))
+        self.assertIn(
+            "Nothing is priced yet — we price it once we know how big the course is.",
+            text,
+        )
+        # No promise of a visible price; the flow has none to show.
+        self.assertNotIn("You see the price", text)
+        self.assertNotIn("draft plan", text)
+        for banned in ("band", "preflight", "backend", "routing", "run"):
+            self.assertNotRegex(text, rf"\b{banned}\b")
+        self.assertNotRegex(text, r"\$\d")
+
     def test_the_name_is_optional_and_never_blocks_continue(self) -> None:
         source = _source()
         self.assertIn("children: 'Name (optional)'", source)

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-13T07:44:37.221Z",
+  "generated_at": "2026-11-13T08:58:29.609Z",
   "reference_time": "2026-11-07T10:00:00.000Z",
   "kind": "painted audit of the shipped Desktop module rendered in jsdom, painted and measured in headless Chromium",
   "chromium": "Chrome/155.0.8059.84",
@@ -362,7 +362,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(123, 75, 10)",
           "bg": "rgb(255, 252, 243)",
           "size": 12,
@@ -505,7 +505,7 @@
       "animated_sample": [],
       "interactive_count": 9,
       "positive_tabindex": 0,
-      "body_text_len": 804,
+      "body_text_len": 799,
       "media_fallback_text": [],
       "ax_controls": 14,
       "ax_unnamed": 0,
@@ -969,7 +969,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(123, 75, 10)",
           "bg": "rgb(255, 252, 243)",
           "size": 24,
@@ -1112,7 +1112,7 @@
       "animated_sample": [],
       "interactive_count": 9,
       "positive_tabindex": 0,
-      "body_text_len": 804,
+      "body_text_len": 799,
       "media_fallback_text": [],
       "ax_controls": 14,
       "ax_unnamed": 0,
@@ -1576,7 +1576,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(123, 75, 10)",
           "bg": "rgb(255, 252, 243)",
           "size": 12,
@@ -1719,7 +1719,7 @@
       "animated_sample": [],
       "interactive_count": 9,
       "positive_tabindex": 0,
-      "body_text_len": 804,
+      "body_text_len": 799,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -2092,7 +2092,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(224, 178, 92)",
           "bg": "rgb(29, 27, 22)",
           "size": 12,
@@ -2235,7 +2235,7 @@
       "animated_sample": [],
       "interactive_count": 9,
       "positive_tabindex": 0,
-      "body_text_len": 804,
+      "body_text_len": 799,
       "media_fallback_text": [],
       "ax_controls": 14,
       "ax_unnamed": 0,
@@ -2699,7 +2699,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(224, 178, 92)",
           "bg": "rgb(29, 27, 22)",
           "size": 24,
@@ -2842,7 +2842,7 @@
       "animated_sample": [],
       "interactive_count": 9,
       "positive_tabindex": 0,
-      "body_text_len": 804,
+      "body_text_len": 799,
       "media_fallback_text": [],
       "ax_controls": 14,
       "ax_unnamed": 0,
@@ -3306,7 +3306,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(224, 178, 92)",
           "bg": "rgb(29, 27, 22)",
           "size": 12,
@@ -3449,7 +3449,7 @@
       "animated_sample": [],
       "interactive_count": 9,
       "positive_tabindex": 0,
-      "body_text_len": 804,
+      "body_text_len": 799,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -3770,7 +3770,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(123, 75, 10)",
           "bg": "rgb(255, 252, 243)",
           "size": 12,
@@ -3896,7 +3896,7 @@
       "animated_sample": [],
       "interactive_count": 6,
       "positive_tabindex": 0,
-      "body_text_len": 878,
+      "body_text_len": 873,
       "media_fallback_text": [
         "No generated artifact is attached; the text equivalent is shown.",
         "No generated artifact is attached; the text equivalent is shown."
@@ -4281,7 +4281,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(123, 75, 10)",
           "bg": "rgb(255, 252, 243)",
           "size": 24,
@@ -4407,7 +4407,7 @@
       "animated_sample": [],
       "interactive_count": 6,
       "positive_tabindex": 0,
-      "body_text_len": 878,
+      "body_text_len": 873,
       "media_fallback_text": [
         "No generated artifact is attached; the text equivalent is shown.",
         "No generated artifact is attached; the text equivalent is shown."
@@ -4792,7 +4792,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(123, 75, 10)",
           "bg": "rgb(255, 252, 243)",
           "size": 12,
@@ -4918,7 +4918,7 @@
       "animated_sample": [],
       "interactive_count": 6,
       "positive_tabindex": 0,
-      "body_text_len": 878,
+      "body_text_len": 873,
       "media_fallback_text": [
         "No generated artifact is attached; the text equivalent is shown.",
         "No generated artifact is attached; the text equivalent is shown."
@@ -5242,7 +5242,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(224, 178, 92)",
           "bg": "rgb(29, 27, 22)",
           "size": 12,
@@ -5368,7 +5368,7 @@
       "animated_sample": [],
       "interactive_count": 6,
       "positive_tabindex": 0,
-      "body_text_len": 878,
+      "body_text_len": 873,
       "media_fallback_text": [
         "No generated artifact is attached; the text equivalent is shown.",
         "No generated artifact is attached; the text equivalent is shown."
@@ -5753,7 +5753,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(224, 178, 92)",
           "bg": "rgb(29, 27, 22)",
           "size": 24,
@@ -5879,7 +5879,7 @@
       "animated_sample": [],
       "interactive_count": 6,
       "positive_tabindex": 0,
-      "body_text_len": 878,
+      "body_text_len": 873,
       "media_fallback_text": [
         "No generated artifact is attached; the text equivalent is shown.",
         "No generated artifact is attached; the text equivalent is shown."
@@ -6264,7 +6264,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(224, 178, 92)",
           "bg": "rgb(29, 27, 22)",
           "size": 12,
@@ -6390,7 +6390,7 @@
       "animated_sample": [],
       "interactive_count": 6,
       "positive_tabindex": 0,
-      "body_text_len": 878,
+      "body_text_len": 873,
       "media_fallback_text": [
         "No generated artifact is attached; the text equivalent is shown.",
         "No generated artifact is attached; the text equivalent is shown."
@@ -6740,7 +6740,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(123, 75, 10)",
           "bg": "rgb(255, 252, 243)",
           "size": 12,
@@ -6866,7 +6866,7 @@
       "animated_sample": [],
       "interactive_count": 8,
       "positive_tabindex": 0,
-      "body_text_len": 950,
+      "body_text_len": 945,
       "media_fallback_text": [
         "This media could not be previewed (MEDIA_UNAVAILABLE); the text equivalent remains.",
         "This media could not be previewed (MEDIA_UNAVAILABLE); the text equivalent remains."
@@ -7297,7 +7297,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(123, 75, 10)",
           "bg": "rgb(255, 252, 243)",
           "size": 24,
@@ -7423,7 +7423,7 @@
       "animated_sample": [],
       "interactive_count": 8,
       "positive_tabindex": 0,
-      "body_text_len": 950,
+      "body_text_len": 945,
       "media_fallback_text": [
         "This media could not be previewed (MEDIA_UNAVAILABLE); the text equivalent remains.",
         "This media could not be previewed (MEDIA_UNAVAILABLE); the text equivalent remains."
@@ -7854,7 +7854,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(123, 75, 10)",
           "bg": "rgb(255, 252, 243)",
           "size": 12,
@@ -7980,7 +7980,7 @@
       "animated_sample": [],
       "interactive_count": 8,
       "positive_tabindex": 0,
-      "body_text_len": 950,
+      "body_text_len": 945,
       "media_fallback_text": [
         "This media could not be previewed (MEDIA_UNAVAILABLE); the text equivalent remains.",
         "This media could not be previewed (MEDIA_UNAVAILABLE); the text equivalent remains."
@@ -8330,7 +8330,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(224, 178, 92)",
           "bg": "rgb(29, 27, 22)",
           "size": 12,
@@ -8456,7 +8456,7 @@
       "animated_sample": [],
       "interactive_count": 8,
       "positive_tabindex": 0,
-      "body_text_len": 950,
+      "body_text_len": 945,
       "media_fallback_text": [
         "This media could not be previewed (MEDIA_UNAVAILABLE); the text equivalent remains.",
         "This media could not be previewed (MEDIA_UNAVAILABLE); the text equivalent remains."
@@ -8887,7 +8887,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(224, 178, 92)",
           "bg": "rgb(29, 27, 22)",
           "size": 24,
@@ -9013,7 +9013,7 @@
       "animated_sample": [],
       "interactive_count": 8,
       "positive_tabindex": 0,
-      "body_text_len": 950,
+      "body_text_len": 945,
       "media_fallback_text": [
         "This media could not be previewed (MEDIA_UNAVAILABLE); the text equivalent remains.",
         "This media could not be previewed (MEDIA_UNAVAILABLE); the text equivalent remains."
@@ -9444,7 +9444,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(224, 178, 92)",
           "bg": "rgb(29, 27, 22)",
           "size": 12,
@@ -9570,7 +9570,7 @@
       "animated_sample": [],
       "interactive_count": 8,
       "positive_tabindex": 0,
-      "body_text_len": 950,
+      "body_text_len": 945,
       "media_fallback_text": [
         "This media could not be previewed (MEDIA_UNAVAILABLE); the text equivalent remains.",
         "This media could not be previewed (MEDIA_UNAVAILABLE); the text equivalent remains."
@@ -11532,7 +11532,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Orient",
+          "text": "Step \u00b7 Orient",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 12,
@@ -11623,7 +11623,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Explain",
+          "text": "Step \u00b7 Explain",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 12,
@@ -11714,7 +11714,7 @@
         },
         {
           "tag": "span",
-          "text": "Checkpoint \u00b7 Practice",
+          "text": "Check \u00b7 Practice",
           "fg": "rgb(123, 75, 10)",
           "bg": "rgb(251, 235, 203)",
           "size": 12,
@@ -11831,7 +11831,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Recap",
+          "text": "Step \u00b7 Recap",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 12,
@@ -11895,7 +11895,7 @@
       "animated_sample": [],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 553,
+      "body_text_len": 539,
       "media_fallback_text": [],
       "ax_controls": 10,
       "ax_unnamed": 0,
@@ -12109,7 +12109,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Orient",
+          "text": "Step \u00b7 Orient",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 24,
@@ -12200,7 +12200,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Explain",
+          "text": "Step \u00b7 Explain",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 24,
@@ -12291,7 +12291,7 @@
         },
         {
           "tag": "span",
-          "text": "Checkpoint \u00b7 Practice",
+          "text": "Check \u00b7 Practice",
           "fg": "rgb(123, 75, 10)",
           "bg": "rgb(251, 235, 203)",
           "size": 24,
@@ -12408,7 +12408,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Recap",
+          "text": "Step \u00b7 Recap",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 24,
@@ -12472,7 +12472,7 @@
       "animated_sample": [],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 553,
+      "body_text_len": 539,
       "media_fallback_text": [],
       "ax_controls": 10,
       "ax_unnamed": 0,
@@ -12686,7 +12686,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Orient",
+          "text": "Step \u00b7 Orient",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 12,
@@ -12777,7 +12777,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Explain",
+          "text": "Step \u00b7 Explain",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 12,
@@ -12868,7 +12868,7 @@
         },
         {
           "tag": "span",
-          "text": "Checkpoint \u00b7 Practice",
+          "text": "Check \u00b7 Practice",
           "fg": "rgb(123, 75, 10)",
           "bg": "rgb(251, 235, 203)",
           "size": 12,
@@ -12985,7 +12985,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Recap",
+          "text": "Step \u00b7 Recap",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 12,
@@ -13049,7 +13049,7 @@
       "animated_sample": [],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 553,
+      "body_text_len": 539,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -13162,7 +13162,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Orient",
+          "text": "Step \u00b7 Orient",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 12,
@@ -13253,7 +13253,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Explain",
+          "text": "Step \u00b7 Explain",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 12,
@@ -13344,7 +13344,7 @@
         },
         {
           "tag": "span",
-          "text": "Checkpoint \u00b7 Practice",
+          "text": "Check \u00b7 Practice",
           "fg": "rgb(224, 178, 92)",
           "bg": "rgb(51, 41, 15)",
           "size": 12,
@@ -13461,7 +13461,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Recap",
+          "text": "Step \u00b7 Recap",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 12,
@@ -13525,7 +13525,7 @@
       "animated_sample": [],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 553,
+      "body_text_len": 539,
       "media_fallback_text": [],
       "ax_controls": 10,
       "ax_unnamed": 0,
@@ -13739,7 +13739,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Orient",
+          "text": "Step \u00b7 Orient",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 24,
@@ -13830,7 +13830,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Explain",
+          "text": "Step \u00b7 Explain",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 24,
@@ -13921,7 +13921,7 @@
         },
         {
           "tag": "span",
-          "text": "Checkpoint \u00b7 Practice",
+          "text": "Check \u00b7 Practice",
           "fg": "rgb(224, 178, 92)",
           "bg": "rgb(51, 41, 15)",
           "size": 24,
@@ -14038,7 +14038,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Recap",
+          "text": "Step \u00b7 Recap",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 24,
@@ -14102,7 +14102,7 @@
       "animated_sample": [],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 553,
+      "body_text_len": 539,
       "media_fallback_text": [],
       "ax_controls": 10,
       "ax_unnamed": 0,
@@ -14316,7 +14316,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Orient",
+          "text": "Step \u00b7 Orient",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 12,
@@ -14407,7 +14407,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Explain",
+          "text": "Step \u00b7 Explain",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 12,
@@ -14498,7 +14498,7 @@
         },
         {
           "tag": "span",
-          "text": "Checkpoint \u00b7 Practice",
+          "text": "Check \u00b7 Practice",
           "fg": "rgb(224, 178, 92)",
           "bg": "rgb(51, 41, 15)",
           "size": 12,
@@ -14615,7 +14615,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Recap",
+          "text": "Step \u00b7 Recap",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 12,
@@ -14679,7 +14679,7 @@
       "animated_sample": [],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 553,
+      "body_text_len": 539,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -20823,7 +20823,7 @@
         },
         {
           "tag": "p",
-          "text": "Review \u00b7 Section 2 of 4 \u00b7 Next: Checkpoint 3 \u00b7 R",
+          "text": "Review \u00b7 Section 2 of 4 \u00b7 Next: Section 3 \u00b7 Repl",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 14,
@@ -20888,7 +20888,7 @@
         },
         {
           "tag": "span",
-          "text": "Evidence",
+          "text": "Independent evidence",
           "fg": "rgb(47, 96, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 12,
@@ -21277,7 +21277,7 @@
       ],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 955,
+      "body_text_len": 964,
       "media_fallback_text": [],
       "ax_controls": 10,
       "ax_unnamed": 0,
@@ -21308,8 +21308,8 @@
           "kind": "authored",
           "tab": 2,
           "tag": "button",
-          "text": "Name the three things an engine needs Ev",
-          "name": "Checkpoint 1: Name the three things an engine needs, Evidence, Check closed",
+          "text": "Name the three things an engine needs In",
+          "name": "Section 1: Name the three things an engine needs, Independent evidence, Check closed",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -21319,7 +21319,7 @@
           "tab": 3,
           "tag": "button",
           "text": "Diagnose a no-start Review due Check ope",
-          "name": "Checkpoint 2: Diagnose a no-start, Review due, Check open",
+          "name": "Section 2: Diagnose a no-start, Review due, Check open",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -21329,7 +21329,7 @@
           "tab": 4,
           "tag": "button",
           "text": "Replace a fouled plug Started No check y",
-          "name": "Checkpoint 3: Replace a fouled plug, Started, No check yet",
+          "name": "Section 3: Replace a fouled plug, Started, No check yet",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -21339,7 +21339,7 @@
           "tab": 5,
           "tag": "button",
           "text": "Check compression safely Not started No ",
-          "name": "Checkpoint 4: Check compression safely, Not started, No check yet",
+          "name": "Section 4: Check compression safely, Not started, No check yet",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -21582,7 +21582,7 @@
         },
         {
           "tag": "p",
-          "text": "Review \u00b7 Section 2 of 4 \u00b7 Next: Checkpoint 3 \u00b7 R",
+          "text": "Review \u00b7 Section 2 of 4 \u00b7 Next: Section 3 \u00b7 Repl",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 28,
@@ -21647,7 +21647,7 @@
         },
         {
           "tag": "span",
-          "text": "Evidence",
+          "text": "Independent evidence",
           "fg": "rgb(47, 96, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 24,
@@ -22036,7 +22036,7 @@
       ],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 955,
+      "body_text_len": 964,
       "media_fallback_text": [],
       "ax_controls": 10,
       "ax_unnamed": 0,
@@ -22067,8 +22067,8 @@
           "kind": "authored",
           "tab": 2,
           "tag": "button",
-          "text": "Name the three things an engine needs Ev",
-          "name": "Checkpoint 1: Name the three things an engine needs, Evidence, Check closed",
+          "text": "Name the three things an engine needs In",
+          "name": "Section 1: Name the three things an engine needs, Independent evidence, Check closed",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -22078,7 +22078,7 @@
           "tab": 3,
           "tag": "button",
           "text": "Diagnose a no-start Review due Check ope",
-          "name": "Checkpoint 2: Diagnose a no-start, Review due, Check open",
+          "name": "Section 2: Diagnose a no-start, Review due, Check open",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -22088,7 +22088,7 @@
           "tab": 4,
           "tag": "button",
           "text": "Replace a fouled plug Started No check y",
-          "name": "Checkpoint 3: Replace a fouled plug, Started, No check yet",
+          "name": "Section 3: Replace a fouled plug, Started, No check yet",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -22098,7 +22098,7 @@
           "tab": 5,
           "tag": "button",
           "text": "Check compression safely Not started No ",
-          "name": "Checkpoint 4: Check compression safely, Not started, No check yet",
+          "name": "Section 4: Check compression safely, Not started, No check yet",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -22341,7 +22341,7 @@
         },
         {
           "tag": "p",
-          "text": "Review \u00b7 Section 2 of 4 \u00b7 Next: Checkpoint 3 \u00b7 R",
+          "text": "Review \u00b7 Section 2 of 4 \u00b7 Next: Section 3 \u00b7 Repl",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 14,
@@ -22406,7 +22406,7 @@
         },
         {
           "tag": "span",
-          "text": "Evidence",
+          "text": "Independent evidence",
           "fg": "rgb(47, 96, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 12,
@@ -22795,7 +22795,7 @@
       ],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 955,
+      "body_text_len": 964,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -22999,7 +22999,7 @@
         },
         {
           "tag": "p",
-          "text": "Review \u00b7 Section 2 of 4 \u00b7 Next: Checkpoint 3 \u00b7 R",
+          "text": "Review \u00b7 Section 2 of 4 \u00b7 Next: Section 3 \u00b7 Repl",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 14,
@@ -23064,7 +23064,7 @@
         },
         {
           "tag": "span",
-          "text": "Evidence",
+          "text": "Independent evidence",
           "fg": "rgb(159, 198, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 12,
@@ -23453,7 +23453,7 @@
       ],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 955,
+      "body_text_len": 964,
       "media_fallback_text": [],
       "ax_controls": 10,
       "ax_unnamed": 0,
@@ -23484,8 +23484,8 @@
           "kind": "authored",
           "tab": 2,
           "tag": "button",
-          "text": "Name the three things an engine needs Ev",
-          "name": "Checkpoint 1: Name the three things an engine needs, Evidence, Check closed",
+          "text": "Name the three things an engine needs In",
+          "name": "Section 1: Name the three things an engine needs, Independent evidence, Check closed",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -23495,7 +23495,7 @@
           "tab": 3,
           "tag": "button",
           "text": "Diagnose a no-start Review due Check ope",
-          "name": "Checkpoint 2: Diagnose a no-start, Review due, Check open",
+          "name": "Section 2: Diagnose a no-start, Review due, Check open",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -23505,7 +23505,7 @@
           "tab": 4,
           "tag": "button",
           "text": "Replace a fouled plug Started No check y",
-          "name": "Checkpoint 3: Replace a fouled plug, Started, No check yet",
+          "name": "Section 3: Replace a fouled plug, Started, No check yet",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -23515,7 +23515,7 @@
           "tab": 5,
           "tag": "button",
           "text": "Check compression safely Not started No ",
-          "name": "Checkpoint 4: Check compression safely, Not started, No check yet",
+          "name": "Section 4: Check compression safely, Not started, No check yet",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -23758,7 +23758,7 @@
         },
         {
           "tag": "p",
-          "text": "Review \u00b7 Section 2 of 4 \u00b7 Next: Checkpoint 3 \u00b7 R",
+          "text": "Review \u00b7 Section 2 of 4 \u00b7 Next: Section 3 \u00b7 Repl",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 28,
@@ -23823,7 +23823,7 @@
         },
         {
           "tag": "span",
-          "text": "Evidence",
+          "text": "Independent evidence",
           "fg": "rgb(159, 198, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 24,
@@ -24212,7 +24212,7 @@
       ],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 955,
+      "body_text_len": 964,
       "media_fallback_text": [],
       "ax_controls": 10,
       "ax_unnamed": 0,
@@ -24243,8 +24243,8 @@
           "kind": "authored",
           "tab": 2,
           "tag": "button",
-          "text": "Name the three things an engine needs Ev",
-          "name": "Checkpoint 1: Name the three things an engine needs, Evidence, Check closed",
+          "text": "Name the three things an engine needs In",
+          "name": "Section 1: Name the three things an engine needs, Independent evidence, Check closed",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -24254,7 +24254,7 @@
           "tab": 3,
           "tag": "button",
           "text": "Diagnose a no-start Review due Check ope",
-          "name": "Checkpoint 2: Diagnose a no-start, Review due, Check open",
+          "name": "Section 2: Diagnose a no-start, Review due, Check open",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -24264,7 +24264,7 @@
           "tab": 4,
           "tag": "button",
           "text": "Replace a fouled plug Started No check y",
-          "name": "Checkpoint 3: Replace a fouled plug, Started, No check yet",
+          "name": "Section 3: Replace a fouled plug, Started, No check yet",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -24274,7 +24274,7 @@
           "tab": 5,
           "tag": "button",
           "text": "Check compression safely Not started No ",
-          "name": "Checkpoint 4: Check compression safely, Not started, No check yet",
+          "name": "Section 4: Check compression safely, Not started, No check yet",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -24517,7 +24517,7 @@
         },
         {
           "tag": "p",
-          "text": "Review \u00b7 Section 2 of 4 \u00b7 Next: Checkpoint 3 \u00b7 R",
+          "text": "Review \u00b7 Section 2 of 4 \u00b7 Next: Section 3 \u00b7 Repl",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 14,
@@ -24582,7 +24582,7 @@
         },
         {
           "tag": "span",
-          "text": "Evidence",
+          "text": "Independent evidence",
           "fg": "rgb(159, 198, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 12,
@@ -24971,7 +24971,7 @@
       ],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 955,
+      "body_text_len": 964,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -25344,7 +25344,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(123, 75, 10)",
           "bg": "rgb(255, 252, 243)",
           "size": 24,
@@ -25487,7 +25487,7 @@
       "animated_sample": [],
       "interactive_count": 9,
       "positive_tabindex": 0,
-      "body_text_len": 804,
+      "body_text_len": 799,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -25860,7 +25860,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(224, 178, 92)",
           "bg": "rgb(29, 27, 22)",
           "size": 24,
@@ -26003,7 +26003,7 @@
       "animated_sample": [],
       "interactive_count": 9,
       "positive_tabindex": 0,
-      "body_text_len": 804,
+      "body_text_len": 799,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -26650,7 +26650,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Orient",
+          "text": "Step \u00b7 Orient",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 24,
@@ -26741,7 +26741,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Explain",
+          "text": "Step \u00b7 Explain",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 24,
@@ -26832,7 +26832,7 @@
         },
         {
           "tag": "span",
-          "text": "Checkpoint \u00b7 Practice",
+          "text": "Check \u00b7 Practice",
           "fg": "rgb(123, 75, 10)",
           "bg": "rgb(251, 235, 203)",
           "size": 24,
@@ -26949,7 +26949,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Recap",
+          "text": "Step \u00b7 Recap",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 24,
@@ -27013,7 +27013,7 @@
       "animated_sample": [],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 553,
+      "body_text_len": 539,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -27126,7 +27126,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Orient",
+          "text": "Step \u00b7 Orient",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 24,
@@ -27217,7 +27217,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Explain",
+          "text": "Step \u00b7 Explain",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 24,
@@ -27308,7 +27308,7 @@
         },
         {
           "tag": "span",
-          "text": "Checkpoint \u00b7 Practice",
+          "text": "Check \u00b7 Practice",
           "fg": "rgb(224, 178, 92)",
           "bg": "rgb(51, 41, 15)",
           "size": 24,
@@ -27425,7 +27425,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Recap",
+          "text": "Step \u00b7 Recap",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 24,
@@ -27489,7 +27489,7 @@
       "animated_sample": [],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 553,
+      "body_text_len": 539,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -29485,7 +29485,7 @@
         },
         {
           "tag": "p",
-          "text": "Review \u00b7 Section 2 of 4 \u00b7 Next: Checkpoint 3 \u00b7 R",
+          "text": "Review \u00b7 Section 2 of 4 \u00b7 Next: Section 3 \u00b7 Repl",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 28,
@@ -29550,7 +29550,7 @@
         },
         {
           "tag": "span",
-          "text": "Evidence",
+          "text": "Independent evidence",
           "fg": "rgb(47, 96, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 24,
@@ -29905,7 +29905,7 @@
       "horizontal_overflow": false,
       "scroll_width": 460,
       "client_width": 460,
-      "content_height": 2651,
+      "content_height": 2686,
       "media_frames": [],
       "images": [],
       "audios": [],
@@ -29939,7 +29939,7 @@
       ],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 955,
+      "body_text_len": 964,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -30143,7 +30143,7 @@
         },
         {
           "tag": "p",
-          "text": "Review \u00b7 Section 2 of 4 \u00b7 Next: Checkpoint 3 \u00b7 R",
+          "text": "Review \u00b7 Section 2 of 4 \u00b7 Next: Section 3 \u00b7 Repl",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 28,
@@ -30208,7 +30208,7 @@
         },
         {
           "tag": "span",
-          "text": "Evidence",
+          "text": "Independent evidence",
           "fg": "rgb(159, 198, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 24,
@@ -30563,7 +30563,7 @@
       "horizontal_overflow": false,
       "scroll_width": 460,
       "client_width": 460,
-      "content_height": 2651,
+      "content_height": 2686,
       "media_frames": [],
       "images": [],
       "audios": [],
@@ -30597,7 +30597,7 @@
       ],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 955,
+      "body_text_len": 964,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -30970,7 +30970,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(0, 0, 0)",
           "bg": "rgb(255, 255, 255)",
           "size": 12,
@@ -31113,7 +31113,7 @@
       "animated_sample": [],
       "interactive_count": 9,
       "positive_tabindex": 0,
-      "body_text_len": 804,
+      "body_text_len": 799,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -31486,7 +31486,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(0, 0, 0)",
           "bg": "rgb(255, 255, 255)",
           "size": 12,
@@ -31629,7 +31629,7 @@
       "animated_sample": [],
       "interactive_count": 9,
       "positive_tabindex": 0,
-      "body_text_len": 804,
+      "body_text_len": 799,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -33625,7 +33625,7 @@
         },
         {
           "tag": "p",
-          "text": "Review \u00b7 Section 2 of 4 \u00b7 Next: Checkpoint 3 \u00b7 R",
+          "text": "Review \u00b7 Section 2 of 4 \u00b7 Next: Section 3 \u00b7 Repl",
           "fg": "rgb(0, 0, 0)",
           "bg": "rgb(255, 255, 255)",
           "size": 14,
@@ -33690,7 +33690,7 @@
         },
         {
           "tag": "span",
-          "text": "Evidence",
+          "text": "Independent evidence",
           "fg": "rgb(0, 0, 0)",
           "bg": "rgb(255, 255, 255)",
           "size": 12,
@@ -34079,7 +34079,7 @@
       ],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 955,
+      "body_text_len": 964,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -34283,7 +34283,7 @@
         },
         {
           "tag": "p",
-          "text": "Review \u00b7 Section 2 of 4 \u00b7 Next: Checkpoint 3 \u00b7 R",
+          "text": "Review \u00b7 Section 2 of 4 \u00b7 Next: Section 3 \u00b7 Repl",
           "fg": "rgb(0, 0, 0)",
           "bg": "rgb(255, 255, 255)",
           "size": 14,
@@ -34348,7 +34348,7 @@
         },
         {
           "tag": "span",
-          "text": "Evidence",
+          "text": "Independent evidence",
           "fg": "rgb(0, 0, 0)",
           "bg": "rgb(255, 255, 255)",
           "size": 12,
@@ -34737,7 +34737,7 @@
       ],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 955,
+      "body_text_len": 964,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -35110,7 +35110,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(123, 75, 10)",
           "bg": "rgb(255, 252, 243)",
           "size": 12,
@@ -35253,7 +35253,7 @@
       "animated_sample": [],
       "interactive_count": 9,
       "positive_tabindex": 0,
-      "body_text_len": 804,
+      "body_text_len": 799,
       "media_fallback_text": [],
       "ax_controls": 14,
       "ax_unnamed": 0,
@@ -35717,7 +35717,7 @@
         },
         {
           "tag": "div",
-          "text": "Checkpoint",
+          "text": "Check",
           "fg": "rgb(224, 178, 92)",
           "bg": "rgb(29, 27, 22)",
           "size": 12,
@@ -35860,7 +35860,7 @@
       "animated_sample": [],
       "interactive_count": 9,
       "positive_tabindex": 0,
-      "body_text_len": 804,
+      "body_text_len": 799,
       "media_fallback_text": [],
       "ax_controls": 14,
       "ax_unnamed": 0,
@@ -36064,7 +36064,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Orient",
+          "text": "Step \u00b7 Orient",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 12,
@@ -36155,7 +36155,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Explain",
+          "text": "Step \u00b7 Explain",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 12,
@@ -36246,7 +36246,7 @@
         },
         {
           "tag": "span",
-          "text": "Checkpoint \u00b7 Practice",
+          "text": "Check \u00b7 Practice",
           "fg": "rgb(123, 75, 10)",
           "bg": "rgb(251, 235, 203)",
           "size": 12,
@@ -36363,7 +36363,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Recap",
+          "text": "Step \u00b7 Recap",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(247, 241, 228)",
           "size": 12,
@@ -36427,7 +36427,7 @@
       "animated_sample": [],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 553,
+      "body_text_len": 539,
       "media_fallback_text": [],
       "ax_controls": 10,
       "ax_unnamed": 0,
@@ -36641,7 +36641,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Orient",
+          "text": "Step \u00b7 Orient",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 12,
@@ -36732,7 +36732,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Explain",
+          "text": "Step \u00b7 Explain",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 12,
@@ -36823,7 +36823,7 @@
         },
         {
           "tag": "span",
-          "text": "Checkpoint \u00b7 Practice",
+          "text": "Check \u00b7 Practice",
           "fg": "rgb(224, 178, 92)",
           "bg": "rgb(51, 41, 15)",
           "size": 12,
@@ -36940,7 +36940,7 @@
         },
         {
           "tag": "span",
-          "text": "Mission \u00b7 Recap",
+          "text": "Step \u00b7 Recap",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(19, 18, 16)",
           "size": 12,
@@ -37004,7 +37004,7 @@
       "animated_sample": [],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 553,
+      "body_text_len": 539,
       "media_fallback_text": [],
       "ax_controls": 10,
       "ax_unnamed": 0,
@@ -37484,8 +37484,8 @@
         "source": "committed fixture"
       }
     },
-    "plugin_sha256": "74d9191fad08d60c7242bf9d88616bf9054f2f24e8505e972789119a4869d187",
-    "branch": "mg/l7",
+    "plugin_sha256": "e34454724222ba2344c354673c72a09b640413c9730eded8c7f2cd4ad1ad96e9",
+    "branch": "mg/u167",
     "note": "the evidence is pinned by plugin_sha256; find the generating commit in the branch history that carries audit/visual/m4-visual/audit.json"
   }
 }

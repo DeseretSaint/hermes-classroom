@@ -10218,31 +10218,6 @@ const CREATE_RESULT_COPY = {
   details: 'Technical detail'
 }
 
-/** A backend cost band, printed verbatim. The UI never computes a price of its own. */
-function planMoney(value) {
-  return `$${Number(value || 0).toFixed(2)}`
-}
-
-/**
- * The queued job's preflight, rendered exactly where the regenerate door renders its own. The
- * numbers come from the command result; when the contract returns none, this line does not exist
- * and the caller says plainly that the exact preflight has not arrived.
- */
-function CreatePreflightLine({ preflight }) {
-  if (!preflight) return null
-  return jsx(
-    'div',
-    {
-      className: 'text-xs text-(--ui-text-secondary)',
-      'data-cb-create-preflight': String(preflight.minimum_cost_usd),
-      children:
-        `Preflight: ${planMoney(preflight.minimum_cost_usd)}–${planMoney(preflight.maximum_cost_usd)} · ` +
-        `${preflight.minimum_calls}–${preflight.maximum_calls} call(s)`
-    },
-    'create-preflight'
-  )
-}
-
 /** Dials are chosen as enum ids; the review panel shows the label the learner actually picked. */
 function dialLabel(dial, value) {
   const options = (DIALS[dial] && DIALS[dial].options) || []
@@ -10350,11 +10325,7 @@ async function startLearnerPlan({ call, key, title, goal, outcome, recipe, dials
     planId,
     enrollmentId,
     jobId: job.result.job_id,
-    jobState: job.result.state,
-    // The backend's own cost/call band when this contract returns one with the queued job. It is
-    // carried verbatim, never recomputed here; absent means the screen states that the exact
-    // preflight has not been returned, not that the run is free.
-    preflight: (job.result && job.result.preflight) || null
+    jobState: job.result.state
   }
 }
 
@@ -10697,7 +10668,9 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
           className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
           children: CREATE_RESULT_COPY.body
         }, 'body'),
-        jsx(CreatePreflightLine, { preflight: result.preflight }, 'preflight'),
+        // No price line: a plan job's create result carries `{job_id, state}` only — the contract
+        // prices a lesson job, not this one — so this screen shows nothing rather than promising
+        // a figure the next screen cannot supply.
         jsxs('details', {
           'data-cb-create-receipt': '',
           className: 'text-xs text-(--ui-text-secondary)',
@@ -11417,13 +11390,17 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                   'approve, and no lesson is written until you do.'
               }, 'facts'),
               jsx('p', {
-                'data-cb-create-preflight-waiting': scopeSectionBand(scope) || 'unknown',
+                'data-cb-create-price-waiting': scopeSectionBand(scope) || 'unknown',
                 className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+                // U8: the learner is told what happens before they press Create, in their own
+                // terms. No promise of a price appears here, because the create flow shows none:
+                // the plan job's result carries no figure. The sizing rule survives as a plain
+                // statement of when a price would be worked out; the pipeline vocabulary that
+                // carried it does not — none of it is something the learner can act on here.
                 children:
-                  `This run will author ${scopeSectionBand(scope) || 'the sections the plan proposes'}. ` +
-                  'The exact preflight — a cost band and a call band — arrives with the plan job; ' +
-                  'nothing here is priced before the backend has sized the run.'
-              }, 'preflight-waiting'),
+                  `Creating this course writes ${scopeSectionBand(scope) || 'the sections the plan proposes'}. ` +
+                  'Nothing is priced yet — we price it once we know how big the course is.'
+              }, 'price-waiting'),
               jsx('div', {
                 className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                 children: planTimingCopy(scope)
@@ -44607,6 +44584,42 @@ function cbTutorHintAvailable(check) {
   return false
 }
 
+/**
+ * The one sentence a failed tutor action says to the learner (U8-follow2).
+ *
+ * Present tense, second person, and the one thing still open to them — never the code the pipeline
+ * returned. `TUTOR_FAILURE_COPY` is the whole vocabulary so a new failure cannot quietly invent a
+ * fourth phrasing, and `tutorFailureDetail` is the only place a code is spelled.
+ */
+const TUTOR_FAILURE_COPY = {
+  hint: 'Your hint could not be recorded. Try again.',
+  practice: 'Your practice could not start. Try again.',
+  ask: 'Your question could not be sent. Try again.',
+  bind: 'This chat could not be linked to your lesson. Open Coursebook and choose the section again.'
+}
+
+/** The closed `Technical detail` line for a failed action: the code and the message, diagnosable. */
+function tutorFailureDetail(error) {
+  if (!error) return null
+  const code = error.code ? String(error.code) : ''
+  const message = describeError(error)
+  if (code && message) return `${code} · ${message}`
+  return code || message || null
+}
+
+/** The disclosure that keeps a code out of the sentence but inside the same card. */
+function TutorTechnicalDetail({ marker, children }) {
+  if (!children) return null
+  return jsxs('details', {
+    [marker]: '',
+    className: 'mt-1 text-xs text-(--ui-text-secondary)',
+    children: [
+      jsx('summary', { className: 'cursor-pointer', children: 'Technical detail' }, 'summary'),
+      jsx('div', { className: 'mt-1', style: { overflowWrap: 'anywhere' }, children }, 'detail')
+    ]
+  })
+}
+
 /** One tutor or learner turn in the rail's notebook margin. */
 function TutorTurn({ turn, blockIndex, sourceIndex, onCitation }) {
   const learner = turn.role === 'learner'
@@ -44829,6 +44842,7 @@ function TutorRail({
   draft = '',
   busy = false,
   notice = null,
+  noticeDetail = null,
   detached = false,
   practice = null,
   practiceAvailable = false,
@@ -44867,6 +44881,22 @@ function TutorRail({
         action || null
       ]
     })
+
+  const noticeCard = notice
+    ? jsxs(
+        'div',
+        {
+          'data-cb-tutor-notice': '',
+          style: muted,
+          children: [
+            // The live region holds only the sentence; the disclosure is a control, not news.
+            jsx('p', { role: 'status', 'data-cb-tutor-notice-line': '', style: { margin: 0 }, children: notice }, 'line'),
+            jsx(TutorTechnicalDetail, { marker: 'data-cb-tutor-notice-detail', children: noticeDetail }, 'detail')
+          ]
+        },
+        'notice'
+      )
+    : null
 
   let body
   if (state === 'no-lesson') {
@@ -45141,7 +45171,7 @@ function TutorRail({
         : jsxs('div', {
             'data-cb-tutor-body': 'practice',
             style: { display: 'flex', flexDirection: 'column', gap: '0.6rem' },
-            children: [modeBody, practiceState === 'active' ? composer : null]
+            children: [noticeCard, modeBody, practiceState === 'active' ? composer : null]
           })
     } else {
       body = jsxs('div', {
@@ -45150,7 +45180,7 @@ function TutorRail({
         children: [
           jsx(TutorGlossary, { entries: glossary, onTermQuote }),
           thread,
-          notice ? jsx('div', { role: 'status', 'data-cb-tutor-notice': '', style: muted, children: notice }) : null,
+          noticeCard,
           checkOpen
             ? jsx('p', {
                 'data-cb-tutor-check-open': '',
@@ -45415,6 +45445,7 @@ function TutorRailPane({ binding }) {
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
+  const [noticeDetail, setNoticeDetail] = useState(null)
   const [failure, setFailure] = useState(null)
   const [localTurns, setLocalTurns] = useState([])
   const [fenced, setFenced] = useState(0)
@@ -45423,6 +45454,15 @@ function TutorRailPane({ binding }) {
   const rootRef = useRef(null)
   const endNonce = useRef(null)
   const autoPractice = useRef(false)
+
+  /**
+   * One learner sentence per action outcome, with its technical detail set and cleared together.
+   * Clearing in one place is the invariant: a code can never outlive the news it belonged to.
+   */
+  const showNotice = useCallback((message, detail = null) => {
+    setNotice(message || null)
+    setNoticeDetail(message && detail ? detail : null)
+  }, [])
 
   // The pane is not the route: measure the rail itself, so a 460 px window and a 1049 px window
   // with a chat beside it both choose the sheet/side layout from the space the rail really has.
@@ -45536,7 +45576,7 @@ function TutorRailPane({ binding }) {
   const performAsk = useCallback(
     async (payload) => {
       setBusy(true)
-      setNotice(null)
+      showNotice(null)
       setFailure(null)
       const response = await rpc('tutor.ask', payload, {
         idempotencyKey: newOperationId(`tutor-${payload.mode}`),
@@ -45546,7 +45586,9 @@ function TutorRailPane({ binding }) {
       if (!response.ok) {
         const code = response.error && response.error.code
         setFailure(code === 'HOST_UNAVAILABLE' ? 'unavailable' : 'provider')
-        setNotice(response.error ? `${code || 'ERROR'}: ${describeError(response.error)}` : null)
+        // The rail already shows its own unavailable plate for this failure; the line under it is
+        // the learner's, and the code stays in the closed disclosure.
+        showNotice(TUTOR_FAILURE_COPY.ask, tutorFailureDetail(response.error))
         return false
       }
       adoptRevision(response.revision)
@@ -45577,7 +45619,7 @@ function TutorRailPane({ binding }) {
       setDraft('')
       clearTutorQuote()
       if (result.state === 'answer_withheld') {
-        setNotice('The answer stays hidden while the check is open. The hint path is the way forward.')
+        showNotice('The answer stays hidden while the check is open. The hint path is the way forward.')
       }
       if (payload.mode === 'practice') practiceRead.reload()
       else history.reload()
@@ -45598,7 +45640,7 @@ function TutorRailPane({ binding }) {
     })
     if (!payload || busy) return
     if (quote && quote.blockId && !blockIndex[quote.blockId]) {
-      setNotice('That excerpt belongs to another section. Select it again in this one.')
+      showNotice('That excerpt belongs to another section. Select it again in this one.')
       return
     }
     await performAsk(payload)
@@ -45607,7 +45649,7 @@ function TutorRailPane({ binding }) {
   const askHint = useCallback(async () => {
     if (!hintAvailable || busy || hintUsed) return
     setBusy(true)
-    setNotice(null)
+    showNotice(null)
     const recorded = await rpc(
       'lesson.assist',
       { enrollment_id: binding.enrollment_id, objective_id: objectiveId, kind: 'hint_request' },
@@ -45615,7 +45657,7 @@ function TutorRailPane({ binding }) {
     )
     if (!recorded.ok) {
       setBusy(false)
-      setNotice(recorded.error ? `${recorded.error.code}: ${describeError(recorded.error)}` : 'The hint could not be recorded.')
+      showNotice(TUTOR_FAILURE_COPY.hint, tutorFailureDetail(recorded.error))
       return
     }
     adoptRevision((recorded.result && recorded.result.revision) || recorded.revision)
@@ -45634,7 +45676,7 @@ function TutorRailPane({ binding }) {
       return
     }
     setBusy(true)
-    setNotice('Hint recorded. This answer is marked hinted; the check still owns the verdict.')
+    showNotice('Hint recorded. This answer is marked hinted; the check still owns the verdict.')
     await performAsk(payload)
   }, [
     hintAvailable,
@@ -45677,14 +45719,14 @@ function TutorRailPane({ binding }) {
     consumeTutorHint(hintRequest.id)
     setMode('ask')
     setHintUsed(true)
-    setNotice('Hint recorded. This answer is marked hinted; the check still owns the verdict.')
+    showNotice('Hint recorded. This answer is marked hinted; the check still owns the verdict.')
     performAsk(payload)
   }, [hintRequest, busy, courseId, binding.enrollment_id, objectiveId, runId, performAsk])
 
   const startPractice = useCallback(async () => {
     if (!practiceAvailable || busy) return
     setBusy(true)
-    setNotice(null)
+    showNotice(null)
     const response = await rpc(
       'practice.start',
       { enrollment_id: binding.enrollment_id, objective_id: objectiveId },
@@ -45692,7 +45734,7 @@ function TutorRailPane({ binding }) {
     )
     setBusy(false)
     if (!response.ok) {
-      setNotice(response.error ? `${response.error.code}: ${describeError(response.error)}` : 'The practice could not start.')
+      showNotice(TUTOR_FAILURE_COPY.practice, tutorFailureDetail(response.error))
       return
     }
     adoptRevision((response.result && response.result.revision) || response.revision)
@@ -45706,12 +45748,12 @@ function TutorRailPane({ binding }) {
     const checkId = (session && session.check_id) || (check.check && check.check.check_id)
     const checkVersion = (session && session.check_version) || (check.check && check.check.check_version)
     if (!checkId || !checkVersion) {
-      setNotice('The practice check could not be named, so nothing was graded.')
+      showNotice('The practice check could not be named, so nothing was graded.')
       return
     }
     if (!endNonce.current) endNonce.current = newOperationId('tutor-practice-end')
     setBusy(true)
-    setNotice(null)
+    showNotice(null)
     const response = await rpc(
       'practice.end',
       {
@@ -45724,7 +45766,7 @@ function TutorRailPane({ binding }) {
     )
     setBusy(false)
     if (!response.ok) {
-      setNotice(practiceRefusalCopy(response.error) || (response.error ? describeError(response.error) : 'The practice could not be ended.'))
+      showNotice(practiceRefusalCopy(response.error) || (response.error ? describeError(response.error) : 'The practice could not be ended.'))
       return
     }
     adoptRevision(response.revision)
@@ -45774,7 +45816,7 @@ function TutorRailPane({ binding }) {
 
   const retry = useCallback(() => {
     setFailure(null)
-    setNotice(null)
+    showNotice(null)
     library.reload()
     page.reload()
     history.reload()
@@ -45792,7 +45834,7 @@ function TutorRailPane({ binding }) {
       autoPractice.current = true
       setMode(next)
       setFailure(null)
-      setNotice(null)
+      showNotice(null)
     },
     [practiceAvailable]
   )
@@ -45843,6 +45885,7 @@ function TutorRailPane({ binding }) {
     draft,
     busy,
     notice,
+    noticeDetail,
     detached: Boolean(binding.status && binding.status !== 'active'),
     practice:
       mode === 'practice'
@@ -45883,6 +45926,52 @@ function TutorRailPane({ binding }) {
   })
 }
 
+/**
+ * The human name of a skill the pane was told about.
+ *
+ * The backend answers with the registered id — `coursebook:lesson-tutoring` — which is an internal
+ * identifier, so it is never printed. The pane has no display-name table: a second copy of a name
+ * that already lives in the skill's own frontmatter would be one more thing to drift, and the
+ * bundle does not carry a label anywhere else. The words after the last `:` are title-cased
+ * instead, so `coursebook:lesson-tutoring` reads as "Lesson Tutoring" and an unregistered skill
+ * still reads as words rather than a slug.
+ */
+function skillDisplayName(skill) {
+  const raw = String(skill || '').trim()
+  if (!raw) return ''
+  const bare = raw.slice(raw.lastIndexOf(':') + 1)
+  return bare
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
+}
+
+/**
+ * The line the rail shows about the skill that will answer this chat. U8: it names the skill in
+ * human words and says what the learner gets, and says nothing about how the plugin chose it —
+ * that is infrastructure the learner cannot act on.
+ *
+ * Each reason the backend can report gets its own sentence, because the reason is the only thing
+ * that knows whether a lesson is bound. `bound_objective_not_in_store` is a live binding whose
+ * lesson row is missing from this store: the tutor is still the loaded skill, so the line keeps
+ * the tutor and asks the learner to reopen the lesson rather than calling it an open chat.
+ */
+function skillNoteCopy(note) {
+  const name = skillDisplayName(note && note.skill)
+  if (!name) return null
+  switch (note.reason) {
+    case 'lesson_binding':
+      return `Tutor: ${name} — it reads this chat’s section from your next message on.`
+    case 'coursebook_chat_without_live_binding':
+      return `Coach: ${name} — no lesson is open for this chat, so it coaches in general terms.`
+    case 'bound_objective_not_in_store':
+      return `Tutor: ${name} — this chat’s lesson has no saved content here. Reopen it from the course pane.`
+    default:
+      return `${name} — this chat will use this skill.`
+  }
+}
+
 function CoursebookPane() {
   const { state, storedId, reload } = useSessionBinding()
   // The pane is part of the same scoped surface as the route: same token table, same mode, and
@@ -45898,6 +45987,7 @@ function CoursebookPane() {
   const scopeProfile = currentScope().profile
   const routingUnavailable = profileRouteState.status === 'unavailable'
   const [bindNote, setBindNote] = useState(null)
+  const [bindDetail, setBindDetail] = useState(null)
   const attemptedBind = useRef(null)
   // Which bundled learner skill this chat's next turn loads. Read from the backend's own rule
   // (`GET /sessions/skill` -> coursebook.lesson_skills), the same function the pre_llm_call hook
@@ -45936,9 +46026,13 @@ function CoursebookPane() {
       if (cancelled || !response) return
       if (response.ok) {
         setBindNote('This lesson is bound to this chat.')
+        setBindDetail(null)
         reload()
       } else {
-        setBindNote(`${response.code}: ${response.message || 'this chat could not be bound.'}`)
+        // The seam refused the bind. The learner reads what did not happen and where to go; the
+        // seam's own code and message stay closed under Technical detail.
+        setBindNote(TUTOR_FAILURE_COPY.bind)
+        setBindDetail(tutorFailureDetail(response))
       }
     })
     return () => {
@@ -45983,23 +46077,55 @@ function CoursebookPane() {
   } else if (state.status === 'loading') {
     body = jsx('div', { className: 'py-6', children: jsx(sdk.Loader, { label: 'Reading this chat’s binding' }) })
   } else if (state.status === 'unavailable') {
+    // U8-follow: both panels are the learner's view of a failed read. They say what cannot happen
+    // right now and the one action open to them, in their words — no backend, no schema, no
+    // binding, and never a raw error code inside the sentence. The code stays diagnosable in the
+    // closed "Technical detail" disclosure, marked with the same convention as the create receipt.
     const code = state.error && state.error.code
-    body =
-      code === 'NOT_IMPLEMENTED'
-        ? jsx(sdk.PanelEmpty, {
-            icon: 'book',
-            title: 'Lessons arrive with the learning kernel',
-            description:
-              'The backend is connected and answering, but this build has no kernel schema, so no ' +
-              'session binding can exist yet. Nothing here is being guessed.',
-            action: jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: openCoursebook, children: 'Open Coursebook' })
-          })
-        : jsx(sdk.PanelEmpty, {
-            icon: 'warning',
-            title: 'Cannot read this chat’s binding',
-            description: code ? `${code}: ${describeError(state.error)}` : describeError(state.error),
-            action: jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: openCoursebook, children: 'Open Coursebook' })
-          })
+    const notImplemented = code === 'NOT_IMPLEMENTED'
+    body = jsxs('div', {
+      className: 'flex flex-col gap-2',
+      'data-cb-binding-panel': notImplemented ? 'not-implemented' : 'unavailable',
+      children: [
+        notImplemented
+          ? jsx(
+              sdk.PanelEmpty,
+              {
+                icon: 'book',
+                title: 'Lessons cannot start here yet',
+                description:
+                  'You cannot start or continue a lesson from this chat yet. Open Coursebook to read what is already there; nothing on this panel is guessed.',
+                action: jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: openCoursebook, children: 'Open Coursebook' })
+              },
+              'panel'
+            )
+          : jsx(
+              sdk.PanelEmpty,
+              {
+                icon: 'warning',
+                title: 'The tutor cannot answer here right now',
+                description:
+                  'Something went wrong reading this chat’s lesson, so you cannot ask the tutor here right now. Open Coursebook and reopen the section to try again.',
+                action: jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: openCoursebook, children: 'Open Coursebook' })
+              },
+              'panel'
+            ),
+        code
+          ? jsxs(
+              'details',
+              {
+                'data-cb-binding-detail': '',
+                className: 'text-xs text-(--ui-text-secondary)',
+                children: [
+                  jsx('summary', { className: 'cursor-pointer', children: 'Technical detail' }, 'summary'),
+                  jsx('div', { className: 'mt-1', children: `${code} · ${describeError(state.error)}` }, 'detail')
+                ]
+              },
+              'detail'
+            )
+          : null
+      ]
+    })
   } else if (state.binding && storedId && state.binding.stored_session_id && state.binding.stored_session_id !== storedId) {
     // a binding for a chat that is no longer on screen is never rendered as this chat's lesson
     body = jsx('div', { className: 'py-6', children: jsx(sdk.Loader, { label: 'Reading this chat’s binding' }) })
@@ -46032,22 +46158,33 @@ function CoursebookPane() {
             className: 'pb-2 text-xs text-(--ui-text-secondary)',
             role: 'status',
             'data-cb-routing': 'unavailable',
+            // U8: same fault, said to the learner rather than about the plumbing — what may not
+            // work, and the one action that fixes it. The marker stays for the state test.
             children:
-              'Routing unavailable: Coursebook could not read this window’s profile routes, so ' +
-              'requests go without a connection id. Reopen the pane or restart Desktop; on a ' +
-              'single-connection install nothing is lost.'
+              'Coursebook cannot see this window’s saved setup, so the tutor may not reach your ' +
+              'courses. Reopen the pane; if it still cannot, restart Desktop.'
           })
         : null,
-      bindNote ? jsx('div', { className: 'pb-2 text-xs text-(--ui-text-secondary)', children: bindNote }) : null,
-      skillNote
+      bindNote
+        ? jsxs(
+            'div',
+            {
+              'data-cb-tutor-bind-note': '',
+              className: 'pb-2 text-xs text-(--ui-text-secondary)',
+              children: [
+                jsx('span', { children: bindNote }, 'note'),
+                jsx(TutorTechnicalDetail, { marker: 'data-cb-tutor-bind-detail', children: bindDetail }, 'detail')
+              ]
+            },
+            'bind-note'
+          )
+        : null,
+      skillNoteCopy(skillNote)
         ? jsx('div', {
             className: 'pb-2 text-xs text-(--ui-text-secondary)',
             'data-cb-skill': skillNote.skill,
             'data-cb-skill-reason': skillNote.reason || '',
-            children:
-              skillNote.reason === 'lesson_binding'
-                ? `Tutor skill: ${skillNote.skill} — loads on this chat's next message.`
-                : `Coach skill: ${skillNote.skill} — no live lesson run for this chat.`
+            children: skillNoteCopy(skillNote)
           })
         : null,
       body
@@ -46197,7 +46334,7 @@ function SessionDiagnostics() {
         value: `cb.rpc v${backendWire.contractVersion}`,
         detail: implemented
           ? `${plural(implemented.length, 'implemented command', 'implemented commands')}: ${implemented.join(', ')}`
-          : 'Backend method registry unavailable; commands are attempted, not assumed.'
+          : 'The command list could not be read; commands are attempted, not assumed.'
       })
     ]
   })
@@ -46211,7 +46348,7 @@ function CoursebookSettings() {
         className: 'text-xs text-(--ui-text-secondary)',
         children:
           'Preferences appear here only when the code that reads them ships. The inventory below is ' +
-          'read-only and shows the exact contracts this backend speaks.'
+          'read-only and shows the exact contracts this copy can speak.'
       }),
       jsx(CbLabel, { children: 'Session binding' }),
       jsx(SessionDiagnostics, {}),
@@ -46243,6 +46380,9 @@ export {
   tutorRailLayout,
   armTutorQuote,
   clearTutorQuote,
+  // Test seam: the pending-bind arming is otherwise only reachable through a lesson start, so a
+  // render test of the refused-bind note has to arm the exact run before it mounts the pane.
+  armPendingBind,
   AttemptControls,
   TakeHomeStudio,
   TakeHomeShelf,
@@ -46567,7 +46707,8 @@ export {
   questMissions,
   missionBriefLine,
   planJobBrief,
-  CreatePreflightLine,
+  skillDisplayName,
+  skillNoteCopy,
   plural,
   COURSE_PRIMARY_TABS,
   courseMoreTabs,
