@@ -1,5 +1,5 @@
 # python3 -m unittest tests.test_harness_e2e -v
-# W2-8 packet, base a708711b (wt/w2-8-audit-packet), 2026-11-12T00:29:28-07:00
+# H-213 re-record, base e8ad509c (wt/t_4b796266), 2026-11-12T16:49:17-07:00
 test_approval_is_fail_closed_and_happens_after_validation (tests.test_harness_e2e.HarnessEndToEndTest.test_approval_is_fail_closed_and_happens_after_validation) ... ok
 test_every_scenario_passes_its_own_assertions (tests.test_harness_e2e.HarnessEndToEndTest.test_every_scenario_passes_its_own_assertions) ... ok
 test_every_scenario_was_generated_from_a_non_japanese_goal (tests.test_harness_e2e.HarnessEndToEndTest.test_every_scenario_was_generated_from_a_non_japanese_goal) ... ok
@@ -32,6 +32,6 @@ test_the_fallback_synthesiser_is_still_gate_clean (tests.test_harness_e2e.ShortC
 test_the_recorded_d8_clip_is_no_longer_synthesised (tests.test_harness_e2e.ShortCompletenessTest.test_the_recorded_d8_clip_is_no_longer_synthesised) ... ok
 
 ----------------------------------------------------------------------
-Ran 26 tests in 18.638s
+Ran 26 tests in 8.062s
 
 OK

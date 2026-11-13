@@ -5,12 +5,12 @@
       "sha256": "170e586fda8513591989eadd57fde9bf1b192992fc31046deb44a06f731ac5f0"
     },
     "focused-tests.txt": {
-      "bytes": 4544,
-      "sha256": "99ff1a909574bdca39160bac0e156734c9d912e43bbc347eccacab442a6e042b"
+      "bytes": 4540,
+      "sha256": "36fc53f317b6bfa1b82db23edc1fb11fa4f82bab864ac747cb245fe15ea6dc7a"
     },
     "full-suite.txt": {
-      "bytes": 21715,
-      "sha256": "232f1db453e55035b3d5e79c46372a1278936caea072928b056f262a14fdcad0"
+      "bytes": 21191,
+      "sha256": "7e703d84e55ec1b5a6b3f3d5ff261ea54f6c446970978debcb6c727f58bf390e"
     },
     "music_short.json": {
       "bytes": 51369,
