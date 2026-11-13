@@ -32,14 +32,14 @@ const COURSE_SCOPES = [
   {
     id: 'short',
     label: 'Short course',
-    sections: [3, 6],
+    sections: [2, 10],
     trail: 3,
     consequence: 'A few stops that build on each other, each with its own check.'
   },
   {
     id: 'full',
     label: 'Full course',
-    sections: [12, 40],
+    sections: [9, 40],
     trail: 6,
     consequence: 'A long trail split into units, planned in full before a lesson is written.'
   }
