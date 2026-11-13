@@ -21,7 +21,7 @@ Three different calls, three different prompts, three different schemas:
 | Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v3` | `UNIT_SECTIONS_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
 | Unit-sections validator | `coursebook.unit_sections.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
-| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v15` | `LESSON_SCHEMA` |
+| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v16` | `LESSON_SCHEMA` |
 | Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
 
 `build_plan_request()` selects the v2 schema and `plan-prompt.v24` when the brief declares a scope
@@ -784,7 +784,7 @@ read seam's own normalisation (`domain._check_label_key`, imported rather than r
 Both raise `_RuleViolation`: attempt 1 is retried with the reasons, the final attempt
 (`LESSON_ATTEMPTS`, 3) parks the lesson `needs_review` with the check closed, and `check.get`
 would refuse the same duplicate anyway. The prompt change is one of the reasons
-`LESSON_PROMPT_VERSION` is versioned; `lesson-prompt.v15` is the current label.
+`LESSON_PROMPT_VERSION` is versioned; `lesson-prompt.v16` is the current label.
 
 **Repair pass (CP-015g).** A lesson that the independent validator refused is re-authored with
 the refusal in two places: the request payload's `revision_instructions` (the itemised reasons,
@@ -802,7 +802,20 @@ and may not state, quote, paraphrase or summarise the key — and (b) the bindin
 sentence that makes `revision_instructions` the validator's refusal and every item path + `fix`
 hint a literal repair. Everything v12, v13 and v14 introduced is still in v15.
 
-**Answer-leak surfaces (CP-015c follow-up).** `lesson-prompt.v15` states the rule
+**Unit context (E2E S2).** The lesson payload carries `unit` (ordinal, title, goal and the
+prerequisite unit ordinals the plan declared) when the section belongs to a blueprint unit, plus
+`taught_so_far` — the titles of the objectives taught before this section, oldest first, bounded
+to the most recent `LESSON_TAUGHT_SO_FAR_MAX_TITLES` (16) so a 40-objective course cannot grow the
+request past its bound. Before this, section 30 was handed `plan_title`, `learner_outcome`,
+`through_line` and one `previous_section` title — the same inputs as section 2 — so the far end of
+a "full" course was more of the same lesson. A flat v1 plan has no unit and the payload says
+`unit: null` rather than inventing one. **v16 is v15 plus** the two instruction paragraphs that
+require the section to connect to its unit goal, use the capability a prerequisite unit
+established without re-teaching it, and name the earlier objective it extends. `taught_so_far`
+is authoring context only: it is never a learner surface and no learner copy claims what is
+"already known".
+
+**Answer-leak surfaces (CP-015c follow-up).** `lesson-prompt.v16` states the rule
 `assert_no_answer_leak` and `assert_check_payload_does_not_announce_answer` enforce: a `model`
 segment (and narration media that reads it) is the one surface where the target form, its reading
 and its function appear together; every other learner surface is scanned (non-model segments, the
@@ -817,7 +830,7 @@ validation payload carries the stored key in its own `answer_key` block, marked
 `learner_facing: false`, because `learner_page` never serializes it; the current validation label
 (§1's table) states that split so a validator does not read the key's presence as a shipped answer.
 
-**Rubric floor.** The lesson prompt (`lesson-prompt.v15`) asks for 3–6 criteria, each a distinct
+**Rubric floor.** The lesson prompt (`lesson-prompt.v16`) asks for 3–6 criteria, each a distinct
 observable aspect of the response. `enforce_lesson_rules` refuses fewer than
 `packs.MIN_RUBRIC_CRITERIA` (3) with a typed reason, so attempt 1 is retried with that reason in
 `revision_instructions` and the final attempt (`LESSON_ATTEMPTS`, 3) parks the lesson
@@ -851,7 +864,7 @@ construct. `enforce_plan_rules` refuses a missing declaration and hands each dec
 (a required illustration, an illustration on a symbolic lesson, audio outside a language lesson).
 The declaration is stored in `gen_plan_sections.media_need_json`. Before the lesson prompt is built,
 the pipeline computes one immutable plan from the recipe, the objective's evidence target, the
-section's declaration, the locale/level and an advisory subject domain. `lesson-prompt.v15`
+section's declaration, the locale/level and an advisory subject domain. `lesson-prompt.v16`
 receives exactly that plan — the check angle, the rubric profile and the *permitted* media roles —
 instead of a generic invitation to add media. A lesson whose policy sets image or audio to `none`
 is told to emit no item of that kind at all, and one whose plan requires an item must produce it.
@@ -874,7 +887,7 @@ default profile. The profile's own criteria are then validated (3–6 distinct o
 mental-state claims, no restated aspect).
 
 **Procedure header (H-06).** A technical procedure lesson carries an optional typed `procedure`
-object in `LESSON_SCHEMA`; `lesson-prompt.v15` asks the author for it whenever the check's evidence
+object in `LESSON_SCHEMA`; `lesson-prompt.v16` asks the author for it whenever the check's evidence
 target is `procedure` or the lesson's construct is a technical procedure, and forbids it
 everywhere else. The label is versioned rather than frozen: it is recorded in stored validation
 bindings and the idempotency fingerprint, so a different instruction text under a reused label
@@ -1106,7 +1119,7 @@ Two stored shapes project into the same `$defs/lesson_document`:
 
 Rules the projection cannot bend:
 
-* `short` is authored, never synthesised from `deep`. The lesson writer (`lesson-prompt.v15`)
+* `short` is authored, never synthesised from `deep`. The lesson writer (`lesson-prompt.v16`)
   authors `segments[].short`, `worked_example.short` and `learner_explanation_short`; the
   projection publishes exactly those strings and never slices a deep field. `_enforce_lesson_document`
   runs before the independent validator: it builds the document, re-runs `validate_blocks`
@@ -1375,3 +1388,18 @@ no fixture claims to be real provider output.
 Prerequisite validation, gating and migration tests are named in `docs/COURSE-BLUEPRINT.md` §14.4
 and cannot exist before the unit model does, because a prerequisite is a property of a unit. No
 test in this file asserts an ordering rule that the plan schema cannot express.
+
+**Authoring follows the edges (E2E S4).** The plan gate proves an edge's shape — backwards, unique,
+acyclic — and nothing made *authoring* follow it: `run_lesson_job` accepted any `unit_ordinal`, so
+unit 3 could be authored before unit 1, and its review section then failed the whole batch because
+unit 1's owner checks did not exist yet. The job now reads `prereq_unit_ordinals` immediately after
+resolving the unit and refuses, before the review/coverage gates and the budget preflight, with
+`PrerequisiteUnitIncomplete` (contract code `PREREQUISITE_UNMET`, non-retryable). The refusal names
+each incomplete prerequisite unit and how many of its sections are authored; a prerequisite unit is
+complete when every stored section of it has a `gen_lessons` row for the plan hash being authored,
+and a *parked* prerequisite lesson counts because its page and check exist (CP-015j). The refusal
+reads the database only: no provider call, no lesson row, no usage row. A unit's own edges only —
+unit 3 declaring unit 1 is not blocked by an unauthored unit 2. `tests/test_lesson_unit_context.py`
+pins the refusal, its zero-spend shape, the partial-shortfall message and the proceed-once-authored
+path, and pins the S2 payload blocks (different `unit` per unit, non-empty `taught_so_far`, `null`
+unit for a flat v1 plan).
