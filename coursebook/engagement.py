@@ -264,6 +264,22 @@ def _real_action(connection, kind: str, action_id: str, enrollment_id: str) -> b
     return False
 
 
+def _attempt_is_revisit(connection, attempt_id: str) -> bool:
+    """Whether the committed attempt belongs to a check served as a revisit (E2E L1).
+
+    A profile whose ``checks`` table predates v15 has no flag, and answers ``False`` so the award
+    lane is exactly what it was.
+    """
+    try:
+        row = connection.execute(
+            "SELECT c.revisit FROM attempts a JOIN checks c ON c.id = a.check_id WHERE a.id = ?",
+            (attempt_id,),
+        ).fetchone()
+    except Exception:  # noqa: BLE001 - an un-migrated profile has no revisit column yet
+        return False
+    return row is not None and bool(row["revisit"])
+
+
 def _evidence_for_action(
     connection, kind: str, action_id: str, enrollment_id: str
 ) -> dict[str, str] | None:
@@ -421,6 +437,19 @@ def award(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[
                 "XP is awarded only for a real recorded action; that action id is not one.",
                 field="action_id",
                 reason="not_a_real_action",
+            )
+
+        if kind == gm_contract.EngagementAction.CHECK_SUBMITTED.value and _attempt_is_revisit(
+            connection, action_id
+        ):
+            # E2E L1: XP is keyed by attempt id, so a revisit's fresh attempt id would otherwise
+            # pay the same section a second time. Review is evidence of retention, not a new
+            # first pass, and the award is refused with a readable reason instead of a token.
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                "a revisit is review, not new evidence, so it pays no XP.",
+                field="action_id",
+                reason="revisit_pays_no_xp",
             )
 
         evidence = _evidence_for_action(connection, kind, action_id, enrollment_id)

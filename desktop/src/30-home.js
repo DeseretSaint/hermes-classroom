@@ -36,6 +36,9 @@ const DESK_STATE_TONE = {
 const DESK_PRIMARY_LABEL = {
   start_lesson: 'Start a fresh run',
   resume_lesson: 'Resume the lesson',
+  // E2E L1: a section whose check is already closed and passed reopens as a revisit. The backend
+  // says so with `review_lesson`; the desk must not offer to start it again.
+  review_lesson: 'Review',
   resolve_review_due: 'Start the review',
   rebind_session: 'Reconnect the chat',
   review_plan: 'Review the plan',

@@ -9522,6 +9522,7 @@ _GENERATION_DDL: tuple[str, ...] = (
         audit_state TEXT NOT NULL,
         state TEXT NOT NULL,
         created_at TEXT NOT NULL,
+        revisit INTEGER NOT NULL DEFAULT 0,
         UNIQUE(objective_id, version)
     )
     """,

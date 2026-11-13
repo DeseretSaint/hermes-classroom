@@ -791,6 +791,23 @@ class FieldDeskRenderTest(unittest.TestCase):
         self.assertEqual(desk["primaryKind"], "resume_lesson")
         self.assertEqual(desk["primaryLabel"], "Resume the lesson")
 
+    def test_model_labels_a_revisit_review_and_never_offers_a_fresh_start(self) -> None:
+        # E2E L1: a passed generated section reopens as a revisit. `_library_next_step` says
+        # review_lesson, so the desk's primary says Review and pressing it opens the course home
+        # (32-desk.js routes every non-lesson kind through onOpen) instead of arming a lesson chat.
+        row = library_row(
+            next_step={"kind": "review_lesson", "label": "Review Diagnose a no-start"},
+            evidence_summary={
+                "independent": 4,
+                "review_due": 0,
+                "total_objectives": 4,
+                "current_objective_id": "obj_0000000000000002",
+            },
+        )
+        desk = self.model(library=library(row))["desk"]
+        self.assertEqual(desk["primaryKind"], "review_lesson")
+        self.assertEqual(desk["primaryLabel"], "Review")
+
     def test_model_falls_back_to_the_rows_own_current_objective(self) -> None:
         row = library_row(next_step={"kind": "start_lesson", "label": "Start Replace a fouled plug"})
         desk = self.model(library=library(row))["desk"]

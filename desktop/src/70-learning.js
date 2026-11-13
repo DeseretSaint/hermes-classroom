@@ -2195,6 +2195,16 @@ function AttemptControls({
         className: 'flex flex-wrap items-center gap-2',
         children: [
           jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: `Check v${displayCheck.check_version}` }),
+          // E2E L1: a revisit is a section the learner already passed, served again for spaced
+          // review. It says Review, never Start: nothing here is a first pass.
+          check.revisit
+            ? jsx(sdk.Badge, {
+                size: 'xs',
+                variant: 'muted',
+                'data-cb-check-revisit': 'true',
+                children: CB3_CLASSROOM_COPY.checkRevisit
+              })
+            : null,
           jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: displayCheck.evidence_target || 'evidence' }),
           result && result.evidence_class ? jsx(EvidenceClassText, { value: result.evidence_class }) : null
         ]
@@ -3062,6 +3072,8 @@ const CB3_CLASSROOM_COPY = Object.freeze({
   gameXp: '{n} XP',
   challengeTitle: 'Field Challenge',
   challengeStart: 'Try it yourself',
+  // E2E L1: a check served as a revisit is review of a completed section, not a first attempt.
+  checkRevisit: 'Review',
   // The aside's action is the door to the check already on this page: it focuses the visible check
   // card and never starts a second question or advances the section. A section with no check
   // renders no action at all, so these rows have no "opening"/"unavailable" states to name.
@@ -3896,6 +3908,17 @@ function ClassroomCheckCard({
       minWidth: 0
     },
     children: [
+      // E2E L1: a revisit is a section the learner already passed, served again for spaced
+      // review. The card names it before the question so the learner is never told to start a
+      // section they already finished.
+      check && check.revisit
+        ? jsx(sdk.Badge, {
+            size: 'xs',
+            variant: 'muted',
+            'data-cb-check-revisit': 'true',
+            children: CB3_CLASSROOM_COPY.checkRevisit
+          }, 'revisit')
+        : null,
       stimulus && stimulus.prompt
         ? jsx('p', {
             'data-cb3-question': '',
@@ -4511,7 +4534,7 @@ function ClassroomV3({
             // A section with no check renders no control: there is nothing on this page for the
             // action to open, and inventing a question here would be a second check.
             recordNote: engagement ? classroomCopy(CB3_CLASSROOM_COPY.gameXp, { n: Number(engagement.xp_total) || 0 }) : null,
-            actionLabel: CB3_CLASSROOM_COPY.challengeStart,
+            actionLabel: check && check.revisit ? CB3_CLASSROOM_COPY.checkRevisit : CB3_CLASSROOM_COPY.challengeStart,
             onStart: focusCheck
           }, 'challenge')
         : null,
