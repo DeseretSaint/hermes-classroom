@@ -1,5 +1,54 @@
+/**
+ * U4: one entry decides what a course page's primary action *is* — its words and its verb.
+ *
+ * The words are Home's own (`DESK_PRIMARY_LABEL`, `30-home.js`): one noun per next step across the
+ * product. They are copied here at load rather than read at paint time so a label and a handler can
+ * never come from two different branches. The verb is the course page's half: a due review resolves
+ * the review, an unapproved plan opens the plan, and only a lesson kind may start or resume a run.
+ * A kind this page cannot serve has no entry, so the control is disabled rather than being dressed
+ * as a lesson start.
+ */
+const COURSE_PRIMARY = Object.freeze({
+  start_lesson: Object.freeze({ label: DESK_PRIMARY_LABEL.start_lesson, verb: 'lesson' }),
+  resume_lesson: Object.freeze({ label: DESK_PRIMARY_LABEL.resume_lesson, verb: 'lesson' }),
+  rebind_session: Object.freeze({ label: DESK_PRIMARY_LABEL.rebind_session, verb: 'lesson' }),
+  resolve_review_due: Object.freeze({ label: DESK_PRIMARY_LABEL.resolve_review_due, verb: 'review' }),
+  review_plan: Object.freeze({ label: DESK_PRIMARY_LABEL.review_plan, verb: 'plan' }),
+  review_pack: Object.freeze({ label: DESK_PRIMARY_LABEL.review_pack, verb: 'plan' })
+})
+
+/** Home's fallback word, kept identical so a future kind reads the same on both surfaces. */
+const COURSE_PRIMARY_FALLBACK_LABEL = 'Open the lesson'
+
+/**
+ * Resolve `kind` once, then read BOTH the words and the handler from that one resolution.
+ *
+ * `handlers` are the surface's own actions: `onOpenLesson`, `onOpenReview`, `onOpenPlan`. The map
+ * entry's verb picks the slot, so a review can never run the lesson handler and a caller cannot take
+ * a label from one branch and a handler from another. `run` is `null` when the entry is unknown or
+ * the surface has no action for that verb — the control is then disabled, not repurposed.
+ */
+function coursePrimaryAction(kind, handlers) {
+  const key = kind || 'start_lesson'
+  const h = handlers || {}
+  const entry = Object.prototype.hasOwnProperty.call(COURSE_PRIMARY, key) ? COURSE_PRIMARY[key] : null
+  const slot = !entry
+    ? null
+    : entry.verb === 'plan'
+      ? h.onOpenPlan
+      : entry.verb === 'review'
+        ? h.onOpenReview
+        : h.onOpenLesson
+  return {
+    kind: key,
+    verb: entry ? entry.verb : null,
+    label: entry ? entry.label : COURSE_PRIMARY_FALLBACK_LABEL,
+    run: typeof slot === 'function' ? () => slot() : null
+  }
+}
+
 /** Overview: the course summary, one next move, the route, then recent evidence and reference. */
-function OverviewView({ row, page, review, quizzes, outline, implemented, onOpenSection, onResume }) {
+function OverviewView({ row, page, review, quizzes, outline, implemented, onOpenSection, onResume, onReview, onOpenPlan }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const next = row.next_step || {}
   const section = page && page.section
@@ -20,6 +69,21 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
   const nextSemantic = nextEntry ? sectionStateSemantic(nextEntry.state, true) : null
   const currentId = section ? section.objective_id : nextEntry ? nextEntry.objective_id : null
   const phone = cbLayoutFor(useCbViewportWidth()) === 'phone'
+  // U4: one resolution gives both the words and the handler. A due review resolves the due
+  // section's review and an unapproved plan opens the plan; neither is allowed to arrive at
+  // `onResume`. A kind this page cannot serve leaves `run` null, so the control is disabled.
+  const primaryObjectiveId = section ? section.objective_id : nextEntry ? nextEntry.objective_id : null
+  const primary = coursePrimaryAction(next.kind, {
+    onOpenLesson:
+      primaryObjectiveId && typeof onResume === 'function'
+        ? () => onResume(primaryObjectiveId)
+        : null,
+    onOpenReview:
+      primaryObjectiveId && typeof onReview === 'function'
+        ? () => onReview(primaryObjectiveId)
+        : null,
+    onOpenPlan: typeof onOpenPlan === 'function' ? onOpenPlan : null
+  })
 
   return jsxs('div', {
     className: 'flex max-w-3xl flex-col gap-5',
@@ -102,9 +166,10 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
             children: [
               jsx(CbAction, {
                 variant: 'primary',
-                disabled: !section,
-                onClick: () => onResume(section ? section.objective_id : null),
-                children: next.kind === 'resume_lesson' ? 'Resume the lesson' : 'Start a fresh run'
+                'data-cb-overview-primary': primary.kind,
+                disabled: !primary.run,
+                onClick: primary.run || (() => {}),
+                children: primary.label
               }),
               jsx(CbAction, {
                 variant: 'tertiary',
@@ -3006,6 +3071,7 @@ function CourseHomeAside({
   busy,
   onContinue,
   onOpenPlan,
+  onOpenReview,
   onOpenOther
 }) {
   const nextStep = (row && row.next_step) || {}
@@ -3023,13 +3089,19 @@ function CourseHomeAside({
     : planReview
       ? CB3_COURSE_COPY.planReviewBody
       : null
-  const run = () => {
-    if (planReview || complete) {
-      if (typeof onOpenPlan === 'function') onOpenPlan()
-      return
-    }
-    if (typeof onContinue === 'function') onContinue(nextStep.kind || 'start_lesson')
-  }
+  // U4: the label is the backend's own words for this objective, but the verb comes from the same
+  // course-page map the rest of the surface reads, so a due review opens the due section's review
+  // and an unapproved plan opens the plan. Neither falls through to `onContinue`, which starts a
+  // lesson run. A finished course's one remaining action is its plan.
+  const primary = coursePrimaryAction(nextStep.kind || step.kind, {
+    onOpenLesson:
+      typeof onContinue === 'function'
+        ? () => onContinue(nextStep.kind || 'start_lesson')
+        : null,
+    onOpenReview: typeof onOpenReview === 'function' ? onOpenReview : null,
+    onOpenPlan: typeof onOpenPlan === 'function' ? onOpenPlan : null
+  })
+  const run = complete && typeof onOpenPlan === 'function' ? onOpenPlan : primary.run
   const others_ = Array.isArray(others) ? others.slice(0, 3) : []
   return jsxs('aside', {
     'data-cb-course-aside': '',
@@ -3082,8 +3154,8 @@ function CourseHomeAside({
             'data-cb-continue-action': '',
             label: nextLabel,
             busy: Boolean(busy),
-            disabled: Boolean(busy),
-            onClick: run,
+            disabled: Boolean(busy) || !run,
+            onClick: run || (() => {}),
             style: { width: '100%' }
           }, 'primary')
         ]
@@ -3221,6 +3293,7 @@ function CourseHomeV3({
   onOpenPlan,
   onOpenSection,
   onOpenOther,
+  onOpenReview,
   onRetry,
   onOpenStudio
 }) {
@@ -3265,6 +3338,18 @@ function CourseHomeV3({
   // carried in the markup as `data-cb3-scene` / `data-cb3-scene-artifact`.
   const heroPlate = cb3CourseHeroResolution({ plate })
   const nextKind = (row && row.next_step && row.next_step.kind) || 'start_lesson'
+  // U4: the review verb belongs to the section the scheduler says is due. A caller that brings its
+  // own review action wins; otherwise the route's own section opener carries it, so the Continue
+  // plate never becomes a dead control on a surface that can still open the due section.
+  const dueObjective = (Array.isArray(objectives) ? objectives : []).find(
+    (entry) => entry && (entry.state === 'review_due' || entry.state === 'needs_review')
+  )
+  const openReviewAction =
+    typeof onOpenReview === 'function'
+      ? onOpenReview
+      : dueObjective && typeof onOpenSection === 'function'
+        ? () => onOpenSection(dueObjective.objective_id)
+        : null
   const step = {
     kind: nextKind,
     label: (row && row.next_step && row.next_step.label) || CB3_COURSE_COPY.continueTitle,
@@ -3467,6 +3552,7 @@ function CourseHomeV3({
             busy,
             onContinue,
             onOpenPlan,
+            onOpenReview: openReviewAction,
             onOpenOther
           }, 'aside')
         ]
@@ -4122,6 +4208,30 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
     sectionOpen: Boolean(openSectionId)
   })
   const objectives = outline.data && Array.isArray(outline.data.objectives) ? outline.data.objectives.filter(Boolean) : []
+  // U4: a due review acts on the section the scheduler says is due, never on the course's current
+  // objective by default; the fallback is that same current section, never a new lesson run.
+  const reviewObjective = objectives.find(
+    (entry) => entry && (entry.state === 'review_due' || entry.state === 'needs_review')
+  ) || null
+  const reviewObjectiveId =
+    (reviewObjective && reviewObjective.objective_id) ||
+    (page.data && page.data.section && page.data.section.objective_id) ||
+    (row.evidence_summary && row.evidence_summary.current_objective_id) ||
+    null
+  const openReview = useCallback(() => {
+    if (reviewObjectiveId) openSection(reviewObjectiveId)
+  }, [reviewObjectiveId, openSection])
+  // The hero carries the same primary as the rest of the course page: one resolution decides both
+  // the words and the verb, so a due review opens the due section and an unapproved plan opens the
+  // plan. Only a lesson kind reaches `startLesson`, and `topCanResume` cannot upgrade a review. An
+  // active binding turns a plain start into a resume in the KIND too, so the words and the mode that
+  // runs cannot disagree.
+  const heroKind = nextKind === 'start_lesson' && topCanResume ? 'resume_lesson' : nextKind
+  const heroPrimary = coursePrimaryAction(heroKind, {
+    onOpenLesson: () => startLesson(heroKind === 'resume_lesson' ? 'resume' : 'fresh'),
+    onOpenReview: openReview,
+    onOpenPlan: () => selectView('plan')
+  })
   const summary = row.evidence_summary || {}
   const courseProgress = objectives.length
     ? objectiveProgress(objectives)
@@ -4218,6 +4328,7 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
           onContinue: (kind) =>
             startLesson(kind === 'resume_lesson' && topCanResume ? 'resume' : 'fresh'),
           onOpenPlan: () => selectView('plan'),
+          onOpenReview: openReview,
           onOpenSection: openSection,
           onOpenStudio: () => setStudioOpen(true),
           onRetry: () => {
@@ -4342,9 +4453,10 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
                       item.id === 'start'
                         ? {
                             variant: 'primary',
-                            disabled: busy,
-                            onClick: () => startLesson(nextKind === 'resume_lesson' && topCanResume ? 'resume' : 'fresh'),
-                            children: busy ? 'Opening' : topCanResume ? 'Resume the lesson' : 'Start a fresh run'
+                            'data-cb-hero-primary': heroPrimary.kind,
+                            disabled: busy || !heroPrimary.run,
+                            onClick: heroPrimary.run || (() => {}),
+                            children: busy ? 'Opening' : heroPrimary.label
                           }
                         : {
                             variant: item.variant,
