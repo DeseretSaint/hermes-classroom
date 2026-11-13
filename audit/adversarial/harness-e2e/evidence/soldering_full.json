@@ -1394,7 +1394,7 @@
         },
         "stimulus_format": null,
         "submit": {
-          "contract_version": 27,
+          "contract_version": 28,
           "ok": true,
           "operation_id": "op-h40-attempt-submit-0000a4",
           "result": {
@@ -1424,7 +1424,7 @@
         },
         "stimulus_format": null,
         "submit": {
-          "contract_version": 27,
+          "contract_version": 28,
           "ok": true,
           "operation_id": "op-h40-attempt-submit-0000a9",
           "result": {
@@ -1537,8 +1537,11 @@
       "section": {
         "evidence_target": "recall",
         "last_opened_at": null,
+        "lesson_state": "validated",
         "objective_id": "0000000000000014",
         "ordinal": 1,
+        "rejection_reasons": [],
+        "section_id": "0000000000000031",
         "state": "not_started",
         "title": "Name the three burn and fume hazards at the bench"
       },
@@ -2590,8 +2593,11 @@
           "evidence_target": "recall",
           "independent": false,
           "last_opened_at": null,
+          "lesson_rejection_reasons": [],
+          "lesson_state": "validated",
           "objective_id": "0000000000000014",
           "ordinal": 1,
+          "section_id": "0000000000000031",
           "state": "not_started",
           "title": "Name the three burn and fume hazards at the bench"
         },
@@ -2601,8 +2607,11 @@
           "evidence_target": "procedure",
           "independent": false,
           "last_opened_at": null,
+          "lesson_rejection_reasons": [],
+          "lesson_state": "validated",
           "objective_id": "0000000000000015",
           "ordinal": 2,
+          "section_id": "0000000000000032",
           "state": "not_started",
           "title": "Set an iron to the temperature a leaded joint needs"
         },
@@ -2612,8 +2621,11 @@
           "evidence_target": "comprehension",
           "independent": false,
           "last_opened_at": null,
+          "lesson_rejection_reasons": [],
+          "lesson_state": "validated",
           "objective_id": "0000000000000016",
           "ordinal": 3,
+          "section_id": "0000000000000038",
           "state": "not_started",
           "title": "Read a resistor value from its colour bands"
         },
@@ -2623,8 +2635,11 @@
           "evidence_target": "discrimination",
           "independent": false,
           "last_opened_at": null,
+          "lesson_rejection_reasons": [],
+          "lesson_state": "validated",
           "objective_id": "0000000000000017",
           "ordinal": 4,
+          "section_id": "0000000000000039",
           "state": "not_started",
           "title": "Inspect a pad for lift before inserting a part"
         },
@@ -2634,8 +2649,11 @@
           "evidence_target": "procedure",
           "independent": false,
           "last_opened_at": null,
+          "lesson_rejection_reasons": [],
+          "lesson_state": "validated",
           "objective_id": "0000000000000018",
           "ordinal": 5,
+          "section_id": "000000000000003f",
           "state": "not_started",
           "title": "Form a lead so the part seats flush"
         },
@@ -2645,8 +2663,11 @@
           "evidence_target": "comprehension",
           "independent": false,
           "last_opened_at": null,
+          "lesson_rejection_reasons": [],
+          "lesson_state": "validated",
           "objective_id": "0000000000000019",
           "ordinal": 6,
+          "section_id": "0000000000000040",
           "state": "not_started",
           "title": "Insert a part in the right orientation"
         },
@@ -2656,8 +2677,11 @@
           "evidence_target": "procedure",
           "independent": false,
           "last_opened_at": null,
+          "lesson_rejection_reasons": [],
+          "lesson_state": "validated",
           "objective_id": "000000000000001a",
           "ordinal": 7,
+          "section_id": "0000000000000046",
           "state": "not_started",
           "title": "Heat the pad and lead together before feeding solder"
         },
@@ -2667,8 +2691,11 @@
           "evidence_target": "discrimination",
           "independent": false,
           "last_opened_at": null,
+          "lesson_rejection_reasons": [],
+          "lesson_state": "validated",
           "objective_id": "000000000000001b",
           "ordinal": 8,
+          "section_id": "0000000000000047",
           "state": "not_started",
           "title": "Recognise a cold joint from its surface"
         },
@@ -2678,8 +2705,11 @@
           "evidence_target": "transfer",
           "independent": false,
           "last_opened_at": null,
+          "lesson_rejection_reasons": [],
+          "lesson_state": "validated",
           "objective_id": "000000000000001c",
           "ordinal": 9,
+          "section_id": "000000000000004d",
           "state": "not_started",
           "title": "Inspect a finished joint against the fillet criterion"
         },
@@ -2689,8 +2719,11 @@
           "evidence_target": "procedure",
           "independent": false,
           "last_opened_at": null,
+          "lesson_rejection_reasons": [],
+          "lesson_state": "validated",
           "objective_id": "000000000000001d",
           "ordinal": 10,
+          "section_id": "000000000000004e",
           "state": "not_started",
           "title": "Wick a solder bridge without lifting the pad"
         },
@@ -2700,8 +2733,11 @@
           "evidence_target": "procedure",
           "independent": false,
           "last_opened_at": null,
+          "lesson_rejection_reasons": [],
+          "lesson_state": "validated",
           "objective_id": "000000000000001e",
           "ordinal": 11,
+          "section_id": "0000000000000054",
           "state": "not_started",
           "title": "Desolder a two-lead part without overheating it"
         },
@@ -2711,8 +2747,11 @@
           "evidence_target": "transfer",
           "independent": false,
           "last_opened_at": null,
+          "lesson_rejection_reasons": [],
+          "lesson_state": "validated",
           "objective_id": "000000000000001f",
           "ordinal": 12,
+          "section_id": "0000000000000055",
           "state": "not_started",
           "title": "Prove continuity with a meter after rework"
         }
@@ -2731,8 +2770,11 @@
                 "evidence_target": "recall",
                 "independent": false,
                 "last_opened_at": null,
+                "lesson_rejection_reasons": [],
+                "lesson_state": "validated",
                 "objective_id": "0000000000000014",
                 "ordinal": 1,
+                "section_id": "0000000000000031",
                 "state": "not_started",
                 "title": "Name the three burn and fume hazards at the bench"
               },
@@ -2742,8 +2784,11 @@
                 "evidence_target": "procedure",
                 "independent": false,
                 "last_opened_at": null,
+                "lesson_rejection_reasons": [],
+                "lesson_state": "validated",
                 "objective_id": "0000000000000015",
                 "ordinal": 2,
+                "section_id": "0000000000000032",
                 "state": "not_started",
                 "title": "Set an iron to the temperature a leaded joint needs"
               }
@@ -2763,8 +2808,11 @@
                 "evidence_target": "comprehension",
                 "independent": false,
                 "last_opened_at": null,
+                "lesson_rejection_reasons": [],
+                "lesson_state": "validated",
                 "objective_id": "0000000000000016",
                 "ordinal": 3,
+                "section_id": "0000000000000038",
                 "state": "not_started",
                 "title": "Read a resistor value from its colour bands"
               },
@@ -2774,8 +2822,11 @@
                 "evidence_target": "discrimination",
                 "independent": false,
                 "last_opened_at": null,
+                "lesson_rejection_reasons": [],
+                "lesson_state": "validated",
                 "objective_id": "0000000000000017",
                 "ordinal": 4,
+                "section_id": "0000000000000039",
                 "state": "not_started",
                 "title": "Inspect a pad for lift before inserting a part"
               }
@@ -2810,8 +2861,11 @@
                 "evidence_target": "procedure",
                 "independent": false,
                 "last_opened_at": null,
+                "lesson_rejection_reasons": [],
+                "lesson_state": "validated",
                 "objective_id": "0000000000000018",
                 "ordinal": 5,
+                "section_id": "000000000000003f",
                 "state": "not_started",
                 "title": "Form a lead so the part seats flush"
               },
@@ -2821,8 +2875,11 @@
                 "evidence_target": "comprehension",
                 "independent": false,
                 "last_opened_at": null,
+                "lesson_rejection_reasons": [],
+                "lesson_state": "validated",
                 "objective_id": "0000000000000019",
                 "ordinal": 6,
+                "section_id": "0000000000000040",
                 "state": "not_started",
                 "title": "Insert a part in the right orientation"
               }
@@ -2857,8 +2914,11 @@
                 "evidence_target": "procedure",
                 "independent": false,
                 "last_opened_at": null,
+                "lesson_rejection_reasons": [],
+                "lesson_state": "validated",
                 "objective_id": "000000000000001a",
                 "ordinal": 7,
+                "section_id": "0000000000000046",
                 "state": "not_started",
                 "title": "Heat the pad and lead together before feeding solder"
               },
@@ -2868,8 +2928,11 @@
                 "evidence_target": "discrimination",
                 "independent": false,
                 "last_opened_at": null,
+                "lesson_rejection_reasons": [],
+                "lesson_state": "validated",
                 "objective_id": "000000000000001b",
                 "ordinal": 8,
+                "section_id": "0000000000000047",
                 "state": "not_started",
                 "title": "Recognise a cold joint from its surface"
               }
@@ -2904,8 +2967,11 @@
                 "evidence_target": "transfer",
                 "independent": false,
                 "last_opened_at": null,
+                "lesson_rejection_reasons": [],
+                "lesson_state": "validated",
                 "objective_id": "000000000000001c",
                 "ordinal": 9,
+                "section_id": "000000000000004d",
                 "state": "not_started",
                 "title": "Inspect a finished joint against the fillet criterion"
               },
@@ -2915,8 +2981,11 @@
                 "evidence_target": "procedure",
                 "independent": false,
                 "last_opened_at": null,
+                "lesson_rejection_reasons": [],
+                "lesson_state": "validated",
                 "objective_id": "000000000000001d",
                 "ordinal": 10,
+                "section_id": "000000000000004e",
                 "state": "not_started",
                 "title": "Wick a solder bridge without lifting the pad"
               }
@@ -2951,8 +3020,11 @@
                 "evidence_target": "procedure",
                 "independent": false,
                 "last_opened_at": null,
+                "lesson_rejection_reasons": [],
+                "lesson_state": "validated",
                 "objective_id": "000000000000001e",
                 "ordinal": 11,
+                "section_id": "0000000000000054",
                 "state": "not_started",
                 "title": "Desolder a two-lead part without overheating it"
               },
@@ -2962,8 +3034,11 @@
                 "evidence_target": "transfer",
                 "independent": false,
                 "last_opened_at": null,
+                "lesson_rejection_reasons": [],
+                "lesson_state": "validated",
                 "objective_id": "000000000000001f",
                 "ordinal": 12,
+                "section_id": "0000000000000055",
                 "state": "not_started",
                 "title": "Prove continuity with a meter after rework"
               }
