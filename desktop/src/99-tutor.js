@@ -1613,13 +1613,25 @@ function skillDisplayName(skill) {
  * The line the rail shows about the skill that will answer this chat. U8: it names the skill in
  * human words and says what the learner gets, and says nothing about how the plugin chose it —
  * that is infrastructure the learner cannot act on.
+ *
+ * Each reason the backend can report gets its own sentence, because the reason is the only thing
+ * that knows whether a lesson is bound. `bound_objective_not_in_store` is a live binding whose
+ * lesson row is missing from this store: the tutor is still the loaded skill, so the line keeps
+ * the tutor and asks the learner to reopen the lesson rather than calling it an open chat.
  */
 function skillNoteCopy(note) {
   const name = skillDisplayName(note && note.skill)
   if (!name) return null
-  return note.reason === 'lesson_binding'
-    ? `Tutor: ${name} — it reads this chat’s section from your next message on.`
-    : `Coach: ${name} — no lesson is open for this chat, so it coaches in general terms.`
+  switch (note.reason) {
+    case 'lesson_binding':
+      return `Tutor: ${name} — it reads this chat’s section from your next message on.`
+    case 'coursebook_chat_without_live_binding':
+      return `Coach: ${name} — no lesson is open for this chat, so it coaches in general terms.`
+    case 'bound_objective_not_in_store':
+      return `Tutor: ${name} — this chat’s lesson has no saved content here. Reopen it from the course pane.`
+    default:
+      return `${name} — this chat will use this skill.`
+  }
 }
 
 function CoursebookPane() {

@@ -27,6 +27,7 @@ import unittest
 from pathlib import Path
 
 from tests.test_desktop_lesson_views import SDK_STUB, _desktop_node_modules
+from coursebook import lesson_skills
 
 ROOT = Path(__file__).resolve().parent.parent
 PLUGIN_JS = ROOT / "desktop" / "plugin.js"
@@ -69,6 +70,8 @@ if (payload.kind === 'rail') {
   json({
     lesson: skillNoteCopy({ skill: 'coursebook:lesson-tutoring', reason: 'lesson_binding' }),
     coach: skillNoteCopy({ skill: 'coursebook:learner-coach', reason: 'coursebook_chat_without_live_binding' }),
+    boundObjective: skillNoteCopy({ skill: 'coursebook:lesson-tutoring', reason: 'bound_objective_not_in_store' }),
+    unknown: skillNoteCopy({ skill: 'coursebook:lesson-tutoring', reason: 'unreadable' }),
     bare: skillNoteCopy({ skill: 'lesson_tutoring', reason: 'lesson_binding' }),
     none: skillNoteCopy(null),
     emptySkill: skillNoteCopy({ skill: '', reason: 'lesson_binding' }),
@@ -344,6 +347,27 @@ class TutorRailRenderTest(unittest.TestCase):
             out["coach"],
             "Coach: Learner Coach — no lesson is open for this chat, so it coaches in general terms.",
         )
+        # A live binding whose lesson row is missing from this store still loads the tutor. The
+        # line must not call it an open chat: the lesson is bound, only its saved content is gone.
+        self.assertEqual(
+            out["boundObjective"],
+            "Tutor: Lesson Tutoring — this chat’s lesson has no saved content here. Reopen it from the course pane.",
+        )
+        self.assertIn("Tutor", out["boundObjective"])
+        self.assertNotIn("Coach", out["boundObjective"])
+        self.assertNotIn("no lesson is open", out["boundObjective"])
+        self.assertIn("Reopen it from the course pane", out["boundObjective"])
+        # An unknown reason names the skill and claims nothing about the lesson.
+        self.assertEqual(out["unknown"], "Lesson Tutoring — this chat will use this skill.")
+        self.assertFalse(out["unknown"].startswith("Tutor:"))
+        self.assertFalse(out["unknown"].startswith("Coach:"))
+        # The pane branches on the backend's own reason strings, not on a copy that can drift.
+        for reason in (
+            lesson_skills.REASON_LIVE_BINDING,
+            lesson_skills.REASON_NO_LIVE_BINDING,
+            lesson_skills.REASON_BOUND_OBJECTIVE_MISSING,
+        ):
+            self.assertIn(f"case '{reason}':", self.source, reason)
         # The words after the last colon are title-cased, so an underscored id reads as words.
         self.assertEqual(out["bare"], "Tutor: Lesson Tutoring — it reads this chat’s section from your next message on.")
         # Nothing to say, nothing printed.
