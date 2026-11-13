@@ -5151,12 +5151,7 @@ class V28AmendmentTest(unittest.TestCase):
         self.assertEqual(set(after), set(before), "v28 added or removed a method payload")
         for method, schema in before.items():
             with self.subTest(method=method):
-                carried = json.loads(json.dumps(after[method]))
-                if method == "lesson.page":
-                    for field in ("section_id", "lesson_state", "rejection_reasons"):
-                        carried["response"]["properties"]["section"]["properties"].pop(field, None)
-                if method == "lesson.regenerate":
-                    carried["request"]["properties"].pop("reasons", None)
+                carried = _without_v28_repair_fields(after[method], method)
                 if method == "health.get":
                     carried["response"]["properties"]["contract_version"]["const"] = 27
                 self.assertEqual(carried, schema, f"{method} moved")
