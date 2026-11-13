@@ -251,10 +251,17 @@ the `tools.show` warm-up described above, because it is required whenever a rig 
 
 ### 7.4 The operator action that unblocks it
 
-Land the launch-body secret-scope fix in the Hermes host checkout (the unmerged
-`wt/t_3e8b07ba-serve-secret-scope` @ `e5cd2ea63f`, plus harbor's review remedy: gate
-`_plugin_launch_body_scope()` on `self.home_path == get_process_hermes_home()`), so a plugin body at
-discovery resolves credentials from the launch profile's own `.env`/env instead of raising. After
-that, re-run `scripts/rig-research-acceptance.py` on a fresh rig home; it must report
+Land the launch-body secret-scope fix in the Hermes host checkout, so a plugin body at discovery
+resolves credentials from the launch profile's own `.env`/env instead of raising:
+
+```
+git -C ~/.hermes/hermes-agent merge --ff-only wt/t_3e8b07ba-ready && hermes gateway restart
+```
+
+That branch is the two reviewed commits (`73b26e2323` H-68 launch-body scope, `2fb0469993` gating
+`_plugin_launch_body_scope()` on `self.home_path == get_process_hermes_home()` — harbor's remedy)
+rebased onto the checkout's own HEAD `1513f54f69`, so it fast-forwards with no rebase and no conflict;
+its tree over `agent/ hermes_cli/ tests/` is identical to the original pair. After the restart,
+re-run `scripts/rig-research-acceptance.py` on a fresh rig home; it must report
 `research_status: "ok"` with a non-empty ledger and cited objectives.
 
