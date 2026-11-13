@@ -86,7 +86,7 @@ if (payload.kind === 'section') {
       sources: index,
       checkSlot: checkNode,
       checkLabels: payload.checkLabels || [],
-      section: { objective_id: payload.document.objective_id, title: payload.document.section_title, ordinal: 2, evidence_target: 'discrimination' },
+      section: { objective_id: payload.document.objective_id, title: payload.document.section_title, ordinal: 2, sections_total: 4, evidence_target: 'discrimination' },
       progress: payload.progress || { total_objectives: 4, independent: 2, review_due: 1 },
       playerState: payload.playerState || { phase: 'awaiting_input', canCheck: false, verdict: null },
       playerController: { current: null },
@@ -257,10 +257,14 @@ class PlayerFooterTest(H149RenderTest):
         self.assertEqual(len(primaries), 1, primaries)
         self.assertIn('data-cb-player-primary="Continue"', html)
 
-    def test_the_chat_action_is_demoted_while_the_player_is_on_screen(self) -> None:
+    def test_no_chat_action_competes_with_the_player(self) -> None:
+        # The player owns the screen and its own exit. A "Start a fresh run" beside an open step 1
+        # said the lesson had not begun while it was on screen (E2E U5), so a detached section
+        # renders no section action here; the strip belongs to the non-player surfaces.
         doc = document(guided=True, blocks=COMPLETE_BLOCKS, check_id="chk_0123456789abcdef")
         html = self.section(doc)
-        self.assertIn('data-cb-section-primary="secondary"', html)
+        self.assertNotIn('data-cb-section-actions', html)
+        self.assertIn('data-cb-player-exit=""', html)
 
     def test_the_check_step_labels_the_primary_check(self) -> None:
         blocks = [COMPLETE_BLOCKS[2], COMPLETE_BLOCKS[0]]

@@ -1312,16 +1312,45 @@ def plan_replan(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
 
 
 def _insert_check(connection, objective, spec: dict[str, Any], stimulus: dict, reference: dict,
-                  rubric: dict, version: int) -> str:
+                  rubric: dict, version: int, *, revisit: bool = False,
+                  audit_state: str | None = None) -> str:
     check_id = _new_id("chk")
     connection.execute(
         "INSERT INTO checks (id, objective_id, version, evidence_target, stimulus_json, rubric_json,"
-        " reference_json, locale, audit_state, state, created_at)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)",
+        " reference_json, locale, audit_state, state, created_at, revisit)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?)",
         (check_id, objective["id"], version, objective["evidence_target"],
-         _json_dump(stimulus), _json_dump(rubric), _json_dump(reference), spec.get("locale"), "passed", _now()),
+         _json_dump(stimulus), _json_dump(rubric), _json_dump(reference), spec.get("locale"),
+         audit_state or "passed", _now(), 1 if revisit else 0),
     )
     return check_id
+
+
+def _newest_closed_check(connection, objective_id: str):
+    """The objective's newest *closed* authored check, or ``None``.
+
+    A generated lesson writes plain-string criteria and stores the real check in ``checks`` — there
+    is no ``check_spec`` object to mint a fresh check from. The newest closed row is the material a
+    revisit is cloned from (E2E L1): it is a check the learner actually answered and passed, so
+    re-serving it at the next version is review, never a new question.
+    """
+    return _row(
+        connection,
+        "SELECT * FROM checks WHERE objective_id = ? AND state = 'closed'"
+        " ORDER BY version DESC, created_at DESC LIMIT 1",
+        (objective_id,),
+    )
+
+
+def _authored_check_spec(check) -> dict[str, Any]:
+    """The spec-shaped view of a stored check row, for cloning it as a revisit."""
+    return {
+        "audit_state": str(check["audit_state"]),
+        "locale": check["locale"],
+        "stimulus": _json_load(check["stimulus_json"], {}),
+        "reference": _json_load(check["reference_json"], {}),
+        "rubric": _json_load(check["rubric_json"], {}),
+    }
 
 
 # ── §14.2 prerequisite edges: reader fence and disclosure ───────────────────
@@ -1537,19 +1566,28 @@ def check_open(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, 
                 "check_version": int(existing["version"]),
                 "evidence_target": existing["evidence_target"],
                 "revision": int(enrollment["revision"]),
+                "revisit": bool(existing["revisit"]),
             }
             if prerequisite_state is not None:
                 result["prerequisite_state"] = prerequisite_state
             return int(enrollment["revision"]), result
         spec = _check_spec(objective)
+        revisit_source = None
         if spec is None:
-            raise RpcError.of(
-                "VALIDATION_FAILED",
-                "this objective has no check specification; it cannot be assessed.",
-                reason="objective_not_checkable",
-                objective_id=objective["id"],
-            )
-        if not _audit_ok(spec):
+            # E2E L1: a generated lesson writes plain-string criteria and stores its real check in
+            # the `checks` table, so there is no spec to mint a fresh check from. The newest closed
+            # authored check is cloned at the next version instead — review of a completed section,
+            # not a new question and not a new evidence transition.
+            revisit_source = _newest_closed_check(connection, objective["id"])
+            if revisit_source is None:
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    "this objective has no check specification; it cannot be assessed.",
+                    reason="objective_not_checkable",
+                    objective_id=objective["id"],
+                )
+            spec = _authored_check_spec(revisit_source)
+        if revisit_source is None and not _audit_ok(spec):
             raise RpcError.of(
                 "VALIDATION_FAILED",
                 "this check did not pass its pre-lesson audit and cannot be used for grading.",
@@ -1573,7 +1611,7 @@ def check_open(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, 
                 reason="check_not_gradable",
                 objective_id=objective["id"],
             )
-        if practice.declaration(stimulus) is not None:
+        if revisit_source is None and practice.declaration(stimulus) is not None:
             # The same validator the generation writer calls: a malformed practice can never reach
             # a learner (docs/CONVERSATION-PRACTICE.md §3.1).
             try:
@@ -1595,13 +1633,20 @@ def check_open(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, 
         connection.execute(
             "UPDATE checks SET state = 'superseded' WHERE objective_id = ? AND state = 'open'", (objective["id"],)
         )
-        check_id = _insert_check(connection, objective, spec, stimulus, reference, rubric, version)
+        check_id = _insert_check(
+            connection, objective, spec, stimulus, reference, rubric, version,
+            revisit=revisit_source is not None,
+            # A revisit keeps the audit the original received: cloning a model-assessed check's
+            # pending audit into `passed` would claim an independent audit that never happened.
+            audit_state=str(spec.get("audit_state") or "passed") if revisit_source is not None else None,
+        )
         _transition(connection, enrollment["id"], expected, to_revision, "continue")
         result = {
             "check_id": check_id,
             "check_version": version,
             "evidence_target": objective["evidence_target"],
             "revision": to_revision,
+            "revisit": revisit_source is not None,
         }
         if prerequisite_state is not None:
             result["prerequisite_state"] = prerequisite_state
@@ -1627,11 +1672,55 @@ def progression_challenge_out(payload: dict[str, Any], envelope: dict[str, Any])
             raise RpcError.of("VALIDATION_FAILED", "the course plan is not approved.", reason="plan_not_approved")
         objective = _objective_in_plan(connection, payload["objective_id"], plan["id"])
         spec = _check_spec(objective)
+        revisit_source = None
         if spec is None:
-            raise RpcError.of(
-                "VALIDATION_FAILED", "this objective has no check specification.",
-                reason="objective_not_checkable",
+            # E2E L1: a generated objective stores its real check in `checks`, not as a
+            # `check_spec`. A challenge against it is the authored item served again as a review,
+            # never a fabricated variant — and `no_varied_challenge_available` would strand a
+            # learner whose course has exactly one authored check.
+            revisit_source = _newest_closed_check(connection, objective["id"])
+            if revisit_source is None:
+                raise RpcError.of(
+                    "VALIDATION_FAILED", "this objective has no check specification.",
+                    reason="objective_not_checkable",
+                )
+            spec = _authored_check_spec(revisit_source)
+            to_revision = _bump_enrollment(connection, enrollment["id"], expected)
+            current = _row(
+                connection,
+                "SELECT MAX(version) AS version FROM checks WHERE objective_id = ?",
+                (objective["id"],),
             )
+            version = int(current["version"] or 0) + 1
+            connection.execute(
+                "UPDATE checks SET state = 'superseded' WHERE objective_id = ? AND state = 'open'",
+                (objective["id"],),
+            )
+            _, reference, rubric = _spec_content(spec)
+            try:
+                validators.reference_kind(reference)
+            except validators.ReferenceSpecError:
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    "this challenge does not declare a grading lane and cannot be assessed.",
+                    reason="check_not_gradable",
+                    objective_id=objective["id"],
+                )
+            check_id = _insert_check(
+                connection, objective, spec, _spec_content(spec)[0], reference, rubric, version,
+                revisit=True,
+                audit_state=str(spec.get("audit_state") or "passed"),
+            )
+            _transition(connection, enrollment["id"], expected, to_revision, "continue")
+            result = {
+                "check_id": check_id,
+                "check_version": version,
+                "revision": to_revision,
+                "revisit": True,
+            }
+            _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""),
+                      to_revision, result)
+            return to_revision, result
         used = {
             row["stimulus_json"]
             for row in connection.execute(
@@ -1680,7 +1769,8 @@ def progression_challenge_out(payload: dict[str, Any], envelope: dict[str, Any])
             variant_reference, variant.get("rubric") or rubric, version,
         )
         _transition(connection, enrollment["id"], expected, to_revision, "continue")
-        result = {"check_id": check_id, "check_version": version, "revision": to_revision}
+        result = {"check_id": check_id, "check_version": version, "revision": to_revision,
+                  "revisit": False}
         _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), to_revision, result)
     return to_revision, result
 
@@ -1859,6 +1949,12 @@ def _commit_attempt(
          _json_dump(graded.criteria), _json_dump(graded.provenance), _now(), _now()),
     )
     next_action = _next_action_for(verdict)
+    # E2E L1: a revisit is review, not new evidence. The pass is recorded (the attempt above and
+    # its layer-1 row below), but it never writes a second layer-2 row, never moves the objective
+    # again and never reports `complete_objective` — the section was already complete.
+    revisit = bool(check["revisit"]) if "revisit" in check.keys() else False
+    if revisit and verdict == "pass":
+        next_action = "review_objective"
     # A hint is consumed by the answer it contaminated: it stays linked to that attempt and
     # cannot keep marking later, independent answers as hinted (R10/R12).
     connection.execute(
@@ -1866,7 +1962,7 @@ def _commit_attempt(
         " AND kind IN ('hint_request', 'answer_shown') AND attempt_id IS NULL",
         (attempt_id, enrollment["id"], objective["id"]),
     )
-    if verdict == "pass" and evidence_class != "cold":
+    if verdict == "pass" and evidence_class != "cold" and not revisit:
         # Access may advance, but the record must not claim independent evidence.
         next_action = "review_objective"
     _transition(connection, enrollment["id"], expected, to_revision, next_action, attempt_id)
@@ -1875,7 +1971,7 @@ def _commit_attempt(
         " VALUES (?, ?, ?, ?, 1, 'attempt', ?, ?)",
         (_new_id("evd"), enrollment["id"], objective["id"], attempt_id, evidence_class, _now()),
     )
-    if verdict == "pass" and evidence_class == "cold":
+    if verdict == "pass" and evidence_class == "cold" and not revisit:
         connection.execute(
             "INSERT INTO evidence (id, enrollment_id, objective_id, attempt_id, layer, kind, evidence_class, created_at)"
             " VALUES (?, ?, ?, ?, 2, ?, ?, ?)",
@@ -1883,10 +1979,11 @@ def _commit_attempt(
              "delayed_retrieval" if objective["state"] == "review_due" else "independent_evidence",
              evidence_class, _now()),
         )
-    connection.execute(
-        "UPDATE objectives SET state = ? WHERE id = ?",
-        (_objective_state_after(verdict, evidence_class, objective["state"]), objective["id"]),
-    )
+    if not revisit:
+        connection.execute(
+            "UPDATE objectives SET state = ? WHERE id = ?",
+            (_objective_state_after(verdict, evidence_class, objective["state"]), objective["id"]),
+        )
     if verdict == "pass":
         connection.execute("UPDATE checks SET state = 'closed' WHERE id = ?", (check["id"],))
     if practice_session_id is not None:
@@ -2893,6 +2990,11 @@ def _library_next_step(connection, enrollment, course) -> dict[str, Any]:
             (enrollment["id"], objective["id"]),
         )
         title = str(objective["title"])
+        # E2E L1: a section whose check is already closed and passed is reopened for review, not
+        # for a first run. The desk and the lesson page label the control "Review" from this kind
+        # instead of "Start"/"Resume"; `check.open` then serves the authored check as a revisit.
+        if _newest_closed_check(connection, objective["id"]) is not None:
+            return {"kind": "review_lesson", "label": f"Review {title}"}
         binding = _latest_binding(connection, enrollment["id"], run["id"]) if run is not None else None
         if binding is not None and binding["status"] in ("detached", "branched", "orphaned"):
             return {"kind": "rebind_session", "label": f"Rebind the chat for {title}"}
@@ -3650,6 +3752,16 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
                 # not served and no check is attached, because an empty document has no block for
                 # one (H-185/H-194 unchanged).
                 document["view_note"] = _VIEW_NOTE_PARKED_REVIEW
+        # E2E L1 (blocker at this base): this count used to be executed on the `result` dict below,
+        # which sits outside the `with db.read()` block — so `connection` was already closed and
+        # every lesson.page call answered INTERNAL_ERROR. Read it while the connection is open.
+        sections_total = int(
+            connection.execute(
+                "SELECT COUNT(*) FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
+                f" WHERE pl.course_id = ? AND {_current_plan_sql()}",
+                (course["id"],),
+            ).fetchone()[0]
+        )
     result = {
         "enrollment_id": enrollment["id"],
         "course": {"course_id": course["id"], "title": course["title"]},
@@ -3657,6 +3769,7 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
             "objective_id": objective["id"],
             "title": objective["title"],
             "ordinal": int(objective["ordinal"]),
+            "sections_total": sections_total,
             "state": objective["state"],
             "evidence_target": objective["evidence_target"],
             "last_opened_at": run["last_opened_at"] if run else None,
@@ -3721,6 +3834,7 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
                 "state": row["state"],
                 "audit_state": row["audit_state"],
                 "attempt_count": int(row["attempt_count"]),
+                "revisit": bool(row["revisit"]),
             }
             for row in checks
         ],
@@ -4663,6 +4777,7 @@ def check_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, d
         "audit_state": check["audit_state"],
         "stimulus": _stimulus_view(_json_load(check["stimulus_json"], {})),
         "attempt_count": attempt_count,
+        "revisit": bool(check["revisit"]),
     }
 
 

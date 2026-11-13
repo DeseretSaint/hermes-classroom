@@ -104,7 +104,12 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
                 variant: 'primary',
                 disabled: !section,
                 onClick: () => onResume(section ? section.objective_id : null),
-                children: next.kind === 'resume_lesson' ? 'Resume the lesson' : 'Start a fresh run'
+                children:
+                  next.kind === 'review_lesson'
+                    ? 'Review'
+                    : next.kind === 'resume_lesson'
+                      ? 'Resume the lesson'
+                      : 'Start a fresh run'
               }),
               jsx(CbAction, {
                 variant: 'tertiary',
@@ -4261,8 +4266,15 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
           worldState: courseWorldState,
           readState: courseReadState,
           onBack,
-          onContinue: (kind) =>
-            startLesson(kind === 'resume_lesson' && topCanResume ? 'resume' : 'fresh'),
+          onContinue: (kind) => {
+            // E2E L1: a review reopens the section, where `check.open` serves the revisit; it never
+            // arms a fresh lesson chat.
+            if (kind === 'review_lesson' && summary.current_objective_id) {
+              openSection(summary.current_objective_id)
+              return
+            }
+            startLesson(kind === 'resume_lesson' && topCanResume ? 'resume' : 'fresh')
+          },
           onOpenPlan: () => selectView('plan'),
           onOpenSection: openSection,
           onOpenStudio: () => setStudioOpen(true),
@@ -4389,8 +4401,19 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
                         ? {
                             variant: 'primary',
                             disabled: busy,
-                            onClick: () => startLesson(nextKind === 'resume_lesson' && topCanResume ? 'resume' : 'fresh'),
-                            children: busy ? 'Opening' : topCanResume ? 'Resume the lesson' : 'Start a fresh run'
+                            // E2E L1: a section whose check is already closed reopens for review;
+                            // opening it is what serves the revisit, not arming a fresh run.
+                            onClick: () =>
+                              nextKind === 'review_lesson'
+                                ? openSection(summary.current_objective_id)
+                                : startLesson(nextKind === 'resume_lesson' && topCanResume ? 'resume' : 'fresh'),
+                            children: busy
+                              ? 'Opening'
+                              : nextKind === 'review_lesson'
+                                ? 'Review'
+                                : topCanResume
+                                  ? 'Resume the lesson'
+                                  : 'Start a fresh run'
                           }
                         : {
                             variant: item.variant,

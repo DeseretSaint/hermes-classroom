@@ -3140,6 +3140,9 @@ const DESK_STATE_TONE = {
 const DESK_PRIMARY_LABEL = {
   start_lesson: 'Start a fresh run',
   resume_lesson: 'Resume the lesson',
+  // E2E L1: a section whose check is already closed and passed reopens as a revisit. The backend
+  // says so with `review_lesson`; the desk must not offer to start it again.
+  review_lesson: 'Review',
   resolve_review_due: 'Start the review',
   rebind_session: 'Reconnect the chat',
   review_plan: 'Review the plan',
@@ -15722,6 +15725,16 @@ function AttemptControls({
         className: 'flex flex-wrap items-center gap-2',
         children: [
           jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: `Check v${displayCheck.check_version}` }),
+          // E2E L1: a revisit is a section the learner already passed, served again for spaced
+          // review. It says Review, never Start: nothing here is a first pass.
+          check.revisit
+            ? jsx(sdk.Badge, {
+                size: 'xs',
+                variant: 'muted',
+                'data-cb-check-revisit': 'true',
+                children: CB3_CLASSROOM_COPY.checkRevisit
+              })
+            : null,
           jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: displayCheck.evidence_target || 'evidence' }),
           result && result.evidence_class ? jsx(EvidenceClassText, { value: result.evidence_class }) : null
         ]
@@ -16589,6 +16602,8 @@ const CB3_CLASSROOM_COPY = Object.freeze({
   gameXp: '{n} XP',
   challengeTitle: 'Field Challenge',
   challengeStart: 'Try it yourself',
+  // E2E L1: a check served as a revisit is review of a completed section, not a first attempt.
+  checkRevisit: 'Review',
   // The aside's action is the door to the check already on this page: it focuses the visible check
   // card and never starts a second question or advances the section. A section with no check
   // renders no action at all, so these rows have no "opening"/"unavailable" states to name.
@@ -17423,6 +17438,17 @@ function ClassroomCheckCard({
       minWidth: 0
     },
     children: [
+      // E2E L1: a revisit is a section the learner already passed, served again for spaced
+      // review. The card names it before the question so the learner is never told to start a
+      // section they already finished.
+      check && check.revisit
+        ? jsx(sdk.Badge, {
+            size: 'xs',
+            variant: 'muted',
+            'data-cb-check-revisit': 'true',
+            children: CB3_CLASSROOM_COPY.checkRevisit
+          }, 'revisit')
+        : null,
       stimulus && stimulus.prompt
         ? jsx('p', {
             'data-cb3-question': '',
@@ -18038,7 +18064,7 @@ function ClassroomV3({
             // A section with no check renders no control: there is nothing on this page for the
             // action to open, and inventing a question here would be a second check.
             recordNote: engagement ? classroomCopy(CB3_CLASSROOM_COPY.gameXp, { n: Number(engagement.xp_total) || 0 }) : null,
-            actionLabel: CB3_CLASSROOM_COPY.challengeStart,
+            actionLabel: check && check.revisit ? CB3_CLASSROOM_COPY.checkRevisit : CB3_CLASSROOM_COPY.challengeStart,
             onStart: focusCheck
           }, 'challenge')
         : null,
@@ -23658,11 +23684,11 @@ function LessonPlayer({
     action.run()
   }
   const ordinal = section && section.ordinal ? String(section.ordinal) : null
-  // Item 42: one denominator for the whole lesson surface. The session's own step count is the
-  // only total a learner can act on here ("how much of this stop is left"), and it is the number
-  // the step readout advances. The course's objective total is a trail fact and is printed once,
-  // as "Section n of m" — printing it here too gave one session two disagreeing totals.
-  const stopTotal = steps.length > 0 ? String(steps.length) : null
+  // The stop chip prints the section's course position over the course's section count, both from
+  // the page's own projection. It used to divide the position by the block count: section 7 of a
+  // five-block lesson read "STOP 7 OF 5" beside "Step 1 of 5". A backend that predates
+  // `section.sections_total` prints the position alone rather than a false total.
+  const stopTotal = section && section.sections_total ? String(section.sections_total) : null
   const stopLabel = ordinal && stopTotal ? `STOP ${ordinal} OF ${stopTotal}` : ordinal ? `STOP ${ordinal}` : 'STOP'
   // One objective sentence, composed only from recorded fields: the section's own evidence target,
   // in learner words. A section that records no target gets the title alone rather than a slogan.
@@ -24753,7 +24779,17 @@ function SectionPage({
           ? jsx(QuietNote, { children: document.view_note })
           : null,
 
-        !bindingActive && pageReadable
+        // The page's own provenance is served (``lesson.page.provenance``) and no learner surface
+        // read it: a page whose independent validation did not pass looked exactly like one that
+        // did. Say it where the learner is, in the backend's own words.
+        document && pageReadable && page && page.provenance && page.provenance.independent === false
+          ? jsx(QuietNote, {
+              children: page.provenance.warning
+                || 'This page was checked by the model that wrote it, not by an independent second pass.'
+            })
+          : null,
+
+        !bindingActive && pageReadable && !playerSurface
           ? jsx('div', {
               // A section may have no runtime read at all (the no-chat case): page.runtime is null,
               // and only `bindingActive` is guaranteed. Never dereference `runtime` unguarded here.
@@ -24780,7 +24816,7 @@ function SectionPage({
         // One live action per screen, and only once there is an approved page to teach from. H-174:
         // a section with no lessons-job page offers no run to start — the readiness panel below
         // (or the course hero, when embedded) names the job that owns it and the one next action.
-        pageReadable
+        pageReadable && (!playerSurface || bindingActive)
           ? jsxs('div', {
               'data-cb-section-actions': bindingActive ? 'resume' : 'start',
               style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.6rem' },
@@ -27019,7 +27055,12 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
                 variant: 'primary',
                 disabled: !section,
                 onClick: () => onResume(section ? section.objective_id : null),
-                children: next.kind === 'resume_lesson' ? 'Resume the lesson' : 'Start a fresh run'
+                children:
+                  next.kind === 'review_lesson'
+                    ? 'Review'
+                    : next.kind === 'resume_lesson'
+                      ? 'Resume the lesson'
+                      : 'Start a fresh run'
               }),
               jsx(CbAction, {
                 variant: 'tertiary',
@@ -31176,8 +31217,15 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
           worldState: courseWorldState,
           readState: courseReadState,
           onBack,
-          onContinue: (kind) =>
-            startLesson(kind === 'resume_lesson' && topCanResume ? 'resume' : 'fresh'),
+          onContinue: (kind) => {
+            // E2E L1: a review reopens the section, where `check.open` serves the revisit; it never
+            // arms a fresh lesson chat.
+            if (kind === 'review_lesson' && summary.current_objective_id) {
+              openSection(summary.current_objective_id)
+              return
+            }
+            startLesson(kind === 'resume_lesson' && topCanResume ? 'resume' : 'fresh')
+          },
           onOpenPlan: () => selectView('plan'),
           onOpenSection: openSection,
           onOpenStudio: () => setStudioOpen(true),
@@ -31304,8 +31352,19 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
                         ? {
                             variant: 'primary',
                             disabled: busy,
-                            onClick: () => startLesson(nextKind === 'resume_lesson' && topCanResume ? 'resume' : 'fresh'),
-                            children: busy ? 'Opening' : topCanResume ? 'Resume the lesson' : 'Start a fresh run'
+                            // E2E L1: a section whose check is already closed reopens for review;
+                            // opening it is what serves the revisit, not arming a fresh run.
+                            onClick: () =>
+                              nextKind === 'review_lesson'
+                                ? openSection(summary.current_objective_id)
+                                : startLesson(nextKind === 'resume_lesson' && topCanResume ? 'resume' : 'fresh'),
+                            children: busy
+                              ? 'Opening'
+                              : nextKind === 'review_lesson'
+                                ? 'Review'
+                                : topCanResume
+                                  ? 'Resume the lesson'
+                                  : 'Start a fresh run'
                           }
                         : {
                             variant: item.variant,

@@ -60,6 +60,7 @@ if (payload.kind === 'section') {
       objectiveId: payload.document.objective_id,
       page,
       pageStatus: 'ready',
+      defaultLessonView: payload.defaultView || 'player',
       pageError: null,
       onRetryPage: () => {},
       implemented: new Set(['check.open', 'artifact.get', 'notebook.save']),
@@ -495,14 +496,20 @@ class LessonViewRenderTest(unittest.TestCase):
         payload["runtimeNull"] = True
         html = self.render(payload)
 
-        # The sentence is still unconditional, and the attribute degrades to its detached default.
-        self.assertIn("This section has no lesson chat yet.", html)
-        self.assertIn('data-cb-detached="detached"', html)
-        # The one live action for a section with no chat is "start", never "resume".
-        self.assertIn('data-cb-section-actions="start"', html)
-        self.assertNotIn('data-cb-section-actions="resume"', html)
-        # The section itself rendered.
+        # The player renders without a runtime read, and it owns the screen: the no-chat strip and
+        # its "Start a fresh run" would contradict a lesson already open on step 1 (E2E U5).
         self.assertIn('data-cb-lesson-view="player"', html)
+        self.assertNotIn("This section has no lesson chat yet.", html)
+        self.assertNotIn('data-cb-section-actions="start"', html)
+
+        # Off the player, the same page still explains the missing chat and offers its one action,
+        # and the detached attribute degrades to its default rather than dereferencing null.
+        payload["defaultView"] = "textbook"
+        textbook = self.render(payload)
+        self.assertIn("This section has no lesson chat yet.", textbook)
+        self.assertIn('data-cb-detached="detached"', textbook)
+        self.assertIn('data-cb-section-actions="start"', textbook)
+        self.assertNotIn('data-cb-section-actions="resume"', textbook)
 
 
 if __name__ == "__main__":

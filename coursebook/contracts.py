@@ -30,8 +30,17 @@ CONTRACT_DIR = Path(__file__).resolve().parent.parent / "contracts"
 CONTRACT_FILES: dict[str, str] = {
     "cb.vocabulary": "vocabulary.v1.json",
     "cb.errors": "errors.v4.json",
+    # E2E L1 (t_1b7cab16): v28 is a *composed* additive amendment over v27. This branch adds the
+    # revisit lane — `revisit` on check.open, check.get and lesson.page.checks, and
+    # `next_step.kind` = review_lesson. The same v28 also carries the E2E L4/L5 amendment
+    # (course completion + unstorable lesson) built in wt/t_6f613fef, and it freezes
+    # lesson.page.section.sections_total, which the base commit already projected. One contract
+    # version must carry every additive change shipped together: two rpc.v28.json files cannot
+    # both exist, so these cards compose rather than fork the version.
     "cb.rpc": "rpc.v28.json",
-    "cb.db": "db.v14.json",
+    # E2E L1: v15 is additive over v14 — one column, `checks.revisit INTEGER NOT NULL DEFAULT 0`.
+    # No row is rewritten; every check written before v15 reads as an ordinary (non-revisit) check.
+    "cb.db": "db.v15.json",
     "cb.jobs": "jobs.v5.json",
     # H-137 (H-73 §4): ``cb.pack`` is the one contract that accepts more than one document
     # version. v2 adds the optional root ``media[]`` link; v1 stays byte-identical and is still
@@ -82,8 +91,13 @@ CONTRACT_VERSION_FILES: dict[str, dict[int, str]] = {
     # that pinned the plate-geometry wire can still validate.
     # E2E L4/L5: v28 is additive over v27 — the terminal `complete` and repair-only
     # `repair_lesson` next steps, the parked lesson's section identity/reasons on
-    # `outline_objective` and `lesson.page`, and `lesson.regenerate.reasons`. v27 stays readable
-    # so a client that pinned the figure-labels wire can still validate.
+    # `outline_objective` and `lesson.page`, and `lesson.regenerate.reasons`.
+    # E2E L1: the same v28 carries the optional `revisit` flag on `check.open`, `check.get`,
+    # `progression.challenge_out` and each `lesson.page.checks` row, `sections_total` on the
+    # lesson-page section record, and one `next_step.kind` enum value, `review_lesson`. A revisit
+    # is a clone of the newest closed authored check; it never moves the objective again and never
+    # pays XP twice. v27 stays readable so a client that pinned the drawn-label wire can still
+    # validate.
     "cb.rpc": {22: "rpc.v22.json", 23: "rpc.v23.json", 24: "rpc.v24.json", 25: "rpc.v25.json",
                26: "rpc.v26.json", 27: "rpc.v27.json", 28: "rpc.v28.json"},
     # t_d33984eb: the v1 projection stays readable by explicit version as immutable history; v2
