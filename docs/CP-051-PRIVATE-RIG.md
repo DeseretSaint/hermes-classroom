@@ -167,3 +167,101 @@ node visual/find-cdp.mjs                      # which port actually paints [data
 `--stop` kills only the PIDs recorded in `$STATE`. It never uses `pkill`, never
 `hermes gateway stop`, and never touches `~/.config/Hermes` or another card's
 `~/.hermes/coursebook-test-*` state.
+
+## 7. Research credentials in an isolated rig (t_3e8b07ba) — blocked on host code
+
+An isolated backend makes research look broken, and it is **not** a missing key:
+
+```
+plugins.web.perplexity.provider: Perplexity search error: Hermes could not read this profile's
+PERPLEXITY_API_KEY (an internal profile-scoping bug on the multiplexed gateway, ...)
+```
+
+With research unavailable, `plan.validate` honestly returns `research_status: "unavailable"`, every
+objective has no `source_ids`, and the validator refuses the draft on `source_support` — so no plan
+can be approved in a rig, and the green course path cannot be measured there.
+
+### 7.1 The mechanism (measured on host `1513f54f69`)
+
+`hermes serve` activates multi-profile hosting fail-closed as its last boot step whenever the machine
+has more than one servable profile home
+(`tui_gateway/launch_profile_policy.py::activate_multi_profile_hosting_eagerly`). This host logs
+`Multi-profile hosting activated at startup (12 servable profile homes)` even when `HERMES_HOME` is
+a throwaway rig home, because the enumeration includes the machine's real profiles.
+
+From then on a credential read is scope-checked **before** it may consult a `.env`:
+`plugins/web/perplexity/provider.py::_perplexity_request` calls
+`agent/web_search_provider.py::get_provider_env`, which calls
+`hermes_cli/config.py::get_env_value`, whose **first** step is
+`agent/secret_scope.py::get_secret`. With no profile scope bound and multiplexing on, that raises
+`UnscopedSecretError`; the home's own `.env` is never reached, and `get_provider_env` re-raises
+afterwards. Coursebook's plan tick starts at plugin *discovery* (`register()`), in a context with no
+scope bound, so that is the context every research call inherits.
+
+There is no config that turns this off: `gateway.multiplex_profiles: false` is retired and
+deliberately ignored by the activation step.
+
+### 7.2 Two workarounds were measured, and both stop short
+
+**(a) A per-home `.env` alone does nothing.** With `<rig home>/.env` holding
+`PERPLEXITY_API_KEY=...` (mode 600) and serve semantics, `get_provider_env` raised
+`UnscopedSecretError` — the value was never read. In a process where multiplexing is *not* active the
+same read returns that `.env`'s value (probe: `value_read: True`), so the file and the path
+(`get_env_path()` → the rig home) are correct; only the scope binding is missing.
+
+**(b) `plugins.isolation: host` fixes the plugin-side read but moves dispatch into the parent.**
+With `plugins.isolation: host` (a supported host setting) the plugin loads in this home's own
+plugin-host process (`hermes_cli/plugin_host.py::PluginHost._build_base_context` binds
+`build_profile_secret_scope(self._home)`), and the plan tick runs there: logs show
+`Plugin host started for <home>`, `coursebook job tick started on its own thread`,
+`Mounted plugin API routes via the plugin host`. Two live plan jobs then failed, in order:
+
+| run | what changed | `gen_research_runs` outcome |
+|---|---|---|
+| 1 | `plugins.isolation: host` | `unavailable` — `search failed: Unknown tool: web_search` |
+| 2 | + one `tools.show` RPC (registers the agent tool list in the parent) | `unavailable` — `Error searching web: Hermes could not read this profile's PERPLEXITY_API_KEY`; **9** provider attempts, 0 successful searches (the same 9 lines appear in `logs/agent.log` and `logs/errors.log`) |
+
+The first failure is `ctx.dispatch_tool("web_search", ...)` being executed by the parent `hermes
+serve`, whose tool registry carries no `web_search` until something imports `model_tools`
+(`hermes_cli/web_server*.py` never does). Once warmed, dispatch reaches the provider — and the
+provider's own credential read happens **in the parent**, which is not running under the profile
+scope either, so the card's original error returns verbatim. Host isolation therefore cannot deliver
+research; it only relocates the failure.
+
+### 7.3 What the repo can and cannot do
+
+Repo-local work cannot make a rig research-capable. The read that fails is host code, named in §7.1;
+binding a profile secret scope is host policy (`agent/secret_scope.py`), and the plugin `ctx` has no
+supported method that runs plugin work under one. Do **not** work around it by importing
+`agent.secret_scope` from plugin code: that is the plugin granting itself credentials, exactly what
+the fail-closed flip exists to prevent.
+
+What the repo does own is the *check* that will prove the fix, and the record of what was measured:
+
+```
+scripts/rig-research-acceptance.py --db <rig home>/plugin-data/coursebook/data.db --out <record>
+```
+
+It drives one `course.create` → one plan job over `cb.rpc`, then reads the backend's own rows. Exit 0
+requires all three of: `gen_research_runs.status == "ok"`, a non-empty `sources` ledger for the
+course, and at least one plan objective whose `provenance.source_ids` is non-empty. It never prints
+`ok` on an `unavailable` run (covered by `tests/test_rig_research_acceptance.py`). The check also does
+the `tools.show` warm-up described above, because it is required whenever a rig runs with
+`plugins.isolation: host`.
+
+### 7.4 The operator action that unblocks it
+
+Land the launch-body secret-scope fix in the Hermes host checkout, so a plugin body at discovery
+resolves credentials from the launch profile's own `.env`/env instead of raising:
+
+```
+git -C ~/.hermes/hermes-agent merge --ff-only wt/t_3e8b07ba-ready && hermes gateway restart
+```
+
+That branch is the two reviewed commits (`73b26e2323` H-68 launch-body scope, `2fb0469993` gating
+`_plugin_launch_body_scope()` on `self.home_path == get_process_hermes_home()` — harbor's remedy)
+rebased onto the checkout's own HEAD `1513f54f69`, so it fast-forwards with no rebase and no conflict;
+its tree over `agent/ hermes_cli/ tests/` is identical to the original pair. After the restart,
+re-run `scripts/rig-research-acceptance.py` on a fresh rig home; it must report
+`research_status: "ok"` with a non-empty ledger and cited objectives.
+
