@@ -12,15 +12,9 @@
 // rendered as a failure with its code and a retry; a value the backend never recorded is rendered
 // as "not recorded" rather than guessed.
 
-const DESK_STATE_WORD = {
-  not_started: 'Not started',
-  introduced: 'Started',
-  independent_evidence: 'Evidence',
-  delayed_evidence: 'Delayed evidence',
-  review_due: 'Review due',
-  needs_review: 'Could not be written',
-  overridden: 'Overridden'
-}
+// Every learner-facing state word comes from `CB_COPY` (00-header.js), the one map. This file
+// used to carry its own copy, which said "Evidence" while the learning surface said "Independent
+// evidence" and the index said "Complete" for the same stored state.
 
 /** The tone is a token name, never a colour literal: `done`/`due`/`active`/`quiet`. */
 const DESK_STATE_TONE = {
@@ -704,7 +698,6 @@ function HomeSceneCard({ slot, index, cover, onOpen }) {
   return jsxs('article', {
     'data-cb-home-scene-card': '',
     role: 'listitem',
-    onClick: () => onOpen && onOpen(slot),
     children: [
       src
         ? jsx('img', {
@@ -735,10 +728,21 @@ function HomeSceneCard({ slot, index, cover, onOpen }) {
           }, 'progress'),
           jsx('p', {
             'data-cb-home-scene-meta': '',
-            children: total > 0 ? `${done} of ${total} sections done` : 'Not started'
+            children: total > 0 ? `${done} of ${total} sections done` : CB_COPY.state.not_started
           }, 'meta')
         ]
-      }, 'body')
+      }, 'body'),
+      // U1: the card is a real button, not a click handler on an article. The overlay covers the
+      // whole card, so pointer and keyboard reach the same control; `Tab` stops on it between the
+      // hero's two buttons and the scene's shelf, and Enter/Space open the course natively. Paint
+      // lives in 76-v3-scope.js so the scene still carries no inline paint. It sits last in the
+      // card so the card's own cover/title markup is unchanged for the parity proof.
+      jsx('button', {
+        type: 'button',
+        'data-cb-home-scene-open': (slot && (slot.course_id || slot.enrollment_id)) || '',
+        'aria-label': `Open ${title}`,
+        onClick: () => onOpen && onOpen(slot)
+      }, 'open')
     ]
   })
 }
@@ -1561,7 +1565,7 @@ function buildDeskModel({ library, outline, estimate, selectedCourseId = null, o
     total,
     settled,
     dueCount,
-    sectionLabel: current && current.ordinal ? `Section ${current.ordinal} of ${total}` : null,
+    sectionLabel: current && current.ordinal ? CB_COPY.sectionLabel(current.ordinal, total) : null,
     nextLabel: next.label || 'No next step was recorded for this course.',
     primaryLabel: DESK_PRIMARY_LABEL[next.kind] || 'Open the lesson',
     primaryKind: next.kind || 'start_lesson',
@@ -2098,7 +2102,7 @@ function DeskProgress({ objectives }) {
 function DeskFacts({ desk }) {
   const current = desk.current
   const facts = [
-    current ? { value: DESK_STATE_WORD[current.state] || 'Not started', label: 'This section' } : null,
+    current ? { value: CB_COPY.stateWord(current.state), label: 'This section' } : null,
     { value: `${desk.settled} of ${desk.total}`, label: 'With evidence' },
     desk.dueCount > 0 ? { value: String(desk.dueCount), label: 'Due now' } : null
   ].filter(Boolean)
@@ -3090,17 +3094,11 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onSeePlan, onRetry
 
 /**
  * The check row's learner word. `check_state` is the backend's highest-version check for the
- * objective; `none` means no check was ever authored, which is a fact, not a lock.
+ * objective; `none` means no check was ever authored, which is a fact, not a lock. The words live
+ * in `CB_COPY.checkState` (00-header.js), so a check reads the same on every surface.
  */
-const CHECK_STATE_WORD = {
-  none: 'No check yet',
-  open: 'Check open',
-  closed: 'Check closed',
-  superseded: 'Check replaced'
-}
-
 function cbCheckStateWord(value) {
-  return CHECK_STATE_WORD[value] || 'Check state not recorded'
+  return CB_COPY.checkWord(value)
 }
 
 /** The objective the route stands on: the desk's current section, else the first without evidence. */
@@ -3327,7 +3325,7 @@ function cbPathRunParts(desk, nextObjective) {
   else if (desk.primaryKind === 'start_lesson') parts.push('Start')
   if (desk.sectionLabel) parts.push(desk.sectionLabel)
   if (desk.estimateState === 'ready' && desk.estimateLabel) parts.push(desk.estimateLabel)
-  if (nextObjective) parts.push(`Next: Checkpoint ${nextObjective.ordinal} · ${nextObjective.title}`)
+  if (nextObjective) parts.push(`Next: ${CB_COPY.sectionLabel(nextObjective.ordinal)} · ${nextObjective.title}`)
   return parts
 }
 
@@ -3361,7 +3359,7 @@ function PathStop({
   const isCurrent = kind === 'current'
   const x = cbPathStopX(nodeIndex, compact)
   const fromX = nodeIndex === 0 ? center : cbPathStopX(nodeIndex - 1, compact)
-  const stateWord = DESK_STATE_WORD[objective.state] || 'Not started'
+  const stateWord = CB_COPY.stateWord(objective.state)
   const checkWord = cbCheckStateWord(objective.check_state)
   const checkState = objective.check_state || 'none'
   const attempts = Math.max(0, Number(objective.attempt_count) || 0)
@@ -3448,7 +3446,7 @@ function PathStop({
           variant: 'row',
           className: 'w-full justify-start',
           'aria-current': isCurrent ? 'step' : undefined,
-          'aria-label': `Checkpoint ${objective.ordinal}: ${objective.title}, ${stateWord}, ${checkWord}`,
+          'aria-label': `${CB_COPY.sectionLabel(objective.ordinal)}: ${objective.title}, ${stateWord}, ${checkWord}`,
           state: isCurrent ? 'selected' : 'rest',
           style: { padding: 0, display: 'block', minHeight: '44px', borderRadius: 0 },
           onFocus: () => setFocused(true),
@@ -4995,7 +4993,7 @@ function GameJournal({ objectives, compact }) {
                       color: cb3Role('ink-soft'),
                       letterSpacing: '0.04em'
                     },
-                    children: card.ordinal ? `Section ${card.ordinal}` : 'Section'
+                    children: CB_COPY.sectionLabel(card.ordinal, null)
                   }, 'ordinal'),
                   jsx('span', {
                     style: {
@@ -5043,7 +5041,7 @@ function GameJournal({ objectives, compact }) {
                           fontWeight: 500,
                           color: cb3Role('ink-soft')
                         },
-                        children: DESK_STATE_WORD[card.state] || 'Not started'
+                        children: CB_COPY.stateWord(card.state)
                       }, 'state')
                 ]
               },

@@ -209,7 +209,7 @@ function CoursesView({ implemented, onStartCreate, onStartSyllabus, onBrowseLibr
           ? jsxs('div', {
               className: 'mb-2 flex flex-col gap-1 border-b border-(--ui-stroke-tertiary) pb-2',
               children: [
-                jsx(CbLabel, { children: 'Review due' }),
+                jsx(CbLabel, { children: CB_COPY.state.review_due }),
                 groups
                   .filter((group) => groupReviewDue(group) > 0)
                   .map((group) =>
@@ -459,8 +459,8 @@ function PackFacts({ row, implemented, onOpen, onResume, onArchive, onDelete, on
           jsx(StatusRow, { label: 'Next step', value: learnerNextLabel(next.label) || '—' }),
           jsx(StatusRow, { label: 'Enrolment', value: enrollmentStatusLabel(row.enrollment_status) }),
           jsx(StatusRow, {
-            label: 'Evidence',
-            value: total === 0 ? 'None recorded' : `${independent} of ${plural(total, 'section', 'sections')}`,
+            label: CB_COPY.evidence.one,
+            value: total === 0 ? 'None recorded' : `${independent} of ${plural(total, CB_COPY.section.one.toLowerCase(), CB_COPY.section.many.toLowerCase())}`,
             detail: total === 0 ? 'This pack has no lesson sections.' : `${plural(due, 'review', 'reviews')} due`
           }),
           jsx(StatusRow, { label: 'Last change', value: formatWhen(row.updated_at) })

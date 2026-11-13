@@ -47,6 +47,64 @@ const AREAS = {
 }
 
 /**
+ * The learner's own vocabulary, in one place (E2E U6).
+ *
+ * The same thing used to print as "Section 2 of 6" on the desk, "Checkpoint 3" in a path label,
+ * "STOP 7" in the player header and "Objective title" in Studio, and one state was "Evidence",
+ * "Independent evidence" and "Complete" on three surfaces. Every learner-facing noun, state word
+ * and check word now comes from this map: `tests/test_desktop_learner_copy.py` refuses a second
+ * literal for any of these words and refuses the internal words on a rendered learner surface.
+ * The enum ids stay frozen in `contracts/`; only the words a person reads live here.
+ */
+const CB_COPY = (() => {
+  const evidence = Object.freeze({ one: 'Evidence', independent: 'Independent evidence' })
+  const section = Object.freeze({ one: 'Section', many: 'Sections' })
+  const step = Object.freeze({ one: 'Step', many: 'Steps' })
+  const check = Object.freeze({ one: 'Check', many: 'Checks' })
+  const state = Object.freeze({
+    not_started: 'Not started',
+    introduced: 'Started',
+    independent_evidence: evidence.independent,
+    delayed_evidence: 'Delayed evidence',
+    review_due: 'Review due',
+    // E2E L5: a failed attempt or a page the validator parked is not a spaced review. The word
+    // says what happened, not when it is next due. Its own key (`unwritten`) and icon (`warning`)
+    // live on the surfaces that paint them, so this state can never read as a review.
+    needs_review: 'Could not be written',
+    overridden: 'Moved on without a grade'
+  })
+  const checkState = Object.freeze({
+    none: 'No check yet',
+    open: 'Check open',
+    closed: 'Check closed',
+    superseded: 'Check replaced'
+  })
+  return Object.freeze({
+    evidence,
+    section,
+    step,
+    check,
+    state,
+    checkState,
+    /** "Section 2 of 6", "Section 2", or the bare noun when nothing is counted. */
+    sectionLabel(ordinal, total) {
+      if (!ordinal) return section.one
+      return total ? `${section.one} ${ordinal} of ${total}` : `${section.one} ${ordinal}`
+    },
+    /** A stored objective/section state as the learner reads it. An id this map does not know is
+     * not evidence that nothing happened, so the fallback says the state was not recorded rather
+     * than claiming "Not started". */
+    stateWord(value) {
+      return state[value] || 'State not recorded'
+    },
+    /** The check row's learner word. `none` means no check was authored — a fact, not a lock. */
+    checkWord(value) {
+      return checkState[value] || 'Check state not recorded'
+    }
+  })
+})()
+
+/**
  * Mirrors of frozen contract enums. `tests/test_desktop_contracts.py` reads this module and
  * refuses any drift from `contracts/vocabulary.v1.json` and `contracts/rpc.v2.json`, so these
  * are checked copies rather than a second authority.
@@ -118,7 +176,7 @@ const DIALS = {
 const FILTERS = [
   { id: 'all', label: 'All' },
   { id: 'in_progress', label: 'In progress' },
-  { id: 'review_due', label: 'Review due' },
+  { id: 'review_due', label: CB_COPY.state.review_due },
   { id: 'archived', label: 'Archived' }
 ]
 /**
@@ -3135,15 +3193,9 @@ function CourseRow({ row, group, implemented, onResume, onArchive, onDelete, onO
 // rendered as a failure with its code and a retry; a value the backend never recorded is rendered
 // as "not recorded" rather than guessed.
 
-const DESK_STATE_WORD = {
-  not_started: 'Not started',
-  introduced: 'Started',
-  independent_evidence: 'Evidence',
-  delayed_evidence: 'Delayed evidence',
-  review_due: 'Review due',
-  needs_review: 'Could not be written',
-  overridden: 'Overridden'
-}
+// Every learner-facing state word comes from `CB_COPY` (00-header.js), the one map. This file
+// used to carry its own copy, which said "Evidence" while the learning surface said "Independent
+// evidence" and the index said "Complete" for the same stored state.
 
 /** The tone is a token name, never a colour literal: `done`/`due`/`active`/`quiet`. */
 const DESK_STATE_TONE = {
@@ -3827,7 +3879,6 @@ function HomeSceneCard({ slot, index, cover, onOpen }) {
   return jsxs('article', {
     'data-cb-home-scene-card': '',
     role: 'listitem',
-    onClick: () => onOpen && onOpen(slot),
     children: [
       src
         ? jsx('img', {
@@ -3858,10 +3909,21 @@ function HomeSceneCard({ slot, index, cover, onOpen }) {
           }, 'progress'),
           jsx('p', {
             'data-cb-home-scene-meta': '',
-            children: total > 0 ? `${done} of ${total} sections done` : 'Not started'
+            children: total > 0 ? `${done} of ${total} sections done` : CB_COPY.state.not_started
           }, 'meta')
         ]
-      }, 'body')
+      }, 'body'),
+      // U1: the card is a real button, not a click handler on an article. The overlay covers the
+      // whole card, so pointer and keyboard reach the same control; `Tab` stops on it between the
+      // hero's two buttons and the scene's shelf, and Enter/Space open the course natively. Paint
+      // lives in 76-v3-scope.js so the scene still carries no inline paint. It sits last in the
+      // card so the card's own cover/title markup is unchanged for the parity proof.
+      jsx('button', {
+        type: 'button',
+        'data-cb-home-scene-open': (slot && (slot.course_id || slot.enrollment_id)) || '',
+        'aria-label': `Open ${title}`,
+        onClick: () => onOpen && onOpen(slot)
+      }, 'open')
     ]
   })
 }
@@ -4684,7 +4746,7 @@ function buildDeskModel({ library, outline, estimate, selectedCourseId = null, o
     total,
     settled,
     dueCount,
-    sectionLabel: current && current.ordinal ? `Section ${current.ordinal} of ${total}` : null,
+    sectionLabel: current && current.ordinal ? CB_COPY.sectionLabel(current.ordinal, total) : null,
     nextLabel: next.label || 'No next step was recorded for this course.',
     primaryLabel: DESK_PRIMARY_LABEL[next.kind] || 'Open the lesson',
     primaryKind: next.kind || 'start_lesson',
@@ -5221,7 +5283,7 @@ function DeskProgress({ objectives }) {
 function DeskFacts({ desk }) {
   const current = desk.current
   const facts = [
-    current ? { value: DESK_STATE_WORD[current.state] || 'Not started', label: 'This section' } : null,
+    current ? { value: CB_COPY.stateWord(current.state), label: 'This section' } : null,
     { value: `${desk.settled} of ${desk.total}`, label: 'With evidence' },
     desk.dueCount > 0 ? { value: String(desk.dueCount), label: 'Due now' } : null
   ].filter(Boolean)
@@ -6213,17 +6275,11 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onSeePlan, onRetry
 
 /**
  * The check row's learner word. `check_state` is the backend's highest-version check for the
- * objective; `none` means no check was ever authored, which is a fact, not a lock.
+ * objective; `none` means no check was ever authored, which is a fact, not a lock. The words live
+ * in `CB_COPY.checkState` (00-header.js), so a check reads the same on every surface.
  */
-const CHECK_STATE_WORD = {
-  none: 'No check yet',
-  open: 'Check open',
-  closed: 'Check closed',
-  superseded: 'Check replaced'
-}
-
 function cbCheckStateWord(value) {
-  return CHECK_STATE_WORD[value] || 'Check state not recorded'
+  return CB_COPY.checkWord(value)
 }
 
 /** The objective the route stands on: the desk's current section, else the first without evidence. */
@@ -6450,7 +6506,7 @@ function cbPathRunParts(desk, nextObjective) {
   else if (desk.primaryKind === 'start_lesson') parts.push('Start')
   if (desk.sectionLabel) parts.push(desk.sectionLabel)
   if (desk.estimateState === 'ready' && desk.estimateLabel) parts.push(desk.estimateLabel)
-  if (nextObjective) parts.push(`Next: Checkpoint ${nextObjective.ordinal} · ${nextObjective.title}`)
+  if (nextObjective) parts.push(`Next: ${CB_COPY.sectionLabel(nextObjective.ordinal)} · ${nextObjective.title}`)
   return parts
 }
 
@@ -6484,7 +6540,7 @@ function PathStop({
   const isCurrent = kind === 'current'
   const x = cbPathStopX(nodeIndex, compact)
   const fromX = nodeIndex === 0 ? center : cbPathStopX(nodeIndex - 1, compact)
-  const stateWord = DESK_STATE_WORD[objective.state] || 'Not started'
+  const stateWord = CB_COPY.stateWord(objective.state)
   const checkWord = cbCheckStateWord(objective.check_state)
   const checkState = objective.check_state || 'none'
   const attempts = Math.max(0, Number(objective.attempt_count) || 0)
@@ -6571,7 +6627,7 @@ function PathStop({
           variant: 'row',
           className: 'w-full justify-start',
           'aria-current': isCurrent ? 'step' : undefined,
-          'aria-label': `Checkpoint ${objective.ordinal}: ${objective.title}, ${stateWord}, ${checkWord}`,
+          'aria-label': `${CB_COPY.sectionLabel(objective.ordinal)}: ${objective.title}, ${stateWord}, ${checkWord}`,
           state: isCurrent ? 'selected' : 'rest',
           style: { padding: 0, display: 'block', minHeight: '44px', borderRadius: 0 },
           onFocus: () => setFocused(true),
@@ -8118,7 +8174,7 @@ function GameJournal({ objectives, compact }) {
                       color: cb3Role('ink-soft'),
                       letterSpacing: '0.04em'
                     },
-                    children: card.ordinal ? `Section ${card.ordinal}` : 'Section'
+                    children: CB_COPY.sectionLabel(card.ordinal, null)
                   }, 'ordinal'),
                   jsx('span', {
                     style: {
@@ -8166,7 +8222,7 @@ function GameJournal({ objectives, compact }) {
                           fontWeight: 500,
                           color: cb3Role('ink-soft')
                         },
-                        children: DESK_STATE_WORD[card.state] || 'Not started'
+                        children: CB_COPY.stateWord(card.state)
                       }, 'state')
                 ]
               },
@@ -9075,7 +9131,7 @@ function CoursesView({ implemented, onStartCreate, onStartSyllabus, onBrowseLibr
           ? jsxs('div', {
               className: 'mb-2 flex flex-col gap-1 border-b border-(--ui-stroke-tertiary) pb-2',
               children: [
-                jsx(CbLabel, { children: 'Review due' }),
+                jsx(CbLabel, { children: CB_COPY.state.review_due }),
                 groups
                   .filter((group) => groupReviewDue(group) > 0)
                   .map((group) =>
@@ -9325,8 +9381,8 @@ function PackFacts({ row, implemented, onOpen, onResume, onArchive, onDelete, on
           jsx(StatusRow, { label: 'Next step', value: learnerNextLabel(next.label) || '—' }),
           jsx(StatusRow, { label: 'Enrolment', value: enrollmentStatusLabel(row.enrollment_status) }),
           jsx(StatusRow, {
-            label: 'Evidence',
-            value: total === 0 ? 'None recorded' : `${independent} of ${plural(total, 'section', 'sections')}`,
+            label: CB_COPY.evidence.one,
+            value: total === 0 ? 'None recorded' : `${independent} of ${plural(total, CB_COPY.section.one.toLowerCase(), CB_COPY.section.many.toLowerCase())}`,
             detail: total === 0 ? 'This pack has no lesson sections.' : `${plural(due, 'review', 'reviews')} due`
           }),
           jsx(StatusRow, { label: 'Last change', value: formatWhen(row.updated_at) })
@@ -9971,6 +10027,11 @@ const TITLE_PLACEHOLDER = 'e.g. Six-minute Spanish conversation'
  * CREATE-EXPERIENCE item 1: the end goal, asked once on its own step between the shape and the
  * review.
  *
+ * E2E U7: step 1 already asks "What do you want to be able to do?". This step is not a second
+ * copy of that question — it asks for the proof: the thing the learner should be able to show,
+ * make or explain when the course is done. The sentence still travels inside `goal`, the field
+ * the planner already reads.
+ *
  * The chips are seeds, not values: pressing one fills the field, and what the plan receives is
  * whatever sentence the learner leaves there. The bucket below only chooses which three
  * suggestions are offered — it is never the course's `subject_domain`, which the learner declares
@@ -9978,8 +10039,8 @@ const TITLE_PLACEHOLDER = 'e.g. Six-minute Spanish conversation'
  * the backend already owns (`coursebook/policy.py::_DOMAIN_STEMS`) for the two buckets it names,
  * and adds the music/craft bucket this question offers; anything else gets the default three.
  */
-const OUTCOME_QUESTION = 'What do you want to be able to do when this is done?'
-const OUTCOME_SUBTITLE = 'Not the topic — the thing you want to be able to do.'
+const OUTCOME_QUESTION = 'What would prove you can do it?'
+const OUTCOME_SUBTITLE = 'The proof you want at the end — what you should be able to show, make or explain.'
 //: Phase 1 of the spec: the outcome travels inside `goal`, the field the planner already reads.
 //: No contract field is added, and a brief with no outcome sends its goal byte-for-byte.
 const OUTCOME_SENTENCE_PREFIX = 'When this course is done I want to be able to: '
@@ -10337,7 +10398,7 @@ function effectiveDepth(depth, scope) {
 const CREATE_STEP_SPINE = Object.freeze([
   { id: 'goal', name: 'Goal', next: 'Next: choose the shape of the course.' },
   { id: 'shape', name: 'Shape', next: 'Next: check the trailhead before it is created.' },
-  { id: 'outcome', name: 'Outcome' },
+  { id: 'outcome', name: 'Proof' },
   { id: 'review', name: 'Review', next: 'Create the course, then review the draft plan.' }
 ])
 
@@ -10351,7 +10412,7 @@ function createSteps(scope) {
 function createStepNext(stepId, scope) {
   if (stepId === 'shape') {
     return scope === 'short' || scope === 'full'
-      ? 'Next: say what this course should let you do.'
+      ? 'Next: say what would prove you can do it.'
       : 'Next: check the trailhead before it is created.'
   }
   if (stepId === 'outcome') return OUTCOME_SUBTITLE
@@ -10764,7 +10825,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
               jsxs('div', {
                 className: 'flex flex-col gap-1.5',
                 children: [
-                  jsx('label', { className: 'text-xs font-medium text-(--ui-text-secondary)', htmlFor: 'cb-goal', children: 'What do you want to be able to do?' }),
+                  jsx('label', { className: 'sr-only', htmlFor: 'cb-goal', children: 'Your goal, in your own words' }),
                   jsx(sdk.Textarea, {
                     'aria-describedby': 'cb-goal-help',
                     'aria-invalid': goalInvalid ? true : undefined,
@@ -11209,7 +11270,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                   jsx('label', {
                     className: 'text-xs font-medium text-(--ui-text-secondary)',
                     htmlFor: 'cb-outcome',
-                    children: 'Your answer, in your own words'
+                    children: 'The proof you want, in your own words'
                   }, 'label'),
                   jsx(sdk.Textarea, {
                     'aria-describedby': 'cb-outcome-help',
@@ -11223,13 +11284,13 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                     className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                     id: 'cb-outcome-help',
                     children: outcome.trim()
-                      ? 'This is the sentence the plan is aimed at. Edit it until it says what you mean.'
+                      ? 'This is the proof the plan is aimed at. Edit it until it says what you mean.'
                       : 'A suggestion starts the sentence; change any word of it. Leaving this empty asks the plan to aim at the goal alone.'
                   }, 'help')
                 ]
               }, 'field'),
               jsxs('div', {
-                'aria-label': 'Suggestions for what you want to be able to do',
+                'aria-label': 'Suggestions for what would prove you can do it',
                 'data-cb-outcome-suggestions': createOutcomeDomain(subjectDomain),
                 role: 'group',
                 style: { display: 'flex', flexWrap: 'wrap', gap: '0.4rem', minWidth: 0 },
@@ -11327,7 +11388,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                       // the length and the level — the three things the plan will be judged against.
                       jsx('span', {
                         'data-cb-create-preview-outcome': outcome.trim() ? 'stated' : 'empty',
-                        children: outcome.trim() ? `Outcome: ${outcome.trim()}` : 'Outcome: not stated'
+                        children: outcome.trim() ? `Proof: ${outcome.trim()}` : 'Proof: not stated'
                       }, 'outcome')
                     ]
                   }, 'facts'),
@@ -13586,18 +13647,8 @@ function courseMoreTabs(supports) {
   ].filter(Boolean)
 }
 
-/** A section or quiz row is never colour-only: this is the text that carries the state. */
-const OBJECTIVE_STATE_COPY = {
-  not_started: 'Not started',
-  introduced: 'Introduced',
-  independent_evidence: 'Independent evidence',
-  delayed_evidence: 'Delayed evidence',
-  review_due: 'Review due',
-  // E2E L5: a failed attempt or a page the validator parked is not a spaced review. The word
-  // says what happened, not when it is next due.
-  needs_review: 'Could not be written',
-  overridden: 'Overridden'
-}
+/** A section or quiz row is never colour-only: this is the text that carries the state. The words
+ * are `CB_COPY.state` (00-header.js) — this file carries no state word of its own. */
 
 const EVIDENCE_CLASS_COPY = {
   // The backend's `cold` class means *independent*: no hint and no shown answer. The learner reads
@@ -13749,21 +13800,27 @@ function learnerEvidenceTarget(value) {
  * next step, and it wins over the stored state only while that section is still open.
  */
 const SECTION_STATE_SEMANTIC = {
-  not_started: { key: 'not_started', label: 'Not started', icon: 'circle-outline' },
-  introduced: { key: 'started', label: 'Started', icon: 'circle-filled' },
-  independent_evidence: { key: 'complete', label: 'Complete', icon: 'pass' },
-  delayed_evidence: { key: 'complete', label: 'Complete', icon: 'pass' },
-  review_due: { key: 'review', label: 'Review due', icon: 'history' },
-  // E2E L5: its own key, word and icon. It shares nothing with `review_due`, so a rejected or
+  not_started: { key: 'not_started', icon: 'circle-outline' },
+  introduced: { key: 'started', icon: 'circle-filled' },
+  independent_evidence: { key: 'complete', icon: 'pass' },
+  delayed_evidence: { key: 'complete', icon: 'pass' },
+  review_due: { key: 'review', icon: 'history' },
+  // E2E L5: its own key and icon. It shares nothing with `review_due`, so a rejected or
   // unwritten page can never be painted as a spaced-review card.
-  needs_review: { key: 'unwritten', label: 'Could not be written', icon: 'warning' },
-  overridden: { key: 'moved_on', label: 'Moved on without a grade', icon: 'dash' }
+  needs_review: { key: 'unwritten', icon: 'warning' },
+  overridden: { key: 'moved_on', icon: 'dash' }
 }
 
+/**
+ * The icon and machine key are this surface's own; the word is always `CB_COPY.state`, so the
+ * index cannot call the same stored state "Complete" while the desk calls it "Independent
+ * evidence". `next` is projected, not stored, so it names its own word.
+ */
 function sectionStateSemantic(state, isNext) {
   const settled = state === 'independent_evidence' || state === 'delayed_evidence'
   if (isNext && !settled) return { key: 'next', label: 'Next', icon: 'chevron-right' }
-  return SECTION_STATE_SEMANTIC[state] || SECTION_STATE_SEMANTIC.not_started
+  const row = SECTION_STATE_SEMANTIC[state] || SECTION_STATE_SEMANTIC.not_started
+  return { ...row, label: CB_COPY.stateWord(state) }
 }
 
 /**
@@ -13775,7 +13832,7 @@ function sectionStateSemantic(state, isNext) {
  */
 function sectionSemanticFor(entry, isNext) {
   if (entry && entry.lesson_state === 'needs_review') {
-    return { key: 'unwritten', label: 'Could not be written', icon: 'warning' }
+    return { key: 'unwritten', label: CB_COPY.state.needs_review, icon: 'warning' }
   }
   return sectionStateSemantic(entry ? entry.state : null, isNext)
 }
@@ -13790,8 +13847,8 @@ function sectionSemanticFor(entry, isNext) {
 function progressStatement(independent, total) {
   const done = Math.max(0, Number(independent) || 0)
   const all = Math.max(0, Number(total) || 0)
-  if (all === 0) return 'No objectives recorded yet'
-  const noun = all === 1 ? 'objective' : 'objectives'
+  if (all === 0) return `No ${CB_COPY.section.many.toLowerCase()} recorded yet`
+  const noun = all === 1 ? CB_COPY.section.one.toLowerCase() : CB_COPY.section.many.toLowerCase()
   return `${done} of ${all} ${noun} ${all === 1 ? 'has' : 'have'} independent evidence`
 }
 
@@ -13932,7 +13989,7 @@ const WARNING_COPY_LEARNING = {
 }
 
 function StateText({ state }) {
-  return jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: OBJECTIVE_STATE_COPY[state] || state || 'unknown' })
+  return jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: CB_COPY.stateWord(state) })
 }
 
 function EvidenceClassText({ value }) {
@@ -16584,7 +16641,7 @@ function NotebookSaveDialog({ open, onClose, enrollmentId, objectiveId, lessonRu
 
   const provenance = []
   if (seed && seed.course_title) provenance.push({ label: 'Course', value: seed.course_title })
-  if (seed && seed.objective_title) provenance.push({ label: 'Objective', value: seed.objective_title })
+  if (seed && seed.objective_title) provenance.push({ label: CB_COPY.section.one, value: seed.objective_title })
   if (seed && seed.block_headline) provenance.push({ label: 'Saved from', value: seed.block_headline })
   const sourceNames = (seed && (seed.source_titles || seed.source_ids)) || []
   if (sourceNames.length > 0) {
@@ -19708,6 +19765,7 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 }
 
 [data-cb-v3] [data-cb-home-scene-card] {
+  position: relative;
   width: 176px;
   height: 175px;
   flex: 0 0 176px;
@@ -19718,6 +19776,30 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   cursor: pointer;
   color: var(--cb3-ink);
   transform-origin: 50% 100%;
+}
+
+/* U1 — the card's one control. The overlay button covers the whole card, so the wide Home keeps
+ * the same keyboard reach as the narrow shelf: Tab stops here and Enter/Space open the course.
+ * It paints nothing itself (the card and its cover own the material); the ring is the identity's
+ * :focus-visible rule, moved inside the card because the card clips its own overflow. */
+[data-cb-v3] [data-cb-home-scene-open] {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+[data-cb-v3] [data-cb-home-scene-open]:focus-visible {
+  outline-offset: -2px;
 }
 
 [data-cb-v3] [data-cb-home-scene-card]:nth-child(1) { transform: rotate(-1.6deg); }
@@ -20164,8 +20246,8 @@ function learnerNextLabel(label) {
   const text = String(label || '').trim()
   if (!text) return ''
   const match = text.match(/^Review (\d+) objective\(s\)$/)
-  if (match) return `Review ${plural(Number(match[1]), 'objective', 'objectives')}`
-  return text.replace(/\bobjective\(s\)/g, 'objectives').replace(/\brun\(s\)/g, 'runs')
+  if (match) return `Review ${plural(Number(match[1]), CB_COPY.section.one.toLowerCase(), CB_COPY.section.many.toLowerCase())}`
+  return text.replace(/\bobjective\(s\)/g, CB_COPY.section.many.toLowerCase()).replace(/\brun\(s\)/g, 'runs')
 }
 
 /**
@@ -20317,7 +20399,7 @@ function RouteSpine({ objectives, currentId, onSelect, phone, ariaLabel }) {
     children: rows.map((objective) => {
       const tone = cbSpineTone(objective.state)
       const isCurrent = Boolean(currentId && objective.objective_id === currentId)
-      const word = DESK_STATE_WORD[objective.state] || 'Not started'
+      const word = CB_COPY.stateWord(objective.state)
       return jsx(
         'li',
         {
@@ -20665,7 +20747,7 @@ function CbAction({ variant, state, className, style, disabled, pending, childre
  */
 function CbStatePill({ state, label, phone }) {
   const tone = cbSpineTone(state)
-  const word = label || DESK_STATE_WORD[state] || 'Not started'
+  const word = label || CB_COPY.stateWord(state)
   return jsx('span', {
     'data-cb-state-pill': state || 'not_started',
     'data-cb-state-tone': tone,
@@ -22670,7 +22752,7 @@ function BlockBody({ block, sources, checkSlot, checkLabels, onSaveBlock, pronun
       checkSlot
         ? jsx(CheckPanelFrame, {
             kind: 'check',
-            label: 'Checkpoint',
+            label: CB_COPY.check.one,
             children: jsx('div', {
               className: 'flex flex-col gap-2',
               'data-cb-block-check': block.id,
@@ -22849,7 +22931,7 @@ function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onB
       checkSlot
         ? jsx(CheckPanelFrame, {
             kind: 'check',
-            label: 'Checkpoint',
+            label: CB_COPY.check.one,
             children: jsx('div', { className: 'flex flex-col gap-2', 'data-cb-block-check': block.id, children: checkSlot })
           })
         : null,
@@ -22915,7 +22997,7 @@ function questMissions(document) {
 function questProgressLabel(summary) {
   if (!summary || typeof summary !== 'object') return 'Progress not recorded'
   const total = Number(summary.total_objectives) || 0
-  if (total === 0) return 'No objectives recorded yet'
+  if (total === 0) return `No ${CB_COPY.section.many.toLowerCase()} recorded yet`
   const independent = Number(summary.independent) || 0
   const due = Number(summary.review_due) || 0
   return `${independent} independent · ${due} due`
@@ -22948,7 +23030,7 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
   const block = mission.block
   const brief = missionBriefLine(block, checkLabels)
   const checkpoint = mission.checkpoint
-  const stateWord = checkpoint ? 'Checkpoint' : 'Mission'
+  const stateWord = checkpoint ? CB_COPY.check.one : CB_COPY.step.one
   const tone = checkpoint ? 'var(--cb-ochre)' : 'var(--cb-ink-soft)'
   return jsxs('li', {
     'data-cb-mission': block.id,
@@ -23859,7 +23941,7 @@ function PlayerClose({ section, progress, onBack, onReadSection, evidenceClass, 
           color: 'var(--cb-ink)',
           overflowWrap: 'anywhere'
         },
-        children: ordinal ? `You finished Section ${ordinal}` : 'You finished this section'
+        children: ordinal ? `You finished ${CB_COPY.sectionLabel(ordinal)}` : 'You finished this section'
       }),
       jsx(EvidenceChip, { value: evidenceClass || null }),
       facts.length > 0
@@ -25367,8 +25449,8 @@ function SectionPage({
   // twice: the source cards and saved notes live in the third part of the workspace.
   const railFacts = section
     ? [
-        { label: 'State', value: DESK_STATE_WORD[section.state] || 'Not started' },
-        { label: 'Evidence', value: learnerEvidenceTarget(section.evidence_target) || 'Not recorded' },
+        { label: 'State', value: CB_COPY.stateWord(section.state) },
+        { label: CB_COPY.evidence.one, value: learnerEvidenceTarget(section.evidence_target) || 'Not recorded' },
         { label: 'Attempts', value: String((page && page.attempts ? page.attempts.length : 0)) }
       ]
     : []
@@ -25490,7 +25572,7 @@ function SectionPage({
   // The section's place in the course, printed only where the shell header is shown.
   const ordinal = section && section.ordinal ? String(section.ordinal) : null
   const total = row.evidence_summary && row.evidence_summary.total_objectives ? String(row.evidence_summary.total_objectives) : null
-  const place = ordinal && total ? `Section ${ordinal} of ${total}` : ordinal ? `Section ${ordinal}` : null
+  const place = ordinal ? CB_COPY.sectionLabel(ordinal, total) : null
   const metaLine = section
     ? [
         crumbAction,
@@ -27596,9 +27678,9 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
                 value: enrollmentStatusLabel(row.enrollment_status)
               }),
               jsx(StatusRow, {
-                label: 'Evidence',
+                label: CB_COPY.evidence.one,
                 value: `${Number(summary.independent || 0)} independent`,
-                detail: `${plural(Number(summary.total_objectives || 0), 'objective', 'objectives')} · ${plural(Number(summary.review_due || 0), 'due', 'due')}`
+                detail: `${plural(Number(summary.total_objectives || 0), CB_COPY.section.one.toLowerCase(), CB_COPY.section.many.toLowerCase())} · ${plural(Number(summary.review_due || 0), 'due', 'due')}`
               }),
               jsx(StatusRow, {
                 label: 'Where it came from',
@@ -27885,10 +27967,10 @@ function UnitHeading({ unit, entries }) {
 function TextbookIndexDetails({ rows }) {
   const targets = Array.from(new Set(rows.map((entry) => entry.evidence_target).filter(Boolean)))
   const legend = [
-    { semantic: { key: 'complete', label: 'Complete', icon: 'pass' }, meaning: 'this objective has independent evidence.' },
+    { semantic: { key: 'complete', label: CB_COPY.state.independent_evidence, icon: 'pass' }, meaning: 'this section has evidence held without help.' },
     { semantic: { key: 'next', label: 'Next', icon: 'chevron-right' }, meaning: 'the section the course points to now.' },
-    { semantic: { key: 'review', label: 'Review due', icon: 'history' }, meaning: 'evidence is scheduled to come back.' },
-    { semantic: { key: 'not_started', label: 'Not started', icon: 'circle-outline' }, meaning: 'no attempt recorded yet.' }
+    { semantic: { key: 'review', label: CB_COPY.state.review_due, icon: 'history' }, meaning: 'evidence is scheduled to come back.' },
+    { semantic: { key: 'not_started', label: CB_COPY.state.not_started, icon: 'circle-outline' }, meaning: 'no attempt recorded yet.' }
   ]
   return jsxs('details', {
     'data-cb-index-details': '',
@@ -29829,7 +29911,7 @@ const CB3_COURSE_COPY = Object.freeze({
   nodeNext: 'Next',
   nodeLocked: 'Opens after the section before it',
   continueTitle: 'Continue',
-  evidenceTitle: 'Evidence',
+  evidenceTitle: CB_COPY.evidence.one,
   othersTitle: 'Your other courses',
   noWorldTitle: 'No scene yet',
   noWorldBody: 'The lesson works without art.',
@@ -31094,8 +31176,8 @@ function ReviewDuePanel({ enrollmentId, revision, review, evidence, onRecorded, 
         const title = item.title || 'Untitled section'
         const rowLabel = item.ordinal ? `section ${item.ordinal}: ${title}` : title
         const stateLine = paused
-          ? `${OBJECTIVE_STATE_COPY[item.state] || item.state || 'State not recorded'} · dropped ${reviewDueLabel(item.dropped_at)}`
-          : `${OBJECTIVE_STATE_COPY[item.state] || item.state || 'State not recorded'} · due ${reviewDueLabel(item.due_at)}`
+          ? `${CB_COPY.stateWord(item.state)} · dropped ${reviewDueLabel(item.dropped_at)}`
+          : `${CB_COPY.stateWord(item.state)} · due ${reviewDueLabel(item.due_at)}`
         return jsxs(
           'div',
           {
@@ -31171,7 +31253,7 @@ function ReviewDuePanel({ enrollmentId, revision, review, evidence, onRecorded, 
                     style: { fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink)' },
                     children: [
                       `${REVIEW_SCHEDULE_COPY[outcome.action] ? REVIEW_SCHEDULE_COPY[outcome.action].label : outcome.action} recorded. `,
-                      `State now ${OBJECTIVE_STATE_COPY[outcome.state] || outcome.state || 'not recorded'}; `,
+                      `State now ${CB_COPY.stateWord(outcome.state)}; `,
                       `next due ${reviewDueLabel(outcome.due_at)}; `,
                       `recorded ${whenLabel(outcome.recorded_at)}.`
                     ]
@@ -31637,7 +31719,9 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
   const heroFacts = [
     sectionTotal
       ? {
-          value: sectionOrdinal ? `Section ${sectionOrdinal} of ${sectionTotal}` : `${sectionTotal} ${sectionTotal === 1 ? 'section' : 'sections'}`,
+          value: sectionOrdinal
+            ? CB_COPY.sectionLabel(sectionOrdinal, sectionTotal)
+            : `${sectionTotal} ${sectionTotal === 1 ? CB_COPY.section.one.toLowerCase() : CB_COPY.section.many.toLowerCase()}`,
           label: (section && section.title) || 'In this course'
         }
       : null,
@@ -31961,7 +32045,7 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
       (view !== 'overview' || supports('review.action'))
         ? jsx(CheckPanelFrame, {
             kind: 'check',
-            label: 'Review due',
+            label: CB_COPY.state.review_due,
             children: jsxs('div', {
               style: { display: 'flex', flexDirection: 'column', gap: '0.4rem' },
               children: [
@@ -36762,7 +36846,7 @@ function PlanRejectPanel({ model, busy, error, onAction }) {
  */
 const FINE_TUNE_CHIP = Object.freeze({
   edited: { id: 'edited', label: 'Edited', variant: 'outline' },
-  needs_review: { id: 'needs_review', label: 'Needs review', variant: 'warn' },
+  needs_review: { id: 'needs_review', label: CB_COPY.state.needs_review, variant: 'warn' },
   approved: { id: 'approved', label: 'Approved', variant: 'muted' }
 })
 
@@ -37574,7 +37658,7 @@ function StudioFineTunePanel({
         : null,
       jsx('div', {
         role: 'list',
-        'aria-label': 'Objectives in stored order',
+        'aria-label': `${CB_COPY.section.many} in stored order`,
         'data-cb-finetune-order': display.map((objective) => objective.objective_id).join(','),
         className: 'flex flex-col gap-2',
         children: display.map((objective, index) => {
@@ -37684,7 +37768,7 @@ function StudioFineTunePanel({
                       children: [
                         jsx(StudioField, {
                           id: `cb-finetune-title-${objective.objective_id}`,
-                          label: 'Objective title',
+                          label: `${CB_COPY.section.one} title`,
                           hint:
                             'Stored on the objective. The section page keeps its authored prose; a retitle is a plan revision that needs review.',
                           children: jsx(sdk.Input, {
@@ -38701,7 +38785,7 @@ function StudioPlanView({
                               jsx('span', { className: 'shrink-0 text-xs tabular-nums text-(--ui-text-secondary)', children: String(objective.ordinal).padStart(2, '0') }),
                               editing
                                 ? jsx(sdk.Input, {
-                                    'aria-label': `Objective ${objective.ordinal} title`,
+                                    'aria-label': `${CB_COPY.section.one} ${objective.ordinal} title`,
                                     value: draft.title || '',
                                     onChange: (event) =>
                                       setDrafts((previous) => ({
@@ -38726,7 +38810,7 @@ function StudioPlanView({
                                       })),
                                     children: [
                                       jsx(sdk.SelectTrigger, {
-                                        'aria-label': `Objective ${objective.ordinal} evidence target`,
+                                        'aria-label': `${CB_COPY.section.one} ${objective.ordinal} evidence target`,
                                         className: 'w-36',
                                         children: jsx(sdk.SelectValue, {})
                                       }, 'trigger'),
@@ -38795,7 +38879,7 @@ function StudioPlanView({
                         // The authoring row still shows the plan gate's own state, in the same
                         // words the trail and the path use. The backend enum is the `data-*`
                         // attribute for evidence inspection, never the sentence a parent reads.
-                        children: `${OBJECTIVE_STATE_COPY[objective.state] || 'State not recorded'} · ${cbCheckStateWord(objective.check_state)}`
+                        children: `${CB_COPY.stateWord(objective.state)} · ${cbCheckStateWord(objective.check_state)}`
                       })
                     ]
                   },
@@ -38806,7 +38890,7 @@ function StudioPlanView({
                 ? jsxs('div', {
                     className: 'flex flex-col gap-2 border-t border-(--ui-stroke-tertiary) pt-2',
                     children: [
-                      jsx(CbLabel, { children: 'Add an objective' }),
+                      jsx(CbLabel, { children: `Add a ${CB_COPY.section.one.toLowerCase()}` }),
                       added.map((item, index) =>
                         jsxs(
                           'div',
@@ -38814,7 +38898,7 @@ function StudioPlanView({
                             className: 'flex flex-wrap items-center gap-2',
                             children: [
                               jsx(sdk.Input, {
-                                'aria-label': `New objective ${index + 1} title`,
+                                'aria-label': `New ${CB_COPY.section.one.toLowerCase()} ${index + 1} title`,
                                 value: item.title,
                                 onChange: (event) =>
                                   setAdded((previous) =>
@@ -38822,7 +38906,7 @@ function StudioPlanView({
                                       position === index ? { ...entry, title: event.target.value } : entry
                                     )
                                   ),
-                                placeholder: 'Objective title',
+                                placeholder: `${CB_COPY.section.one} title`,
                                 className: 'min-w-0 flex-1'
                               }),
                               jsx(sdk.Select, {
@@ -38835,7 +38919,7 @@ function StudioPlanView({
                                   ),
                                 children: [
                                   jsx(sdk.SelectTrigger, {
-                                    'aria-label': `New objective ${index + 1} evidence target`,
+                                    'aria-label': `New ${CB_COPY.section.one.toLowerCase()} ${index + 1} evidence target`,
                                     className: 'w-36',
                                     children: jsx(sdk.SelectValue, {})
                                   }, 'trigger'),
@@ -42463,7 +42547,7 @@ const CB_GRAMMAR_ONE_LINE = Object.freeze({
 })
 
 const CB_WORLD_STATE_WORD = Object.freeze({
-  not_requested: 'Not started',
+  not_requested: CB_COPY.state.not_started,
   concepts_generating: 'Choosing directions',
   concepts_ready: 'Three directions',
   style_selected: 'Direction chosen',
@@ -45406,7 +45490,7 @@ function TutorRailPane({ binding }) {
   const section = page.data && page.data.section
   const runtime = page.data && page.data.runtime
   const objectiveTitle = section ? section.title : (history.data && history.data.context ? history.data.context.objective_title : null)
-  const contextChip = section && section.ordinal ? `Section ${section.ordinal}` : objectiveId ? 'This section' : ''
+  const contextChip = section && section.ordinal ? CB_COPY.sectionLabel(section.ordinal, null) : objectiveId ? 'This section' : ''
   const lessonChanged = Boolean(
     runtime && runtime.lesson_run_id && runId && String(runtime.lesson_run_id) !== String(runId)
   )
@@ -46141,6 +46225,7 @@ function CoursebookSettings() {
 // block views, the section page and the quest projection are pure components/functions over a
 // server-owned document, so a Node test can render them without a backend, a chat or a window.
 export {
+  CB_COPY,
   TutorRail,
   TutorRailPane,
   TutorSelectionPill,

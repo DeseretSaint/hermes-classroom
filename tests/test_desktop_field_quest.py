@@ -340,7 +340,7 @@ class FieldQuestRenderTest(unittest.TestCase):
 
     def test_a_course_without_recorded_objectives_says_so(self) -> None:
         html = self.quest(evidence={"independent": 0, "review_due": 0, "total_objectives": 0})
-        self.assertIn("No objectives recorded yet", html)
+        self.assertIn("No sections recorded yet", html)
         self.assertNotIn("0 independent", html)
 
     def test_missing_evidence_summary_is_not_rendered_as_zero(self) -> None:
@@ -533,7 +533,7 @@ class FieldQuestModelTest(FieldQuestRenderTest):
     def test_progress_strings_are_descriptive_and_never_invented(self) -> None:
         self.assertEqual(
             self.model()["progress"],
-            ["2 independent · 1 due", "No objectives recorded yet", "Progress not recorded",
+            ["2 independent · 1 due", "No sections recorded yet", "Progress not recorded",
              "3 independent · 0 due"],
         )
 

@@ -171,6 +171,11 @@ const TITLE_PLACEHOLDER = 'e.g. Six-minute Spanish conversation'
  * CREATE-EXPERIENCE item 1: the end goal, asked once on its own step between the shape and the
  * review.
  *
+ * E2E U7: step 1 already asks "What do you want to be able to do?". This step is not a second
+ * copy of that question — it asks for the proof: the thing the learner should be able to show,
+ * make or explain when the course is done. The sentence still travels inside `goal`, the field
+ * the planner already reads.
+ *
  * The chips are seeds, not values: pressing one fills the field, and what the plan receives is
  * whatever sentence the learner leaves there. The bucket below only chooses which three
  * suggestions are offered — it is never the course's `subject_domain`, which the learner declares
@@ -178,8 +183,8 @@ const TITLE_PLACEHOLDER = 'e.g. Six-minute Spanish conversation'
  * the backend already owns (`coursebook/policy.py::_DOMAIN_STEMS`) for the two buckets it names,
  * and adds the music/craft bucket this question offers; anything else gets the default three.
  */
-const OUTCOME_QUESTION = 'What do you want to be able to do when this is done?'
-const OUTCOME_SUBTITLE = 'Not the topic — the thing you want to be able to do.'
+const OUTCOME_QUESTION = 'What would prove you can do it?'
+const OUTCOME_SUBTITLE = 'The proof you want at the end — what you should be able to show, make or explain.'
 //: Phase 1 of the spec: the outcome travels inside `goal`, the field the planner already reads.
 //: No contract field is added, and a brief with no outcome sends its goal byte-for-byte.
 const OUTCOME_SENTENCE_PREFIX = 'When this course is done I want to be able to: '
@@ -537,7 +542,7 @@ function effectiveDepth(depth, scope) {
 const CREATE_STEP_SPINE = Object.freeze([
   { id: 'goal', name: 'Goal', next: 'Next: choose the shape of the course.' },
   { id: 'shape', name: 'Shape', next: 'Next: check the trailhead before it is created.' },
-  { id: 'outcome', name: 'Outcome' },
+  { id: 'outcome', name: 'Proof' },
   { id: 'review', name: 'Review', next: 'Create the course, then review the draft plan.' }
 ])
 
@@ -551,7 +556,7 @@ function createSteps(scope) {
 function createStepNext(stepId, scope) {
   if (stepId === 'shape') {
     return scope === 'short' || scope === 'full'
-      ? 'Next: say what this course should let you do.'
+      ? 'Next: say what would prove you can do it.'
       : 'Next: check the trailhead before it is created.'
   }
   if (stepId === 'outcome') return OUTCOME_SUBTITLE
@@ -964,7 +969,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
               jsxs('div', {
                 className: 'flex flex-col gap-1.5',
                 children: [
-                  jsx('label', { className: 'text-xs font-medium text-(--ui-text-secondary)', htmlFor: 'cb-goal', children: 'What do you want to be able to do?' }),
+                  jsx('label', { className: 'sr-only', htmlFor: 'cb-goal', children: 'Your goal, in your own words' }),
                   jsx(sdk.Textarea, {
                     'aria-describedby': 'cb-goal-help',
                     'aria-invalid': goalInvalid ? true : undefined,
@@ -1409,7 +1414,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                   jsx('label', {
                     className: 'text-xs font-medium text-(--ui-text-secondary)',
                     htmlFor: 'cb-outcome',
-                    children: 'Your answer, in your own words'
+                    children: 'The proof you want, in your own words'
                   }, 'label'),
                   jsx(sdk.Textarea, {
                     'aria-describedby': 'cb-outcome-help',
@@ -1423,13 +1428,13 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                     className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                     id: 'cb-outcome-help',
                     children: outcome.trim()
-                      ? 'This is the sentence the plan is aimed at. Edit it until it says what you mean.'
+                      ? 'This is the proof the plan is aimed at. Edit it until it says what you mean.'
                       : 'A suggestion starts the sentence; change any word of it. Leaving this empty asks the plan to aim at the goal alone.'
                   }, 'help')
                 ]
               }, 'field'),
               jsxs('div', {
-                'aria-label': 'Suggestions for what you want to be able to do',
+                'aria-label': 'Suggestions for what would prove you can do it',
                 'data-cb-outcome-suggestions': createOutcomeDomain(subjectDomain),
                 role: 'group',
                 style: { display: 'flex', flexWrap: 'wrap', gap: '0.4rem', minWidth: 0 },
@@ -1527,7 +1532,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                       // the length and the level — the three things the plan will be judged against.
                       jsx('span', {
                         'data-cb-create-preview-outcome': outcome.trim() ? 'stated' : 'empty',
-                        children: outcome.trim() ? `Outcome: ${outcome.trim()}` : 'Outcome: not stated'
+                        children: outcome.trim() ? `Proof: ${outcome.trim()}` : 'Proof: not stated'
                       }, 'outcome')
                     ]
                   }, 'facts'),

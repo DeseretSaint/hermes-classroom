@@ -9,7 +9,7 @@ already owns. They assert what a person reads and the structure a keyboard user 
   and carries every state as icon + word;
 * the result voice says "First try, no hints", "We could not grade this answer" and a concrete
   takeaway followed by one next action, never a mastery claim;
-* progress is a count the backend records ("3 of 4 objectives have independent evidence"), not a
+* progress is a count the backend records ("3 of 4 sections have independent evidence"), not a
   percentage, streak or invented unit.
 
 What this does NOT prove: that a live Desktop window paints these strings. The M4 visual audit and
@@ -247,7 +247,7 @@ class LearningSurfaceRenderTest(unittest.TestCase):
     # -- Lesson index -----------------------------------------------------------------------
     def test_progress_statement_is_the_count_the_backend_records(self) -> None:
         html = self.textbook()
-        self.assertIn("3 of 6 objectives have independent evidence", html)
+        self.assertIn("3 of 6 sections have independent evidence", html)
         progress_block = html.split("data-cb-progress-statement", 1)[1].split("</div>", 1)[0]
         self.assertNotIn("%", progress_block)
         self.assertNotIn("streak", html.lower())
@@ -257,7 +257,7 @@ class LearningSurfaceRenderTest(unittest.TestCase):
         out = self.render(
             {"kind": "textbook", "row": ROW, "outline": OUTLINE, "independent": 3, "total": 4, "objectives": OBJECTIVES}
         )
-        self.assertEqual(out["helpers"]["progress"], "3 of 4 objectives have independent evidence")
+        self.assertEqual(out["helpers"]["progress"], "3 of 4 sections have independent evidence")
         self.assertEqual(out["helpers"]["counts"]["independent"], 3)
         self.assertEqual(out["helpers"]["counts"]["total"], 6)
 
@@ -283,8 +283,8 @@ class LearningSurfaceRenderTest(unittest.TestCase):
         self.assertIn("Get the wheel off", html)
         self.assertIn("Put it back together", html)
         self.assertEqual(html.count("data-cb-unit-progress="), 2)
-        self.assertIn("1 of 3 objectives have independent evidence", html)
-        self.assertIn("2 of 3 objectives have independent evidence", html)
+        self.assertIn("1 of 3 sections have independent evidence", html)
+        self.assertIn("2 of 3 sections have independent evidence", html)
 
     def test_a_single_implicit_unit_is_not_invented_as_a_heading(self) -> None:
         outline = dict(OUTLINE)
@@ -312,7 +312,7 @@ class LearningSurfaceRenderTest(unittest.TestCase):
         self.assertIn('data-cb-section-state="complete"', html)
         self.assertIn('data-cb-section-state="review"', html)
         self.assertIn('data-cb-section-state="not_started"', html)
-        self.assertIn("Complete", html)
+        self.assertIn("Independent evidence", html)
         self.assertIn("Review due", html)
         self.assertIn("Not started", html)
         # The state word travels with the icon inside the row, not only in the details legend.
@@ -355,7 +355,7 @@ class LearningSurfaceRenderTest(unittest.TestCase):
         details = html.index("data-cb-overview-details")
         self.assertLess(progress, next_statement)
         self.assertLess(next_statement, details)
-        self.assertIn("3 of 6 objectives have independent evidence", html)
+        self.assertIn("3 of 6 sections have independent evidence", html)
         self.assertIn("Next ·", html)
         self.assertNotIn("THIS COURSE", html)
         self.assertIn("Course details", html)

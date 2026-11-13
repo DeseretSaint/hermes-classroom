@@ -1204,7 +1204,7 @@ function TutorRailPane({ binding }) {
   const section = page.data && page.data.section
   const runtime = page.data && page.data.runtime
   const objectiveTitle = section ? section.title : (history.data && history.data.context ? history.data.context.objective_title : null)
-  const contextChip = section && section.ordinal ? `Section ${section.ordinal}` : objectiveId ? 'This section' : ''
+  const contextChip = section && section.ordinal ? CB_COPY.sectionLabel(section.ordinal, null) : objectiveId ? 'This section' : ''
   const lessonChanged = Boolean(
     runtime && runtime.lesson_run_id && runId && String(runtime.lesson_run_id) !== String(runId)
   )
@@ -1939,6 +1939,7 @@ function CoursebookSettings() {
 // block views, the section page and the quest projection are pure components/functions over a
 // server-owned document, so a Node test can render them without a backend, a chat or a window.
 export {
+  CB_COPY,
   TutorRail,
   TutorRailPane,
   TutorSelectionPill,

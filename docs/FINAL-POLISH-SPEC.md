@@ -104,7 +104,7 @@ Visual change:
 
 One lesson surface, not a document with a check bolted on.
 
-- **Header** — `STOP 2 OF 6`, section title, one objective sentence. No course metadata strip.
+- **Header** — `Section 2 of 6`, section title, one objective sentence. No course metadata strip.
 - **Body** — one concept, one example/artifact, one action. A sourced image or diagram is a
   first-class artifact with its caption and text equivalent; audio has a visible transcript. If
   media is unavailable, the text equivalent is the lesson, not a broken frame.

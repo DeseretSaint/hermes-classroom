@@ -285,9 +285,9 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
                 value: enrollmentStatusLabel(row.enrollment_status)
               }),
               jsx(StatusRow, {
-                label: 'Evidence',
+                label: CB_COPY.evidence.one,
                 value: `${Number(summary.independent || 0)} independent`,
-                detail: `${plural(Number(summary.total_objectives || 0), 'objective', 'objectives')} · ${plural(Number(summary.review_due || 0), 'due', 'due')}`
+                detail: `${plural(Number(summary.total_objectives || 0), CB_COPY.section.one.toLowerCase(), CB_COPY.section.many.toLowerCase())} · ${plural(Number(summary.review_due || 0), 'due', 'due')}`
               }),
               jsx(StatusRow, {
                 label: 'Where it came from',
@@ -574,10 +574,10 @@ function UnitHeading({ unit, entries }) {
 function TextbookIndexDetails({ rows }) {
   const targets = Array.from(new Set(rows.map((entry) => entry.evidence_target).filter(Boolean)))
   const legend = [
-    { semantic: { key: 'complete', label: 'Complete', icon: 'pass' }, meaning: 'this objective has independent evidence.' },
+    { semantic: { key: 'complete', label: CB_COPY.state.independent_evidence, icon: 'pass' }, meaning: 'this section has evidence held without help.' },
     { semantic: { key: 'next', label: 'Next', icon: 'chevron-right' }, meaning: 'the section the course points to now.' },
-    { semantic: { key: 'review', label: 'Review due', icon: 'history' }, meaning: 'evidence is scheduled to come back.' },
-    { semantic: { key: 'not_started', label: 'Not started', icon: 'circle-outline' }, meaning: 'no attempt recorded yet.' }
+    { semantic: { key: 'review', label: CB_COPY.state.review_due, icon: 'history' }, meaning: 'evidence is scheduled to come back.' },
+    { semantic: { key: 'not_started', label: CB_COPY.state.not_started, icon: 'circle-outline' }, meaning: 'no attempt recorded yet.' }
   ]
   return jsxs('details', {
     'data-cb-index-details': '',
@@ -2518,7 +2518,7 @@ const CB3_COURSE_COPY = Object.freeze({
   nodeNext: 'Next',
   nodeLocked: 'Opens after the section before it',
   continueTitle: 'Continue',
-  evidenceTitle: 'Evidence',
+  evidenceTitle: CB_COPY.evidence.one,
   othersTitle: 'Your other courses',
   noWorldTitle: 'No scene yet',
   noWorldBody: 'The lesson works without art.',
@@ -3783,8 +3783,8 @@ function ReviewDuePanel({ enrollmentId, revision, review, evidence, onRecorded, 
         const title = item.title || 'Untitled section'
         const rowLabel = item.ordinal ? `section ${item.ordinal}: ${title}` : title
         const stateLine = paused
-          ? `${OBJECTIVE_STATE_COPY[item.state] || item.state || 'State not recorded'} · dropped ${reviewDueLabel(item.dropped_at)}`
-          : `${OBJECTIVE_STATE_COPY[item.state] || item.state || 'State not recorded'} · due ${reviewDueLabel(item.due_at)}`
+          ? `${CB_COPY.stateWord(item.state)} · dropped ${reviewDueLabel(item.dropped_at)}`
+          : `${CB_COPY.stateWord(item.state)} · due ${reviewDueLabel(item.due_at)}`
         return jsxs(
           'div',
           {
@@ -3860,7 +3860,7 @@ function ReviewDuePanel({ enrollmentId, revision, review, evidence, onRecorded, 
                     style: { fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink)' },
                     children: [
                       `${REVIEW_SCHEDULE_COPY[outcome.action] ? REVIEW_SCHEDULE_COPY[outcome.action].label : outcome.action} recorded. `,
-                      `State now ${OBJECTIVE_STATE_COPY[outcome.state] || outcome.state || 'not recorded'}; `,
+                      `State now ${CB_COPY.stateWord(outcome.state)}; `,
                       `next due ${reviewDueLabel(outcome.due_at)}; `,
                       `recorded ${whenLabel(outcome.recorded_at)}.`
                     ]
@@ -4326,7 +4326,9 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
   const heroFacts = [
     sectionTotal
       ? {
-          value: sectionOrdinal ? `Section ${sectionOrdinal} of ${sectionTotal}` : `${sectionTotal} ${sectionTotal === 1 ? 'section' : 'sections'}`,
+          value: sectionOrdinal
+            ? CB_COPY.sectionLabel(sectionOrdinal, sectionTotal)
+            : `${sectionTotal} ${sectionTotal === 1 ? CB_COPY.section.one.toLowerCase() : CB_COPY.section.many.toLowerCase()}`,
           label: (section && section.title) || 'In this course'
         }
       : null,
@@ -4650,7 +4652,7 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
       (view !== 'overview' || supports('review.action'))
         ? jsx(CheckPanelFrame, {
             kind: 'check',
-            label: 'Review due',
+            label: CB_COPY.state.review_due,
             children: jsxs('div', {
               style: { display: 'flex', flexDirection: 'column', gap: '0.4rem' },
               children: [
