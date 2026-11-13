@@ -755,7 +755,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v15",
+                "prompt_version": "lesson-prompt.v16",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000002b",
@@ -801,7 +801,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v15",
+                "prompt_version": "lesson-prompt.v16",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000002e",
@@ -882,7 +882,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 4771,
+            "input_tokens": 4880,
             "output_tokens": 1881,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -911,7 +911,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v15",
+                "prompt_version": "lesson-prompt.v16",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000037",
@@ -957,7 +957,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v15",
+                "prompt_version": "lesson-prompt.v16",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000003a",
@@ -1038,7 +1038,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 4839,
+            "input_tokens": 5011,
             "output_tokens": 1938,
             "unknown_calls": 0,
             "unknown_cost": false

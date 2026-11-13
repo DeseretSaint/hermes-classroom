@@ -916,7 +916,18 @@ def _stage_error(exc: Exception) -> dict[str, Any]:
     code = _error_code(exc)
     message = str(exc)[:_MAX_ERROR_TEXT] or type(exc).__name__
     details: dict[str, Any] = {}
-    for attribute in ("purpose", "duration_ms", "deadline_s", "job_deadline", "schema_name", "repair_attempted"):
+    for attribute in (
+        "purpose",
+        "duration_ms",
+        "deadline_s",
+        "job_deadline",
+        "schema_name",
+        "repair_attempted",
+        # E2E S4: a prerequisite refusal names the unit it refused and the prerequisite units
+        # that are incomplete, so an operator reads why the job stopped instead of a bare message.
+        "unit_ordinal",
+        "unmet_units",
+    ):
         value = getattr(exc, attribute, None)
         if value is not None:
             details[attribute] = value

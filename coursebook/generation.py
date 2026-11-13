@@ -285,7 +285,13 @@ UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v3"
 #: every item path and ``fix`` hint is a binding repair, and that a rejected claim is removed or
 #: supported by a supplied excerpt rather than resubmitted. Instruction text changed on top of
 #: v14, so v15. See ``docs/GENERATION.md`` §5 for what v15 adds over v14.
-LESSON_PROMPT_VERSION = "lesson-prompt.v15"
+#: v16 (E2E S2): the payload gains two authoring-context blocks — `unit` (ordinal, title, goal,
+#: prereq_unit_ordinals) and `taught_so_far` (the objectives already taught before this section) —
+#: and the instruction text states the obligation to build on them. The defect: every section was
+#: handed the same course-wide facts, so a 30-section course authored section 30 with the same
+#: inputs as section 2 and the far end was "more of the same". Payload and instruction text both
+#: changed, so the label advances.
+LESSON_PROMPT_VERSION = "lesson-prompt.v16"
 #: The validator instruction text. H-191 §5: a validator answer was discarded because one
 #: ``item`` label was 81 characters against a ``maxLength`` of 80 the prompt never stated. The
 #: text now states the locator rule and the bound (read from :data:`ITEM_REFERENCE_MAX_CHARS`),
@@ -770,6 +776,39 @@ class SyllabusPlanRefused(GenerationError):
 
 class PlanNotApproved(GenerationError):
     """Lesson authoring was requested for a plan the learner/parent has not approved."""
+
+
+class PrerequisiteUnitIncomplete(GenerationError):
+    """A lesson job named a unit whose prerequisite units are not authored yet (E2E S4).
+
+    The plan gate enforces prerequisite edges only as *shape* (backwards, unique, acyclic), so
+    before this gate ``run_lesson_job`` accepted any ``unit_ordinal``: authoring unit 3 before
+    unit 1 was legal, and its review section then failed the whole unit job because unit 1's
+    owner checks did not exist yet — after the unit's sections had been paid for.
+
+    This is the authoring-time counterpart of the learner-side ``PREREQUISITE_UNMET`` gate: it
+    refuses the unit batch *before the first provider call*, naming the prerequisite unit(s) and
+    how much of each is authored. It reuses that frozen contract code (``state``, non-retryable)
+    rather than minting a new one — the contract's codes are closed, and a missing prerequisite
+    unit is the same class of deterministic refusal.
+
+    A prerequisite unit counts as authored when each of its stored sections has a lesson row for
+    the plan hash being authored. A *parked* lesson still counts: its page and check exist, and
+    CP-015j deliberately lets a review present a closed owner check rather than fail the unit.
+    """
+
+    code = "PREREQUISITE_UNMET"
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        unit_ordinal: int,
+        unmet_units: Sequence[Mapping[str, Any]],
+    ) -> None:
+        super().__init__(message)
+        self.unit_ordinal = int(unit_ordinal)
+        self.unmet_units = [dict(item) for item in unmet_units]
 
 
 class ProviderTimeout(GenerationError):
@@ -5294,6 +5333,21 @@ def _lesson_instructions(
         "No listicle padding, no bullet wall, no repeated summary, no restating the objective as "
         "content, and no placeholder prose ('TODO', 'TBD', 'Lorem ipsum', 'this section will "
         "cover'). Every sentence must tell the learner something they did not have before.",
+        # E2E S2: units add lesson-level context. Before this, section 30 was handed the same
+        # three course-wide facts as section 2, so a "full" course was more of the same lesson
+        # repeated. The payload now carries the unit and what has been taught; the prompt states
+        # the obligation to use them.
+        "Place this section inside its unit (the input's 'unit': ordinal, title, goal and the "
+        "prerequisite units it names). Open by connecting the section's work to that unit goal, "
+        "and when the section is not the unit's first, build on what the unit already established "
+        "instead of introducing the unit from scratch. When the unit block names prerequisite "
+        "units, treat the capability those units established as available: use it, and do not "
+        "re-teach it.",
+        "Build on what was already taught. 'taught_so_far' lists the objectives taught before "
+        "this section, oldest first; when it is non-empty, name the earlier objective this "
+        "section extends and use what it established as prior knowledge. Never re-teach an item "
+        "on that list from the beginning, and never spend a segment reintroducing it. A lesson "
+        "whose content would make equal sense anywhere in the course is refused.",
         "Write plainly for the declared learner level in the input: short sentences, one idea per "
         "sentence, a term defined the first time it is used and then used. A beginner does not "
         "need fewer words, they need fewer ideas per sentence.",
@@ -9339,6 +9393,14 @@ def _validation_pass_plan(
 #: second request policy: :func:`_bounded_input` still owns the request bound.
 LESSON_GOAL_MAX_CHARS = 600
 
+#: E2E S2: the lesson author is told which unit it is writing inside and what has already been
+#: taught. Both blocks are bounded so a 40-objective course cannot grow a lesson request past its
+#: byte bound (the same failure H-182 measured for the ledger): the unit is four short fields, and
+#: the taught list keeps only the most recent entries — the immediate prior knowledge a section
+#: can actually build on — rather than every objective title from section 1.
+LESSON_TAUGHT_SO_FAR_MAX_TITLES = 16
+LESSON_CONTEXT_TITLE_MAX_CHARS = 160
+
 
 def _lesson_goal(goal: str | None, plan: Mapping[str, Any]) -> str | None:
     """The learner's goal, whitespace-normalised and capped for the lesson request.
@@ -9376,6 +9438,104 @@ def _previous_section_title(
     return title or None
 
 
+def _context_title(value: Any) -> str:
+    """One bounded context title: whitespace-normalised, capped, empty string when absent."""
+    return " ".join(str(value or "").split())[:LESSON_CONTEXT_TITLE_MAX_CHARS]
+
+
+def _lesson_section_objective_ordinal(
+    section: Mapping[str, Any], objective: Mapping[str, Any] | None
+) -> int:
+    """The objective ordinal this section authors, from the objective or the section's refs."""
+    if objective is not None:
+        try:
+            return int(str(objective.get("ordinal")))
+        except (TypeError, ValueError):
+            pass
+    refs = section.get("objective_refs") or []
+    try:
+        return int(refs[0]) if refs else 0
+    except (TypeError, ValueError):
+        return 0
+
+
+def _lesson_unit_block(
+    plan: Mapping[str, Any],
+    objective: Mapping[str, Any] | None,
+    unit: Mapping[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    """The unit this section is authored inside (E2E S2), or ``None`` for a flat v1 plan.
+
+    Before this, the payload carried a bare ``unit_id`` at most, so a lesson in unit 4 was handed
+    the same three course-wide facts as a lesson in unit 1 and could not tell which phase of the
+    course it belonged to. The block names the unit's own title and goal and its prerequisite
+    unit ordinals — authoring context the plan already declared, never a new claim about the
+    learner. ``unit`` is the stored ``plan_units`` row when the caller has it; a direct caller
+    (or a document-only path) falls back to the objective's ``unit_ref`` in the plan document.
+    """
+    block: dict[str, Any] | None = None
+    if unit is not None:
+        block = {
+            "ordinal": int(unit.get("ordinal") or 0),
+            "title": _context_title(unit.get("title")),
+            "goal": _context_title(unit.get("goal")),
+            "prereq_unit_ordinals": [int(value) for value in unit.get("prereq_unit_ordinals") or []],
+        }
+    else:
+        ref = (objective or {}).get("unit_ref")
+        for candidate in plan.get("units") or []:
+            if not isinstance(candidate, Mapping):
+                continue
+            try:
+                candidate_ordinal = int(str(candidate.get("ordinal")))
+            except (TypeError, ValueError):
+                continue
+            if ref is not None and candidate_ordinal == int(ref):
+                block = {
+                    "ordinal": candidate_ordinal,
+                    "title": _context_title(candidate.get("title")),
+                    "goal": _context_title(candidate.get("goal")),
+                    "prereq_unit_ordinals": [
+                        int(value) for value in candidate.get("prereq_unit_ordinals") or []
+                    ],
+                }
+                break
+    if block is None:
+        return None
+    return block
+
+
+def _lesson_taught_so_far(
+    plan: Mapping[str, Any], objective_ordinal: int
+) -> list[str]:
+    """Titles of the objectives already taught before this section (E2E S2), oldest first.
+
+    The plan document owns the course order, so the list is derived from it rather than from the
+    caller's section slice: a lesson in unit 3 sees units 1-2's objectives and its own unit's
+    earlier ones, never a later objective and never the global last-N of an unrelated course.
+    Bounded to the most recent :data:`LESSON_TAUGHT_SO_FAR_MAX_TITLES` entries; the immediate
+    prior learning is what a section can build on, and an unbounded list would push a legal
+    full-scope lesson over its request bound.
+    """
+    if objective_ordinal <= 0:
+        return []
+    rows: list[tuple[int, str]] = []
+    for item in plan.get("objectives") or []:
+        if not isinstance(item, Mapping):
+            continue
+        try:
+            ordinal = int(str(item.get("ordinal")))
+        except (TypeError, ValueError):
+            continue
+        if ordinal >= objective_ordinal:
+            continue
+        title = _context_title(item.get("title"))
+        if title:
+            rows.append((ordinal, title))
+    rows.sort(key=lambda pair: pair[0])
+    return [title for _ordinal, title in rows[-LESSON_TAUGHT_SO_FAR_MAX_TITLES:]]
+
+
 def build_lesson_request(
     *,
     plan: dict[str, Any],
@@ -9394,9 +9554,16 @@ def build_lesson_request(
     goal: str | None = None,
     previous_section: str | None = None,
     previous_draft: dict[str, Any] | None = None,
+    unit: Mapping[str, Any] | None = None,
 ) -> LLMRequest:
     declared_level = level or _dial_text(dials, "level")
     declared_domain = subject_domain or _dial_text(dials, "subject_domain")
+    # E2E S2: the section's own place in the course. Both blocks are derived from the plan the
+    # caller passed (the stored unit row wins when it has one), so a direct caller gets them too.
+    unit_block = _lesson_unit_block(plan, objective, unit)
+    taught_so_far = _lesson_taught_so_far(
+        plan, _lesson_section_objective_ordinal(section, objective)
+    )
     # The scaffold policy needs the declared level, so it reads the in-memory view; the payload
     # keeps ``dials`` closed and carries the declared inputs as their own fields.
     policy = _scaffold_policy(recipe, _policy_dials(dials, level=declared_level, subject_domain=declared_domain), locale)
@@ -9423,6 +9590,12 @@ def build_lesson_request(
             if previous_section is not None
             else _previous_section_title(plan, section)
         ),
+        # E2E S2: a lesson is authored inside a phase of the course, not in a vacuum. ``unit``
+        # names that phase and its declared prerequisite edges; ``taught_so_far`` lists the
+        # objectives already taught before this section, oldest first. The instruction text
+        # requires the section to build on both.
+        "unit": unit_block,
+        "taught_so_far": taught_so_far,
         "delivery": plan.get("delivery"),
         "section": section,
         "objective": objective,
@@ -13223,6 +13396,90 @@ def _check_payloads(lesson: dict[str, Any], *, locale: str | None, recipe: str |
     return {"stimulus": stimulus, "reference": reference, "rubric": rubric, "locale": locale}
 
 
+def _prerequisite_unit_shortfall(
+    connection: sqlite3.Connection,
+    plan_id: str,
+    unit: Mapping[str, Any],
+    digest: str,
+) -> list[dict[str, Any]]:
+    """Prerequisite units of ``unit`` that are not authored for ``digest`` (E2E S4).
+
+    The plan gate only proves the edges' *shape*; nothing made authoring follow them. This is the
+    deterministic completion read the lesson job gates on, and it costs one query per prerequisite
+    unit — no provider call, no row written.
+
+    A unit is complete when every stored section of that unit has at least one ``gen_lessons`` row
+    for this plan hash. State is deliberately not part of it: a parked lesson still carries the
+    page and check a review section presents (CP-015j), so it is authored work, and refusing on it
+    would re-introduce the false failure that rule removed. A unit with no sections has not been
+    through the unit stage at all.
+    """
+    shortfall: list[dict[str, Any]] = []
+    for raw in sorted({int(value) for value in unit.get("prereq_unit_ordinals") or []}):
+        prerequisite = _unit_row(connection, plan_id, raw)
+        if prerequisite is None:
+            shortfall.append(
+                {
+                    "unit_ordinal": raw,
+                    "title": None,
+                    "reason": "missing_unit",
+                    "sections_total": 0,
+                    "sections_authored": 0,
+                }
+            )
+            continue
+        sections = _unit_section_rows(connection, plan_id, str(prerequisite["id"]))
+        if not sections:
+            shortfall.append(
+                {
+                    "unit_ordinal": raw,
+                    "title": prerequisite.get("title"),
+                    "reason": "no_sections",
+                    "sections_total": 0,
+                    "sections_authored": 0,
+                }
+            )
+            continue
+        section_ids = [str(section["section_id"]) for section in sections]
+        placeholders = ",".join("?" for _ in section_ids)
+        authored = {
+            str(row["section_id"])
+            for row in connection.execute(
+                f"SELECT DISTINCT section_id FROM gen_lessons WHERE plan_hash = ?"
+                f" AND section_id IN ({placeholders})",
+                (str(digest), *section_ids),
+            ).fetchall()
+        }
+        if len(authored) != len(section_ids):
+            shortfall.append(
+                {
+                    "unit_ordinal": raw,
+                    "title": prerequisite.get("title"),
+                    "reason": "sections_unauthored",
+                    "sections_total": len(section_ids),
+                    "sections_authored": len(authored),
+                }
+            )
+    return shortfall
+
+
+def _describe_prerequisite_shortfall(shortfall: Sequence[Mapping[str, Any]]) -> str:
+    parts: list[str] = []
+    for item in shortfall:
+        title = str(item.get("title") or "").strip()
+        label = f"unit {item['unit_ordinal']}" + (f" ({title})" if title else "")
+        if item.get("reason") == "missing_unit":
+            parts.append(f"{label} does not exist in this plan")
+        elif item.get("reason") == "no_sections":
+            parts.append(f"{label} has no authored sections")
+        else:
+            parts.append(
+                f"{label} authored {item.get('sections_authored', 0)} of "
+                f"{item.get('sections_total', 0)} sections"
+            )
+    return "; ".join(parts)
+
+
 def run_lesson_job(
     connection: sqlite3.Connection,
     job: dict[str, Any],
@@ -13313,6 +13570,22 @@ def run_lesson_job(
         unit = _unit_row(connection, str(plan_id), requested_unit)
         if unit is None:
             raise GenerationRejected(f"plan {plan_id!r} has no unit {requested_unit}")
+        # E2E S4: prerequisite edges were enforced only as shape (backwards, unique, acyclic), so
+        # authoring unit 3 before unit 1 was legal — and unit 3's review then failed the whole
+        # batch because unit 1's owner checks did not exist. Refuse the batch here, before the
+        # review/coverage gates and before the budget preflight, so a mis-ordered job is a typed
+        # refusal with zero spend instead of an expensive failure halfway through.
+        shortfall = _prerequisite_unit_shortfall(connection, str(plan_id), unit, digest)
+        if shortfall:
+            raise PrerequisiteUnitIncomplete(
+                f"unit {unit['ordinal']} of plan {plan_id!r} cannot be authored: its "
+                f"prerequisite unit(s) are incomplete — "
+                + _describe_prerequisite_shortfall(shortfall)
+                + ". Author those units' lessons first; no lesson was authored and no provider "
+                "call was made.",
+                unit_ordinal=int(unit["ordinal"]),
+                unmet_units=shortfall,
+            )
         section_rows = _unit_section_rows(connection, str(plan_id), str(unit["id"]))
     else:
         unit = None
@@ -13506,6 +13779,7 @@ def run_lesson_job(
                     review_target=review_target,
                     park_reason=park_reason,
                     version=next_version,
+                    unit=unit,
                 )
             )
     except BaseException as exc:
@@ -13758,6 +14032,7 @@ def _author_section(
     park_reason: str | None = None,
     version: int = 1,
     goal: str | None = None,
+    unit: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     objective_ordinal = int(
         review_target["objective_ordinal"]
@@ -13830,6 +14105,7 @@ def _author_section(
             goal=goal,
             previous_section=previous_section,
             previous_draft=previous_draft,
+            unit=unit,
         )
         generation_started = time.monotonic()
         response = _call_llm(llm, request, usage)
