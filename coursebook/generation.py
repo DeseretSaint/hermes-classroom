@@ -245,7 +245,11 @@ PLAN_PROMPT_VERSION = "plan-prompt.v22"
 #: performance, that a performance course ends on the final objective (not just somewhere in the
 #: last unit), and that spaced review needs one review per five owner sections with a different
 #: form of the same target.
-PLAN_PROMPT_VERSION_V2 = "plan-prompt.v25"
+#: v26 (E2E S1/S3): a single-session course is one section with no review slot, so the prompt no
+#: longer tells the author that a committed course must schedule a review at that scope — the
+#: recipe rule allows a committed single course to carry `spaced_review: false`, and a true flag
+#: there is refused as unsatisfiable.
+PLAN_PROMPT_VERSION_V2 = "plan-prompt.v26"
 #: The unit-sections authoring stage. One unit per call, so its own version. v2 (CP-015g) states the
 #: unit scope and the construct shape its media gate enforces; v3 (CP-015g D3) adds the citation
 #: rule — an owner section copies its objective's source ids, a review section cites the union of
@@ -5180,7 +5184,8 @@ def _plan_instructions_v2(
             "sections: raise the units' target_lessons above their objective counts so the review "
             "slots exist. A review re-presents the same evidence target in a different form (new "
             "items, not a copy of the owner's check). A committed course with no review is "
-            "refused.",
+            "refused, except a single-session course: it has one section and no review slot, so "
+            "it sets 'spaced_review' false.",
         ]
     )
     if level:
@@ -6395,6 +6400,15 @@ def review_density_reasons(
     """
     if not plan.get("spaced_review"):
         return []
+    # A single-session course is exactly one owner section and the scope band allows no review
+    # slot on top of it; requiring one would make the band unsatisfiable. The contradiction is a
+    # plan error the author can act on, so it is refused with that action named.
+    if str(plan.get("scope") or "") == "single":
+        return [
+            "plan.spaced_review is true but a 'single' course is one section and has no review "
+            "slot; set spaced_review false, or choose the 'short' scope if the learner needs to "
+            "revisit the material"
+        ]
     owners = len(objectives)
     required = required_review_count(owners)
     if required == 0:
@@ -6753,7 +6767,11 @@ def _enforce_plan_tail(
         if plan.get("delivery") == "parent_led":
             reasons.append("a one-off brief is not a parent-led lesson")
     elif recipe == "committed":
-        if not plan.get("spaced_review"):
+        # A single-session course has one section and no review slot by the blueprint band
+        # (``_section_caps``), so the committed recipe cannot demand the impossible there: the
+        # learner's commitment stands, and there is simply nothing to space yet. A spaced_review
+        # flag on that scope is refused by ``review_density_reasons`` instead.
+        if not plan.get("spaced_review") and str(plan.get("scope") or "") != "single":
             reasons.append("committed courses must schedule spaced review")
         if not any(item.get("kind") == "quiz" for item in check_plan):
             reasons.append("committed courses need graded checks")
@@ -14812,7 +14830,7 @@ def learner_page(connection: sqlite3.Connection, lesson_id: str) -> dict[str, An
     if _leaks(page):
         raise LessonNotAvailable("stored lesson page contains answer material; refusing to serve it")
     check_rows = connection.execute(
-        "SELECT c.id AS check_id, c.reference_json, c.rubric_json"
+        "SELECT c.id AS check_id, c.reference_json, c.rubric_json, c.state AS check_state"
         " FROM checks c JOIN gen_lesson_checks l ON l.check_id = c.id"
         " WHERE l.lesson_id = ? ORDER BY c.version DESC",
         (lesson_id,),
@@ -14838,6 +14856,23 @@ def learner_page(connection: sqlite3.Connection, lesson_id: str) -> dict[str, An
     # A model-assessed page is readable, but the warning travels with it: a learner or parent
     # must not read a same-model / no-research pass as validation.
     page["provenance"] = lesson_provenance(connection, row["state"], row.get("validation_id"))
+    # A spaced-review section authors its own variant check, stored closed so the objective's
+    # scheduled check stays the owner's. The page must not advertise that check as enabled (an
+    # attempt against it would be refused as closed), and the learner must be told where the
+    # evidence-bearing check lives.
+    section_row = connection.execute(
+        "SELECT section_role FROM gen_plan_sections WHERE id = ?", (row["section_id"],)
+    ).fetchone()
+    is_review = section_row is not None and str(section_row["section_role"] or "owner") == "review"
+    if is_review and not any(
+        str(dict(item).get("check_state") or "") == "open" for item in check_rows
+    ):
+        page["provenance"]["check_enabled"] = False
+        page["provenance"]["warning"] = (
+            "spaced review: these items are a new form of an earlier objective's target, but this "
+            "page's check is not the objective's scheduled check. Answer the owner lesson's check "
+            "for evidence; these items are revision practice and are not graded here."
+        )
     return page
 
 

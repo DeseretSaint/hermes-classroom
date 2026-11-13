@@ -135,7 +135,7 @@ class SpacedReviewDensityTest(unittest.TestCase):
         )
         enforce(plan, recipe="committed")
 
-    def test_a_full_course_needs_one_review_per_four_owners(self) -> None:
+    def test_a_full_course_needs_one_review_per_five_owners(self) -> None:
         plan = blueprint_plan(
             scope="full", units=4, objectives_per_unit=3, recipe="committed", reviews=(0, 0, 0, 0)
         )
@@ -144,6 +144,20 @@ class SpacedReviewDensityTest(unittest.TestCase):
         # 12 owners need ceil(12/5) = 3 reviews.
         self.assertTrue(
             any("at least 3" in reason for reason in caught.exception.reasons),
+            caught.exception.reasons,
+        )
+
+    def test_a_single_section_course_cannot_declare_spaced_review(self) -> None:
+        """A single scope is one section and the band has no review slot; the flag is a
+        contradiction the author can act on, not a silent no-op."""
+        plan = blueprint_plan(
+            scope="single", units=1, objectives_per_unit=1, recipe="committed",
+            spaced_review=True, reviews=(0,),
+        )
+        with self.assertRaises(gen._RuleViolation) as caught:
+            enforce(plan, recipe="committed")
+        self.assertTrue(
+            any("no review slot" in reason for reason in caught.exception.reasons),
             caught.exception.reasons,
         )
 
@@ -253,6 +267,44 @@ class ReviewOverUnwrittenOwnerParksTest(ClosedOwnerCheckCase):
         self.assertEqual(review["state"], "needs_review")
         self.assertTrue(review.get("parked"))
         self.assertIn("owner lessons are not written yet", review["park_reason"])
+
+
+class ReviewPageDoesNotClaimAGradedCheckTest(ClosedOwnerCheckCase):
+    """A servable review page must not advertise a check the attempt lane will refuse."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.seed_owner_lesson(ordinal=1, lesson_state="validated", check_state="open")
+        self.seed_owner_lesson(ordinal=2, lesson_state="needs_review", check_state="closed")
+        self.seed_owner_lesson(ordinal=3, lesson_state="needs_review", check_state="closed")
+
+    def test_the_review_page_says_its_variant_check_is_not_graded(self) -> None:
+        result = gen.run_lesson_job(
+            db.connect(),
+            {
+                "job_id": None,
+                "brief": {
+                    "plan_id": self.plan_id,
+                    "unit_ordinal": 1,
+                    "section_id": "sec_4",
+                    "regenerate": True,
+                },
+            },
+            self.lessons_llm(),
+            plan_id=self.plan_id,
+            unit_ordinal=1,
+            now=NOW,
+        )
+        review = next(item for item in result["lessons"] if item["section_id"] == "sec_4")
+        self.assertFalse(review["check_enabled"])
+        with db.read() as connection:
+            role = connection.execute(
+                "SELECT section_role FROM gen_plan_sections WHERE id = 'sec_4'"
+            ).fetchone()
+            self.assertEqual(str(role["section_role"]), "review")
+            page = gen.learner_page(connection, str(review["lesson_id"]))
+        self.assertFalse(page["provenance"]["check_enabled"])
+        self.assertIn("revision practice", str(page["provenance"]["warning"]))
 
 
 if __name__ == "__main__":

@@ -254,7 +254,9 @@ Deterministic plan rules, replacing the current `enforce_plan_rules` body:
     A `performance`/`mixed` declaration requires the same final section at every scope.
 11. When `spaced_review` is true the plan schedules at least one review per five owner sections
     (and at least one whenever the course has an owner): the units' `target_lessons` must leave
-    that many review slots. A committed plan with zero reviews is refused. Each review section
+    that many review slots. A committed plan with zero reviews is refused — except a `single`
+    course, which is one section with no review slot by the scope band: that scope may not declare
+    `spaced_review`, and its committed recipe does not demand one. Each review section
     re-presents the same evidence target in a new form; a byte-identical owner stimulus is
     refused, and a review over unwritten owners parks rather than failing the unit.
 

@@ -42,12 +42,19 @@ def blueprint_plan(
     if check_kind is None:
         check_kind = "verification" if recipe == "one_off" else "quiz"
     if spaced_review is None:
-        spaced_review = recipe == "committed"
+        # A single-session course is one section and has no review slot (docs/COURSE-BLUEPRINT.md
+        # §1), so it is never a spaced-review course whatever its recipe says.
+        spaced_review = recipe == "committed" and scope != "single"
     if spaced_review and not reviews:
-        # S3: a spaced-review course schedules at least one review per unit. The plan rule
-        # requires one per SPACED_REVIEW_EVERY owners; one per unit is the simplest fixture that
-        # satisfies it without changing any unit's owner count.
-        reviews = tuple(1 for _ in range(units))
+        # S3: a spaced-review course schedules the *minimum* the plan rule requires — one review
+        # per SPACED_REVIEW_EVERY owner sections, spread over the units. One review per unit would
+        # over-schedule a wide course past its declared section cap (40 owners / 10 units would
+        # carry 50 sections against a 48 cap).
+        needed = gen.required_review_count(units * objectives_per_unit)
+        counts = [0] * units
+        for index in range(needed):
+            counts[index % units] += 1
+        reviews = tuple(counts)
     unit_rows: list[dict[str, Any]] = []
     objective_rows: list[dict[str, Any]] = []
     check_rows: list[dict[str, Any]] = []

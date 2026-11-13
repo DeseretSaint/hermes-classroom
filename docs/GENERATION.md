@@ -17,14 +17,14 @@ Three different calls, three different prompts, three different schemas:
 | Pass | Purpose string | Prompt version | Schema |
 |---|---|---|---|
 | Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v22` | `PLAN_SCHEMA` |
-| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v25` | `PLAN_SCHEMA_V2` |
+| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v26` | `PLAN_SCHEMA_V2` |
 | Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v4` | `UNIT_SECTIONS_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
 | Unit-sections validator | `coursebook.unit_sections.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
 | Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v17` | `LESSON_SCHEMA` |
 | Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
 
-`build_plan_request()` selects the v2 schema and `plan-prompt.v25` when the brief declares a scope
+`build_plan_request()` selects the v2 schema and `plan-prompt.v26` when the brief declares a scope
 (`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v22` otherwise. The rounds that
 advanced these labels, in order: CP-015's ledger-grounding, single-defensible-answer,
 evidence-target-fit, goal-coverage and check-covers-criteria rules; CP-015a's exclusions /
