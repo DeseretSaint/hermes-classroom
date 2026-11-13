@@ -4733,8 +4733,9 @@ function StudioFineTunePanel({
     }
   }
 
-  // A one-section cost band derived from the last lessons job's recorded preflight — arithmetic on
-  // stored numbers, labelled as an estimate, not a promise about this click.
+  // One section's likely price, estimated from what this course's last lessons run actually cost —
+  // arithmetic on stored numbers, labelled as an estimate, not a promise about this click. The
+  // learner reads the dollars only; the per-call arithmetic that produced them stays here.
   const planJobs = (jobs.data && jobs.data.jobs) || []
   const lastLessonsJob =
     planJobs.find((job) => job && job.brief && job.brief.stage === 'lessons') || null
@@ -4746,13 +4747,13 @@ function StudioFineTunePanel({
     const maxCalls = Math.max(minCalls, Math.ceil(Number(recorded.maximum_calls || 0) / Number(recorded.section_count)))
     estimate = {
       low: minCalls * perCall,
-      high: maxCalls * perCall,
-      perCall,
-      calls: maxCalls,
-      budget: recorded.budget_source || null
+      high: maxCalls * perCall
     }
   }
   const money = (value) => `$${Number(value || 0).toFixed(2)}`
+  // The queued job's own one-section price, read once from the contract field the regenerate answer
+  // carries. The learner reads the dollars; the field's name never reaches the screen.
+  const regenPrice = (regenResult && regenResult.preflight) || null
 
   const refreshAfterMutation = useCallback(
     (result) => {
@@ -5513,11 +5514,10 @@ function StudioFineTunePanel({
                           className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                           'data-cb-regenerate-cost': estimate ? 'estimated' : 'unknown',
                           children: estimate
-                            ? `Estimated ${money(estimate.low)}–${money(estimate.high)} for one section ` +
-                              `(${estimate.calls} call(s) at ${money(estimate.perCall)} per call, derived from this ` +
-                              `course’s last recorded lessons preflight${estimate.budget ? ` · budget: ${estimate.budget}` : ''}). ` +
-                              'The exact preflight is returned with the queued job.'
-                            : 'The backend sizes this one-section run when you confirm; no recorded preflight is readable for this course yet.'
+                            ? `Regenerating this section costs about ${money(estimate.low)}–${money(estimate.high)}, ` +
+                              'based on what writing lessons for this course has cost so far. ' +
+                              'The price for this section appears here once you queue it.'
+                            : 'We work out what one section costs when you queue it — this course has no earlier lesson run to go by yet.'
                         }),
                         jsxs('div', {
                           className: 'flex flex-wrap items-center gap-2',
@@ -5557,14 +5557,13 @@ function StudioFineTunePanel({
                           className: 'text-xs',
                           children: `Queued ${fineTuneScopeLine(regenResult.title)} · job ${regenResult.jobId}`
                         }),
-                        regenResult.preflight
+                        regenPrice
                           ? jsx('div', {
                               className: 'text-xs text-(--ui-text-secondary)',
-                              'data-cb-regenerate-preflight': String(regenResult.preflight.minimum_cost_usd),
+                              'data-cb-regenerate-price-estimate': String(regenPrice.minimum_cost_usd),
                               children:
-                                `Preflight: ${money(regenResult.preflight.minimum_cost_usd)}–` +
-                                `${money(regenResult.preflight.maximum_cost_usd)} · ` +
-                                `${regenResult.preflight.minimum_calls}–${regenResult.preflight.maximum_calls} call(s)`
+                                `This section costs ${money(regenPrice.minimum_cost_usd)}–` +
+                                `${money(regenPrice.maximum_cost_usd)} to regenerate.`
                             })
                           : null,
                         regenResult.jobId
