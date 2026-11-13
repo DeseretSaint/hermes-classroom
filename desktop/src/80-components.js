@@ -4669,12 +4669,21 @@ function SectionPage({
     setLessonView(preferredView)
     setFocusBlockId(targetBlockId || null)
   }, [objectiveId, targetBlockId, preferredView])
+  const [checkRevisionFloor, setCheckRevisionFloor] = useState(0)
+  const adoptCheckRevision = useCallback((value) => {
+    const next = Number(value)
+    if (Number.isFinite(next) && next > 0) setCheckRevisionFloor(next)
+  }, [])
+  // L2: the page read can carry the revision from before `check.open` created the check; the
+  // opened check's own returned revision is the fence the next submit must carry.
+  const checkRevision = Math.max(page ? Number(page.revision) || 0 : 0, checkRevisionFloor)
   const check = useOpenCheck({
     enrollmentId: row.enrollment_id,
     objectiveId,
-    revision: page ? page.revision : 0,
+    revision: checkRevision,
     enabled: Boolean(page) && supports('check.open') && Boolean(section),
-    implemented
+    implemented,
+    onRevision: adoptCheckRevision
   })
   // The check surface prints one label per structured item; the document prose must not print the
   // same line again on the teaching block or the practice block.
@@ -4714,18 +4723,31 @@ function SectionPage({
   const checkOwnsPrimary = Boolean(!parentLed && check && check.check)
   const checkNode =
     check.status === 'error'
-      ? jsx(QuietNote, {
-          children: check.error
-            ? `${check.error.code}: ${describeError(check.error)}`
-            : 'The current check could not be opened.'
-        })
+      ? check.error && check.error.code === 'PREREQUISITE_UNMET'
+        ? jsxs('div', {
+            'data-cb-check-refusal': 'PREREQUISITE_UNMET',
+            className: 'flex flex-col gap-2',
+            children: [
+              jsx(QuietNote, { children: describeError(check.error) }),
+              jsx(sdk.Button, {
+                variant: 'secondary',
+                onClick: () => check.acknowledge(),
+                children: 'Start anyway'
+              }, 'start-anyway')
+            ]
+          })
+        : jsx(QuietNote, {
+            children: check.error
+              ? `${check.error.code}: ${describeError(check.error)}`
+              : 'The current check could not be opened.'
+          })
       : check.status === 'loading' && !check.check
         ? jsx(sdk.Loader, { label: 'Opening the current check' })
         : jsx(AttemptControls, {
           enrollmentId: row.enrollment_id,
           objectiveId,
           check: check.check,
-          revision: page ? page.revision : 0,
+          revision: checkRevision,
           implemented,
           bindingState: runtime ? runtime.binding_status : 'detached',
           parentLed,
@@ -4748,7 +4770,7 @@ function SectionPage({
           enrollmentId: row.enrollment_id,
           objectiveId,
           check: check.check,
-          revision: page ? page.revision : 0,
+          revision: checkRevision,
           implemented,
           bindingState: runtime ? runtime.binding_status : 'detached',
           parentLed,
@@ -4764,7 +4786,7 @@ function SectionPage({
         })
 
   const begin = useCallback(
-    async (mode) => {
+    async (mode, acknowledgePrerequisites = false) => {
       setBusy(true)
       setNotice(null)
       // One shared path with the course detail: a fresh run arms the exact run, then this surface
@@ -4775,7 +4797,8 @@ function SectionPage({
         objectiveId,
         objectiveTitle: section ? section.title : null,
         mode,
-        profile: row.profile || currentScope().profile
+        profile: row.profile || currentScope().profile,
+        acknowledgePrerequisites
       })
       setBusy(false)
       if (outcome.ok && outcome.armed) {
@@ -4795,6 +4818,13 @@ function SectionPage({
               }
         )
         if (onChanged) onChanged()
+        return
+      }
+      if (!outcome.ok && outcome.reason === 'prerequisite-unmet') {
+        setNotice({
+          text: outcome.message,
+          action: { label: 'Start anyway', run: () => begin(mode, true) }
+        })
         return
       }
       if (!outcome.ok && outcome.reason === 'no-binding') {

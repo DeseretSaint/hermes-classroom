@@ -274,8 +274,16 @@ class BindSessionCase(KernelCase):
         from coursebook import domain
 
         with db.read() as connection:
-            # The submit gate must see the live row...
-            domain._binding_refusal(connection, self.lesson["enrollment_id"])
+            # The submit gate must read the row for the objective the write names: the new
+            # section's live binding allows, the superseded section's detached row refuses.
+            domain._binding_refusal(
+                connection, self.lesson["enrollment_id"], other["objective_id"]
+            )
+            with self.assertRaises(api.RpcError) as refused:
+                domain._binding_refusal(
+                    connection, self.lesson["enrollment_id"], self.lesson["objective_id"]
+                )
+            self.assertEqual(refused.exception.error["code"], "BINDING_NOT_ACTIVE")
             # ...and binding.get must resolve to it, not to the superseded one.
             latest = domain._latest_binding(connection, self.lesson["enrollment_id"])
         self.assertEqual(str(latest["id"]), str(second["binding"]["id"]))

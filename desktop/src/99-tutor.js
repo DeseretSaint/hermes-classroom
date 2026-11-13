@@ -1098,13 +1098,22 @@ function TutorRailPane({ binding }) {
     `tutor-history-${binding.enrollment_id}-${objectiveId}-${runId}`,
     backendSupports('tutor.history') && Boolean(courseId && objectiveId && runId)
   )
-  const revision = page.data ? page.data.revision : row ? row.revision : 0
+  const [checkRevisionFloor, setCheckRevisionFloor] = useState(0)
+  const adoptCheckRevision = useCallback((value) => {
+    const next = Number(value)
+    if (Number.isFinite(next) && next > 0) setCheckRevisionFloor(next)
+  }, [])
+  const revision = Math.max(
+    page.data ? Number(page.data.revision) || 0 : row ? Number(row.revision) || 0 : 0,
+    checkRevisionFloor
+  )
   const check = useOpenCheck({
     enrollmentId: binding.enrollment_id,
     objectiveId,
     revision,
     enabled: Boolean(objectiveId) && backendSupports('check.open') && Boolean(page.data),
-    implemented: backendWire.implemented
+    implemented: backendWire.implemented,
+    onRevision: adoptCheckRevision
   })
   const practiceRead = useRpcQuery(
     'practice.state',

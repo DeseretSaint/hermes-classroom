@@ -497,7 +497,7 @@ function whenLabel(value) {
  * objective's audited spec. The revision fence travels in the envelope, so a check opened against
  * an older intent is refused as STALE_REVISION rather than silently winning.
  */
-function useOpenCheck({ enrollmentId, objectiveId, revision, enabled, implemented }) {
+function useOpenCheck({ enrollmentId, objectiveId, revision, enabled, implemented, onRevision }) {
   // `stimulusStatus` is a state of its own, not a property inferred from `check.stimulus`: a failed
   // or empty `check.get` and a build without that command are different facts, and neither one is
   // "the question is here". `loading` holds the form back rather than offering a blind textarea.
@@ -510,6 +510,20 @@ function useOpenCheck({ enrollmentId, objectiveId, revision, enabled, implemente
     stimulusError: null
   })
   const [ticket, setTicket] = useState(0)
+  // R6: an unmet prerequisite edge is a refusal that names the learner's choice. The surface's
+  // "Start anyway" is the acknowledgment, and it belongs to the objective the learner pressed it
+  // on: a new section starts unacknowledged rather than inheriting the previous decision.
+  const [acknowledged, setAcknowledged] = useState(false)
+  useEffect(() => {
+    setAcknowledged(false)
+  }, [objectiveId])
+  // The adoption callback is called from inside the effect and callers pass an inline closure, so
+  // it is read through a ref: putting it in the dependency list would re-open the check on every
+  // render and double every call.
+  const onRevisionRef = useRef(onRevision)
+  useEffect(() => {
+    onRevisionRef.current = onRevision
+  })
   // `check.open` returns identity only; the learner-facing stimulus (prompt, choices, items) is a
   // separate read. A build that does not implement `check.get` keeps today's answer-only surface
   // (the question lives in the teaching chat) rather than guessing a question.
@@ -532,14 +546,31 @@ function useOpenCheck({ enrollmentId, objectiveId, revision, enabled, implemente
       setState((previous) =>
         previous.check && previous.check.check_id === checkId ? { ...previous, ...update } : previous
       )
+    // L2: `check.open` bumps the enrollment when it creates the check and returns the new
+    // revision. The read that opened the section carries the older one, so the surface must adopt
+    // this number before the card can submit; otherwise the first answer is refused
+    // STALE_REVISION against a fence the check itself moved.
+    const adopt = (value) => {
+      const next = Number(value)
+      if (Number.isFinite(next) && next > 0 && typeof onRevisionRef.current === 'function') {
+        onRevisionRef.current(next)
+      }
+    }
     rpc(
       'check.open',
-      { enrollment_id: enrollmentId, objective_id: objectiveId },
+      {
+        enrollment_id: enrollmentId,
+        objective_id: objectiveId,
+        ...(acknowledged ? { acknowledge_prerequisites: true } : {})
+      },
       { expectedRevision: Number(revision) || 0 }
     )
       .then((response) => {
         if (cancelled) return
         if (!response || !response.ok) {
+          // A stale fence is recoverable and names the revision it expects next; adopt it so the
+          // effect's next run (and the card's submit) fences on the value the backend holds.
+          adopt(staleRevision(response))
           setState({
             status: 'error',
             check: null,
@@ -550,6 +581,7 @@ function useOpenCheck({ enrollmentId, objectiveId, revision, enabled, implemente
           return
         }
         const opened = response.result
+        adopt(opened && opened.revision)
         setState({
           status: 'ready',
           check: opened,
@@ -617,9 +649,15 @@ function useOpenCheck({ enrollmentId, objectiveId, revision, enabled, implemente
     return () => {
       cancelled = true
     }
-  }, [enrollmentId, objectiveId, revision, enabled, canReadStimulus, ticket])
+  }, [enrollmentId, objectiveId, revision, enabled, canReadStimulus, ticket, acknowledged])
 
-  return { ...state, reload: () => setTicket((value) => value + 1) }
+  return {
+    ...state,
+    // `acknowledge` is the Start anyway control's write: it re-opens the same check with R6's
+    // `acknowledge_prerequisites: true`, so the refusal becomes a recorded learner decision.
+    acknowledge: () => setAcknowledged(true),
+    reload: () => setTicket((value) => value + 1)
+  }
 }
 
 /**
@@ -1962,6 +2000,9 @@ function AttemptControls({
     )
     if (!response.ok) {
       const code = response.error && response.error.code
+      // L2: a stale refusal names the revision the backend holds. Adopt it, so the learner's
+      // next press fences on the current number instead of repeating the same refusal.
+      if (code === 'STALE_REVISION') adoptRevision(staleRevision(response))
       setError(response.error)
       setPhase(code === 'STALE_REVISION' || code === 'CHECK_STALE' ? 'stale' : 'awaiting_input')
       return
@@ -1995,6 +2036,7 @@ function AttemptControls({
       }
     )
     if (!response.ok) {
+      adoptRevision(staleRevision(response))
       setError(response.error)
       setPhase('needs_retry')
       return
@@ -3882,6 +3924,8 @@ function classroomVerdictSentence(result, stimulus, chosenIndex) {
  */
 function ClassroomCheckCard({
   check,
+  openError = null,
+  onStartAnyway = null,
   stimulusStatus = 'ready',
   stimulusError = null,
   enrollmentId,
@@ -3954,6 +3998,11 @@ function ClassroomCheckCard({
       }
     )
     if (!response.ok) {
+      // L2: the refusal names the revision the backend holds; adopt it before the learner's next
+      // press so the same answer is not refused twice for a number the check itself moved.
+      if (response.error && response.error.code === 'STALE_REVISION' && typeof onRevision === 'function') {
+        onRevision(staleRevision(response))
+      }
       setError(response.error)
       setPhase('awaiting_input')
       return
@@ -3963,7 +4012,7 @@ function ClassroomCheckCard({
     setPhase(graded.verdict === 'pass' ? 'graded' : 'wrong')
     if (onVerdict) onVerdict(graded.verdict)
     if (onCommitted) onCommitted(graded)
-  }, [check, canCheck, kind, ticked, selectedChoice, text, enrollmentId, revision, onCommitted, onVerdict])
+  }, [check, canCheck, kind, ticked, selectedChoice, text, enrollmentId, revision, onCommitted, onVerdict, onRevision])
 
   const tryAgain = useCallback(() => {
     nonceRef.current = null
@@ -4032,6 +4081,65 @@ function ClassroomCheckCard({
     setTicked((previous) => (previous.includes(id) ? previous.filter((item) => item !== id) : previous.concat(id)))
   }
 
+  // L3/R6: an unmet prerequisite edge is not a dead end. `check.open` refused because the
+  // learner has not shown the earlier unit's objectives yet, and the refusal itself says they may
+  // start anyway. The card offers exactly that one control; pressing it re-opens the same check
+  // with `acknowledge_prerequisites: true`, and the opened check then carries
+  // `prerequisite_state: unmet_acknowledged`. Any other open failure is named, never disguised as
+  // a missing question.
+  if (openError) {
+    const unmetState =
+      openError.code === 'PREREQUISITE_UNMET' && openError.details ? openError.details.prerequisite_state : null
+    return jsxs('div', {
+      'data-cb3-surface': 'check',
+      'data-cb3-check-refusal': openError.code || 'CHECK_OPEN_FAILED',
+      className: 'cb3-card',
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.75rem',
+        padding: '1.25rem',
+        backgroundColor: cb3Role('card-stock'),
+        border: `1px solid ${cb3Role('rule')}`,
+        borderRadius: cb3Radius('round'),
+        color: cb3Role('ink'),
+        minWidth: 0
+      },
+      children: [
+        jsx(ClassroomQuietLine, {
+          role: 'status',
+          children:
+            openError.message ||
+            'The current check could not be opened.'
+        }, 'refusal'),
+        unmetState && Array.isArray(unmetState.unmet) && unmetState.unmet.length > 0
+          ? jsx('ul', {
+              'data-cb3-prerequisite-unmet': '',
+              style: {
+                margin: 0,
+                paddingInlineStart: '1.1rem',
+                fontFamily: 'var(--cb3-font-ui)',
+                fontSize: cb3Type('meta'),
+                lineHeight: cb3Lead('meta'),
+                color: cb3Role('ink-soft')
+              },
+              children: unmetState.unmet.map((item, index) =>
+                jsx('li', { children: item.title || item.objective_id }, `unmet-${index}`)
+              )
+            }, 'unmet')
+          : null,
+        unmetState && typeof onStartAnyway === 'function'
+          ? jsx(PillAction, {
+              'data-cb3-start-anyway': '',
+              variant: 'primary',
+              label: 'Start anyway',
+              onClick: onStartAnyway
+            }, 'start-anyway')
+          : null
+      ]
+    })
+  }
+
   const card = jsxs('div', {
     'data-cb3-surface': 'check',
     'data-cb3-check': kind,
@@ -4059,6 +4167,16 @@ function ClassroomCheckCard({
             'data-cb-check-revisit': 'true',
             children: CB3_CLASSROOM_COPY.checkRevisit
           }, 'revisit')
+        : null,
+      // E2E L3: an unmet prerequisite the learner chose to start anyway is said out loud, once,
+      // above the question — the refusal copy is gone and this states what the run does not count.
+      check && check.prerequisite_state && check.prerequisite_state.state === 'unmet_acknowledged'
+        ? jsx(ClassroomQuietLine, {
+            'data-cb3-prerequisite-acknowledged': 'unmet_acknowledged',
+            role: 'status',
+            children:
+              'Prerequisite not met — acknowledged. You can start now; the course will not count the prerequisite as met.'
+          }, 'prerequisite')
         : null,
       stimulus && stimulus.prompt
         ? jsx('p', {
@@ -4333,6 +4451,8 @@ function ClassroomV3({
   outline,
   page,
   check,
+  checkError = null,
+  onStartAnyway = null,
   stimulusStatus = 'ready',
   stimulusError = null,
   mode = 'guided',
@@ -4647,6 +4767,8 @@ function ClassroomV3({
           style: { minWidth: 0 },
           children: jsx(ClassroomCheckCard, {
             check,
+            openError: checkError,
+            onStartAnyway,
             stimulusStatus,
             stimulusError,
             enrollmentId,
@@ -4915,12 +5037,20 @@ function ClassroomV3Surface({
     modelRevision(row),
     revisionFloor
   )
+  const adoptRevision = useCallback((value) => {
+    const next = Number(value)
+    if (Number.isFinite(next) && next > 0) setRevisionFloor(next)
+  }, [])
   const check = useOpenCheck({
     enrollmentId,
     objectiveId,
     revision,
     enabled: Boolean(objectiveId) && Boolean(page.data) && backendSupports('check.open'),
-    implemented: backendWire.implemented
+    implemented: backendWire.implemented,
+    // L2: `check.open` returns the revision its own creation bumped to. Adopting it here is what
+    // makes the card's next submit fence on the backend's value instead of the page read's older
+    // one; a stale refusal adopts `current_revision` the same way.
+    onRevision: adoptRevision
   })
   const reloadEngagement = engagement.reload
   // WIRE-9: one XP event per committed passing attempt. `check_submitted` is the contract's own
@@ -5004,6 +5134,10 @@ function ClassroomV3Surface({
     outline: outline.data,
     page: page.data,
     check: check.check,
+    // L3: when `check.open` refused an unmet prerequisite edge, the card needs the refusal and the
+    // one control that answers it — never a warning with no way forward.
+    checkError: check.error,
+    onStartAnyway: check.acknowledge,
     stimulusStatus: check.stimulusStatus,
     stimulusError: check.stimulusError,
     mode,
@@ -5016,12 +5150,10 @@ function ClassroomV3Surface({
     enrollmentId,
     objectiveId,
     revision,
-    // W2-4: an assist moves the enrollment revision before the page refresh lands, so the check
-    // card's next submit fences on the bumped value instead of losing to STALE_REVISION.
-    onRevision: (value) => {
-      const next = Number(value)
-      if (Number.isFinite(next) && next > 0) setRevisionFloor(next)
-    },
+    // W2-4: an assist (and now `check.open` itself) moves the enrollment revision before the page
+    // refresh lands, so the check card's next submit fences on the bumped value instead of losing
+    // to STALE_REVISION.
+    onRevision: adoptRevision,
     onBack,
     onOpenSection,
     onNextSection: advanceFromCheck,
