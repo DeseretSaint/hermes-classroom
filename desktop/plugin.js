@@ -23684,12 +23684,12 @@ function LessonPlayer({
     action.run()
   }
   const ordinal = section && section.ordinal ? String(section.ordinal) : null
-  // The stop chip prints the section's course position and nothing else. It used to divide that
-  // position by the block count: section 7 of a five-block lesson read "STOP 7 OF 5" beside
-  // "Step 1 of 5". The course-wide total is not in the `lesson.page` contract, so the chip does
-  // not print a denominator it would have to invent; the step readout owns "Step n of m".
-  const stopTotal = null
-  const stopLabel = ordinal ? `STOP ${ordinal}` : 'STOP'
+  // The stop chip prints the section's course position over the course's section count, both from
+  // the page's own projection. It used to divide the position by the block count: section 7 of a
+  // five-block lesson read "STOP 7 OF 5" beside "Step 1 of 5". A backend that predates
+  // `section.sections_total` prints the position alone rather than a false total.
+  const stopTotal = section && section.sections_total ? String(section.sections_total) : null
+  const stopLabel = ordinal && stopTotal ? `STOP ${ordinal} OF ${stopTotal}` : ordinal ? `STOP ${ordinal}` : 'STOP'
   // One objective sentence, composed only from recorded fields: the section's own evidence target,
   // in learner words. A section that records no target gets the title alone rather than a slogan.
   const objective =
