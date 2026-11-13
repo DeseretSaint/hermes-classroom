@@ -19,7 +19,7 @@ from __future__ import annotations
 import json
 import unittest
 
-from coursebook import db, generation as gen
+from coursebook import db, executor, generation as gen, job_service
 
 from tests.blueprint_support import blueprint_plan
 from tests.test_blueprint_units import T0, UnitStageCase
@@ -266,9 +266,9 @@ class PrerequisiteAuthoringGateTest(UnitStageCase):
         self.assertEqual(error.code, "PREREQUISITE_UNMET")
         self.assertEqual(error.unit_ordinal, 3)
         self.assertEqual([item["unit_ordinal"] for item in error.unmet_units], [1])
-        self.assertEqual(error.unmet_units[0]["reason"], "sections_unauthored")
+        self.assertEqual(error.unmet_units[0]["reason"], "lessons_unauthored")
         self.assertIn("unit 1", str(error))
-        self.assertIn("authored 0 of 2 sections", str(error))
+        self.assertIn("0 of 2 lesson(s) authored", str(error))
         self.assertIn("no provider call was made", str(error))
         # The refusal is before the first call, and it wrote nothing.
         self.assertEqual(llm.requests, [])
@@ -282,6 +282,27 @@ class PrerequisiteAuthoringGateTest(UnitStageCase):
             ).fetchone()["n"]
         self.assertEqual(int(lessons), 0)
         self.assertEqual(int(usage_after), int(usage_before))
+
+    def test_the_refusal_reaches_jobs_get_as_a_contract_legal_envelope(self) -> None:
+        """The job surface, not only the exception: the operator reads a frozen-catalogue error."""
+        plan = self._three_unit_plan()
+        _course_id, plan_id = self.seed(plan)
+        self._author_unit_sections(plan, plan_id, (1, 2, 3))
+        llm = self.lesson_llm()
+        brief = {"stage": "lessons", "plan_id": plan_id, "unit_ordinal": 3}
+        job_id = job_service.create("plan", brief, now=T0)["job_id"]
+        stages = executor.resolvers(llm=llm, search=None, now=T0)["plan"](brief)
+        view = job_service.execute(job_id, stages, now=T0)
+        self.assertEqual(view["state"], "failed")
+        error = view["error"]
+        self.assertEqual(error["code"], "PREREQUISITE_UNMET")
+        self.assertEqual(error["category"], "state")
+        self.assertFalse(error["retryable"])
+        self.assertEqual(error["details"]["unit_ordinal"], 3)
+        self.assertEqual(
+            [item["unit_ordinal"] for item in error["details"]["unmet_units"]], [1]
+        )
+        self.assertEqual(llm.requests, [])
 
     def test_a_unit_proceeds_once_its_declared_prerequisite_is_authored(self) -> None:
         plan = self._three_unit_plan()
@@ -338,8 +359,9 @@ class PrerequisiteAuthoringGateTest(UnitStageCase):
                 unit_ordinal=3,
                 now=T0,
             )
-        self.assertEqual(caught.exception.unmet_units[0]["sections_authored"], 1)
-        self.assertIn("authored 1 of 2 sections", str(caught.exception))
+        self.assertEqual(caught.exception.unmet_units[0]["sections_authored"], 2)
+        self.assertEqual(caught.exception.unmet_units[0]["lessons_authored"], 1)
+        self.assertIn("1 of 2 lesson(s) authored", str(caught.exception))
         self.assertEqual(llm.requests, [])
 
 

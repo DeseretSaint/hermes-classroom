@@ -13405,14 +13405,16 @@ def _prerequisite_unit_shortfall(
     """Prerequisite units of ``unit`` that are not authored for ``digest`` (E2E S4).
 
     The plan gate only proves the edges' *shape*; nothing made authoring follow them. This is the
-    deterministic completion read the lesson job gates on, and it costs one query per prerequisite
-    unit — no provider call, no row written.
+    deterministic completion read the lesson job gates on, and it costs a few queries per
+    prerequisite unit — no provider call, no row written.
 
-    A unit is complete when every stored section of that unit has at least one ``gen_lessons`` row
-    for this plan hash. State is deliberately not part of it: a parked lesson still carries the
-    page and check a review section presents (CP-015j), so it is authored work, and refusing on it
-    would re-introduce the false failure that rule removed. A unit with no sections has not been
-    through the unit stage at all.
+    "Complete" is the same fact :func:`unit_authoring_state` already reads, so the gate and the
+    executor's "what still needs authoring" answer cannot disagree: the unit has its declared
+    ``target_lessons`` sections at this plan digest, and every one of those sections has a stored
+    lesson at the digest. Lesson state is deliberately not part of it — a parked lesson still
+    carries the page and check a review section presents (CP-015j), so it is authored work, and
+    refusing on it would re-introduce the false failure that rule removed. A unit with no
+    sections at this digest has not been through the unit stage for this plan.
     """
     shortfall: list[dict[str, Any]] = []
     for raw in sorted({int(value) for value in unit.get("prereq_unit_ordinals") or []}):
@@ -13425,39 +13427,48 @@ def _prerequisite_unit_shortfall(
                     "reason": "missing_unit",
                     "sections_total": 0,
                     "sections_authored": 0,
+                    "lessons_authored": 0,
                 }
             )
             continue
-        sections = _unit_section_rows(connection, plan_id, str(prerequisite["id"]))
-        if not sections:
+        target = int(prerequisite.get("target_lessons") or 0)
+        section_ids = [
+            str(row["id"])
+            for row in connection.execute(
+                "SELECT id FROM gen_plan_sections WHERE plan_id = ? AND plan_hash = ?"
+                " AND unit_id = ? ORDER BY ordinal",
+                (str(plan_id), str(digest), str(prerequisite["id"])),
+            ).fetchall()
+        ]
+        if not section_ids:
             shortfall.append(
                 {
                     "unit_ordinal": raw,
                     "title": prerequisite.get("title"),
                     "reason": "no_sections",
-                    "sections_total": 0,
+                    "sections_total": target,
                     "sections_authored": 0,
+                    "lessons_authored": 0,
                 }
             )
             continue
-        section_ids = [str(section["section_id"]) for section in sections]
         placeholders = ",".join("?" for _ in section_ids)
-        authored = {
-            str(row["section_id"])
-            for row in connection.execute(
-                f"SELECT DISTINCT section_id FROM gen_lessons WHERE plan_hash = ?"
-                f" AND section_id IN ({placeholders})",
+        lessons = int(
+            connection.execute(
+                f"SELECT COUNT(*) AS n FROM gen_lessons WHERE plan_hash = ? AND section_id"
+                f" IN ({placeholders})",
                 (str(digest), *section_ids),
-            ).fetchall()
-        }
-        if len(authored) != len(section_ids):
+            ).fetchone()["n"]
+        )
+        if len(section_ids) != target or lessons != len(section_ids):
             shortfall.append(
                 {
                     "unit_ordinal": raw,
                     "title": prerequisite.get("title"),
-                    "reason": "sections_unauthored",
-                    "sections_total": len(section_ids),
-                    "sections_authored": len(authored),
+                    "reason": "lessons_unauthored",
+                    "sections_total": target,
+                    "sections_authored": len(section_ids),
+                    "lessons_authored": lessons,
                 }
             )
     return shortfall
@@ -13474,8 +13485,8 @@ def _describe_prerequisite_shortfall(shortfall: Sequence[Mapping[str, Any]]) -> 
             parts.append(f"{label} has no authored sections")
         else:
             parts.append(
-                f"{label} authored {item.get('sections_authored', 0)} of "
-                f"{item.get('sections_total', 0)} sections"
+                f"{label} has {item.get('lessons_authored', 0)} of "
+                f"{item.get('sections_total', 0)} lesson(s) authored"
             )
     return "; ".join(parts)
 

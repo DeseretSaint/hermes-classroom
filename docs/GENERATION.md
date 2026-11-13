@@ -1395,9 +1395,11 @@ unit 3 could be authored before unit 1, and its review section then failed the w
 unit 1's owner checks did not exist yet. The job now reads `prereq_unit_ordinals` immediately after
 resolving the unit and refuses, before the review/coverage gates and the budget preflight, with
 `PrerequisiteUnitIncomplete` (contract code `PREREQUISITE_UNMET`, non-retryable). The refusal names
-each incomplete prerequisite unit and how many of its sections are authored; a prerequisite unit is
-complete when every stored section of it has a `gen_lessons` row for the plan hash being authored,
-and a *parked* prerequisite lesson counts because its page and check exist (CP-015j). The refusal
+each incomplete prerequisite unit and how many of its lessons are authored; a prerequisite unit is
+complete when it has its declared `target_lessons` sections at the plan digest being authored and
+every one of those sections has a stored lesson at that digest — the same read
+`unit_authoring_state` uses, so the gate and the executor cannot disagree — and a *parked*
+prerequisite lesson counts because its page and check exist (CP-015j). The refusal
 reads the database only: no provider call, no lesson row, no usage row. A unit's own edges only —
 unit 3 declaring unit 1 is not blocked by an unauthored unit 2. `tests/test_lesson_unit_context.py`
 pins the refusal, its zero-spend shape, the partial-shortfall message and the proceed-once-authored
