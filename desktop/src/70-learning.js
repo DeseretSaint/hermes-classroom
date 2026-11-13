@@ -62,7 +62,9 @@ const OBJECTIVE_STATE_COPY = {
   independent_evidence: 'Independent evidence',
   delayed_evidence: 'Delayed evidence',
   review_due: 'Review due',
-  needs_review: 'Needs review',
+  // E2E L5: a failed attempt or a page the validator parked is not a spaced review. The word
+  // says what happened, not when it is next due.
+  needs_review: 'Could not be written',
   overridden: 'Overridden'
 }
 
@@ -221,7 +223,9 @@ const SECTION_STATE_SEMANTIC = {
   independent_evidence: { key: 'complete', label: 'Complete', icon: 'pass' },
   delayed_evidence: { key: 'complete', label: 'Complete', icon: 'pass' },
   review_due: { key: 'review', label: 'Review due', icon: 'history' },
-  needs_review: { key: 'review', label: 'Review needed', icon: 'history' },
+  // E2E L5: its own key, word and icon. It shares nothing with `review_due`, so a rejected or
+  // unwritten page can never be painted as a spaced-review card.
+  needs_review: { key: 'unwritten', label: 'Could not be written', icon: 'warning' },
   overridden: { key: 'moved_on', label: 'Moved on without a grade', icon: 'dash' }
 }
 
@@ -229,6 +233,20 @@ function sectionStateSemantic(state, isNext) {
   const settled = state === 'independent_evidence' || state === 'delayed_evidence'
   if (isNext && !settled) return { key: 'next', label: 'Next', icon: 'chevron-right' }
   return SECTION_STATE_SEMANTIC[state] || SECTION_STATE_SEMANTIC.not_started
+}
+
+/**
+ * The state a row should paint, including the authored page's own state.
+ *
+ * A section whose newest authored page is parked (`lesson_state == 'needs_review'`) could not be
+ * written, whatever the objective's evidence state says. The backend records that fact; the row
+ * shows it instead of guessing from the check state.
+ */
+function sectionSemanticFor(entry, isNext) {
+  if (entry && entry.lesson_state === 'needs_review') {
+    return { key: 'unwritten', label: 'Could not be written', icon: 'warning' }
+  }
+  return sectionStateSemantic(entry ? entry.state : null, isNext)
 }
 
 /**
@@ -251,7 +269,7 @@ function objectiveProgress(objectives, totalFallback) {
   const list = Array.isArray(objectives) ? objectives.filter(Boolean) : []
   const total = list.length > 0 ? list.length : Math.max(0, Number(totalFallback) || 0)
   const independent = list.filter((entry) => entry.independent).length
-  const due = list.filter((entry) => entry.state === 'review_due' || entry.state === 'needs_review').length
+  const due = list.filter((entry) => entry.state === 'review_due').length
   return { total, independent, due, statement: progressStatement(independent, total) }
 }
 

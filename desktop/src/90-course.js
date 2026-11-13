@@ -17,7 +17,7 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
       }
   const nextEntry = mainlineObjective(row, objectives)
   const nextTitle = section ? section.title : nextEntry ? nextEntry.title : next.label || null
-  const nextSemantic = nextEntry ? sectionStateSemantic(nextEntry.state, true) : null
+  const nextSemantic = nextEntry ? sectionSemanticFor(nextEntry, true) : null
   const currentId = section ? section.objective_id : nextEntry ? nextEntry.objective_id : null
   const phone = cbLayoutFor(useCbViewportWidth()) === 'phone'
 
@@ -286,6 +286,7 @@ function FieldNoteMark({ title, compact }) {
 function sectionToneColor(key) {
   if (key === 'complete') return 'var(--cb-field)'
   if (key === 'review') return 'var(--cb-ochre)'
+  if (key === 'unwritten') return 'var(--cb-coral)'
   if (key === 'next') return 'var(--cb-accent)'
   return 'var(--cb-ink-soft)'
 }
@@ -572,7 +573,7 @@ function TextbookView({ row, page, pageState, review, notebooks, outline, planSt
         due: Number(summary.review_due) || 0
       }
   const nextEntry = mainlineObjective(row, objectives) || rows.find((entry) => !entry.independent) || null
-  const nextSemantic = nextEntry ? sectionStateSemantic(nextEntry.state, true) : null
+  const nextSemantic = nextEntry ? sectionSemanticFor(nextEntry, true) : null
   const nextTitle = nextEntry ? nextEntry.title : null
 
   // A plan with more than one unit groups its sections. One implicit unit (a legacy or pack plan)
@@ -627,7 +628,7 @@ function TextbookView({ row, page, pageState, review, notebooks, outline, planSt
       SectionRow,
       {
         entry,
-        semantic: sectionStateSemantic(entry.state, isNext),
+        semantic: sectionSemanticFor(entry, isNext),
         isNext,
         onOpen: onOpenSection
       },
@@ -3006,7 +3007,8 @@ function CourseHomeAside({
   busy,
   onContinue,
   onOpenPlan,
-  onOpenOther
+  onOpenOther,
+  onBack
 }) {
   const nextStep = (row && row.next_step) || {}
   const motion = useCbMotion()
@@ -3024,7 +3026,13 @@ function CourseHomeAside({
       ? CB3_COURSE_COPY.planReviewBody
       : null
   const run = () => {
-    if (planReview || complete) {
+    if (complete) {
+      // A finished course has no next lesson and no plan to re-open. The one honest action is
+      // back to the library, where the next course can be chosen.
+      if (typeof onBack === 'function') onBack()
+      return
+    }
+    if (planReview) {
       if (typeof onOpenPlan === 'function') onOpenPlan()
       return
     }
@@ -3467,7 +3475,8 @@ function CourseHomeV3({
             busy,
             onContinue,
             onOpenPlan,
-            onOpenOther
+            onOpenOther,
+            onBack
           }, 'aside')
         ]
       }, 'body')
@@ -4117,6 +4126,43 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
     planStatus: outline.status
   })
   const heroReadable = heroReadiness.state === 'readable'
+  // E2E L5: the hero's repair action, identical in shape to the section page's. It is offered
+  // only when the backend reports a parked page, and it carries the stored reasons as the fence.
+  const repairHeroLesson = useCallback(async () => {
+    const planId = outline.data && outline.data.plan ? outline.data.plan.plan_id : null
+    const sectionId = page.data && page.data.section ? page.data.section.section_id : null
+    const reasons =
+      page.data && page.data.section && Array.isArray(page.data.section.rejection_reasons)
+        ? page.data.section.rejection_reasons
+        : []
+    if (!planId || !sectionId) {
+      setNotice(
+        'This build cannot name the authored section for this objective, so it cannot repair it from here.'
+      )
+      return
+    }
+    setBusy(true)
+    setNotice(null)
+    const payload = { enrollment_id: row.enrollment_id, plan_id: planId, section_id: sectionId }
+    if (reasons.length) payload.reasons = reasons
+    const response = await rpc('lesson.regenerate', payload, {
+      idempotencyKey: newOperationId('lesson-repair')
+    })
+    setBusy(false)
+    if (!response.ok) {
+      setNotice(
+        response.error
+          ? `${response.error.code}: ${describeError(response.error)}`
+          : 'The repair could not be queued.'
+      )
+      return
+    }
+    setNotice(
+      'Queued one new page for this section. Other sections, their media and every attempt are untouched.'
+    )
+    refresh()
+    if (onChanged) onChanged()
+  }, [outline.data, page.data, row.enrollment_id, refresh, onChanged])
   const heroPlan = lessonHeroPlan(heroReadiness, {
     overview: view === 'overview',
     sectionOpen: Boolean(openSectionId)
@@ -4381,7 +4427,8 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
               jobs.reload()
               outline.reload()
             },
-            onRetryLessonsJob: retryLessonsJob
+            onRetryLessonsJob: retryLessonsJob,
+            onRepairLesson: repairHeroLesson
           }),
 
       jsx(NoticeLine, { notice, busy }),

@@ -316,7 +316,7 @@
         },
         "stimulus_format": null,
         "submit": {
-          "contract_version": 27,
+          "contract_version": 28,
           "ok": true,
           "operation_id": "op-h40-attempt-submit-000026",
           "result": {
@@ -439,8 +439,11 @@
       "section": {
         "evidence_target": "procedure",
         "last_opened_at": null,
+        "lesson_state": "validated",
         "objective_id": "000000000000000a",
         "ordinal": 1,
+        "rejection_reasons": [],
+        "section_id": "0000000000000018",
         "state": "not_started",
         "title": "Remove the rear wheel, replace the inner tube and check the brakes"
       },
@@ -586,8 +589,11 @@
           "evidence_target": "procedure",
           "independent": false,
           "last_opened_at": null,
+          "lesson_rejection_reasons": [],
+          "lesson_state": "validated",
           "objective_id": "000000000000000a",
           "ordinal": 1,
+          "section_id": "0000000000000018",
           "state": "not_started",
           "title": "Remove the rear wheel, replace the inner tube and check the brakes"
         }
@@ -606,8 +612,11 @@
                 "evidence_target": "procedure",
                 "independent": false,
                 "last_opened_at": null,
+                "lesson_rejection_reasons": [],
+                "lesson_state": "validated",
                 "objective_id": "000000000000000a",
                 "ordinal": 1,
+                "section_id": "0000000000000018",
                 "state": "not_started",
                 "title": "Remove the rear wheel, replace the inner tube and check the brakes"
               }

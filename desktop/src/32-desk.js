@@ -622,7 +622,12 @@ function FieldDesk({
       if (!outcome.ok && outcome.reason === 'no-binding') onOpen(desk.row, desk.current.objective_id)
       return
     }
-    // Review, plan and pack states are course-detail actions, not a second lesson path.
+    if (kind === 'repair_lesson') {
+      // The section owns the reasons and the one Repair control; open it instead of a second path.
+      if (desk.current) onOpen(desk.row, desk.current.objective_id)
+      return
+    }
+    // Review, plan, pack and completion states are course-detail actions, not a second lesson path.
     onOpen(desk.row)
   }, [desk, profile, onOpen, library])
 

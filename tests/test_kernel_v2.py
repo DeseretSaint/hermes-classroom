@@ -49,6 +49,12 @@ class LibraryTest(KernelCase):
         lesson = self.prepare_lesson()
         self.assertEqual(self.ok("library.list", {"filter": "review_due"})["result"]["total"], 0)
         self.submit(lesson, "5")  # not_yet -> needs_review
+        # E2E L5: a failed attempt is `needs_review`, which is not a spaced review. Only an
+        # objective whose own state is `review_due` belongs in this filter.
+        self.assertEqual(self.ok("library.list", {"filter": "review_due"})["result"]["total"], 0)
+        self.execute(
+            "UPDATE objectives SET state = 'review_due' WHERE id = ?", (lesson["objective_id"],)
+        )
         result = self.ok("library.list", {"filter": "review_due"})["result"]
         self.assertEqual(result["total"], 1)
         self.assertEqual(result["items"][0]["next_step"]["kind"], "resolve_review_due")

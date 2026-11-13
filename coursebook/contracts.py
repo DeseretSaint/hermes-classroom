@@ -30,7 +30,7 @@ CONTRACT_DIR = Path(__file__).resolve().parent.parent / "contracts"
 CONTRACT_FILES: dict[str, str] = {
     "cb.vocabulary": "vocabulary.v1.json",
     "cb.errors": "errors.v4.json",
-    "cb.rpc": "rpc.v27.json",
+    "cb.rpc": "rpc.v28.json",
     "cb.db": "db.v14.json",
     "cb.jobs": "jobs.v5.json",
     # H-137 (H-73 §4): ``cb.pack`` is the one contract that accepts more than one document
@@ -55,7 +55,7 @@ CONTRACT_FILES: dict[str, str] = {
 
 #: The contract whose version the plugin speaks on the wire.
 WIRE_CONTRACT_ID = "cb.rpc"
-WIRE_CONTRACT_VERSION = 27
+WIRE_CONTRACT_VERSION = 28
 
 
 #: Version -> file name for every contract that accepts more than one document version.
@@ -80,8 +80,12 @@ CONTRACT_VERSION_FILES: dict[str, dict[int, str]] = {
     # Item 28b: v27 is additive over v26 — `lesson_document_media.labels`, the text the product UI
     # draws over a textless figure, optional and absent by default. v26 stays readable so a client
     # that pinned the plate-geometry wire can still validate.
+    # E2E L4/L5: v28 is additive over v27 — the terminal `complete` and repair-only
+    # `repair_lesson` next steps, the parked lesson's section identity/reasons on
+    # `outline_objective` and `lesson.page`, and `lesson.regenerate.reasons`. v27 stays readable
+    # so a client that pinned the figure-labels wire can still validate.
     "cb.rpc": {22: "rpc.v22.json", 23: "rpc.v23.json", 24: "rpc.v24.json", 25: "rpc.v25.json",
-               26: "rpc.v26.json", 27: "rpc.v27.json"},
+               26: "rpc.v26.json", 27: "rpc.v27.json", 28: "rpc.v28.json"},
     # t_d33984eb: the v1 projection stays readable by explicit version as immutable history; v2
     # is the inventory current (one trust-label sentence corrected, no rule or output moved).
     "cb.projection": {1: "projection.v1.json", 2: "projection.v2.json"},

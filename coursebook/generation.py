@@ -13626,6 +13626,9 @@ def run_lesson_job(
     # a section-scoped job: the scope is the section the author named, not a partial outline.
     scoped_section = brief.get("section_id")
     regenerate = bool(brief.get("regenerate"))
+    repair_reasons = [
+        str(reason) for reason in (brief.get("repair_reasons") or []) if str(reason).strip()
+    ][:20]
     if scoped_section is not None:
         section_rows = [
             section for section in section_rows if str(section.get("section_id")) == str(scoped_section)
@@ -13791,6 +13794,7 @@ def run_lesson_job(
                     park_reason=park_reason,
                     version=next_version,
                     unit=unit,
+                    repair_feedback=repair_reasons if forced else [],
                 )
             )
     except BaseException as exc:
@@ -14044,6 +14048,7 @@ def _author_section(
     version: int = 1,
     goal: str | None = None,
     unit: Mapping[str, Any] | None = None,
+    repair_feedback: Sequence[str] | None = None,
 ) -> dict[str, Any]:
     objective_ordinal = int(
         review_target["objective_ordinal"]
@@ -14094,6 +14099,15 @@ def _author_section(
     # W2-2: the draft attempt 2 repairs. It is the document the rules or the validator refused,
     # carried into the next request so the parts that already passed are not authored twice.
     previous_draft: dict[str, Any] | None = None
+    # E2E L5: a repair names the reasons the parked revision was refused for, so attempt 1 starts
+    # from that refusal instead of re-authoring blind. The reasons are the stored ones the kernel
+    # fenced the request on, never prose the caller supplied as authority.
+    repair_feedback = [str(reason) for reason in (repair_feedback or []) if str(reason).strip()][:20]
+    if repair_feedback:
+        feedback = (
+            "The previous revision of this section was refused for:\n- "
+            + "\n- ".join(repair_feedback)
+        )
 
     for attempt in range(1, LESSON_ATTEMPTS + 1):
         # Each attempt starts clean so no stale validator report can be attached to a new draft.

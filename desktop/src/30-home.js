@@ -18,7 +18,7 @@ const DESK_STATE_WORD = {
   independent_evidence: 'Evidence',
   delayed_evidence: 'Delayed evidence',
   review_due: 'Review due',
-  needs_review: 'Needs review',
+  needs_review: 'Could not be written',
   overridden: 'Overridden'
 }
 
@@ -29,7 +29,7 @@ const DESK_STATE_TONE = {
   independent_evidence: 'done',
   delayed_evidence: 'done',
   review_due: 'due',
-  needs_review: 'due',
+  needs_review: 'attention',
   overridden: 'quiet'
 }
 
@@ -39,7 +39,10 @@ const DESK_PRIMARY_LABEL = {
   resolve_review_due: 'Start the review',
   rebind_session: 'Reconnect the chat',
   review_plan: 'Review the plan',
-  review_pack: 'Review the pack'
+  review_pack: 'Review the pack',
+  // E2E L4/L5: a finished course and a page that could not be written each get their own word.
+  complete: 'Course complete',
+  repair_lesson: 'Repair this lesson'
 }
 
 function deskToneColor(tone) {
@@ -59,8 +62,16 @@ function mainlineObjective(row, objectives) {
   if (list.length === 0) return null
   const kind = row && row.next_step ? row.next_step.kind : null
   if (kind === 'resolve_review_due') {
-    const due = list.find((entry) => entry.state === 'review_due' || entry.state === 'needs_review')
+    const due = list.find((entry) => entry.state === 'review_due')
     if (due) return due
+  }
+  if (kind === 'repair_lesson') {
+    // The backend names the objective its parked section belongs to; never guess by recency.
+    const named = row.next_step.objective_id
+      ? list.find((entry) => entry.objective_id === row.next_step.objective_id)
+      : null
+    const parked = named || list.find((entry) => entry.lesson_state === 'needs_review')
+    if (parked) return parked
   }
   const currentId = row && row.evidence_summary ? row.evidence_summary.current_objective_id : null
   const byId = currentId ? list.find((entry) => entry.objective_id === currentId) : null
@@ -1534,9 +1545,7 @@ function buildDeskModel({ library, outline, estimate, selectedCourseId = null, o
   const current = mainlineObjective(row, objectives) || (readState !== 'ready' ? rowFallbackCurrent(row) : null)
   const total = outline && Number(outline.total) ? Number(outline.total) : objectives.length
   const settled = objectives.filter((entry) => entry.independent).length
-  const dueCount = objectives.filter(
-    (entry) => entry.state === 'review_due' || entry.state === 'needs_review'
-  ).length
+  const dueCount = objectives.filter((entry) => entry.state === 'review_due').length
   const next = row.next_step || {}
   return {
     rows,
@@ -2821,6 +2830,8 @@ function cbNextStopSentence(kind) {
   if (kind === 'start_lesson') return '. Work through this section, then finish its check.'
   if (kind === 'review_plan') return '. Read the recorded plan before the first lesson starts.'
   if (kind === 'review_pack') return '. Check the imported pack before it becomes a course.'
+  if (kind === 'repair_lesson') return '. The page could not be written; repair it from the reasons it names.'
+  if (kind === 'complete') return '. Every section has evidence and nothing is due.'
   return '. Open it to see what this course records next.'
 }
 
@@ -2866,14 +2877,24 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onSeePlan, onRetry
 
   // A lesson start needs a section id. Plan/review/pack next steps open Course Detail and do not,
   // so a failed outline read never disables the one primary action.
-  const needsSection = desk.primaryKind === 'start_lesson' || desk.primaryKind === 'resume_lesson'
+  const needsSection =
+    desk.primaryKind === 'start_lesson' ||
+    desk.primaryKind === 'resume_lesson' ||
+    desk.primaryKind === 'repair_lesson'
   const canPrimary = Boolean(desk.row) && (Boolean(current) || !needsSection)
   // A parent-authored classroom is still a classroom: the plate takes the plum seal and the
   // same composition. The companion is the adult's own pet, never an invented child avatar.
   const isParent = Boolean(desk.row && desk.row.recipe === 'parent')
   const pet = useStudyCompanion(companionEnabled !== false)
   const companion = pet ? jsx(StudyCompanion, { info: pet, size: compact ? 44 : 64 }, 'companion') : null
-  const label = desk.primaryKind === 'resolve_review_due' ? 'THE REVIEW IS DUE' : 'CONTINUE THE TRAIL'
+  const label =
+    desk.primaryKind === 'resolve_review_due'
+      ? 'THE REVIEW IS DUE'
+      : desk.primaryKind === 'complete'
+        ? 'COURSE COMPLETE'
+        : desk.primaryKind === 'repair_lesson'
+          ? 'THE PAGE COULD NOT BE WRITTEN'
+          : 'CONTINUE THE TRAIL'
   const sentence = cbNextStopSentence(desk.primaryKind)
   const plateField = isParent ? 'var(--cb-plum-soft)' : 'var(--cb-lamp-soft)'
   const plateEdge = isParent ? 'var(--cb-plum)' : 'var(--cb-lamp)'
