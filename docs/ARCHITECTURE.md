@@ -299,9 +299,17 @@ runs every 5 s on a separate `coursebook-job-reaper` thread (separate so a pump 
 cannot stop it):
 
 * a live lease is honoured, whoever owns it;
-* `running` + expired/absent lease → `interrupted_requires_retry`, lease cleared, brief and
-  checkpoint preserved;
+* `running` + expired/absent lease **and** a heartbeat older than `COURSEBOOK_WORKER_LOST_SECONDS`
+  (default: the lease) → `failed` with `details.reason = WORKER_LOST` and a retry hint; the lease is
+  cleared and the brief/checkpoint are preserved for the retry (G6). A recent heartbeat keeps a short
+  grace window after the lease lapses, so clock skew is not read as death;
 * `cancel_requested`/`cancelling` + expired/absent lease → `cancelled`.
+
+`jobs.cancel` settles the same dead-worker row itself (running → cancel_requested → cancelled in one
+fenced transaction): a request posted to a thread that no longer exists is not a cancel (G6). A
+genuinely live lease still receives `cancel_requested` and stops at its own stage boundary.
+`executor.start_tick` also starts the reaper for a real plugin context that has no agent event loop,
+so a host without a pump thread still watches liveness.
 
 The reaper thread also has **no request scope of its own** (H-182/D6). Copying the context is not
 enough: the copied context may carry no profile override at all, so the thread resolved

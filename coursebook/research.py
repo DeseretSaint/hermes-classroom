@@ -90,10 +90,24 @@ SCOPES: tuple[str, ...] = ("single", "short", "full")
 DEFAULT_DEPTH = "working"
 DEFAULT_SCOPE = "short"
 
+#: How many objectives one sourced capability may honestly carry. Every ``sourced`` objective
+#: needs its own verbatim quote from a cited excerpt, and a course may split one capability into
+#: an ordered pair of sub-performances (recognise it, then do it unaided) — never a third variant
+#: over the same claim. This ratio is the bridge between the two halves of the contract: the
+#: research cell decides how many sources a pass may fetch, and the objective band may not ask for
+#: more objectives than that cell can source. ``generation`` reads it as the objective ceiling and
+#: ``tests/test_objective_source_ratio.py`` holds it against every scope's band.
+OBJECTIVES_PER_SOURCE = 2
+
 #: One row per (scope, depth): ``(max_queries, max_results_per_query, max_pages, max_sources)``.
 #: Every value is a ceiling checked before the call it bounds; the derived query set may be
 #: smaller. A full course never receives the old six-page demo pass: at ``working`` it gets at
-#: least 9 queries / 14 pages, and at ``deep`` 12 / 18 — bounded, never an open crawl.
+#: least 9 queries / 14 pages, and at ``deep`` 12 / 22 — bounded, never an open crawl.
+#:
+#: E2E S6: the earlier full/``deep`` cell fetched 16 pages against a 12-to-40-objective band, so a
+#: 40-objective course could honestly source 0.4 objectives per page. The cell now fetches 20, which
+#: is the smallest budget that satisfies the band's own ceiling at ``OBJECTIVES_PER_SOURCE``
+#: (20 × 2 = 40); the band's floor of 12 was already reachable.
 _BUDGET_MATRIX: dict[str, dict[str, tuple[int, int, int, int]]] = {
     "single": {
         "survey": (2, 4, 2, 2),
@@ -108,7 +122,7 @@ _BUDGET_MATRIX: dict[str, dict[str, tuple[int, int, int, int]]] = {
     "full": {
         "survey": (6, 5, 8, 8),
         "working": (9, 5, 14, 12),
-        "deep": (12, 6, 18, 16),
+        "deep": (12, 6, 22, 20),
     },
 }
 

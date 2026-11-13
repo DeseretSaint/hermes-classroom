@@ -537,10 +537,10 @@ def _reaper_loop(interval: float) -> None:
                 # not a failure; repeating the same line every five seconds is the defect.
                 logger.info("coursebook job reaper waiting: %s", skipped)
             last_skip = skipped
-            if result.get("interrupted") or result.get("cancelled"):
+            if result.get("worker_lost") or result.get("cancelled"):
                 logger.warning(
-                    "coursebook job reaper: running->interrupted=%s cancel->cancelled=%s",
-                    result.get("interrupted"),
+                    "coursebook job reaper: worker_lost->failed=%s cancel->cancelled=%s",
+                    result.get("worker_lost"),
                     result.get("cancelled"),
                 )
         except Exception:  # noqa: BLE001 - one bad pass must not kill the reaper
@@ -592,6 +592,12 @@ def start_tick(ctx: Any, *, interval: float | None = None) -> Any:
     dashboard-only process has no agent event loop, and inventing a thread there would outlive
     the object that owns it. ``on_unload``, when present, stops the loop.
 
+    G6: the **liveness watchdog is not the pump**. A host that registers the plugin without an
+    agent event loop still needs ``reconcile_expired`` running, otherwise an expired job waits for
+    the next process restart — which is exactly the thirty-minute ``running`` row the live probe
+    found. So a real plugin context (one that can unload us) starts the reaper even when no tick
+    loop is started; a bare ``object()`` starts nothing.
+
     CB-011 integration fix (Vellum): ``ctx.spawn_task`` requires a *running* asyncio loop, but the
     Hermes plugin loader calls ``register(ctx)`` synchronously (observed on ``hermes serve`` and
     ``plugins doctor``: ``RuntimeWarning: coroutine '_tick_loop' was never awaited`` /
@@ -604,7 +610,10 @@ def start_tick(ctx: Any, *, interval: float | None = None) -> Any:
     """
     global _TICK_TASK, _TICK_THREAD
     spawn = getattr(ctx, "spawn_task", None)
+    unload = getattr(ctx, "on_unload", None)
     if not callable(spawn):
+        if callable(unload):
+            _start_reaper()
         return None
     if _TICK_TASK is not None and not getattr(_TICK_TASK, "done", lambda: True)():
         return _TICK_TASK
@@ -618,7 +627,6 @@ def start_tick(ctx: Any, *, interval: float | None = None) -> Any:
             configured = TICK_SECONDS
     _STOP.clear()
     _start_reaper()
-    unload = getattr(ctx, "on_unload", None)
     try:
         asyncio.get_running_loop()
     except RuntimeError:

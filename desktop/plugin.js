@@ -9764,8 +9764,8 @@ function LibraryView({ implemented, createOpen, onOpen, onStartSyllabus, onStart
  * one-line consequence, and the two numbers that are actually enforced:
  *
  *   sections  `coursebook/generation.py` authors one section per blueprint objective, so the
- *             section band is `SCOPE_EXPECTATIONS[key]["blueprint_objectives"]`: (1,1), (3,6),
- *             (12,40). `tests/test_desktop_create_flow` re-reads that Python table and refuses
+ *             section band is `SCOPE_EXPECTATIONS[key]["blueprint_objectives"]`: (1,1), (2,10),
+ *             (9,40). `tests/test_desktop_create_flow` re-reads that Python table and refuses
  *             drift, so this is a checked copy rather than a second authority.
  *   trail     how many stops the card's schematic draws. It is the band's floor, capped at six so
  *             the miniature stays a trail; `full` carries a dashed tail because its band is open.
@@ -23614,12 +23614,12 @@ function LessonPlayer({
     action.run()
   }
   const ordinal = section && section.ordinal ? String(section.ordinal) : null
-  // Item 42: one denominator for the whole lesson surface. The session's own step count is the
-  // only total a learner can act on here ("how much of this stop is left"), and it is the number
-  // the step readout advances. The course's objective total is a trail fact and is printed once,
-  // as "Section n of m" — printing it here too gave one session two disagreeing totals.
-  const stopTotal = steps.length > 0 ? String(steps.length) : null
-  const stopLabel = ordinal && stopTotal ? `STOP ${ordinal} OF ${stopTotal}` : ordinal ? `STOP ${ordinal}` : 'STOP'
+  // The stop chip prints the section's course position and nothing else. It used to divide that
+  // position by the block count: section 7 of a five-block lesson read "STOP 7 OF 5" beside
+  // "Step 1 of 5". The course-wide total is not in the `lesson.page` contract, so the chip does
+  // not print a denominator it would have to invent; the step readout owns "Step n of m".
+  const stopTotal = null
+  const stopLabel = ordinal ? `STOP ${ordinal}` : 'STOP'
   // One objective sentence, composed only from recorded fields: the section's own evidence target,
   // in learner words. A section that records no target gets the title alone rather than a slogan.
   const objective =
@@ -23637,7 +23637,7 @@ function LessonPlayer({
     children: [
       jsxs('header', {
         'data-cb-player-bar': '',
-        'data-cb-player-stop': `${ordinal || ''}/${stopTotal || ''}`,
+        'data-cb-player-stop': stopTotal ? `${ordinal || ''}/${stopTotal}` : (ordinal || ''),
         style: {
           display: 'flex',
           flexDirection: 'column',
@@ -24610,7 +24610,17 @@ function SectionPage({
           ? jsx(QuietNote, { children: document.view_note })
           : null,
 
-        !bindingActive && pageReadable
+        // The page's own provenance is served (``lesson.page.provenance``) and no learner surface
+        // read it: a page whose independent validation did not pass looked exactly like one that
+        // did. Say it where the learner is, in the backend's own words.
+        document && pageReadable && page && page.provenance && page.provenance.independent === false
+          ? jsx(QuietNote, {
+              children: page.provenance.warning
+                || 'This page was checked by the model that wrote it, not by an independent second pass.'
+            })
+          : null,
+
+        !bindingActive && pageReadable && !playerSurface
           ? jsx('div', {
               // A section may have no runtime read at all (the no-chat case): page.runtime is null,
               // and only `bindingActive` is guaranteed. Never dereference `runtime` unguarded here.
@@ -24637,7 +24647,7 @@ function SectionPage({
         // One live action per screen, and only once there is an approved page to teach from. H-174:
         // a section with no lessons-job page offers no run to start — the readiness panel below
         // (or the course hero, when embedded) names the job that owns it and the one next action.
-        pageReadable
+        pageReadable && (!playerSurface || bindingActive)
           ? jsxs('div', {
               'data-cb-section-actions': bindingActive ? 'resume' : 'start',
               style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.6rem' },
@@ -32056,7 +32066,7 @@ function useStudioJob(jobId, onSettled) {
   return job
 }
 
-function StudioJobLine({ jobId, job: providedJob, onSettled, onRunAgain }) {
+function StudioJobLine({ jobId, job: providedJob, onSettled, onRunAgain, retryKey }) {
   // A caller that already reads the job (plan review needs it for the rejection model) passes it
   // in; the line then shares that read instead of polling the same id a second time.
   const polledJob = useStudioJob(providedJob ? null : jobId, onSettled)
@@ -32081,14 +32091,15 @@ function StudioJobLine({ jobId, job: providedJob, onSettled, onRunAgain }) {
 
   // Re-queue the same stage from the brief the job itself stored. The parent re-reads, so the line
   // shows the new job id rather than pretending the cancelled one resumed. The key is derived from
-  // the job being retried, so a double click replays one job instead of queueing a second spend.
+  // the job being retried, so a double click replays one job instead of queueing a second spend. A
+  // caller whose stage names a unit (lessons) supplies its own key so the retry carries that unit.
   const runAgain = async () => {
     setBusy(true)
     setError(null)
     const response = await rpc(
       'jobs.create',
       { kind: job.kind || 'plan', brief: job.brief },
-      { idempotencyKey: `cb-stage-again-${jobId}` }
+      { idempotencyKey: typeof retryKey === 'function' ? retryKey(jobId, job) : `cb-stage-again-${jobId}` }
     )
     setBusy(false)
     if (!response.ok) {
@@ -37171,6 +37182,24 @@ function StudioFineTunePanel({
 }
 
 /**
+ * The unit a lessons job was authoring, read from its own checkpoint.
+ *
+ * `next_unit_ordinal` is the next unit the stored rows still need; a job that failed before it
+ * could report that carries the unit it was on (`unit_ordinal`), so a retry names the same unit
+ * instead of skipping ahead. `null` means there is nothing left to write — never a guess from the
+ * number of pages on screen.
+ */
+function lessonsUnitTarget(job) {
+  const checkpoint = (job && job.checkpoint) || {}
+  if (checkpoint.units_complete_all === true) return null
+  for (const key of ['next_unit_ordinal', 'next_unit_to_author', 'unit_ordinal']) {
+    const value = checkpoint[key]
+    if (Number.isInteger(value)) return value
+  }
+  return null
+}
+
+/**
  * The plan working view: outline and activities on the left, sources and review notes on the
  * right. The parent can edit every meaningful field of a **draft** plan; an approved plan is
  * changed in place through the H-194 fine-tune commands, which record a reviewable revision.
@@ -37220,6 +37249,45 @@ function StudioPlanView({
   const [error, setError] = useState(null)
   const [notice, setNotice] = useState(null)
   const [lessonJobId, setLessonJobId] = useState(null)
+  // G2: a lessons job authors exactly one unit, so the unit being asked for is part of the request.
+  // It is read from the settled job's own checkpoint (`next_unit_ordinal`) or, after a reload, from
+  // the stored jobs — never from a page count or from how many times this screen was pressed.
+  const [lessonCheckpoint, setLessonCheckpoint] = useState(null)
+  const lessonJobs = useRpcQuery(
+    'jobs.list',
+    { enrollment_id: course && course.enrollment_id, kind: ['plan'], limit: 20 },
+    `studio-plan-lesson-jobs-${(course && course.enrollment_id) || 'none'}`,
+    Boolean(course && course.enrollment_id) && Boolean(supported && supported('jobs.list'))
+  )
+  const lessonPages = Boolean(
+    book && book.data && book.data.tabs && (book.data.tabs.learner_pages || []).length > 0
+  )
+  const storedLessonJob =
+    ((lessonJobs && lessonJobs.data && lessonJobs.data.jobs) || [])
+      .filter((job) => (job.brief || {}).stage === 'lessons')
+      .sort((left, right) => (Number(right.updated_at) || 0) - (Number(left.updated_at) || 0))[0] || null
+  // The job whose checkpoint this screen reads. A settle beats a stored row for the job on screen;
+  // once the id moves (a retry or the next unit) the stale local read stops applying.
+  const lessonStateJob =
+    lessonCheckpoint && lessonCheckpoint.job_id === lessonJobId ? lessonCheckpoint : storedLessonJob
+  const nextUnitOrdinal = lessonsUnitTarget(lessonStateJob)
+  // The ordinal this press asks for. `next_unit_ordinal` is the backend's own answer; a job with no
+  // checkpoint yet is retried at the unit it names; a course whose every unit is authored gets one
+  // key beyond the last unit so the honest no-op job is still a fresh request.
+  const unitTotal =
+    Number((lessonStateJob && lessonStateJob.checkpoint && lessonStateJob.checkpoint.units_total) || 0) ||
+    ((plan && plan.units) || []).length
+  const allUnitsAuthored = Boolean(
+    lessonStateJob && lessonStateJob.checkpoint && lessonStateJob.checkpoint.units_complete_all === true
+  )
+  const authoredUnit = Number(
+    (lessonStateJob && lessonStateJob.checkpoint && lessonStateJob.checkpoint.unit_ordinal) || 0
+  )
+  const lessonRequestOrdinal = Number.isInteger(nextUnitOrdinal)
+    ? nextUnitOrdinal
+    : allUnitsAuthored
+      ? Math.max(unitTotal + 1, 1)
+      : authoredUnit || 1
   // H-103: the plan job is read here, once, so the review can explain a rejection. The old job
   // line polled this same id separately; StudioJobStatus now shares this read instead of minting a
   // second poller.
@@ -37448,12 +37516,14 @@ function StudioPlanView({
     if (!plan) return
     setBusy(true)
     setError(null)
-    // Keyed by the plan version: a double click or a retried click replays the same job instead of
-    // enqueueing a second lessons run (and a second spend) for the same approved outline.
+    // Keyed by the plan version **and** the unit this press asks for. The executor authors exactly
+    // one unit per job and `jobs.create` replays the job stored for a key, so a key without the
+    // unit made the second press replay unit 1 forever. A double click on one press still replays:
+    // both clicks carry the same (plan, unit) key.
     const response = await rpc(
       'jobs.create',
       { kind: 'plan', brief: { stage: 'lessons', plan_id: plan.plan_id, enrollment_id: course.enrollment_id } },
-      { idempotencyKey: `cb-lessons-${plan.plan_id}` }
+      { idempotencyKey: `cb-lessons-${plan.plan_id}-${lessonRequestOrdinal}` }
     )
     setBusy(false)
     if (!response.ok) {
@@ -37461,7 +37531,11 @@ function StudioPlanView({
       return
     }
     setLessonJobId(response.result.job_id)
-  }, [plan])
+    // The read that offered this unit described the previous job; re-read so the next offer comes
+    // from the job that just started rather than from a screen that has already moved on.
+    setLessonCheckpoint(null)
+    if (lessonJobs.reload) lessonJobs.reload()
+  }, [plan, course.enrollment_id, lessonRequestOrdinal, lessonJobs])
 
   const startRevision = useCallback(async () => {
     if (!plan || objectives.length === 0) return
@@ -37573,6 +37647,13 @@ function StudioPlanView({
     (job) => {
       if (!job) return
       const isLessons = job.brief && job.brief.stage === 'lessons'
+      if (isLessons) {
+        // G2: the settled checkpoint names the unit just authored and the next one, so the primary
+        // action becomes "Write unit N lessons" from the job's own facts. The stored jobs are
+        // re-read too, so a reload offers the same unit this screen offers now.
+        setLessonCheckpoint({ job_id: job.job_id, checkpoint: job.checkpoint || {} })
+        if (lessonJobs.reload) lessonJobs.reload()
+      }
       const message = (job.error && job.error.message) || ''
       if (isLessons && job.state === 'failed' && /no authored document|outline covers objectives/i.test(message)) {
         setLessonDocumentGap(message)
@@ -37643,7 +37724,7 @@ function StudioPlanView({
   }
 
   const isDraft = plan.state === 'draft'
-  const contentReady = Boolean(book && book.data && book.data.tabs && (book.data.tabs.learner_pages || []).length > 0)
+  const contentReady = lessonPages
   const setting = brief && brief.brief ? brief.brief.setting : null
   const sources = (book && book.data && book.data.sources) || []
 
@@ -37689,9 +37770,14 @@ function StudioPlanView({
               !isDraft && !editing && !lessonDocumentGap
                 ? jsx(CbAction, {
                     variant: 'primary',
+                    'data-cb-lessons-unit': String(lessonRequestOrdinal),
                     disabled: busy || !supported('jobs.create'),
                     onClick: generateLessons,
-                    children: contentReady ? 'Generate missing lessons' : 'Generate lessons'
+                    children: Number.isInteger(nextUnitOrdinal)
+                      ? `Write unit ${nextUnitOrdinal} lessons`
+                      : contentReady
+                        ? 'Generate missing lessons'
+                        : 'Generate lessons'
                   })
                 : null,
               !isDraft && !editing
@@ -37774,7 +37860,24 @@ function StudioPlanView({
             onRunAgain: onChanged
           })
         : null,
-      lessonJobId ? jsx(StudioJobLine, { jobId: lessonJobId, onSettled: settled }) : null,
+      lessonJobId
+        ? jsx(StudioJobLine, {
+            jobId: lessonJobId,
+            onSettled: settled,
+            // G2: a failed lessons job is retried from its own stored brief, and the key names the
+            // unit plus the failed run — so the retry is a new job id while a double click on Run
+            // again still replays one job.
+            onRunAgain: (newJobId) => {
+              setLessonJobId(newJobId)
+              setLessonCheckpoint(null)
+              if (lessonJobs.reload) lessonJobs.reload()
+            },
+            retryKey: (failedJobId, run) => {
+              const unit = lessonsUnitTarget(run)
+              return `cb-lessons-${plan.plan_id}-${Number.isInteger(unit) ? unit : lessonRequestOrdinal}-retry-${failedJobId}`
+            }
+          })
+        : null,
 
       // H-194: an approved plan is fine-tuned here, through `plan.edit` / `plan.undo`, never by
       // re-sorting this screen. The panel is parent-only: a learner surface has no authoring.
@@ -38099,7 +38202,13 @@ function LearnerPlanView({
   const objectives = (outline.data && outline.data.objectives) || []
   const jobRows = (jobs.data && jobs.data.jobs) || []
   const planJob = jobRows.find((job) => ((job.brief || {}).stage || 'plan') === 'plan') || null
-  const lessonsJob = jobRows.find((job) => (job.brief || {}).stage === 'lessons') || null
+  // G2: a course can have one lessons job per unit, so the surface reads the newest one — its
+  // checkpoint is the only honest answer to "is the course fully written?".
+  const lessonsJob =
+    jobRows
+      .filter((job) => (job.brief || {}).stage === 'lessons')
+      .sort((left, right) => (Number(right.updated_at) || 0) - (Number(left.updated_at) || 0))[0] || null
+  const nextUnitOrdinal = lessonsUnitTarget(lessonsJob)
   const scope = (planJob && planJob.brief && planJob.brief.scope) || scopeHint || null
   const jobId = retryJobId || jobHint || (planJob && planJob.job_id) || null
   // A plan that is already readable does not need its finished job line repeated on every visit.
@@ -38150,7 +38259,7 @@ function LearnerPlanView({
         ? jsxs('div', {
             className: 'flex flex-wrap items-center gap-2',
             children: [
-              lessonsReady && onStartLesson
+              lessonsReady && onStartLesson && !Number.isInteger(nextUnitOrdinal)
                 ? jsx(CbAction, {
                     variant: 'primary',
                     onClick: () => onStartLesson(objectives[0].objective_id),

@@ -363,28 +363,30 @@ class CancelStateUnreadableTest(KernelCase):
 class ReconciliationTest(KernelCase):
     """An expired ownerless lease is resolved live, without a process restart."""
 
-    def test_expired_running_job_becomes_interrupted(self) -> None:
+    def test_expired_running_job_becomes_failed_worker_lost(self) -> None:
         job_id = job_service.create("plan", {"goal": "x"})["job_id"]
         job_service.claim(job_id, owner="dead-worker", now=T0)
         result = job_service.reconcile_expired(now=T0 + timedelta(seconds=job_service.LEASE_SECONDS + 2))
-        self.assertEqual(result["interrupted"], 1)
+        self.assertEqual(result["worker_lost"], 1)
         view = job_service._view(job_id)
-        self.assertEqual(view["state"], "interrupted_requires_retry")
+        self.assertEqual(view["state"], "failed", "G6: a dead worker is a typed failure, not a limbo")
+        self.assertEqual((view["error"] or {}).get("details", {}).get("reason"), "WORKER_LOST")
         self.assertIsNone(view["lease"])
 
     def test_a_live_lease_is_honoured(self) -> None:
         job_id = job_service.create("plan", {"goal": "x"})["job_id"]
         job_service.claim(job_id, owner="live-worker", now=T0)
-        result = job_service.reconcile_expired(now=T0 + timedelta(seconds=5))
-        self.assertEqual(result, {"interrupted": 0, "cancelled": 0})
+        stale = T0 + timedelta(seconds=5)
+        result = job_service.reconcile_expired(now=stale)
+        self.assertEqual(result, {"worker_lost": 0, "cancelled": 0})
         self.assertEqual(job_service._view(job_id)["state"], "running")
 
     def test_repeated_reconciliation_is_idempotent(self) -> None:
         job_id = job_service.create("plan", {"goal": "x"})["job_id"]
         job_service.claim(job_id, owner="dead-worker", now=T0)
         later = T0 + timedelta(seconds=job_service.LEASE_SECONDS + 2)
-        self.assertEqual(job_service.reconcile_expired(now=later)["interrupted"], 1)
-        self.assertEqual(job_service.reconcile_expired(now=later), {"interrupted": 0, "cancelled": 0})
+        self.assertEqual(job_service.reconcile_expired(now=later)["worker_lost"], 1)
+        self.assertEqual(job_service.reconcile_expired(now=later), {"worker_lost": 0, "cancelled": 0})
 
 
 class ReaperThreadTest(KernelCase):
@@ -417,6 +419,24 @@ class ReaperThreadTest(KernelCase):
             executor.start_tick(self._Ctx())
         self.assertTrue(_threads("coursebook-job-reaper"), "the reaper must run beside the pump")
 
+    def test_a_dashboard_only_context_starts_the_watchdog_without_a_pump(self) -> None:
+        """G6: no ``spawn_task`` means no pump, but a real plugin context still gets the watchdog."""
+
+        class NoPumpContext:
+            def __init__(self) -> None:
+                self.unloads: list = []
+
+            def on_unload(self, callback) -> None:  # noqa: ANN001
+                self.unloads.append(callback)
+
+        context = NoPumpContext()
+        self.assertIsNone(executor.start_tick(context), "a host with no loop gets no pump")
+        self.assertTrue(
+            _threads("coursebook-job-reaper"),
+            "an expired job must not wait for a process restart just because there is no pump",
+        )
+        self.assertEqual(_threads("coursebook-job-tick"), [])
+
     def test_reaper_fixes_an_expired_job_without_a_restart(self) -> None:
         job_id = job_service.create("plan", {"goal": "x"})["job_id"]
         job_service.claim(job_id, owner="dead-worker", now=T0)
@@ -427,10 +447,10 @@ class ReaperThreadTest(KernelCase):
             executor.start_tick(self._Ctx())
             deadline = time.monotonic() + 5.0
             while time.monotonic() < deadline:
-                if job_service._view(job_id)["state"] == "interrupted_requires_retry":
+                if job_service._view(job_id)["state"] == "failed":
                     break
                 time.sleep(0.05)
-        self.assertEqual(job_service._view(job_id)["state"], "interrupted_requires_retry")
+        self.assertEqual(job_service._view(job_id)["state"], "failed")
 
 
 class EndToEndPumpTest(KernelCase):

@@ -191,8 +191,12 @@ class PlayerSurfaceTest(H149RenderTest):
     def test_the_field_stop_header_names_the_stop_the_title_and_the_step(self) -> None:
         doc = document(guided=True, blocks=COMPLETE_BLOCKS, check_id="chk_0123456789abcdef")
         html = self.player(doc)
-        self.assertIn('data-cb-player-stop="2/4"', html)
-        self.assertIn("STOP 2 OF 4", html)
+        # The chip names the section's course position only: the course total is not in the
+        # lesson.page contract, and dividing by the block count read "STOP 2 OF 4" for a lesson
+        # with four blocks (E2E U3). The step readout owns "Step 1 of 4".
+        self.assertIn('data-cb-player-stop="2"', html)
+        self.assertIn("STOP 2", html)
+        self.assertNotIn("STOP 2 OF", html)
         self.assertIn('data-cb-player-title=""', html)
         self.assertIn("Affection and register", html)
         self.assertIn('data-cb-player-objective=""', html)
@@ -257,10 +261,14 @@ class PlayerFooterTest(H149RenderTest):
         self.assertEqual(len(primaries), 1, primaries)
         self.assertIn('data-cb-player-primary="Continue"', html)
 
-    def test_the_chat_action_is_demoted_while_the_player_is_on_screen(self) -> None:
+    def test_no_chat_action_competes_with_the_player(self) -> None:
+        # The player owns the screen and its own exit. A "Start a fresh run" beside an open step 1
+        # said the lesson had not begun while it was on screen (E2E U5), so a detached section
+        # renders no section action here; the strip belongs to the non-player surfaces.
         doc = document(guided=True, blocks=COMPLETE_BLOCKS, check_id="chk_0123456789abcdef")
         html = self.section(doc)
-        self.assertIn('data-cb-section-primary="secondary"', html)
+        self.assertNotIn('data-cb-section-actions', html)
+        self.assertIn('data-cb-player-exit=""', html)
 
     def test_the_check_step_labels_the_primary_check(self) -> None:
         blocks = [COMPLETE_BLOCKS[2], COMPLETE_BLOCKS[0]]

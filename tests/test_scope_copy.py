@@ -80,7 +80,14 @@ class ScopeCopyInTheRenderedPromptsTest(unittest.TestCase):
         self.assertEqual(request.prompt_version, gen.PLAN_PROMPT_VERSION_V2)
         text = request.instructions
         self.assertIn("Scope: full", text)
-        self.assertIn("Produce 2 to 12 unit(s) and 9 to 40 objective(s)", text)
+        expectation = gen.SCOPE_EXPECTATIONS["full"]
+        unit_low, unit_high = expectation["blueprint_units"]
+        band_low, band_high = expectation["blueprint_objectives"]
+        self.assertIn(
+            f"Produce {unit_low} to {unit_high} unit(s) and "
+            f"{band_low} to {band_high} objective(s)",
+            text,
+        )
         self.assertNotIn(self.STALE, text)
         self.assertNotIn(self.STALE, gen.SCOPE_EXPECTATIONS["full"]["note"])
 
@@ -89,13 +96,31 @@ class ScopeCopyInTheRenderedPromptsTest(unittest.TestCase):
             with self.subTest(scope=scope):
                 expectation = gen.SCOPE_EXPECTATIONS[scope]
                 unit_low, unit_high = expectation["blueprint_units"]
-                obj_low, obj_high = expectation["blueprint_objectives"]
+                band_low, band_high = expectation["blueprint_objectives"]
                 text = _rendered(scope).instructions
+                # The ledger this render uses is empty, so the floor is the band's own; the
+                # ceiling is the research cell the job will actually run (``effective_depth``
+                # raises a full course to ``deep``), which after S6's budget raise supports the
+                # band's own ceiling for every scope.
+                budget = research.budget_for(
+                    research.effective_depth(None, scope), scope
+                )
+                ceiling = min(
+                    band_high, budget.max_sources * research.OBJECTIVES_PER_SOURCE
+                )
+                self.assertGreaterEqual(ceiling, band_high)
                 self.assertIn(
                     f"Produce {unit_low} to {unit_high} unit(s) and "
-                    f"{obj_low} to {obj_high} objective(s)",
+                    f"{band_low} to {ceiling} objective(s)",
                     text,
                 )
+                if ceiling != band_high:
+                    # A tightened ceiling is stated with its reason, never silently applied.
+                    self.assertIn(
+                        f"The {scope!r} band is {band_low} to {band_high} objective(s)",
+                        text,
+                    )
+                    self.assertIn(f"at most {budget.max_sources} source(s)", text)
                 self.assertNotIn(self.STALE, text)
 
     def test_the_v1_prompt_still_asks_for_the_v1_range(self) -> None:
@@ -105,10 +130,11 @@ class ScopeCopyInTheRenderedPromptsTest(unittest.TestCase):
         # requirements and advances the label again (v6 -> v8), still with the same range.
         # CP-015's ledger-first authoring rule advances the label to v13; CP-015a takes it to
         # v17, CP-015g/D1-F1's shared evidence-family/claim-link rules take it to v19,
-        # CP-015g/D1-F2's inferred-domain and named-orthography rules take it to v21, and W2-9's
-        # declared-gap deletion from the shared sourcing rule takes it to v22. The range
+        # CP-015g/D1-F2's inferred-domain and named-orthography rules take it to v21, W2-9's
+        # declared-gap deletion from the shared sourcing rule takes it to v22, and E2E S5's
+        # two-sub-performance cap plus the shortfall prefix takes it to v23. The range
         # this test guards is unchanged.
-        self.assertEqual(gen.PLAN_PROMPT_VERSION, "plan-prompt.v22")
+        self.assertEqual(gen.PLAN_PROMPT_VERSION, "plan-prompt.v23")
         for scope, expected in (("single", "4 to 5"), ("short", "4 to 6"), ("full", "4 to 8")):
             with self.subTest(scope=scope):
                 text = gen._plan_instructions(

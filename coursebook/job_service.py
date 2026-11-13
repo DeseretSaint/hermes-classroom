@@ -43,6 +43,18 @@ logger = logging.getLogger("coursebook.job_service")
 #: enough that a slow provider call does not lose its fence between heartbeats.
 LEASE_SECONDS = 120
 
+#: Seconds the row may go without a recorded worker heartbeat before a still-``running`` attempt
+#: is presumed dead (G6). Every successful ``renew``/``checkpoint`` rewrites ``updated_at``; a
+#: worker that stopped beating leaves that stamp behind. The default equals the lease: an expired
+#: lease already means the beat is a full lease old. A deployment may shorten it with
+#: ``COURSEBOOK_WORKER_LOST_SECONDS``, which is how a live probe asserts the watchdog window
+#: without waiting two minutes.
+WORKER_LOST_ENV = "COURSEBOOK_WORKER_LOST_SECONDS"
+
+#: Typed reason carried in ``error.details`` when the watchdog fails a row. The job state is the
+#: contract's own retryable ``failed``; this value is what tells an operator *why* it rested.
+WORKER_LOST_REASON = "WORKER_LOST"
+
 #: Seconds one job **attempt** may run before the in-flight provider call is cancelled and the
 #: job is failed (CP-044). Per-call deadlines are not a job deadline: a plan attempt runs two
 #: author/validate rounds, so bounded calls that each finish "in time" can still keep the row
@@ -118,6 +130,82 @@ def _load(value: str | None, default: Any) -> Any:
     except (TypeError, ValueError):
         return default
     return parsed if isinstance(parsed, type(default)) else default
+
+
+def worker_lost_after_seconds() -> float:
+    """How long a row may sit without a heartbeat before its worker is presumed lost.
+
+    Resolved at call time so a probe or deployment can shorten the window. A malformed or
+    non-positive override is logged and the default kept, exactly as the job deadline behaves: a
+    typo must not silently remove the watchdog.
+    """
+    raw = os.environ.get(WORKER_LOST_ENV)
+    default = float(LEASE_SECONDS)
+    if raw is None or not str(raw).strip():
+        return default
+    try:
+        value = float(str(raw).strip())
+    except (TypeError, ValueError):
+        logger.warning("coursebook: ignoring %s=%r (not a number); using %.0fs", WORKER_LOST_ENV, raw, default)
+        return default
+    if value <= 0:
+        logger.warning("coursebook: ignoring %s=%r (not positive); using %.0fs", WORKER_LOST_ENV, raw, default)
+        return default
+    return value
+
+
+def last_worker_beat(row: Any) -> datetime | None:
+    """Durable evidence of the worker's last heartbeat for one ``jobs`` row.
+
+    ``claim``/``renew``/``checkpoint``/``finish`` all rewrite ``updated_at``, so it *is* the beat
+    stamp; a worker that died stops moving it. ``created_at`` is the fallback for a row written
+    before any of those transitions ran.
+    """
+    return _parse(row["updated_at"]) or _parse(row["created_at"])
+
+
+def worker_is_lost(row: Any, *, now: datetime | None = None) -> bool:
+    """Whether this live-state row's worker is gone: no live lease **and** a stale heartbeat.
+
+    Both halves are required. A fresh lease is a worker still renewing, whoever owns it; a recent
+    heartbeat keeps a short grace window after the lease lapses (clock skew, a beat landing
+    between two passes). Only when neither is present is the row's owner provably gone.
+    """
+    moment = _now(now)
+    held = _parse(row["lease_expires_at"])
+    if held is not None and held > moment:
+        return False
+    beat = last_worker_beat(row)
+    if beat is None:
+        return True
+    return (moment - beat).total_seconds() >= worker_lost_after_seconds()
+
+
+def worker_lost_error(row: Any, *, now: datetime | None = None) -> dict[str, Any]:
+    """The contract-legal error a watchdog-failed row carries.
+
+    ``failed`` is a *resting* contract state: it is retryable, so the operator is told the retry is
+    a real action and the checkpoint survives for it. The typed ``WORKER_LOST`` reason is the
+    distinction between "the worker went away" and "the stage raised".
+    """
+    moment = _now(now)
+    beat = last_worker_beat(row)
+    window = worker_lost_after_seconds()
+    return contracts.build_error(
+        "HOST_UNAVAILABLE",
+        (
+            f"job {row['id']} stopped reporting: its worker has not heartbeat for at least "
+            f"{window:.0f}s and its lease is no longer held. The attempt was stopped; retry it "
+            "and it resumes from the last checkpoint."
+        ),
+        retryable=True,
+        reason=WORKER_LOST_REASON,
+        retry_hint="retry the job; the brief and last checkpoint are preserved",
+        last_heartbeat_at=_iso(beat) if beat is not None else None,
+        lease_expires_at=row["lease_expires_at"],
+        stale_after_seconds=window,
+        observed_at=_iso(moment),
+    )
 
 
 class JobLeaseLost(RuntimeError):
@@ -397,7 +485,12 @@ def cancel_requested(job_id: str, *, attempts: int | None = None) -> bool:
 
 
 def request_cancel(job_id: str, *, now: datetime | None = None) -> dict[str, Any]:
-    """Record cancellation intent. ``cancelled`` means nothing further will run."""
+    """Record cancellation intent. ``cancelled`` means nothing further will run.
+
+    A ``running`` row whose worker is provably gone (:func:`worker_is_lost`) is settled directly:
+    there is no thread left to reach a stage boundary. A live row keeps ``cancel_requested`` and
+    stops at its own boundary.
+    """
     moment = _now(now)
     with db.transaction() as connection:
         row = _job(connection, job_id)
@@ -412,6 +505,18 @@ def request_cancel(job_id: str, *, now: datetime | None = None) -> dict[str, Any
             target = "cancelled"
         elif state in ("cancel_requested", "cancelling"):
             return {"job_id": job_id, "state": state}
+        elif state == "running" and worker_is_lost(row, now=moment):
+            # G6: no worker is left to reach a stage boundary, so "cancel" must be settlement
+            # here, not a request posted to a thread that is gone. Two contract-legal edges
+            # (running -> cancel_requested -> cancelled) in one fenced transaction end durably.
+            jobs_contract.assert_transition(state, "cancel_requested")
+            jobs_contract.assert_transition("cancel_requested", "cancelled")
+            connection.execute(
+                "UPDATE jobs SET state = 'cancelled', lease_owner = NULL, lease_expires_at = NULL,"
+                " updated_at = ? WHERE id = ?",
+                (_iso(moment), job_id),
+            )
+            return {"job_id": job_id, "state": "cancelled"}
         else:
             target = "cancel_requested"
         jobs_contract.assert_transition(state, target)
@@ -916,7 +1021,18 @@ def _stage_error(exc: Exception) -> dict[str, Any]:
     code = _error_code(exc)
     message = str(exc)[:_MAX_ERROR_TEXT] or type(exc).__name__
     details: dict[str, Any] = {}
-    for attribute in ("purpose", "duration_ms", "deadline_s", "job_deadline", "schema_name", "repair_attempted"):
+    for attribute in (
+        "purpose",
+        "duration_ms",
+        "deadline_s",
+        "job_deadline",
+        "schema_name",
+        "repair_attempted",
+        # E2E S4: a prerequisite refusal names the unit it refused and the prerequisite units
+        # that are incomplete, so an operator reads why the job stopped instead of a bare message.
+        "unit_ordinal",
+        "unmet_units",
+    ):
         value = getattr(exc, attribute, None)
         if value is not None:
             details[attribute] = value
@@ -1072,75 +1188,87 @@ def _default_store() -> Any:
 
 
 def reconcile_expired(*, now: datetime | None = None) -> dict[str, Any]:
-    """Move **expired-lease** live rows to a terminal/honest state; safe to call repeatedly.
+    """The liveness watchdog: settle live-state rows whose worker is provably gone.
 
     This is the live-process twin of :func:`reconcile_startup` and exists because that pass runs
     once per process (H-66): a job whose worker stopped beating — a crashed pump thread, a stage
     stranded in a foreign call, a lost profile context — sat ``running`` with a past lease until
-    the next restart. The rule here is intentionally narrower than startup recovery:
+    the next restart. G6 adds the second half of the evidence and a typed verdict:
 
     * a **live** lease is honoured, whoever owns it: a worker is still renewing it;
-    * ``running`` with an expired/absent lease becomes ``interrupted_requires_retry`` (brief and
-      checkpoint survive, nothing is retried automatically);
+    * ``running`` whose lease lapsed **and** whose heartbeat is older than
+      :func:`worker_lost_after_seconds` becomes ``failed`` carrying ``WORKER_LOST`` and a retry
+      hint — the contract's retryable resting state, with the brief and checkpoint intact;
     * ``cancel_requested``/``cancelling`` with an expired/absent lease becomes ``cancelled``: no
       worker can still reach a boundary, so the intent is final.
+
+    Every pass is idempotent: the write is conditional on the state and stale evidence re-read
+    under the write lock, and a row already failed/cancelled is no longer a candidate.
 
     No artifact reconciliation here: this runs every few seconds, and only the startup pass may
     sweep files.
 
     A store with **no schema yet** is a skip, not a failure (H-182/D6). The reaper starts at plugin
     registration, before the first Coursebook action has migrated anything, and opening the file
-    then both created an empty database and raised ``no such table: jobs`` every five seconds. Absent
-    is not unreadable: a *migrated* store that cannot be read still raises exactly as before.
+    then both created an empty database and raised ``no such table: jobs`` every five seconds.
+    Absent is not unreadable: a *migrated* store that cannot be read still raises exactly as before.
     """
     if db.applied_schema_version() is None:
         return {
-            "interrupted": 0,
+            "worker_lost": 0,
             "cancelled": 0,
             "skipped": True,
             "reason": "database has no schema yet",
         }
     moment = _now(now)
     stamp = _iso(moment)
+
+    def _settleable(row: Any) -> bool:
+        """Same verdict as the pass below, usable on ugly and cheap reads alike."""
+        state = str(row["state"])
+        if state not in ("running", "cancel_requested", "cancelling"):
+            return False
+        held = _parse(row["lease_expires_at"])
+        if held is not None and held > moment:
+            return False  # a live worker is still beating; leaving it alone is the whole point
+        if state == "running":
+            return worker_is_lost(row, now=moment)
+        return True
+
     with db.read() as connection:
         candidates = connection.execute(
-            "SELECT id, state, lease_expires_at FROM jobs WHERE state IN"
+            "SELECT id, state, lease_expires_at, updated_at, created_at FROM jobs WHERE state IN"
             " ('running','cancel_requested','cancelling')"
         ).fetchall()
-    stale = [
-        row
-        for row in candidates
-        if (held := _parse(row["lease_expires_at"])) is None or held <= moment
-    ]
+    stale = [row for row in candidates if _settleable(row)]
     if not stale:
-        return {"interrupted": 0, "cancelled": 0}
-    interrupted = cancelled = 0
+        return {"worker_lost": 0, "cancelled": 0}
+    lost = cancelled = 0
     with db.transaction() as connection:
         for row in stale:
             # Re-read under the write lock: a beat may have renewed it since the read pass.
             current = connection.execute(
-                "SELECT state, lease_expires_at FROM jobs WHERE id = ?", (row["id"],)
+                "SELECT * FROM jobs WHERE id = ?", (row["id"],)
             ).fetchone()
-            if current is None:
+            if current is None or not _settleable(current):
                 continue
-            state = str(current["state"])
-            if state not in ("running", "cancel_requested", "cancelling"):
-                continue
-            held = _parse(current["lease_expires_at"])
-            if held is not None and held > moment:
-                continue  # a live worker is still beating; leaving it alone is the whole point
-            target = "interrupted_requires_retry" if state == "running" else "cancelled"
-            jobs_contract.assert_transition(state, target)
-            connection.execute(
-                "UPDATE jobs SET state = ?, lease_owner = NULL, lease_expires_at = NULL,"
-                " updated_at = ? WHERE id = ?",
-                (target, stamp, row["id"]),
-            )
-            if target == "cancelled":
-                cancelled += 1
+            if str(current["state"]) == "running":
+                jobs_contract.assert_transition("running", "failed")
+                connection.execute(
+                    "UPDATE jobs SET state = 'failed', error_json = ?, lease_owner = NULL,"
+                    " lease_expires_at = NULL, updated_at = ? WHERE id = ?",
+                    (_json(worker_lost_error(current, now=moment)), stamp, row["id"]),
+                )
+                lost += 1
             else:
-                interrupted += 1
-    return {"interrupted": interrupted, "cancelled": cancelled}
+                jobs_contract.assert_transition(str(current["state"]), "cancelled")
+                connection.execute(
+                    "UPDATE jobs SET state = 'cancelled', lease_owner = NULL, lease_expires_at = NULL,"
+                    " updated_at = ? WHERE id = ?",
+                    (stamp, row["id"]),
+                )
+                cancelled += 1
+    return {"worker_lost": lost, "cancelled": cancelled}
 
 
 def reconcile_startup(

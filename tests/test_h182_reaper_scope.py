@@ -121,7 +121,7 @@ class ReaperStoreScopeTest(KernelCase):
     def test_single_home_backend_reconciles_the_launch_store(self) -> None:
         """The reported topology: the flag is set, the thread has no request scope."""
         launch_job, escaped_job = self._start_and_drift(single_home=True)
-        self.assertEqual(_job_state(_store(self.launch), launch_job), "interrupted_requires_retry")
+        self.assertEqual(_job_state(_store(self.launch), launch_job), "failed")
         self.assertEqual(
             _job_state(_store(self.escaped), escaped_job),
             "running",
@@ -131,7 +131,7 @@ class ReaperStoreScopeTest(KernelCase):
     def test_the_pin_holds_without_the_single_home_flag(self) -> None:
         """Multi-profile hosting: the reaper keeps the scope it was registered in."""
         launch_job, escaped_job = self._start_and_drift(single_home=False)
-        self.assertEqual(_job_state(_store(self.launch), launch_job), "interrupted_requires_retry")
+        self.assertEqual(_job_state(_store(self.launch), launch_job), "failed")
         self.assertEqual(_job_state(_store(self.escaped), escaped_job), "running")
 
 
@@ -165,7 +165,7 @@ class ReaperBeforeFirstMigrationTest(KernelCase):
         self.assertEqual(
             job_service.reconcile_expired(),
             {
-                "interrupted": 0,
+                "worker_lost": 0,
                 "cancelled": 0,
                 "skipped": True,
                 "reason": "database has no schema yet",

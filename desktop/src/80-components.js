@@ -3907,12 +3907,12 @@ function LessonPlayer({
     action.run()
   }
   const ordinal = section && section.ordinal ? String(section.ordinal) : null
-  // Item 42: one denominator for the whole lesson surface. The session's own step count is the
-  // only total a learner can act on here ("how much of this stop is left"), and it is the number
-  // the step readout advances. The course's objective total is a trail fact and is printed once,
-  // as "Section n of m" — printing it here too gave one session two disagreeing totals.
-  const stopTotal = steps.length > 0 ? String(steps.length) : null
-  const stopLabel = ordinal && stopTotal ? `STOP ${ordinal} OF ${stopTotal}` : ordinal ? `STOP ${ordinal}` : 'STOP'
+  // The stop chip prints the section's course position and nothing else. It used to divide that
+  // position by the block count: section 7 of a five-block lesson read "STOP 7 OF 5" beside
+  // "Step 1 of 5". The course-wide total is not in the `lesson.page` contract, so the chip does
+  // not print a denominator it would have to invent; the step readout owns "Step n of m".
+  const stopTotal = null
+  const stopLabel = ordinal ? `STOP ${ordinal}` : 'STOP'
   // One objective sentence, composed only from recorded fields: the section's own evidence target,
   // in learner words. A section that records no target gets the title alone rather than a slogan.
   const objective =
@@ -3930,7 +3930,7 @@ function LessonPlayer({
     children: [
       jsxs('header', {
         'data-cb-player-bar': '',
-        'data-cb-player-stop': `${ordinal || ''}/${stopTotal || ''}`,
+        'data-cb-player-stop': stopTotal ? `${ordinal || ''}/${stopTotal}` : (ordinal || ''),
         style: {
           display: 'flex',
           flexDirection: 'column',
@@ -4903,7 +4903,17 @@ function SectionPage({
           ? jsx(QuietNote, { children: document.view_note })
           : null,
 
-        !bindingActive && pageReadable
+        // The page's own provenance is served (``lesson.page.provenance``) and no learner surface
+        // read it: a page whose independent validation did not pass looked exactly like one that
+        // did. Say it where the learner is, in the backend's own words.
+        document && pageReadable && page && page.provenance && page.provenance.independent === false
+          ? jsx(QuietNote, {
+              children: page.provenance.warning
+                || 'This page was checked by the model that wrote it, not by an independent second pass.'
+            })
+          : null,
+
+        !bindingActive && pageReadable && !playerSurface
           ? jsx('div', {
               // A section may have no runtime read at all (the no-chat case): page.runtime is null,
               // and only `bindingActive` is guaranteed. Never dereference `runtime` unguarded here.
@@ -4930,7 +4940,7 @@ function SectionPage({
         // One live action per screen, and only once there is an approved page to teach from. H-174:
         // a section with no lessons-job page offers no run to start — the readiness panel below
         // (or the course hero, when embedded) names the job that owns it and the one next action.
-        pageReadable
+        pageReadable && (!playerSurface || bindingActive)
           ? jsxs('div', {
               'data-cb-section-actions': bindingActive ? 'resume' : 'start',
               style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.6rem' },

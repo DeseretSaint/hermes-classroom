@@ -851,7 +851,7 @@
       "independent": true,
       "needs_review": false,
       "outcome": "independently_validated",
-      "prompt_version": "plan-prompt.v24",
+      "prompt_version": "plan-prompt.v25",
       "warning": null
     },
     "attempt_rows": [
@@ -1006,7 +1006,7 @@
     "plan_scope": "full",
     "plan_state_after_approval": "approved",
     "plan_state_before_approval": "draft",
-    "prompt_version": "plan-prompt.v24",
+    "prompt_version": "plan-prompt.v25",
     "schema_name": "coursebook_plan_v2",
     "sections": 12,
     "units": 6,
@@ -1665,7 +1665,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v15",
+                "prompt_version": "lesson-prompt.v16",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000005b",
@@ -1711,7 +1711,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v15",
+                "prompt_version": "lesson-prompt.v16",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000005e",
@@ -1792,7 +1792,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10701,
+            "input_tokens": 10801,
             "output_tokens": 1919,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -1821,7 +1821,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v15",
+                "prompt_version": "lesson-prompt.v16",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000067",
@@ -1867,7 +1867,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v15",
+                "prompt_version": "lesson-prompt.v16",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000006a",
@@ -1948,7 +1948,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10662,
+            "input_tokens": 10821,
             "output_tokens": 1888,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -1977,7 +1977,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v15",
+                "prompt_version": "lesson-prompt.v16",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000073",
@@ -2023,7 +2023,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v15",
+                "prompt_version": "lesson-prompt.v16",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000076",
@@ -2104,7 +2104,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10674,
+            "input_tokens": 10878,
             "output_tokens": 1912,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -2133,7 +2133,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v15",
+                "prompt_version": "lesson-prompt.v16",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000007f",
@@ -2179,7 +2179,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v15",
+                "prompt_version": "lesson-prompt.v16",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000082",
@@ -2260,7 +2260,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10653,
+            "input_tokens": 10904,
             "output_tokens": 1884,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -2289,7 +2289,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v15",
+                "prompt_version": "lesson-prompt.v16",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000008b",
@@ -2335,7 +2335,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v15",
+                "prompt_version": "lesson-prompt.v16",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000008e",
@@ -2416,7 +2416,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 8270,
+            "input_tokens": 8572,
             "output_tokens": 1930,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -2445,7 +2445,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v15",
+                "prompt_version": "lesson-prompt.v16",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000097",
@@ -2491,7 +2491,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v15",
+                "prompt_version": "lesson-prompt.v16",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000009a",
@@ -2572,7 +2572,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10709,
+            "input_tokens": 11075,
             "output_tokens": 1926,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3010,10 +3010,10 @@
     "plan_job": {
       "request": {
         "objective_count_rule": [
-          9,
+          6,
           40
         ],
-        "prompt_version": "plan-prompt.v24",
+        "prompt_version": "plan-prompt.v25",
         "schema_name": "coursebook_plan_v2",
         "unit_count_rule": [
           2,
@@ -3040,7 +3040,7 @@
           "independent": true,
           "needs_review": false,
           "outcome": "independently_validated",
-          "prompt_version": "plan-prompt.v24",
+          "prompt_version": "plan-prompt.v25",
           "warning": null
         },
         "course_id": "crs_00000000000000000000000000000002",
@@ -3055,7 +3055,7 @@
           "known": true,
           "model": "recorded-transcript-h40",
           "pipeline_version": "cb.gen.v2",
-          "prompt_version": "plan-prompt.v24",
+          "prompt_version": "plan-prompt.v25",
           "provider": "recorded"
         },
         "job_id": "job_00000000000000000000000000000007",
@@ -3101,8 +3101,8 @@
         "units": 6,
         "usage": {
           "budget": {
-            "max_calls": 32,
-            "max_cost_usd": 0.75,
+            "max_calls": 60,
+            "max_cost_usd": 2.4,
             "source": "declared"
           },
           "by_purpose": {
@@ -3120,7 +3120,7 @@
           "calls": 7,
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
-          "input_tokens": 33542,
+          "input_tokens": 33552,
           "output_tokens": 2254,
           "unknown_calls": 0,
           "unknown_cost": false
@@ -3269,7 +3269,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5867,
+            "input_tokens": 4204,
             "output_tokens": 551,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3328,7 +3328,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5860,
+            "input_tokens": 4196,
             "output_tokens": 538,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3387,7 +3387,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5849,
+            "input_tokens": 4185,
             "output_tokens": 537,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3446,7 +3446,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5857,
+            "input_tokens": 4193,
             "output_tokens": 539,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3505,7 +3505,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5865,
+            "input_tokens": 1749,
             "output_tokens": 543,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3564,7 +3564,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5880,
+            "input_tokens": 4217,
             "output_tokens": 542,
             "unknown_calls": 0,
             "unknown_cost": false

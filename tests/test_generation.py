@@ -672,7 +672,7 @@ class ResearchTest(GenerationTestBase):
         self.assertGreaterEqual(len(run.queries), 8)
         self.assertLessEqual(len(run.queries), 12)
         self.assertGreaterEqual(len(seam.fetches), 8)
-        self.assertLessEqual(len(seam.fetches), 18)
+        self.assertLessEqual(len(seam.fetches), 20)
         self.assertEqual(len(seam.queries), len(run.queries))
 
     def test_single_scope_tightens_the_same_depth(self) -> None:
@@ -1495,7 +1495,7 @@ class LessonJobTest(GenerationTestBase):
         ]
         self.assertTrue(generation_requests)
         for request in generation_requests:
-            self.assertEqual(request.prompt_version, "lesson-prompt.v15")
+            self.assertEqual(request.prompt_version, "lesson-prompt.v16")
             self.assertIn("Capability policy", request.instructions)
             payload = json.loads(request.input_text)
             self.assertIn("capability_policy", payload)
@@ -1573,7 +1573,7 @@ class LessonJobTest(GenerationTestBase):
         text = gen._lesson_instructions(recipe="parent", locale=None, scaffold_note="")
         self.assertIn("3-6", text)
         self.assertIn("distinct observable", text)
-        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v15")
+        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v16")
 
     def test_a_lesson_with_fewer_than_three_rubric_criteria_is_retried_then_parked(self) -> None:
         plan_result = self.approved_plan()
@@ -3453,8 +3453,12 @@ class ObjectiveFloorTest(unittest.TestCase):
         for prompt in prompts:
             self.assertIn("never pad", prompt)
             self.assertIn("ordered sub-performances", prompt)
-            self.assertIn("recognise it, use it with support, use it unaided", prompt)
+            self.assertIn("recognise it, then do it unaided", prompt)
             self.assertIn("a topic heading is not a sub-performance", prompt)
+            # E2E S5: two sub-performances is the limit, and the honest shortfall is disclosed
+            # with the one prefix the gate matches.
+            self.assertIn("Two is the limit", prompt)
+            self.assertIn(gen.SHORTFALL_PREFIX, prompt)
         self.assertIn("and 2 to 10 objective(s)", prompts[1])
         self.assertEqual(gen.SCOPE_EXPECTATIONS["short"]["blueprint_objectives"], (2, 10))
 

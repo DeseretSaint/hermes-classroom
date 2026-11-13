@@ -243,7 +243,15 @@ Deterministic plan rules, replacing the current `enforce_plan_rules` body:
 
 1. Scope bounds hold (G5: contiguous, short 2 to 10 and full 9 to 40 objectives): single has 1
    unit and 1 objective; short has 1 to 3 units and 2 to 10 objectives; full has 2 to 12 units and
-   9 to 40 objectives.
+   9 to 40 objectives. Two of those numbers are derived from the run rather than the band (E2E
+   S5/S6, `docs/GENERATION.md`):
+   * the ceiling is `min(band ceiling, max_sources × OBJECTIVES_PER_SOURCE)` for the research cell
+     `research.effective_depth()` selects — every `sourced` objective needs its own verbatim quote,
+     so a cell can only source two objectives per source it may fetch;
+   * the floor is `min(band floor, distinct quotable capabilities)` whenever the ledger carries at
+     least one capability. A plan shorter than the band is accepted only when its `exclusions`
+     disclose the shortfall with the prefix `Scope shortfall — fewer supporting capabilities:`, and
+     one capability may carry at most two objectives (recognise, then unaided).
 2. Unit ordinals are contiguous; objective ordinals are contiguous; objective `unit_ref` and
    section `unit_ref` name existing units.
 3. Every unit has 2 to 6 objectives for full, 1 to 6 for short, exactly 1 for single.
@@ -263,19 +271,25 @@ Deterministic plan rules, replacing the current `enforce_plan_rules` body:
 
 ## 6. Token limits, cost and stage boundaries
 
-The blueprint call is one structured call with `max_tokens` raised from 4000 to 12000 and the
-same 240 second deadline. The schema bounds keep the artifact under the existing 48 KiB
-`MAX_PLAN_BYTES`: 40 objectives with short criteria and units fit in roughly 25 to 35 KiB. The
+The blueprint call is one structured call. Its `max_tokens` is sized by the declared scope's
+objective band, not one constant: 8 000 for `single`, 12 000 for `short` and 24 000 for `full`
+(`PLAN_OUTPUT_TOKENS_BY_SCOPE`), with the pre-blueprint v1 shape keeping 4 000. The schema bounds
+keep the artifact under the existing 48 KiB `MAX_PLAN_BYTES`: 40 objectives with short criteria
+and units fit in roughly 25 to 35 KiB, which on the measured route's Japanese tokenisation is
+about 12 000 artifact tokens before the JSON keys and the reasoning trace the cap also counts. The
 implementing card must measure the real output on the provider in use, record input and output
 tokens, and if 40 objectives do not fit, lower the full cap in the contract to the measured
-number. It must never truncate a blueprint. A plan job that cannot fit its own scope refuses with
-a typed reason that names the scope, the measured bytes and the cap.
+number. It must never truncate a blueprint: an answer cut at the cap is re-asked once under the
+marked `.cut` label (`_stage_answer_with_repair`), exactly as the unit-sections and lesson stages
+already do. A second cut answer fails with the typed truncated outcome; a plan job that cannot
+fit its own scope refuses with a typed reason that names the scope, the measured bytes and the
+cap.
 
 Budget is per stage, not per course:
 
 | stage | provider calls, worst case | reason |
 |---|---:|---|
-| blueprint (`plan`) | 4 | one generate and one validate, two attempts |
+| blueprint (`plan`) | 2 × (1 + passes) × 2 | one generate, one `.cut` re-ask, one validate per validation pass and one re-ask per pass, two attempts (`plan_calls`); a 40-objective/12-unit plan is 14 passes, so 60 |
 | unit sections (`unit_sections`, one unit) | 6 | one generate, one validate and one truncation re-ask, two attempts (CP-015e) |
 | unit lessons (`lessons`, one unit) | 12 per section: one generate, one validate and two truncation re-asks, three attempts | CP-015g gave an item-level fix hint a second retry; W2-2 counted the lesson's own re-ask |
 

@@ -2656,8 +2656,16 @@ def jobs_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, di
 
 @_handler("jobs.cancel")
 def jobs_cancel(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
-    """Cancellation is a state machine move, not a claim that a provider call stopped."""
+    """Cancellation is a state machine move, not a claim that a provider call stopped.
+
+    G6: a ``running`` row whose lease lapsed and whose heartbeat is stale has no worker left to
+    reach a boundary. Answering it with ``cancel_requested`` was a request to nobody — the live
+    probe's row stayed ``running`` for thirty minutes. That row is settled to ``cancelled`` here,
+    in this fenced transaction. A genuinely live lease still gets ``cancel_requested``: a running
+    stage is stopped at its own boundary, never killed mid-write.
+    """
     db.ensure_schema()
+    moment = datetime.now(timezone.utc)
     with db.transaction() as connection:
         job = _row(connection, "SELECT * FROM jobs WHERE id = ?", (payload["job_id"],))
         if job is None:
@@ -2665,10 +2673,20 @@ def jobs_cancel(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
         state = str(job["state"])
         if state == "queued":
             target = "cancelled"
-        elif state == "running":
-            target = "cancel_requested"
         elif state == "interrupted_requires_retry":
             target = "cancelled"
+        elif state == "running" and job_service.worker_is_lost(job, now=moment):
+            # Two contract-legal edges in one durable move: running -> cancel_requested -> cancelled.
+            jobs_contract.assert_transition(state, "cancel_requested")
+            jobs_contract.assert_transition("cancel_requested", "cancelled")
+            connection.execute(
+                "UPDATE jobs SET state = 'cancelled', lease_owner = NULL, lease_expires_at = NULL,"
+                " updated_at = ? WHERE id = ?",
+                (_now(), job["id"]),
+            )
+            return 0, {"job_id": job["id"], "state": "cancelled"}
+        elif state == "running":
+            target = "cancel_requested"
         else:
             raise RpcError.of(
                 "JOB_NOT_CANCELLABLE", f"job is {state} and cannot be cancelled.", state=state

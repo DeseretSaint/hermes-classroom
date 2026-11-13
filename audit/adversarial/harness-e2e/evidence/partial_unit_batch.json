@@ -6,8 +6,8 @@
   "lesson_page_state": "not_started",
   "lesson_page_view_note": null,
   "lesson_stage_refusal": {
-    "message": "unit 2 of plan 'pln_00000000000000000000000000000003' has no sections; author the unit sections job first",
-    "type": "GenerationRejected"
+    "message": "unit 2 of plan 'pln_00000000000000000000000000000003' cannot be authored: its prerequisite unit(s) are incomplete — unit 1 (Intervals on the keyboard) has no authored sections. Author those units' lessons first; no lesson was authored and no provider call was made.",
+    "type": "PrerequisiteUnitIncomplete"
   },
   "lessons_after_refusal": 0,
   "outline_missing_objective": {
