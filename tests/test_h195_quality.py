@@ -198,6 +198,7 @@ class TeachingFloorTest(unittest.TestCase):
     def test_the_floor_parameters_are_the_documented_ones(self) -> None:
         self.assertEqual(gen.MIN_TEACHING_PROSE_CHARS, 400)
         self.assertEqual(gen.MIN_SINGLE_SEGMENT_CHARS, 120)
+        self.assertEqual(gen.MAX_SINGLE_SEGMENT_CHARS, 1200)
         self.assertIn("overview", gen.GENERIC_LESSON_HEADINGS)
         self.assertIn("key takeaways", gen.GENERIC_LESSON_HEADINGS)
         self.assertIn("lorem ipsum", gen.PLACEHOLDER_LESSON_PHRASES)
@@ -368,7 +369,12 @@ class LessonProvenanceTest(GenerationTestBase):
             self.assertEqual(generation["provider"], "fake")
             self.assertEqual(generation["model"], "fake-author")
             self.assertTrue(generation["known"])
-            self.assertEqual(generation["prompt_version"], gen.LESSON_PROMPT_VERSION)
+            # A repaired attempt carries the documented revision suffix on the same prompt label
+            # (``REVISION_PROMPT_SUFFIX``); the provenance block records the label actually used.
+            self.assertTrue(
+                generation["prompt_version"].startswith(gen.LESSON_PROMPT_VERSION),
+                generation["prompt_version"],
+            )
             self.assertEqual(generation["pipeline_version"], gen.PIPELINE_VERSION)
             self.assertNotIn("answer", json.dumps(generation))
 

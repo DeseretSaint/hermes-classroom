@@ -68,6 +68,7 @@ from . import prompts
 from . import rubrics
 from . import text_completeness
 from . import validators
+from . import wording
 from .packs import MIN_RUBRIC_CRITERIA
 from .research import (
     ResearchBudget,
@@ -279,7 +280,14 @@ UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v3"
 #: every item path and ``fix`` hint is a binding repair, and that a rejected claim is removed or
 #: supported by a supplied excerpt rather than resubmitted. Instruction text changed on top of
 #: v14, so v15. See ``docs/GENERATION.md`` §5 for what v15 adds over v14.
-LESSON_PROMPT_VERSION = "lesson-prompt.v15"
+#:
+#: v16 (E2E review 2026-11-12, items A2 and A4): the prompt now states the two deterministic
+#: rules the gates enforce before validation — every rubric criterion of an item-shaped
+#: (verification checklist) check must be earnable from at least one ``check.stimulus.items``
+#: label, and a segment body stays at or under ``MAX_SINGLE_SEGMENT_CHARS``, with a long step
+#: split into two segments. The A1 run paid for three refusals (~39 k output tokens) over a
+#: rubric band no checklist item covered; a stated rule is the first repair.
+LESSON_PROMPT_VERSION = "lesson-prompt.v16"
 #: The validator instruction text. H-191 §5: a validator answer was discarded because one
 #: ``item`` label was 81 characters against a ``maxLength`` of 80 the prompt never stated. The
 #: text now states the locator rule and the bound (read from :data:`ITEM_REFERENCE_MAX_CHARS`),
@@ -5130,6 +5138,9 @@ def _lesson_instructions(
         "Write the lesson page for the section in the input.",
         f"Recipe: {recipe}.",
         "Segments: 2-6, at least one 'model' and one 'guided'.",
+        f"Keep every segment body at or under {MAX_SINGLE_SEGMENT_CHARS} characters. A step "
+        "that would run longer is two steps: split it into two segments, each with its own "
+        "content-naming heading, rather than writing one wall under one heading.",
         # H-195: the teaching arc. A section teaches ONE objective, in order, and every segment
         # earns its place: why it matters, a worked example, a second example or counterexample,
         # then a check on the same target. These are requirements, not a suggestion to pad.
@@ -5200,6 +5211,11 @@ def _lesson_instructions(
         "opens the interaction', not 'the greeting is the one to say'.",
         "Write 3-6 rubric criteria in check.rubric, each a distinct observable aspect of the "
         "response; never restate one aspect in two criteria.",
+        "A rubric criterion must be earnable from the check: when check.stimulus.format is "
+        "'verification', every criterion has to share a content word with at least one "
+        "check.stimulus.items label, because the checklist items (not the weighted bands) are "
+        "what a learner confirms and what the confirmation lane scores. Name the step the band "
+        "scores in its own item; a band no item covers is refused before the validator runs.",
         "If check.stimulus.format is 'verification', enumerate the steps it asks the learner to "
         "confirm in check.stimulus.items as {id, label} objects (1-24; ids like item_1, unique; "
         "labels 1-200 characters, distinct once case, spacing and punctuation are ignored). Never "
@@ -7153,6 +7169,13 @@ def lesson_procedure_problems(
 MIN_TEACHING_PROSE_CHARS = 400
 MIN_SINGLE_SEGMENT_CHARS = 120
 
+#: E2E A4: the per-segment ceiling. The floor above refuses an outline; nothing refused a wall.
+#: One segment carries one reading step inside the lesson's 2-6 step budget
+#: (``LESSON_OUTPUT_TOKENS`` sizes the whole answer), and ``LESSON_SHORT_SCHEMA_MAX`` — the
+#: authored compressed view's own ceiling — is where a single screen already fills. A body past
+#: that point is the lesson wearing one heading; the repair is a split, and the refusal says so.
+MAX_SINGLE_SEGMENT_CHARS = 1200
+
 #: Headings that would fit any lesson. A heading must name this lesson's own content; one of
 #: these tokens (after case/space/punctuation folding) is treated as template filler.
 GENERIC_LESSON_HEADINGS: tuple[str, ...] = (
@@ -7258,6 +7281,18 @@ def teaching_quality_problems(lesson: dict[str, Any]) -> list[str]:
             "no segment explains anything in depth: the longest segment body is "
             f"{longest} characters, under the {MIN_SINGLE_SEGMENT_CHARS}-character floor"
         )
+    # E2E A4: the other side of the same floor. A wall of prose under one heading is one reading
+    # step carrying a lesson's worth of text; the repair is a split, so the reason names it.
+    for index, segment in enumerate(segments, start=1):
+        body = str(segment.get("body") or "").strip()
+        if len(body) <= MAX_SINGLE_SEGMENT_CHARS:
+            continue
+        heading = str(segment.get("heading") or "").strip()
+        reasons.append(
+            f"segment {index} ({heading!r}) carries {len(body)} characters of body, over the "
+            f"{MAX_SINGLE_SEGMENT_CHARS}-character ceiling for one teaching step; split it into "
+            "two segments at the point where the step changes, and give each its own heading"
+        )
     authored = " ".join(
         [*prose]
         + [str(example.get("prompt") or ""), *(str(step) for step in steps),
@@ -7304,6 +7339,16 @@ def enforce_lesson_rules(
     profile = rubric_profile or rubrics.resolve_profile(capability.rubric_profile, declared_target)
     for problem in rubrics.validate_rubric(profile, check.get("rubric") or [], declared_target):
         reasons.append(problem)
+    # E2E A2: a weighted rubric band the checklist cannot elicit is refused here, before the
+    # independent validator is asked for a verdict. The A1 run showed the alternative: three
+    # refusals and ~39 k output tokens spent to learn that no item covered the safety band.
+    # Only item-shaped checks are judged — a free-response check has no labels to cover anything.
+    stimulus = check.get("stimulus") or {}
+    items = stimulus.get("items") if isinstance(stimulus, Mapping) else None
+    if isinstance(items, list) and items:
+        reasons.extend(
+            rubrics.rubric_item_coverage_problems(check.get("rubric") or [], items)
+        )
     if objective is not None and check.get("evidence_target") != objective.get("evidence_target"):
         reasons.append(
             f"check targets {check.get('evidence_target')!r} but the objective requires "
@@ -7415,8 +7460,8 @@ def _is_presenting_media(item: Mapping[str, Any]) -> bool:
     return str(item.get("role") or "").strip().casefold() == _MEDIA_ROLE_NARRATION
 
 
-def _narrative_text(page: dict[str, Any]) -> str:
-    """The parts of a learner page where an answer must not be *announced*.
+def _narrative_surfaces(page: dict[str, Any]) -> list[str]:
+    """The parts of a learner page where an answer must not be *announced*. One string each.
 
     Stimulus prompts and selection choices are excluded on purpose: in a selection check the
     correct choice necessarily appears in the page. The invariant is that the *key* is not
@@ -7428,9 +7473,11 @@ def _narrative_text(page: dict[str, Any]) -> str:
     worked example, the explanation, the recap, the parent notes and non-narration media stay in
     the scan, so "the answer you should pick is X" in an explain step or a recap is still
     refused.
+
+    The list is kept un-joined because the paraphrase scan is local: it compares clauses, not a
+    page, so "simmer" in an explain step and "gentle" in a media caption are not one sentence.
     """
     parts: list[str] = []
-    presented_deeps: set[str] = set()
     for segment in page.get("segments") or []:
         if not isinstance(segment, Mapping):
             continue
@@ -7444,9 +7491,6 @@ def _narrative_text(page: dict[str, Any]) -> str:
         )
         if _segment_kind(segment) == _PRESENTING_SEGMENT_KIND:
             # Presenting surface: teaching the form is the job. Not scanned for the key.
-            presented = _normalize_answer(fields[1])
-            if presented:
-                presented_deeps.add(presented)
             continue
         parts.extend(fields)
     example = page.get("worked_example") or {}
@@ -7472,21 +7516,48 @@ def _narrative_text(page: dict[str, Any]) -> str:
     # the segment has: the projection copies the model body into an ``example`` block verbatim,
     # so the block is identified by its deep text rather than by role (the worked example is also
     # an ``example`` block and stays in the scan).
+    #
+    # It is deliberately *not* one of the surfaces returned here: a projection can join authored
+    # fields (the worked example's steps become one block ``deep``), and a token window over that
+    # join is not a sentence the author wrote. The projection stays in the exact-containment scan
+    # only; every authored field it renders is scanned for paraphrase on its own.
+    return parts
+
+
+def _presented_deeps(page: dict[str, Any]) -> set[str]:
+    """The normalised bodies of the presenting segments, which the document projection skips."""
+    presented: set[str] = set()
+    for segment in page.get("segments") or []:
+        if not isinstance(segment, Mapping) or _segment_kind(segment) != _PRESENTING_SEGMENT_KIND:
+            continue
+        text = _normalize_answer(segment.get("body") or "")
+        if text:
+            presented.add(text)
+    return presented
+
+
+def _document_text(page: dict[str, Any]) -> str:
     document = page.get("document")
-    if isinstance(document, dict):
+    if not isinstance(document, dict):
+        return ""
+    presented = _presented_deeps(page)
 
-        def _skip_presented_block(block: Mapping[str, Any]) -> bool:
-            return _normalize_answer(block.get("deep") or "") in presented_deeps
+    def _skip_presented_block(block: Mapping[str, Any]) -> bool:
+        return _normalize_answer(block.get("deep") or "") in presented
 
-        parts.append(
-            lesson_document.narrative_text(
-                document, skip_block=_skip_presented_block, skip_media=_is_presenting_media
-            )
+    return _normalize_answer(
+        lesson_document.narrative_text(
+            document, skip_block=_skip_presented_block, skip_media=_is_presenting_media
         )
-    return _normalize_answer("\n".join(parts))
+    )
 
 
-def _media_spec_text(page: Mapping[str, Any], lesson: Mapping[str, Any]) -> str:
+def _narrative_text(page: dict[str, Any]) -> str:
+    """The scanned narrative folded into one normalised string (containment tests read this)."""
+    return _normalize_answer("\n".join(_narrative_surfaces(page) + [_document_text(page)]))
+
+
+def _media_spec_surfaces(page: Mapping[str, Any], lesson: Mapping[str, Any]) -> list[str]:
     """The authored media ``spec`` strings — the prompt an image or audio worker is handed.
 
     The spec never reaches the learner page (``_build_learner_page`` drops it), so the narrative
@@ -7500,7 +7571,7 @@ def _media_spec_text(page: Mapping[str, Any], lesson: Mapping[str, Any]) -> str:
         if not isinstance(item, Mapping) or _is_presenting_media(item):
             continue
         parts.append(str(item.get("spec") or ""))
-    return _normalize_answer("\n".join(parts))
+    return parts
 
 
 def assert_no_answer_leak(page: dict[str, Any], lesson: dict[str, Any]) -> None:
@@ -7512,8 +7583,17 @@ def assert_no_answer_leak(page: dict[str, Any], lesson: dict[str, Any]) -> None:
     ``docs/DECISION-TAUGHT-TARGET.md``. The authored media ``spec`` is scanned with the same
     secrets: it is the generation prompt for an artifact the learner will see, so an answer in it
     is a leak even though the page projection never carries the field.
+
+    The scan has two halves (E2E A3). Exact containment is the first: the normalised key inside
+    the normalised surface. Word order and inflection are the ordinary way prose restates an
+    answer ("gentle simmer" -> "simmer gently"), and containment cannot see them, so a
+    content-word token-set overlap (``wording.paraphrases``, local window, threshold 0.8) runs
+    beside it. The exemptions are unchanged and are structural: a selection check's
+    ``stimulus.choices`` and a checklist's ``stimulus.items`` are never in a scanned surface,
+    because the correct option and the steps themselves must appear there.
     """
-    narrative = _narrative_text(page)
+    surfaces = _narrative_surfaces(page)
+    narrative = _normalize_answer("\n".join(surfaces + [_document_text(page)]))
     check = lesson.get("check") or {}
     secrets = [str(check.get("reference_answer") or "")] + [str(item) for item in check.get("accepted_answers") or []]
     # A practice's key is its match clauses; they must not appear in the learner page either
@@ -7525,13 +7605,35 @@ def assert_no_answer_leak(page: dict[str, Any], lesson: dict[str, Any]) -> None:
     leaked = [secret for secret in secrets if secret and _normalize_answer(secret) in narrative]
     if leaked:
         raise _RuleViolation(["learner-facing narrative contains the check reference answer or a keyed answer"])
-    specs = _media_spec_text(page, lesson)
+    paraphrased = [
+        secret for secret in secrets
+        if secret and _normalize_answer(secret) not in narrative
+        and wording.paraphrases(secret, surfaces)
+    ]
+    if paraphrased:
+        raise _RuleViolation([
+            "learner-facing narrative paraphrases the check reference answer or a keyed answer "
+            f"({paraphrased[0]!r}): word order and inflection do not make a restatement safe; "
+            "refer to the answer by its function instead of restating it"
+        ])
+    spec_surfaces = _media_spec_surfaces(page, lesson)
+    specs = _normalize_answer("\n".join(spec_surfaces))
     leaked_specs = [secret for secret in secrets if secret and _normalize_answer(secret) in specs]
     if leaked_specs:
         raise _RuleViolation([
             "media spec restates the check reference answer or a keyed answer: a spec is the "
             "generation prompt for an artifact the learner sees, so it must describe the visual "
             "or the clip without naming the graded answer"
+        ])
+    paraphrased_specs = [
+        secret for secret in secrets
+        if secret and _normalize_answer(secret) not in specs
+        and wording.paraphrases(secret, spec_surfaces)
+    ]
+    if paraphrased_specs:
+        raise _RuleViolation([
+            "media spec paraphrases the check reference answer or a keyed answer: an artifact "
+            "generated from this spec would carry the graded answer into the learner's view"
         ])
     rubric_terms = [str(item.get("description") or "") for item in check.get("rubric") or []]
     leaked_rubric = [term for term in rubric_terms if term and _normalize_answer(term) in narrative]
@@ -7586,6 +7688,22 @@ def assert_check_payload_does_not_announce_answer(lesson: Mapping[str, Any]) -> 
             "or an accepted answer in its stimulus prompt or learner_instructions, so the graded "
             "response can be copied; keep the key in the stored answer key and ask the question "
             "without shipping it"
+        ])
+    # E2E A3 in the check half: the same token-set scan runs here, because a prompt that says
+    # "simmer gently" ships a key stored as "gentle simmer" just as surely as a copied string.
+    # ``choices``/``items`` stay exempt: they are not in ``surfaces`` at all.
+    paraphrased = [
+        secret for secret in secrets
+        if secret and len(_normalize_answer(secret)) >= _MIN_ANNOUNCED_KEY_CHARS
+        and _normalize_answer(secret) not in scanned
+        and wording.paraphrases(secret, surfaces)
+    ]
+    if paraphrased:
+        raise _RuleViolation([
+            "lesson.check.reference_answer: the learner-facing check paraphrases the reference "
+            f"answer or an accepted answer ({paraphrased[0]!r}) in its stimulus prompt or "
+            "learner_instructions; word order does not stop the graded response being copied, "
+            "so ask the question without restating its answer"
         ])
 
 

@@ -21,7 +21,7 @@ Three different calls, three different prompts, three different schemas:
 | Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v3` | `UNIT_SECTIONS_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
 | Unit-sections validator | `coursebook.unit_sections.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
-| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v15` | `LESSON_SCHEMA` |
+| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v16` | `LESSON_SCHEMA` |
 | Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
 
 `build_plan_request()` selects the v2 schema and `plan-prompt.v24` when the brief declares a scope
@@ -784,7 +784,7 @@ read seam's own normalisation (`domain._check_label_key`, imported rather than r
 Both raise `_RuleViolation`: attempt 1 is retried with the reasons, the final attempt
 (`LESSON_ATTEMPTS`, 3) parks the lesson `needs_review` with the check closed, and `check.get`
 would refuse the same duplicate anyway. The prompt change is one of the reasons
-`LESSON_PROMPT_VERSION` is versioned; `lesson-prompt.v15` is the current label.
+`LESSON_PROMPT_VERSION` is versioned; `lesson-prompt.v16` is the current label.
 
 **Repair pass (CP-015g).** A lesson that the independent validator refused is re-authored with
 the refusal in two places: the request payload's `revision_instructions` (the itemised reasons,
@@ -800,14 +800,21 @@ The label advances for that instruction text: **v15 is v14 plus** (a) the
 `learner_explanation` coaching-surface sentence — the explanation may say how to reach the answer
 and may not state, quote, paraphrase or summarise the key — and (b) the binding repair-pass
 sentence that makes `revision_instructions` the validator's refusal and every item path + `fix`
-hint a literal repair. Everything v12, v13 and v14 introduced is still in v15.
+hint a literal repair. Everything v12, v13 and v14 introduced is still in v15. **v16 is v15 plus**
+(a) the rubric-coverage rule for item-shaped checks (E2E A2) and (b) the per-segment ceiling with
+its split instruction (E2E A4); everything v15 introduced is still in v16.
 
-**Answer-leak surfaces (CP-015c follow-up).** `lesson-prompt.v15` states the rule
+**Answer-leak surfaces (CP-015c follow-up).** `lesson-prompt.v16` states the rule
 `assert_no_answer_leak` and `assert_check_payload_does_not_announce_answer` enforce: a `model`
 segment (and narration media that reads it) is the one surface where the target form, its reading
 and its function appear together; every other learner surface is scanned (non-model segments, the
 worked example, `learner_explanation(_short)`, `parent_notes`, non-narration media, the recap), and
-the check's stimulus prompt and `learner_instructions` must not restate the key. `learner_explanation`
+the check's stimulus prompt and `learner_instructions` must not restate the key. The scan runs two
+tests on those surfaces: normalised containment, and a content-word token-set overlap
+(`wording.paraphrases`, a local window, threshold 0.8) so that a page saying "simmer gently"
+against a key of "gentle simmer" is refused (E2E A3). The exemptions are structural and
+unchanged — a selection check's `choices` and a checklist's `items` are never scanned, because
+the correct option and the steps must appear there. `learner_explanation`
 is also named a coaching surface: it describes how to reach the answer (what to notice, what to set
 aside) and must not state, quote, paraphrase or summarise the key. CP-015g measured why the wording
 matters: a live second draft dropped the refused claim but explained the choice in different words,
@@ -817,12 +824,25 @@ validation payload carries the stored key in its own `answer_key` block, marked
 `learner_facing: false`, because `learner_page` never serializes it; the current validation label
 (§1's table) states that split so a validator does not read the key's presence as a shipped answer.
 
-**Rubric floor.** The lesson prompt (`lesson-prompt.v15`) asks for 3–6 criteria, each a distinct
+**Rubric floor.** The lesson prompt (`lesson-prompt.v16`) asks for 3–6 criteria, each a distinct
 observable aspect of the response. `enforce_lesson_rules` refuses fewer than
 `packs.MIN_RUBRIC_CRITERIA` (3) with a typed reason, so attempt 1 is retried with that reason in
 `revision_instructions` and the final attempt (`LESSON_ATTEMPTS`, 3) parks the lesson
 `needs_review`. Criteria are never
 synthesised to reach the floor: a pack is exportable only when the author actually declared them.
+
+**Rubric coverage of an item-shaped check (E2E A2).** `validate_rubric` proves the rubric's own
+shape; it cannot see the check the learner answers. For an item-shaped check — a `verification`
+checklist carrying `check.stimulus.items` — the confirmation lane scores the ticked items and
+`rubric.pass_rule`, never the weighted bands. `rubrics.rubric_item_coverage_problems` therefore
+requires every criterion to share a content word with at least one item label
+(`coursebook/wording.py` owns the tokenizer: stem folding for spaced scripts, character bigrams
+for CJK). An uncovered criterion is a `_RuleViolation` raised in `enforce_lesson_rules`, before
+`build_lesson_validation_request` is reached, so the lesson is repaired and the expensive
+validator is never called. The measured cost of not having this rule: the A1 one-off lesson was
+authored three times and refused each time with `answer_key.rubric[2] ... no such step`, ~39 k
+output tokens, no servable lesson. The prompt states the rule (v16), and a repaired checklist is
+re-validated normally.
 
 **Teaching floor (H-195).** On the real authoring path, and before the independent validator is
 called, `teaching_quality_problems(lesson)` applies a deterministic floor to the drafted section:
@@ -834,6 +854,11 @@ called, `teaching_quality_problems(lesson)` applies a deterministic floor to the
   `key points`, `summary`, `introduction`, …) is refused, and two segments may not share one;
 * at least `MIN_TEACHING_PROSE_CHARS` (400) characters of authored segment prose, with a longest
   segment of at least `MIN_SINGLE_SEGMENT_CHARS` (120) — an outline is not a lesson;
+* no segment body over `MAX_SINGLE_SEGMENT_CHARS` (1 200) — E2E A4: the floor refuses an outline
+  and this refuses a 2 500-character wall under one heading. The reason names the segment and
+  the split hint: a longer step is two segments, each with its own content-naming heading. The
+  ceiling is sized to the lesson's own 2–6 step budget and is the point where the authored
+  compressed view (`LESSON_SHORT_SCHEMA_MAX`, 1 200) already stops;
 * no boilerplate from `PLACEHOLDER_LESSON_PHRASES` (`lorem ipsum`, `to be determined`,
   `insert content`, …) anywhere in the authored teaching text.
 
@@ -851,7 +876,7 @@ construct. `enforce_plan_rules` refuses a missing declaration and hands each dec
 (a required illustration, an illustration on a symbolic lesson, audio outside a language lesson).
 The declaration is stored in `gen_plan_sections.media_need_json`. Before the lesson prompt is built,
 the pipeline computes one immutable plan from the recipe, the objective's evidence target, the
-section's declaration, the locale/level and an advisory subject domain. `lesson-prompt.v15`
+section's declaration, the locale/level and an advisory subject domain. `lesson-prompt.v16`
 receives exactly that plan — the check angle, the rubric profile and the *permitted* media roles —
 instead of a generic invitation to add media. A lesson whose policy sets image or audio to `none`
 is told to emit no item of that kind at all, and one whose plan requires an item must produce it.
@@ -874,7 +899,7 @@ default profile. The profile's own criteria are then validated (3–6 distinct o
 mental-state claims, no restated aspect).
 
 **Procedure header (H-06).** A technical procedure lesson carries an optional typed `procedure`
-object in `LESSON_SCHEMA`; `lesson-prompt.v15` asks the author for it whenever the check's evidence
+object in `LESSON_SCHEMA`; `lesson-prompt.v16` asks the author for it whenever the check's evidence
 target is `procedure` or the lesson's construct is a technical procedure, and forbids it
 everywhere else. The label is versioned rather than frozen: it is recorded in stored validation
 bindings and the idempotency fingerprint, so a different instruction text under a reused label
@@ -1106,7 +1131,7 @@ Two stored shapes project into the same `$defs/lesson_document`:
 
 Rules the projection cannot bend:
 
-* `short` is authored, never synthesised from `deep`. The lesson writer (`lesson-prompt.v15`)
+* `short` is authored, never synthesised from `deep`. The lesson writer (`lesson-prompt.v16`)
   authors `segments[].short`, `worked_example.short` and `learner_explanation_short`; the
   projection publishes exactly those strings and never slices a deep field. `_enforce_lesson_document`
   runs before the independent validator: it builds the document, re-runs `validate_blocks`
