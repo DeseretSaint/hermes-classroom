@@ -518,9 +518,11 @@ class CreateFlowWiringTest(unittest.TestCase):
         self.assertIn("jsx(StudioPlanView", learner)
         self.assertIn("surface: 'learner'", learner)
 
-    def test_the_lessons_job_is_keyed_by_plan_version(self) -> None:
+    def test_the_lessons_job_is_keyed_by_plan_and_the_unit(self) -> None:
+        """G2: the executor authors one unit per job, so the key names the unit as well as the plan."""
         source = _source()
-        self.assertIn("idempotencyKey: `cb-lessons-${plan.plan_id}`", source)
+        self.assertIn("idempotencyKey: `cb-lessons-${plan.plan_id}-${lessonRequestOrdinal}`", source)
+        self.assertNotIn("idempotencyKey: `cb-lessons-${plan.plan_id}`", source)
 
     def test_no_fake_percentage_on_the_job_surface(self) -> None:
         source = _source()

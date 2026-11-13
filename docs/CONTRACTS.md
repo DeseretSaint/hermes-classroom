@@ -1117,8 +1117,17 @@ The jobs preflight counts the unit the brief would author (the named `unit_ordin
 resolved next unit) rather than the whole plan, so a unit-sized `brief.budget_usd` is not refused
 as insufficient for a multi-unit course. No method, job kind, state, error code or brief field
 moves. To author a later unit the client posts the same brief with a **fresh** idempotency key and
-reads `next_unit_ordinal` from the completed job; the existing `cb-lessons-<plan_id>` key replays
+reads `next_unit_ordinal` from the completed job; the original `cb-lessons-<plan_id>` key replays
 the first unit's job, which is the spend guarantee, not a bug.
+
+The Desktop (G2) now does exactly this. `generateLessons` keys `cb-lessons-<plan_id>-<ordinal>`,
+with the ordinal read from the settled job's `next_unit_ordinal` (or, after leaving and reopening,
+from the newest `jobs.list` lessons row) and starting at 1. The plan action is labelled
+`Write unit N lessons` while a unit remains and `Generate lessons` / `Generate missing lessons`
+otherwise, and the learner plan surface offers `Start the first lesson` only when the newest lessons
+checkpoint says `units_complete_all`. A failed lessons job offers `Run this stage again`, keyed
+`cb-lessons-<plan_id>-<unit>-retry-<failed_job_id>`: a retry is a new job id, while a double click on
+one press still carries one (plan, unit) key and replays one job.
 
 ### Cost ceilings and the `CostCeilingExceeded` recovery checkpoint (behaviour note + one additive brief field)
 
