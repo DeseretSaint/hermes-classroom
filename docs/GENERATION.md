@@ -16,16 +16,16 @@ Three different calls, three different prompts, three different schemas:
 
 | Pass | Purpose string | Prompt version | Schema |
 |---|---|---|---|
-| Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v22` | `PLAN_SCHEMA` |
-| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v24` | `PLAN_SCHEMA_V2` |
+| Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v23` | `PLAN_SCHEMA` |
+| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v25` | `PLAN_SCHEMA_V2` |
 | Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v3` | `UNIT_SECTIONS_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
 | Unit-sections validator | `coursebook.unit_sections.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
 | Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v16` | `LESSON_SCHEMA` |
 | Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
 
-`build_plan_request()` selects the v2 schema and `plan-prompt.v24` when the brief declares a scope
-(`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v22` otherwise. The rounds that
+`build_plan_request()` selects the v2 schema and `plan-prompt.v25` when the brief declares a scope
+(`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v23` otherwise. The rounds that
 advanced these labels, in order: CP-015's ledger-grounding, single-defensible-answer,
 evidence-target-fit, goal-coverage and check-covers-criteria rules; CP-015a's exclusions /
 outcome-integrity rule; CP-015g/D1-F1's three shared rules (the check's `kind` follows the
@@ -49,6 +49,12 @@ records an honest `unknown` on a criterion the artifact does not owe as a waived
 reason — capping that artifact's outcome at `model_assessed`. The plan stage keeps its own
 long-form rubrics and its full criteria set; the recipe-aware hazard rule is a lesson/unit rule,
 because the plan's criteria set is split across statically batched passes.
+
+`plan-prompt.v23` / `plan-prompt.v25` (E2E S5) carry the shortfall rule: one capability may be
+split into at most two ordered sub-performances, and a plan that stops below its scope's band must
+disclose it in `exclusions` with the prefix `Scope shortfall — fewer supporting capabilities:`. The
+v2 label also states the derived band (the ledger's capability floor and the research cell's
+sourcing ceiling) instead of the band's own numbers.
 
 `plan-prompt.v22` / `plan-prompt.v24` (W2-9) carry two instruction-text corrections.
 `mastery_path.plan_policy_lines` no longer asks the v2 author for `independent_evidence` or
@@ -292,11 +298,32 @@ raises instead of silently behaving like one of the three.
 | --- | --- | --- | --- |
 | `single` | 2/4/2/2 | 4/5/4/4 | 6/6/6/6 |
 | `short` | 3/4/4/4 | 6/5/8/8 | 9/6/12/10 |
-| `full` | 6/5/8/8 | 9/5/14/12 | 12/6/18/16 |
+| `full` | 6/5/8/8 | 9/5/14/12 | 12/6/22/20 |
 
-A full course therefore gets a defensible pass (9 queries / 14 pages at `working`, 12 / 18 at
+A full course therefore gets a defensible pass (9 queries / 14 pages at `working`, 12 / 22 at
 `deep`), never the old six-page demo sample. The caps are bounded: queries ≤ 12, pages ≤ 24,
 sources ≤ 24.
+
+**The objective band is derived from this matrix, and the sources-per-objective ratio is the
+reason (E2E S6).** Every `sourced` objective needs its own verbatim quote from a cited excerpt, so
+a pass that may fetch `max_sources` rows can honestly carry at most
+`max_sources × OBJECTIVES_PER_SOURCE` objectives (`OBJECTIVES_PER_SOURCE = 2` in `research.py`).
+`generation._scope_objective_band()` narrows a plan's ceiling to that product for the cell the job
+actually runs — the cell `research.effective_depth()` selects, which raises every `full` course to
+`deep` — and `docs/COURSE-BLUEPRINT.md` §5's band stays the outer shape: `single` 1, `short` 3–6,
+`full` 12–40. The `full`/`deep` cell was 16 sources against a 40-objective ceiling (0.4 sources per
+objective); it is now 20, the smallest budget that satisfies the band's own ceiling (20 × 2 = 40),
+so the ceiling still binds a plan whose cell is narrower than its band but never narrows a shipped
+scope. The invariant `max_sources × OBJECTIVES_PER_SOURCE ≥ blueprint_objectives[1]` is asserted for
+every scope in `tests/test_objective_source_ratio.py`.
+
+**The floor is the ledger's, not a bare count (E2E S5).** A `full` course used to be forced to 12
+objectives even when the ledger supported five capabilities, and the only way to reach 12 was to
+split one capability into three titles. The floor is now
+`min(band floor, distinct quotable capabilities)` whenever the ledger carries at least one; a plan
+shorter than the band must disclose it in `exclusions` with the prefix
+`Scope shortfall — fewer supporting capabilities:`, and one capability may carry at most two
+objectives (recognise, then unaided).
 
 The **scope is also a floor**, not only a budget selector. A `single` or `short` course that
 declares `survey` runs at `working`, and a `full` course that declares `survey` or `working`

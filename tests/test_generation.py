@@ -672,7 +672,7 @@ class ResearchTest(GenerationTestBase):
         self.assertGreaterEqual(len(run.queries), 8)
         self.assertLessEqual(len(run.queries), 12)
         self.assertGreaterEqual(len(seam.fetches), 8)
-        self.assertLessEqual(len(seam.fetches), 18)
+        self.assertLessEqual(len(seam.fetches), 20)
         self.assertEqual(len(seam.queries), len(run.queries))
 
     def test_single_scope_tightens_the_same_depth(self) -> None:
@@ -3452,8 +3452,12 @@ class ObjectiveFloorTest(unittest.TestCase):
         for prompt in prompts:
             self.assertIn("never pad", prompt)
             self.assertIn("ordered sub-performances", prompt)
-            self.assertIn("recognise it, use it with support, use it unaided", prompt)
+            self.assertIn("recognise it, then do it unaided", prompt)
             self.assertIn("a topic heading is not a sub-performance", prompt)
+            # E2E S5: two sub-performances is the limit, and the honest shortfall is disclosed
+            # with the one prefix the gate matches.
+            self.assertIn("Two is the limit", prompt)
+            self.assertIn(gen.SHORTFALL_PREFIX, prompt)
         self.assertIn("and 3 to 6 objective(s)", prompts[1])
         self.assertEqual(gen.SCOPE_EXPECTATIONS["short"]["blueprint_objectives"], (3, 6))
 

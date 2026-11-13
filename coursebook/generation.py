@@ -217,7 +217,10 @@ logger = logging.getLogger("coursebook.generation")
 #: contract the validator applies and pushed the author toward inventing a citation; the honesty
 #: clause ("do not invent a citation") stays verbatim. The rule is shared text, so the v1 and v2
 #: authoring labels both advance.
-PLAN_PROMPT_VERSION = "plan-prompt.v22"
+#: v23 (E2E S5): the short-course rule now licenses at most two ordered sub-performances of one
+#: capability and names the ``exclusions`` prefix that discloses a shortfall against the band
+#: (``Scope shortfall — fewer supporting capabilities:``). Shared text again, so both labels move.
+PLAN_PROMPT_VERSION = "plan-prompt.v23"
 
 #: The blueprint prompt. The design (``docs/COURSE-BLUEPRINT.md`` §5) names it
 #: ``plan-prompt.v2`` because it was written against ``plan-prompt.v1``; master already shipped
@@ -241,7 +244,10 @@ PLAN_PROMPT_VERSION = "plan-prompt.v22"
 #: ``independent_evidence`` / ``delayed_evidence`` — a v2 ``check_plan`` entry carries
 #: ``objective_ref``, ``kind`` and ``evidence_target`` only and the enforce gate rejects those
 #: keys — and the shared sourcing rule no longer forbids a declared ``support: 'unverified'`` gap.
-PLAN_PROMPT_VERSION_V2 = "plan-prompt.v24"
+#: v25 (E2E S5/S6): the scope bullet states the band the gate enforces rather than the band's own
+#: numbers — the ledger's capability floor and the research cell's sourcing ceiling — and names
+#: the ``exclusions`` prefix that discloses a shortfall against the band.
+PLAN_PROMPT_VERSION_V2 = "plan-prompt.v25"
 #: The unit-sections authoring stage. One unit per call, so its own version. v2 (CP-015g) states the
 #: unit scope and the construct shape its media gate enforces; v3 (CP-015g D3) adds the citation
 #: rule — an owner section copies its objective's source ids, a review section cites the union of
@@ -4412,6 +4418,108 @@ def _section_caps(expectation: Mapping[str, Any]) -> tuple[int, int]:
     return per_high + REVIEW_SECTIONS_PER_UNIT, obj_high + REVIEW_SECTIONS_PER_COURSE
 
 
+#: Minimum characters in a claim link. A ``sourced`` objective copies at least this much of its
+#: cited excerpt verbatim (the rule gate refuses a shorter quote), so an excerpt shorter than this
+#: cannot be the source of any objective and is not counted as a capability below.
+MIN_CLAIM_QUOTE_CHARS = 12
+
+
+def _ledger_capability_count(ledger: Sequence[SourceRecord]) -> int:
+    """How many distinct capabilities the ledger can honestly source (E2E S5).
+
+    A capability is only usable when an objective can copy its sentence verbatim out of one
+    excerpt, so the ledger's *evidence units* are its quotable excerpts:
+
+    * a ``no_body`` row is provenance without quotable text (``research.SourceRecord``), and no
+      claim can be linked to it — it carries no capability;
+    * two rows printing the same prose carry one capability, not two, which is why the count is
+      over distinct text rather than over sources. The research pass can fetch the same paragraph
+      from a mirror, a syndication copy and the publisher's own page, and three copies of one
+      sentence are not three things a course can teach;
+    * a row whose whole excerpt is shorter than :data:`MIN_CLAIM_QUOTE_CHARS` cannot host a claim
+      link, so it is skipped for the same reason the citation rule refuses such a quote.
+
+    The count is deterministic and derived from page text only: no model call, and no reading of
+    what the excerpt *means*. Counting distinct excerpts rather than capabilities is the
+    conservative direction: one long page may state several capabilities, and counting it once can
+    only ask the plan for *fewer* objectives — never more — while a plan that stops below the band
+    has to disclose the shortfall either way. The opposite error (counting pages as capabilities)
+    is what manufactured padding out of one sentence.
+    """
+    seen: set[str] = set()
+    for source in ledger or ():
+        if str(getattr(source, "excerpt_state", "recorded") or "") == "no_body":
+            continue
+        text = " ".join(str(getattr(source, "excerpt", "") or "").split()).casefold()
+        if len(text) < MIN_CLAIM_QUOTE_CHARS:
+            continue
+        seen.add(text)
+    return len(seen)
+
+
+#: Prefix of the ``exclusions`` entry that discloses a plan shorter than its scope's floor because
+#: the ledger supported fewer capabilities than that floor asks for (E2E S5). It is deliberately
+#: *not* :data:`EXCLUSION_PREFIX`: that prefix marks a goal capability no source supports, and the
+#: outcome-integrity rule reads every such entry as a phrase the plan must not promise. A scope
+#: shortfall is prose about the course's size, so it carries its own prefix and is read by its own
+#: rule. The prefix is quoted verbatim in the plan prompt, so the sentence a model is told and the
+#: sentence the gate matches can never drift.
+SHORTFALL_PREFIX = "Scope shortfall — fewer supporting capabilities:"
+
+_SHORTFALL_PREFIX_RE = re.compile(
+    r"^\s*scope\s+shortfall\s*[—–\-:]*\s*fewer\s+supporting\s+capabilit(?:y|ies)\s*:",
+    re.IGNORECASE,
+)
+
+
+def scope_shortfall_disclosed(plan: Mapping[str, Any]) -> bool:
+    """Whether the plan's own ``exclusions`` disclose a below-floor objective count."""
+    for entry in plan.get("exclusions") or []:
+        if _SHORTFALL_PREFIX_RE.match(str(entry or "")):
+            return True
+    return False
+
+
+def _scope_objective_band(
+    expectation: Mapping[str, Any],
+    ledger: Sequence[SourceRecord],
+    *,
+    depth: Any = None,
+) -> tuple[int, int]:
+    """``(floor, ceiling)`` for the objective count this plan may declare.
+
+    Two independent bounds, and neither one is the band's own number any more:
+
+    * **The ceiling is the research cell's** (E2E S6). Every ``sourced`` objective needs its own
+      verbatim quote from a cited excerpt, so a pass that may fetch ``max_sources`` rows can
+      honestly carry at most ``max_sources × OBJECTIVES_PER_SOURCE`` objectives. The cell is the
+      one this job will actually run with — :func:`research.budget_for` on the depth
+      :func:`research.effective_depth` resolves for this scope — so the limit the author is told,
+      the limit the gate enforces and the budget the research pass spends are one number. A band
+      ceiling above the cell's capacity is a promise the ledger cannot keep; the smaller of the two
+      wins.
+    * **The floor is the ledger's** (E2E S5). A full course's 12-objective floor used to be met by
+      splitting one supported capability into three titles, which is a count, not a course. When
+      the ledger carries at least one quotable capability the floor is ``min(band floor,
+      capabilities)``: a ledger that supports five capabilities asks for five objectives, not
+      twelve, and the shortfall is disclosed in ``exclusions`` instead of padded. A ledger with no
+      quotable capability at all says nothing about how wide the course should be — that is a
+      research failure, not a narrow subject — so the band's floor stands and the plan declares
+      its claims ``unverified``. A plan is never asked for zero objectives either way: the scope's
+      unit rules still hold the shape.
+    """
+    lo_obj, hi_obj = (int(value) for value in expectation["blueprint_objectives"])
+    # ``effective_depth`` is the depth the research pass will actually run (a ``full`` course is
+    # raised to ``deep`` whatever the brief declares — ``research.SCOPE_MIN_DEPTH``), so the cell
+    # read here is the cell that fetched the ledger, not the one the dial named.
+    depth_value = research_mod.effective_depth(depth, expectation["scope"])
+    budget = research_mod.budget_for(depth_value, expectation["scope"])
+    ceiling = min(hi_obj, int(budget.max_sources) * int(research_mod.OBJECTIVES_PER_SOURCE))
+    capabilities = _ledger_capability_count(ledger)
+    floor = max(1, min(lo_obj, capabilities)) if capabilities else lo_obj
+    return floor, ceiling
+
+
 def _domain_provenance(
     *, goal: str | None = None, subject_domain: str | None, locale: str | None
 ) -> dict[str, Any]:
@@ -4811,13 +4919,19 @@ def _plan_sourcing_rules() -> list[str]:
         "A course may be short. State only the capabilities the excerpts support, even when that "
         "is one capability in one unit; never pad the plan with an extra objective, unit, topic "
         "heading or named example to reach an objective count. When the excerpts support fewer "
-        "capabilities than the objective band asks for, split a supported capability into its "
-        "own ordered sub-performances — recognise it, use it with support, use it unaided — one "
+        "capabilities than the objective band asks for, split a supported capability into at most "
+        "two of its own ordered sub-performances — recognise it, then do it unaided — one "
         "objective per sub-performance, in that order, each citing the excerpt that states the "
         "capability and each asking the learner for something its check can tell apart from the "
-        "others. Split only where the excerpt or the capability itself carries that progression: "
+        "other. Two is the limit: a third title over the same claim ('identify it with support', "
+        "'name it') asks for the same performance its earlier objectives already ask for and is "
+        "refused. Split only where the excerpt or the capability itself carries that progression: "
         "a topic heading is not a sub-performance, and a split never licenses a claim the "
-        "excerpt does not state. Cover what the goal names only where the ledger "
+        "excerpt does not state. When the plan still stops below the band, say so in exclusions "
+        f"with exactly this prefix — '{SHORTFALL_PREFIX}' — followed "
+        "by the capabilities the ledger does support and the band it falls short of; that "
+        "disclosure is what makes a short course legal, and it is checked. Cover what the goal "
+        "names only where the ledger "
         "carries it: when the goal names a capability no excerpt supports, do not invent an "
         "objective for it — record the capability in exclusions, prefixed 'Not covered — no "
         "supporting source:', so the gap is visible to the reviewer instead of being taught "
@@ -5098,16 +5212,36 @@ def _plan_instructions_v2(
     capability: capability_policy.LessonCapabilityPlan | None = None,
     parent_brief: dict[str, Any] | None = None,
     goal: str | None = None,
+    sources: Sequence[SourceRecord] | None = None,
 ) -> str:
     """The ``coursebook.plan.v2`` blueprint prompt (``docs/COURSE-BLUEPRINT.md`` §5).
 
     It asks for units, objectives and the check plan only. Sections are authored after approval
-    by the unit stage, so this prompt must not ask for them and the model has no field for them.
+    by the unit stage, so this prompt must not ask for them and the model has no field for it.
+
+    ``sources`` is the ledger this plan will be authored against. It is read only for the two
+    derived numbers of :func:`_scope_objective_band` — the floor the distinct capabilities can
+    honestly support and the ceiling the research cell's ``max_sources`` can source — so the band
+    stated here is the band the rule gate enforces, never a wider one.
     """
     expectation = _scope_expectation(scope)
     assert expectation is not None
     unit_low, unit_high = expectation["blueprint_units"]
-    obj_low, obj_high = expectation["blueprint_objectives"]
+    band_low, band_high = (int(value) for value in expectation["blueprint_objectives"])
+    budget = research_mod.budget_for(
+        research_mod.effective_depth((dials or {}).get("depth"), expectation["scope"]),
+        expectation["scope"],
+    )
+    capabilities = _ledger_capability_count(sources) if sources is not None else 0
+    if sources is None:
+        # No ledger was handed in (a direct caller building a prompt, never the pipeline): state
+        # the scope's own band rather than claim a capability count nobody supplied. The pipeline
+        # always passes the ledger, so the real prompt carries the derived pair.
+        obj_low, obj_high = band_low, band_high
+    else:
+        obj_low, obj_high = _scope_objective_band(
+            expectation, sources, depth=(dials or {}).get("depth")
+        )
     per_low, per_high = expectation["unit_objectives"]
     lines = [
         f"Design blueprint plan v2 (plan_schema {PLAN_SCHEMA_V2_NAME!r}) for the goal in the input.",
@@ -5115,30 +5249,58 @@ def _plan_instructions_v2(
         f"Research status: {research_status}.",
         f"Scope: {expectation['scope']} — {expectation['note']}. Produce {unit_low} to {unit_high} "
         f"unit(s) and {obj_low} to {obj_high} objective(s) across the whole course.",
-        f"Each unit is an ordered group of {per_low} to {per_high} objective(s) for this scope, "
-        "with a title, a goal, its prerequisite unit ordinals and a target lesson count.",
-        "Objective ordinals are contiguous across the whole course; every objective names the "
-        "unit it belongs to with unit_ref and appears in unit order.",
-        "Unit ordinals are contiguous from 1. prereq_unit_ordinals holds only strictly lower "
-        "ordinals, with no duplicates and no self reference; unit 1 has none.",
-        "target_lessons is the number of owner plus review lessons that unit will carry; every "
-        "objective needs its own owner lesson, so target_lessons is at least that unit's "
-        "objective count. The sum of target_lessons must fit the declared sessions per week and "
-        "weeks.",
-        "Do not author sections or lessons. Sections are authored by a separate unit stage after "
-        "approval; a section field is not part of this schema.",
-        "Produce exactly one check plan entry per objective with objective_ref, kind and "
-        "evidence_target, plus optional notes. Do not emit count or independent_evidence: one "
-        "owner lesson writes exactly one check, and independence is an evidence class.",
-        # CP-015g/D1-F1: the check's kind is the shape of the evidence, and a quiz cannot
-        # evidence something the learner does with their hands.
-        "The check's `kind` follows the objective's evidence target, never the reverse: a "
-        "'procedure' objective is evidenced by a performance checklist (kind 'verification'), "
-        "a 'transfer' objective by a recorded attempt or an observation log (kind 'verification' "
-        "or 'observation'), and only a 'recall', 'comprehension' or 'discrimination' objective "
-        "may be evidenced by a quiz. A course that measures only what the learner can say about "
-        "an act does not evidence the act.",
     ]
+    if (obj_low, obj_high) != (band_low, band_high):
+        # The derived band is the enforced one, so it is the one the author is told (E2E S5/S6).
+        # The band itself is still named, because a plan below it must disclose the shortfall and
+        # a plan above the ceiling would be refused for a reason the author can now see coming.
+        why: list[str] = []
+        if obj_low != band_low:
+            why.append(
+                f"the supplied excerpts carry {capabilities} distinct "
+                f"capabilit{'y' if capabilities == 1 else 'ies'}, and an objective is only "
+                "honest when an excerpt states its capability"
+            )
+        if obj_high != band_high:
+            why.append(
+                f"this pass may fetch at most {budget.max_sources} source(s) and each objective "
+                f"needs its own verbatim quote, so at most "
+                f"{budget.max_sources * research_mod.OBJECTIVES_PER_SOURCE} objectives can be "
+                "sourced"
+            )
+        lines.append(
+            f"The {expectation['scope']!r} band is {band_low} to {band_high} objective(s); "
+            + "; ".join(why)
+            + f". The band for this plan is therefore {obj_low} to {obj_high} objective(s): "
+            "author within it and disclose any shortfall against the band in exclusions."
+        )
+    lines.extend(
+        [
+            f"Each unit is an ordered group of {per_low} to {per_high} objective(s) for this scope, "
+            "with a title, a goal, its prerequisite unit ordinals and a target lesson count.",
+            "Objective ordinals are contiguous across the whole course; every objective names the "
+            "unit it belongs to with unit_ref and appears in unit order.",
+            "Unit ordinals are contiguous from 1. prereq_unit_ordinals holds only strictly lower "
+            "ordinals, with no duplicates and no self reference; unit 1 has none.",
+            "target_lessons is the number of owner plus review lessons that unit will carry; every "
+            "objective needs its own owner lesson, so target_lessons is at least that unit's "
+            "objective count. The sum of target_lessons must fit the declared sessions per week and "
+            "weeks.",
+            "Do not author sections or lessons. Sections are authored by a separate unit stage after "
+            "approval; a section field is not part of this schema.",
+            "Produce exactly one check plan entry per objective with objective_ref, kind and "
+            "evidence_target, plus optional notes. Do not emit count or independent_evidence: one "
+            "owner lesson writes exactly one check, and independence is an evidence class.",
+            # CP-015g/D1-F1: the check's kind is the shape of the evidence, and a quiz cannot
+            # evidence something the learner does with their hands.
+            "The check's `kind` follows the objective's evidence target, never the reverse: a "
+            "'procedure' objective is evidenced by a performance checklist (kind 'verification'), "
+            "a 'transfer' objective by a recorded attempt or an observation log (kind 'verification' "
+            "or 'observation'), and only a 'recall', 'comprehension' or 'discrimination' objective "
+            "may be evidenced by a quiz. A course that measures only what the learner can say about "
+            "an act does not evidence the act.",
+        ]
+    )
     lines.extend(_plan_sourcing_rules())
     lines.extend(
         [
@@ -6755,27 +6917,59 @@ def prerequisite_edge_reasons(units: Sequence[dict[str, Any]]) -> list[str]:
     return reasons
 
 
+#: How many ``sourced`` objectives one capability may carry. A capability is one distinct claim
+#: link (one verbatim quote from a supplied excerpt). It may be split into an ordered pair of
+#: sub-performances — recognise it, then do it unaided — because those two ask the evidence for
+#: different things. A third variant over the same claim is the padding E2E S5 measured
+#: ("recognise the parts" → "identify the parts with support" → "name the parts"): three titles,
+#: one performance, and a check plan that cannot tell them apart.
+CAPABILITY_SUB_PERFORMANCES_MAX = 2
+
+
 def _duplicate_performance_reasons(objectives: Sequence[Mapping[str, Any]]) -> list[str]:
-    """Item 24 — a shortfall is closed by distinguishable performances, never by a repeat.
+    """Item 24 / E2E S5 — a shortfall is closed by distinguishable performances, never by padding.
 
     The scope floor counts objectives, and a ledger that supports fewer capabilities than the
     floor left the planner two dishonest ways out: invent an unsourced objective (the citation
-    rules already refuse that) or relabel a supported one twice. Splitting a capability into
-    ordered sub-performances is legitimate only while the evidence can tell them apart, so two
-    ``sourced`` objectives that copy the same claim link, declare the same evidence target and
-    state the same observable criterion are one objective printed twice. Nothing here reads prose
-    a model could paraphrase around: the claim link and the criteria are the plan's own fields.
-    Comparison uses the module's one case/whitespace/punctuation folding rule (``_procedure_key``)
-    and keeps word order, so a reordering stays a different instruction.
+    rules already refuse that) or relabel a supported one. Two ways of relabelling are refused
+    here, both deterministic:
+
+    * **the same performance twice** — two ``sourced`` objectives that copy the same claim link,
+      declare the same evidence target and state the same observable criterion are one objective
+      printed twice, and no check can score them differently;
+    * **a third variant of one capability** — a capability may carry at most
+      :data:`CAPABILITY_SUB_PERFORMANCES_MAX` objectives (recognise, then unaided). Past that the
+      plan is manufacturing count out of one sentence: "identify the parts with support" and "name
+      the parts" are titles over the performance its first objective already asked for, whatever
+      their criteria are worded as. The honest repair is the one the floor now allows — stop at
+      the capabilities the ledger supports and disclose the shortfall in ``exclusions``.
+
+    Nothing here reads prose a model could paraphrase around: the claim link and the criteria are
+    the plan's own fields. Comparison uses the module's one case/whitespace/punctuation folding
+    rule (``_procedure_key``) and keeps word order, so a reordering stays a different instruction.
     """
     reasons: list[str] = []
     seen: dict[tuple[str, str, str], int] = {}
+    per_capability: dict[str, int] = {}
     for objective in objectives:
         if str(objective.get("support") or "") != "sourced":
             continue
         quote = _procedure_key(objective.get("source_quote"))
         if not quote:
             continue
+        ordinal = int(objective.get("ordinal", 0))
+        per_capability[quote] = per_capability.get(quote, 0) + 1
+        if per_capability[quote] > CAPABILITY_SUB_PERFORMANCES_MAX:
+            reasons.append(
+                f"objective {ordinal} is sourced objective {per_capability[quote]} over one "
+                f"capability ('{quote[:60]}'): a capability may carry at most "
+                f"{CAPABILITY_SUB_PERFORMANCES_MAX} ordered sub-performances (recognise it, then "
+                "do it unaided), because a further title over the same claim asks for the same "
+                "performance its earlier objectives already ask for. Do not manufacture the "
+                "objective count out of one sentence: stop at the capabilities the ledger "
+                f"supports and disclose the shortfall in exclusions with the prefix "
+                f"'{SHORTFALL_PREFIX}'"
+            )
         criteria = " | ".join(
             key
             for key in (_procedure_key(item) for item in objective.get("evidence_criteria") or [])
@@ -6784,13 +6978,12 @@ def _duplicate_performance_reasons(objectives: Sequence[Mapping[str, Any]]) -> l
         if not criteria:
             continue
         key = (quote, str(objective.get("evidence_target") or ""), criteria)
-        ordinal = int(objective.get("ordinal", 0))
         if key in seen:
             reasons.append(
                 f"objective {ordinal} repeats objective {seen[key]}'s sourced claim, evidence "
                 "target and evidence criteria: two objectives the evidence cannot tell apart are "
                 "one objective printed twice. A shortfall is closed by ordered sub-performances "
-                "(recognise, then with support, then unaided), each asking for something its "
+                "(recognise, then unaided), each asking for something its "
                 "check can distinguish — never by a second title over the same performance"
             )
         else:
@@ -6839,19 +7032,55 @@ def _enforce_plan_rules_v2(
     unit_ordinals = [int(unit.get("ordinal", 0)) for unit in units]
     objective_ordinals = [int(obj.get("ordinal", 0)) for obj in objectives]
 
-    # Rule 1 — scope bounds.
+    # Rule 1 — scope bounds. Two of the three numbers are derived, not the band's own (E2E
+    # S5/S6): the floor is the ledger's distinct capability count when that is smaller than the
+    # band's floor, and the ceiling is the research cell's sourcing capacity
+    # (``max_sources × OBJECTIVES_PER_SOURCE``). The band's numbers remain the outer shape a
+    # course of this scope is expected to have, and a plan shorter than that shape must disclose
+    # the shortfall in its own exclusions.
     lo_units, hi_units = expectation["blueprint_units"]
-    lo_obj, hi_obj = expectation["blueprint_objectives"]
+    band_low, band_high = (int(value) for value in expectation["blueprint_objectives"])
+    floor, ceiling = _scope_objective_band(expectation, ledger, depth=(dials or {}).get("depth"))
     if not lo_units <= len(units) <= hi_units:
         reasons.append(
             f"scope {expectation['scope']!r} requires {lo_units} to {hi_units} unit(s); "
             f"the plan has {len(units)}"
         )
-    if not lo_obj <= len(objectives) <= hi_obj:
-        reasons.append(
-            f"scope {expectation['scope']!r} requires {lo_obj} to {hi_obj} objective(s); "
-            f"the plan has {len(objectives)}"
+    if not floor <= len(objectives) <= ceiling:
+        bound = (
+            f"scope {expectation['scope']!r} requires {floor} to {ceiling} objective(s)"
+            if floor != band_low or ceiling != band_high
+            else f"scope {expectation['scope']!r} requires {band_low} to {band_high} objective(s)"
         )
+        reasons.append(f"{bound}; the plan has {len(objectives)}")
+    if len(objectives) < band_low:
+        capabilities = _ledger_capability_count(ledger)
+        if capabilities and capabilities < band_low:
+            if not scope_shortfall_disclosed(plan):
+                reasons.append(
+                    f"scope {expectation['scope']!r} expects {band_low} to {band_high} "
+                    f"objective(s) and the ledger supports {capabilities} distinct "
+                    f"capabilit{'y' if capabilities == 1 else 'ies'}, so the plan may stop below "
+                    f"the band — but only when it says so: add an exclusions entry beginning "
+                    f"'{SHORTFALL_PREFIX}' naming the capabilities the ledger does support and "
+                    "the band it falls short of. A shortfall is disclosed, never padded out with "
+                    "a third title over one capability"
+                )
+        elif capabilities:
+            reasons.append(
+                f"scope {expectation['scope']!r} expects {band_low} to {band_high} objective(s) "
+                f"and the ledger supports {capabilities} distinct capabilities, so the floor "
+                f"applies; the plan has {len(objectives)}. Author the missing objectives from "
+                "the capabilities the ledger carries"
+            )
+        else:
+            reasons.append(
+                f"scope {expectation['scope']!r} expects {band_low} to {band_high} objective(s); "
+                f"the plan has {len(objectives)}. The supplied ledger carries no quotable "
+                "capability at all, so no shortfall in it can be disclosed: a wider course is "
+                "authored with support 'unverified' for the claims no source establishes, and "
+                "research wider if the goal needs them sourced"
+            )
     if recipe == "one_off" and (len(units) != 1 or len(objectives) != 1):
         reasons.append("a one-off brief is exactly one unit and exactly one objective")
     if recipe == "one_off" and declared_scope not in ("", "single"):
@@ -9132,6 +9361,22 @@ def build_plan_request(
     # stored v1 documents must keep being authored and read unchanged (§10).
     blueprint = bool(scope)
     scope_expectation = _scope_expectation(scope) if blueprint else None
+    # E2E S5/S6: the band this plan is judged against — the ledger's capability floor and this
+    # research cell's sourcing ceiling — computed once here so the payload rules and the prompt
+    # state the same pair the rule gate enforces.
+    if scope_expectation is not None:
+        scope_band = list(scope_expectation["blueprint_objectives"])
+        plan_band = list(
+            _scope_objective_band(
+                scope_expectation,
+                research_run.sources,
+                depth=(dials or {}).get("depth"),
+            )
+        )
+    else:
+        # Unreachable on the v2 path (a blueprint is authored only when a scope is declared), and
+        # kept explicit so the v1 payload below never reads a band it does not have.
+        scope_band, plan_band = [4, 8], [4, 8]
     schema = (
         parent_plan_schema_v2(parent_brief)
         if blueprint and pages is not None
@@ -9162,7 +9407,12 @@ def build_plan_request(
             {
                 "units": "one ordered group of objectives per unit; units are the authoring, "
                 "budget and cancel checkpoint",
-                "objective_count": list(scope_expectation["blueprint_objectives"]),
+                # E2E S5/S6: the payload states the band this plan is actually judged against —
+                # the ledger's capability floor and the research cell's sourcing ceiling — and
+                # keeps the scope's own band beside it so the author can disclose a shortfall
+                # against the band the reviewer knows.
+                "objective_count": plan_band,
+                "objective_band": scope_band,
                 "unit_count": list(scope_expectation["blueprint_units"]),
                 "unit_objective_count": list(scope_expectation["unit_objectives"]),
                 "sections": "do not author sections; a separate unit stage authors them after "
@@ -9223,6 +9473,10 @@ def build_plan_request(
             capability=capability,
             parent_brief=parent_brief,
             goal=goal,
+            # The prompt states the same derived band the rule gate enforces (E2E S5/S6): the
+            # floor the ledger's distinct capabilities support and the ceiling this research cell
+            # can source. Passing the ledger is what keeps the two numbers one number.
+            sources=list(research_run.sources),
         )
         if blueprint
         else _plan_instructions(
