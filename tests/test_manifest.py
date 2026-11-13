@@ -160,6 +160,9 @@ class PackageLayoutTest(unittest.TestCase):
                 "/workshop/catalog",
                 "/workshop/install",
                 "/workshop/share",
+                # W2: the fetch half of `source.revalidate` — the frozen method needs page text
+                # and this process has no plugin `ctx`, so the host registry is the fetch.
+                "/sources/revalidate",
             },
         )
 
