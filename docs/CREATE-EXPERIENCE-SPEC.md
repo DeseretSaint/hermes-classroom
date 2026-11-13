@@ -35,8 +35,8 @@ a `general` domain, three comprehension objectives, and — measured — a plan 
 
 One question, asked once, on a step of its own after the shape step:
 
-> **What do you want to be able to do when this is done?**
-> *Not the topic — the thing you want to be able to do.*
+> **What would prove you can do it?**
+> *The proof you want at the end — what you should be able to show, make or explain.*
 
 Three domain-shaped suggestions and a free-text field, exactly the pattern the goal gallery already
 uses (`desktop/src/50-create.js:206-260`), so no new component vocabulary:

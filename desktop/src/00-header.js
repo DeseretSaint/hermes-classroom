@@ -47,6 +47,59 @@ const AREAS = {
 }
 
 /**
+ * The learner's own vocabulary, in one place (E2E U6).
+ *
+ * The same thing used to print as "Section 2 of 6" on the desk, "Checkpoint 3" in a path label,
+ * "STOP 7" in the player header and "Objective title" in Studio, and one state was "Evidence",
+ * "Independent evidence" and "Complete" on three surfaces. Every learner-facing noun, state word
+ * and check word now comes from this map: `tests/test_desktop_learner_copy.py` refuses a second
+ * literal for any of these words and refuses the internal words on a rendered learner surface.
+ * The enum ids stay frozen in `contracts/`; only the words a person reads live here.
+ */
+const CB_COPY = (() => {
+  const evidence = Object.freeze({ one: 'Evidence', independent: 'Independent evidence' })
+  const section = Object.freeze({ one: 'Section', many: 'Sections' })
+  const step = Object.freeze({ one: 'Step', many: 'Steps' })
+  const check = Object.freeze({ one: 'Check', many: 'Checks' })
+  const state = Object.freeze({
+    not_started: 'Not started',
+    introduced: 'Started',
+    independent_evidence: evidence.independent,
+    delayed_evidence: 'Delayed evidence',
+    review_due: 'Review due',
+    needs_review: 'Needs review',
+    overridden: 'Moved on without a grade'
+  })
+  const checkState = Object.freeze({
+    none: 'No check yet',
+    open: 'Check open',
+    closed: 'Check closed',
+    superseded: 'Check replaced'
+  })
+  return Object.freeze({
+    evidence,
+    section,
+    step,
+    check,
+    state,
+    checkState,
+    /** "Section 2 of 6", "Section 2", or the bare noun when nothing is counted. */
+    sectionLabel(ordinal, total) {
+      if (!ordinal) return section.one
+      return total ? `${section.one} ${ordinal} of ${total}` : `${section.one} ${ordinal}`
+    },
+    /** A stored objective/section state as the learner reads it; an unknown id is never printed. */
+    stateWord(value) {
+      return state[value] || state.not_started
+    },
+    /** The check row's learner word. `none` means no check was authored — a fact, not a lock. */
+    checkWord(value) {
+      return checkState[value] || 'Check state not recorded'
+    }
+  })
+})()
+
+/**
  * Mirrors of frozen contract enums. `tests/test_desktop_contracts.py` reads this module and
  * refuses any drift from `contracts/vocabulary.v1.json` and `contracts/rpc.v2.json`, so these
  * are checked copies rather than a second authority.
@@ -118,7 +171,7 @@ const DIALS = {
 const FILTERS = [
   { id: 'all', label: 'All' },
   { id: 'in_progress', label: 'In progress' },
-  { id: 'review_due', label: 'Review due' },
+  { id: 'review_due', label: CB_COPY.state.review_due },
   { id: 'archived', label: 'Archived' }
 ]
 /**

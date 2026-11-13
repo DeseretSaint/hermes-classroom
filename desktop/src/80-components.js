@@ -72,8 +72,8 @@ function learnerNextLabel(label) {
   const text = String(label || '').trim()
   if (!text) return ''
   const match = text.match(/^Review (\d+) objective\(s\)$/)
-  if (match) return `Review ${plural(Number(match[1]), 'objective', 'objectives')}`
-  return text.replace(/\bobjective\(s\)/g, 'objectives').replace(/\brun\(s\)/g, 'runs')
+  if (match) return `Review ${plural(Number(match[1]), CB_COPY.section.one.toLowerCase(), CB_COPY.section.many.toLowerCase())}`
+  return text.replace(/\bobjective\(s\)/g, CB_COPY.section.many.toLowerCase()).replace(/\brun\(s\)/g, 'runs')
 }
 
 /**
@@ -225,7 +225,7 @@ function RouteSpine({ objectives, currentId, onSelect, phone, ariaLabel }) {
     children: rows.map((objective) => {
       const tone = cbSpineTone(objective.state)
       const isCurrent = Boolean(currentId && objective.objective_id === currentId)
-      const word = DESK_STATE_WORD[objective.state] || 'Not started'
+      const word = CB_COPY.stateWord(objective.state)
       return jsx(
         'li',
         {
@@ -573,7 +573,7 @@ function CbAction({ variant, state, className, style, disabled, pending, childre
  */
 function CbStatePill({ state, label, phone }) {
   const tone = cbSpineTone(state)
-  const word = label || DESK_STATE_WORD[state] || 'Not started'
+  const word = label || CB_COPY.stateWord(state)
   return jsx('span', {
     'data-cb-state-pill': state || 'not_started',
     'data-cb-state-tone': tone,
@@ -2578,7 +2578,7 @@ function BlockBody({ block, sources, checkSlot, checkLabels, onSaveBlock, pronun
       checkSlot
         ? jsx(CheckPanelFrame, {
             kind: 'check',
-            label: 'Checkpoint',
+            label: CB_COPY.check.one,
             children: jsx('div', {
               className: 'flex flex-col gap-2',
               'data-cb-block-check': block.id,
@@ -2757,7 +2757,7 @@ function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onB
       checkSlot
         ? jsx(CheckPanelFrame, {
             kind: 'check',
-            label: 'Checkpoint',
+            label: CB_COPY.check.one,
             children: jsx('div', { className: 'flex flex-col gap-2', 'data-cb-block-check': block.id, children: checkSlot })
           })
         : null,
@@ -2823,7 +2823,7 @@ function questMissions(document) {
 function questProgressLabel(summary) {
   if (!summary || typeof summary !== 'object') return 'Progress not recorded'
   const total = Number(summary.total_objectives) || 0
-  if (total === 0) return 'No objectives recorded yet'
+  if (total === 0) return `No ${CB_COPY.section.many.toLowerCase()} recorded yet`
   const independent = Number(summary.independent) || 0
   const due = Number(summary.review_due) || 0
   return `${independent} independent · ${due} due`
@@ -2856,7 +2856,7 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
   const block = mission.block
   const brief = missionBriefLine(block, checkLabels)
   const checkpoint = mission.checkpoint
-  const stateWord = checkpoint ? 'Checkpoint' : 'Mission'
+  const stateWord = checkpoint ? CB_COPY.check.one : CB_COPY.step.one
   const tone = checkpoint ? 'var(--cb-ochre)' : 'var(--cb-ink-soft)'
   return jsxs('li', {
     'data-cb-mission': block.id,
@@ -3912,7 +3912,7 @@ function LessonPlayer({
   // the step readout advances. The course's objective total is a trail fact and is printed once,
   // as "Section n of m" — printing it here too gave one session two disagreeing totals.
   const stopTotal = steps.length > 0 ? String(steps.length) : null
-  const stopLabel = ordinal && stopTotal ? `STOP ${ordinal} OF ${stopTotal}` : ordinal ? `STOP ${ordinal}` : 'STOP'
+  const stopLabel = CB_COPY.sectionLabel(ordinal, stopTotal)
   // One objective sentence, composed only from recorded fields: the section's own evidence target,
   // in learner words. A section that records no target gets the title alone rather than a slogan.
   const objective =
@@ -5120,8 +5120,8 @@ function SectionPage({
   // twice: the source cards and saved notes live in the third part of the workspace.
   const railFacts = section
     ? [
-        { label: 'State', value: DESK_STATE_WORD[section.state] || 'Not started' },
-        { label: 'Evidence', value: learnerEvidenceTarget(section.evidence_target) || 'Not recorded' },
+        { label: 'State', value: CB_COPY.stateWord(section.state) },
+        { label: CB_COPY.evidence.one, value: learnerEvidenceTarget(section.evidence_target) || 'Not recorded' },
         { label: 'Attempts', value: String((page && page.attempts ? page.attempts.length : 0)) }
       ]
     : []

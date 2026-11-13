@@ -295,7 +295,7 @@ class CheckpointPathRenderTest(PathHarness):
         for objective_id in ("obj_01", "obj_02", "obj_03", "obj_04"):
             self.assertIn(f'data-cb-path-open="{objective_id}"', html)
         # One openable button per node, plus the details disclosure that is not a navigation.
-        self.assertEqual(html.count('aria-label="Checkpoint '), 4, html)
+        self.assertEqual(html.count('aria-label="Section '), 4, html)
         self.assertEqual(html.count('data-cb-path-current="true"'), 1, html)
         self.assertEqual(html.count('aria-current="step"'), 1, html)
         self.assertIn('data-cb-path-current="true"', html)
@@ -349,7 +349,7 @@ class CheckpointPathRenderTest(PathHarness):
         self.assertIn("data-cb-path-run", html)
         self.assertIn("Section 2 of 4", html)
         self.assertIn("≈ 20 min", html)
-        self.assertIn("Next: Checkpoint 3", html)
+        self.assertIn("Next: Section 3", html)
         # No recorded estimate means no time claim in the run header at all.
         none = self.render(estimate={"status": "none", "minutes": None})["html"]
         run = re.search(r'data-cb-path-run=""[^>]*>(.*?)</p>', none, re.S)
@@ -368,7 +368,9 @@ class CheckpointPathRenderTest(PathHarness):
         rendered = self.render(OVERRODE_OUTLINE)
         html = rendered["html"]
         self.assertEqual(rendered["desk"]["settled"], 0)
-        self.assertIn("Overridden", html)
+        # U6: the stored `overridden` state has one learner word, and it is not an evidence word.
+        self.assertIn("Moved on without a grade", html)
+        self.assertNotIn(">Overridden<", html)
         # H-155 owns the caption rule: a zero count is said as a count, never as a slogan.
         self.assertIn("0 of 2 sections with evidence", html)
 

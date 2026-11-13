@@ -1930,6 +1930,7 @@ function CoursebookSettings() {
 // block views, the section page and the quest projection are pure components/functions over a
 // server-owned document, so a Node test can render them without a backend, a chat or a window.
 export {
+  CB_COPY,
   TutorRail,
   TutorRailPane,
   TutorSelectionPill,

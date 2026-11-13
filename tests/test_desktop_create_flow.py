@@ -961,8 +961,8 @@ class CreateFormInteractionTest(unittest.TestCase):
         step = out["outcomeStep"]
         self.assertIsNotNone(step, "the end-goal step did not render for a short course")
         self.assertEqual(step["step"], "Step 3 of 4")
-        self.assertEqual(step["question"], "What do you want to be able to do when this is done?")
-        self.assertEqual(step["subtitle"], "Not the topic — the thing you want to be able to do.")
+        self.assertEqual(step["question"], "What would prove you can do it?")
+        self.assertEqual(step["subtitle"], "The proof you want at the end — what you should be able to show, make or explain.")
         self.assertEqual(len(step["chips"]), 3)
         self.assertEqual(step["domain"], "default")
         # Review still follows it, one step later, and Create is still a press there.
@@ -978,7 +978,7 @@ class CreateFormInteractionTest(unittest.TestCase):
         # The course row and the plan job carry the same goal, so they cannot disagree.
         self.assertEqual(out["coursePayload"]["goal"], expected)
         # And the last screen before Create shows it back in the learner's words.
-        self.assertEqual(out["previewOutcome"], f"Outcome: {chip}")
+        self.assertEqual(out["previewOutcome"], f"Proof: {chip}")
         # Every existing brief field is exactly what it was.
         self.assertEqual(out["brief"]["scope"], "short")
         self.assertEqual(out["brief"]["level"], "none")
@@ -1000,7 +1000,7 @@ class CreateFormInteractionTest(unittest.TestCase):
         self.assertEqual(out["stepAfterShape"]["step"], "Step 3 of 3")
         self.assertEqual(out["stepAtReview"], "Step 3 of 3")
         self.assertEqual(out["brief"]["goal"], GOAL)
-        self.assertEqual(out["previewOutcome"], "Outcome: not stated")
+        self.assertEqual(out["previewOutcome"], "Proof: not stated")
 
     def test_skipping_sends_the_goal_unchanged(self) -> None:
         out = self.submit("none", outcomeMode="skip")
@@ -1035,8 +1035,8 @@ class CreateFormInteractionTest(unittest.TestCase):
             )
             self.assertEqual(out["domain"], domain, subject)
             self.assertEqual(out["chips"], chips, subject)
-            self.assertEqual(out["question"], "What do you want to be able to do when this is done?")
-            self.assertEqual(out["subtitle"], "Not the topic — the thing you want to be able to do.")
+            self.assertEqual(out["question"], "What would prove you can do it?")
+            self.assertEqual(out["subtitle"], "The proof you want at the end — what you should be able to show, make or explain.")
 
     # ── CREATE-5: change the goal really returns to the form ───────────────
     def test_change_the_goal_returns_to_the_prefilled_form(self) -> None:

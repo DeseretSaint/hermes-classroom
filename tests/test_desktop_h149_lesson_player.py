@@ -192,7 +192,7 @@ class PlayerSurfaceTest(H149RenderTest):
         doc = document(guided=True, blocks=COMPLETE_BLOCKS, check_id="chk_0123456789abcdef")
         html = self.player(doc)
         self.assertIn('data-cb-player-stop="2/4"', html)
-        self.assertIn("STOP 2 OF 4", html)
+        self.assertIn("Section 2 of 4", html)
         self.assertIn('data-cb-player-title=""', html)
         self.assertIn("Affection and register", html)
         self.assertIn('data-cb-player-objective=""', html)

@@ -4403,7 +4403,7 @@ function PlanRejectPanel({ model, busy, error, onAction }) {
  */
 const FINE_TUNE_CHIP = Object.freeze({
   edited: { id: 'edited', label: 'Edited', variant: 'outline' },
-  needs_review: { id: 'needs_review', label: 'Needs review', variant: 'warn' },
+  needs_review: { id: 'needs_review', label: CB_COPY.state.needs_review, variant: 'warn' },
   approved: { id: 'approved', label: 'Approved', variant: 'muted' }
 })
 
@@ -5215,7 +5215,7 @@ function StudioFineTunePanel({
         : null,
       jsx('div', {
         role: 'list',
-        'aria-label': 'Objectives in stored order',
+        'aria-label': `${CB_COPY.section.many} in stored order`,
         'data-cb-finetune-order': display.map((objective) => objective.objective_id).join(','),
         className: 'flex flex-col gap-2',
         children: display.map((objective, index) => {
@@ -5325,7 +5325,7 @@ function StudioFineTunePanel({
                       children: [
                         jsx(StudioField, {
                           id: `cb-finetune-title-${objective.objective_id}`,
-                          label: 'Objective title',
+                          label: `${CB_COPY.section.one} title`,
                           hint:
                             'Stored on the objective. The section page keeps its authored prose; a retitle is a plan revision that needs review.',
                           children: jsx(sdk.Input, {
@@ -6250,7 +6250,7 @@ function StudioPlanView({
                               jsx('span', { className: 'shrink-0 text-xs tabular-nums text-(--ui-text-secondary)', children: String(objective.ordinal).padStart(2, '0') }),
                               editing
                                 ? jsx(sdk.Input, {
-                                    'aria-label': `Objective ${objective.ordinal} title`,
+                                    'aria-label': `${CB_COPY.section.one} ${objective.ordinal} title`,
                                     value: draft.title || '',
                                     onChange: (event) =>
                                       setDrafts((previous) => ({
@@ -6275,7 +6275,7 @@ function StudioPlanView({
                                       })),
                                     children: [
                                       jsx(sdk.SelectTrigger, {
-                                        'aria-label': `Objective ${objective.ordinal} evidence target`,
+                                        'aria-label': `${CB_COPY.section.one} ${objective.ordinal} evidence target`,
                                         className: 'w-36',
                                         children: jsx(sdk.SelectValue, {})
                                       }, 'trigger'),
@@ -6344,7 +6344,7 @@ function StudioPlanView({
                         // The authoring row still shows the plan gate's own state, in the same
                         // words the trail and the path use. The backend enum is the `data-*`
                         // attribute for evidence inspection, never the sentence a parent reads.
-                        children: `${OBJECTIVE_STATE_COPY[objective.state] || 'State not recorded'} · ${cbCheckStateWord(objective.check_state)}`
+                        children: `${CB_COPY.stateWord(objective.state)} · ${cbCheckStateWord(objective.check_state)}`
                       })
                     ]
                   },
@@ -6355,7 +6355,7 @@ function StudioPlanView({
                 ? jsxs('div', {
                     className: 'flex flex-col gap-2 border-t border-(--ui-stroke-tertiary) pt-2',
                     children: [
-                      jsx(CbLabel, { children: 'Add an objective' }),
+                      jsx(CbLabel, { children: `Add a ${CB_COPY.section.one.toLowerCase()}` }),
                       added.map((item, index) =>
                         jsxs(
                           'div',
@@ -6363,7 +6363,7 @@ function StudioPlanView({
                             className: 'flex flex-wrap items-center gap-2',
                             children: [
                               jsx(sdk.Input, {
-                                'aria-label': `New objective ${index + 1} title`,
+                                'aria-label': `New ${CB_COPY.section.one.toLowerCase()} ${index + 1} title`,
                                 value: item.title,
                                 onChange: (event) =>
                                   setAdded((previous) =>
@@ -6371,7 +6371,7 @@ function StudioPlanView({
                                       position === index ? { ...entry, title: event.target.value } : entry
                                     )
                                   ),
-                                placeholder: 'Objective title',
+                                placeholder: `${CB_COPY.section.one} title`,
                                 className: 'min-w-0 flex-1'
                               }),
                               jsx(sdk.Select, {
@@ -6384,7 +6384,7 @@ function StudioPlanView({
                                   ),
                                 children: [
                                   jsx(sdk.SelectTrigger, {
-                                    'aria-label': `New objective ${index + 1} evidence target`,
+                                    'aria-label': `New ${CB_COPY.section.one.toLowerCase()} ${index + 1} evidence target`,
                                     className: 'w-36',
                                     children: jsx(sdk.SelectValue, {})
                                   }, 'trigger'),

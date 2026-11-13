@@ -11,7 +11,7 @@ const LEARNING_VIEWS = [
   { id: 'notebook', label: 'Notebook' },
   { id: 'quizzes', label: 'Quizzes' },
   { id: 'plan', label: 'Plan' },
-  { id: 'evidence', label: 'Evidence' },
+  { id: 'evidence', label: CB_COPY.evidence.one },
   { id: 'sources', label: 'Sources' },
   { id: 'export', label: 'Export' }
 ]
@@ -36,7 +36,7 @@ const COURSE_PRIMARY_TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'learn', label: 'Learn' },
   { id: 'notebook', label: 'Notebook' },
-  { id: 'evidence', label: 'Evidence' }
+  { id: 'evidence', label: CB_COPY.evidence.one }
 ]
 
 /**
@@ -55,16 +55,8 @@ function courseMoreTabs(supports) {
   ].filter(Boolean)
 }
 
-/** A section or quiz row is never colour-only: this is the text that carries the state. */
-const OBJECTIVE_STATE_COPY = {
-  not_started: 'Not started',
-  introduced: 'Introduced',
-  independent_evidence: 'Independent evidence',
-  delayed_evidence: 'Delayed evidence',
-  review_due: 'Review due',
-  needs_review: 'Needs review',
-  overridden: 'Overridden'
-}
+/** A section or quiz row is never colour-only: this is the text that carries the state. The words
+ * are `CB_COPY.state` (00-header.js) — this file carries no state word of its own. */
 
 const EVIDENCE_CLASS_COPY = {
   // The backend's `cold` class means *independent*: no hint and no shown answer. The learner reads
@@ -216,19 +208,24 @@ function learnerEvidenceTarget(value) {
  * next step, and it wins over the stored state only while that section is still open.
  */
 const SECTION_STATE_SEMANTIC = {
-  not_started: { key: 'not_started', label: 'Not started', icon: 'circle-outline' },
-  introduced: { key: 'started', label: 'Started', icon: 'circle-filled' },
-  independent_evidence: { key: 'complete', label: 'Complete', icon: 'pass' },
-  delayed_evidence: { key: 'complete', label: 'Complete', icon: 'pass' },
-  review_due: { key: 'review', label: 'Review due', icon: 'history' },
-  needs_review: { key: 'review', label: 'Review needed', icon: 'history' },
-  overridden: { key: 'moved_on', label: 'Moved on without a grade', icon: 'dash' }
+  not_started: { key: 'not_started', icon: 'circle-outline' },
+  introduced: { key: 'started', icon: 'circle-filled' },
+  independent_evidence: { key: 'complete', icon: 'pass' },
+  delayed_evidence: { key: 'complete', icon: 'pass' },
+  review_due: { key: 'review', icon: 'history' },
+  needs_review: { key: 'review', icon: 'history' },
+  overridden: { key: 'moved_on', icon: 'dash' }
 }
 
+/**
+ * The icon and machine key are this surface's own; the word is always `CB_COPY.state`, so the
+ * index cannot call the same stored state "Complete" while the desk calls it "Evidence".
+ */
 function sectionStateSemantic(state, isNext) {
   const settled = state === 'independent_evidence' || state === 'delayed_evidence'
   if (isNext && !settled) return { key: 'next', label: 'Next', icon: 'chevron-right' }
-  return SECTION_STATE_SEMANTIC[state] || SECTION_STATE_SEMANTIC.not_started
+  const row = SECTION_STATE_SEMANTIC[state] || SECTION_STATE_SEMANTIC.not_started
+  return { ...row, label: CB_COPY.stateWord(state) }
 }
 
 /**
@@ -241,8 +238,8 @@ function sectionStateSemantic(state, isNext) {
 function progressStatement(independent, total) {
   const done = Math.max(0, Number(independent) || 0)
   const all = Math.max(0, Number(total) || 0)
-  if (all === 0) return 'No objectives recorded yet'
-  const noun = all === 1 ? 'objective' : 'objectives'
+  if (all === 0) return `No ${CB_COPY.section.many.toLowerCase()} recorded yet`
+  const noun = all === 1 ? CB_COPY.section.one.toLowerCase() : CB_COPY.section.many.toLowerCase()
   return `${done} of ${all} ${noun} ${all === 1 ? 'has' : 'have'} independent evidence`
 }
 
@@ -383,7 +380,7 @@ const WARNING_COPY_LEARNING = {
 }
 
 function StateText({ state }) {
-  return jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: OBJECTIVE_STATE_COPY[state] || state || 'unknown' })
+  return jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: CB_COPY.stateWord(state) })
 }
 
 function EvidenceClassText({ value }) {
@@ -2786,7 +2783,7 @@ function NotebookSaveDialog({ open, onClose, enrollmentId, objectiveId, lessonRu
 
   const provenance = []
   if (seed && seed.course_title) provenance.push({ label: 'Course', value: seed.course_title })
-  if (seed && seed.objective_title) provenance.push({ label: 'Objective', value: seed.objective_title })
+  if (seed && seed.objective_title) provenance.push({ label: CB_COPY.section.one, value: seed.objective_title })
   if (seed && seed.block_headline) provenance.push({ label: 'Saved from', value: seed.block_headline })
   const sourceNames = (seed && (seed.source_titles || seed.source_ids)) || []
   if (sourceNames.length > 0) {
@@ -3035,7 +3032,7 @@ const CB3_CLASSROOM_COPY = Object.freeze({
   retryGrading: 'This answer could not be graded yet. It is saved, and checking again does not use a new attempt.',
   retry: 'Try again',
   next: 'Next section',
-  evidenceTitle: 'Evidence',
+  evidenceTitle: CB_COPY.evidence.one,
   evidenceCount: '{n} of {total} checks recorded',
   evidenceEmpty: 'No checks recorded yet.',
   asideNext: 'Next up: {next}',

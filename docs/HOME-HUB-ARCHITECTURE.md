@@ -113,7 +113,7 @@ blueprint courses it is the current unit label, which hides `learner_label` (`do
 decorative milestone. A checkpoint is the cold check event that writes evidence: a **gate check**
 is the section's own check; a **delayed check** is the node reaching `review_due` and being
 answered cold; a **cumulative check** over several nodes has no per-node representation today, so
-the hub must not draw one. Its accessible name is “Checkpoint 3: <title>, Started”. Expanding it
+the hub must not draw one. Its accessible name is “Section 3: <title>, Started”. Expanding it
 may show the evidence target in learner words, the committed attempt count and the last-opened
 time. It may not show a lock, star, percentage or “0/3 complete”. `overridden` is its own word and
 is never counted as evidence; `settled` already excludes it.
