@@ -557,6 +557,24 @@ GENERIC_STUDY_PHRASES: tuple[str, ...] = (
 #: estimate stays the authority and the deterministic rule only refuses one that exceeds the cap.
 SCOPES: tuple[str, ...] = ("single", "short", "full")
 
+#: The band arithmetic, stated once because G5 showed the previous table left holes:
+#:
+#: * ``single`` holds exactly 1 objective;
+#: * ``short`` holds 2 to 10 objectives in 1 to 3 units — the lower bound is 2 because a
+#:   2-objective plan had no legal scope at all (single is exactly 1, and the old short floor of 3
+#:   refused it), and the upper bound is 10 because a 10-objective plan was refused at *both*
+#:   scopes: the old table said "requires 3 to 6" at short and "requires 12 to 40" at full;
+#: * ``full`` holds 9 to 40 objectives in 2 to 12 units. 40 is the plan schema's own ``maxItems``
+#:   (``PLAN_SCHEMA_V2``), not a product promise, so the band can never describe a document the
+#:   schema refuses; the 48 in the design doc is the *section* cap (40 owner + 8 review), which is
+#:   what ``_section_caps`` derives.
+#:
+#: The bands therefore cover every count from 1 to 40 and they **overlap** at 9-10. The overlap is
+#: deliberate: the declared scope is the learner's dial, so a 10-objective plan the learner asked
+#: for as a short course is legal, and the same plan under a full dial is legal too. A band is a
+#: maximum/minimum per dial, never a classifier that tells the learner which dial they meant.
+#: Sections (see :func:`_section_caps`) work out as single 1, short 2-12 and full 9-48 — also
+#: contiguous, which closes the 9-11 section hole the old table left.
 SCOPE_EXPECTATIONS: dict[str, dict[str, Any]] = {
     "single": {
         "max_weeks": 1,
@@ -573,7 +591,9 @@ SCOPE_EXPECTATIONS: dict[str, dict[str, Any]] = {
     "short": {
         "max_weeks": 8,
         "v1_objectives": (4, 6),
-        "blueprint_objectives": (3, 6),
+        # G5: 2-10, contiguous with ``single`` (1) below and overlapping ``full`` (9-40) above.
+        # The old 3-6 band left 2 and 7-11 objectives with no legal scope.
+        "blueprint_objectives": (2, 10),
         "blueprint_units": (1, 3),
         "unit_objectives": (1, 6),
         "note": "a short course of a few weeks, not a term-long syllabus",
@@ -581,7 +601,11 @@ SCOPE_EXPECTATIONS: dict[str, dict[str, Any]] = {
     "full": {
         "max_weeks": 104,
         "v1_objectives": (4, 8),
-        "blueprint_objectives": (12, 40),
+        # G5: 9-40. 40 is ``PLAN_SCHEMA_V2``'s own ``objectives.maxItems``; a band that promised 48
+        # objectives would describe a document the schema refuses. 48 is the section cap this table
+        # derives in ``_section_caps`` (40 owner + 8 review), which is where the design doc's
+        # "full 9-48" number belongs.
+        "blueprint_objectives": (9, 40),
         "blueprint_units": (2, 12),
         "unit_objectives": (2, 6),
         # No numeric claim here: this note is rendered by both prompt paths, and the two scopes
@@ -684,6 +708,61 @@ class GenerationRejected(GenerationError):
     """
 
     code = "VALIDATION_FAILED"
+
+
+#: The typed ``details.reason`` a scope-band refusal carries (G5). ``cb.errors`` v4 stays frozen:
+#: docs/CONTRACTS.md's H-130 rule puts a subsystem label in ``details.reason`` when the catalogue
+#: code's category, retryability and HTTP mapping already fit, and "the plan's shape does not fit
+#: the scope's band" is a content validation failure — ``VALIDATION_FAILED``, non-retryable, the
+#: same mapping every other deterministic plan refusal carries. A catalogue code for it would be a
+#: version bump owned by the contract owner, and it would add nothing a client can branch on.
+SCOPE_BAND_REASON = "scope_band"
+
+
+class ScopeBandRefused(GenerationRejected):
+    """G5: the plan's own size fits no legal band, so a second authoring pass cannot fix it.
+
+    Before this type, the second rule-gate failure was written as a plan document parked
+    ``needs_review``, which ``plan.approve`` then refused ("no durable validation binding"): a dead
+    artifact the learner had to discover. A count that no scope holds is not repairable by the
+    author — the model cannot invent a wider band — so the honest answer is a typed refusal that
+    names the legal bands and the learner's action, and **no plan row at all**.
+    """
+
+    reason = SCOPE_BAND_REASON
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        scope: str,
+        objectives: int,
+        units: int,
+        weeks: int | None = None,
+        legal_scopes: Sequence[str] = (),
+        rule_reasons: Sequence[str] = (),
+    ) -> None:
+        expectation = SCOPE_EXPECTATIONS.get(scope) or {}
+        objective_band = list(expectation.get("blueprint_objectives") or ())
+        unit_band = list(expectation.get("blueprint_units") or ())
+        # ``details`` is the contract's open, non-sensitive context object. Counts and scope names
+        # only: never a claim, an excerpt or a reference answer.
+        self.error_details: dict[str, Any] = {
+            "reason": SCOPE_BAND_REASON,
+            "scope": scope,
+            "objectives": int(objectives),
+            "units": int(units),
+            "legal_scopes": [str(name) for name in legal_scopes],
+            "objective_band": objective_band,
+            "unit_band": unit_band,
+        }
+        if weeks is not None:
+            self.error_details["weeks"] = int(weeks)
+        if expectation.get("max_weeks") is not None:
+            self.error_details["max_weeks"] = int(expectation["max_weeks"])
+        if rule_reasons:
+            self.error_details["rule_reasons"] = [str(item)[:300] for item in list(rule_reasons)[:6]]
+        super().__init__(message)
 
 
 class SyllabusPlanRefused(GenerationError):
@@ -980,11 +1059,27 @@ class LessonNotAvailable(GenerationError):
 
 
 class _RuleViolation(GenerationError):
-    """The generator broke a deterministic rule (recipe, scaffolding, answer leakage)."""
+    """The generator broke a deterministic rule (recipe, scaffolding, answer leakage).
 
-    def __init__(self, reasons: Sequence[str]) -> None:
+    ``band`` carries the scope-band context when the violation is *only* the plan's own size (G5).
+    The caller uses it to choose between the two honest outcomes: a repairable draft goes back to
+    the author for attempt 2, and a band-only failure after the last attempt is a typed
+    :class:`ScopeBandRefused` with no plan row written — not a plan parked ``needs_review`` that
+    ``plan.approve`` then refuses.
+    """
+
+    def __init__(self, reasons: Sequence[str], *, band: dict[str, Any] | None = None) -> None:
         self.reasons = [str(r) for r in reasons]
+        self.band = band if isinstance(band, dict) else None
         super().__init__("; ".join(self.reasons) or "generation rule violated")
+
+    @property
+    def band_only(self) -> bool:
+        """True when every reason is a scope-band reason (and there is at least one)."""
+        if not self.band:
+            return False
+        band_reasons = {str(item) for item in self.band.get("reasons") or ()}
+        return bool(band_reasons) and set(self.reasons) <= band_reasons
 
 
 # ── LLM seam ────────────────────────────────────────────────────────────────
@@ -4172,8 +4267,8 @@ def _section_caps(expectation: Mapping[str, Any]) -> tuple[int, int]:
     Derived from the scope's own objective and unit dials plus the blueprint's review allowance:
     every objective owns exactly one section, so the owner sections are the objective cap, and a
     review section sits on top of them (docs/COURSE-BLUEPRINT.md §1: none for ``single``, 0-2 in a
-    ``short`` course, 0-2 per unit with at most 8 in a ``full`` course). The documented bands work
-    out as single 1, short 8 and full 48.
+    ``short`` course, 0-2 per unit with at most 8 in a ``full`` course). With the G5 bands the
+    documented section ranges work out as single 1, short 2-12 and full 9-48.
     """
     per_high = int(expectation["unit_objectives"][1])
     obj_high = int(expectation["blueprint_objectives"][1])
@@ -4183,6 +4278,173 @@ def _section_caps(expectation: Mapping[str, Any]) -> tuple[int, int]:
     if str(expectation.get("scope") or "") == "short":
         return per_high + REVIEW_SECTIONS_PER_UNIT, obj_high + REVIEW_SECTIONS_PER_UNIT
     return per_high + REVIEW_SECTIONS_PER_UNIT, obj_high + REVIEW_SECTIONS_PER_COURSE
+
+
+def _weeks_value(plan: Mapping[str, Any]) -> int | None:
+    """The plan's authored ``time_estimate.weeks``, or ``None`` when it is not a plain integer."""
+    estimate = plan.get("time_estimate")
+    if not isinstance(estimate, Mapping):
+        return None
+    weeks = estimate.get("weeks")
+    return weeks if isinstance(weeks, int) and not isinstance(weeks, bool) else None
+
+
+def scope_band_fit(*, objectives: int, units: int) -> list[str]:
+    """Every scope whose objective and unit bands both hold this shape, narrowest first.
+
+    Used by the refusal text so the learner is told which dial their course actually fits. The
+    answer is never a guess: it is the same table the rule gate enforces, read for a different
+    question. ``9-10`` objectives legitimately fit both ``short`` and ``full`` (the bands overlap
+    on purpose), so the list can hold two names.
+    """
+    fits: list[str] = []
+    for scope in SCOPES:
+        expectation = SCOPE_EXPECTATIONS[scope]
+        obj_low, obj_high = expectation["blueprint_objectives"]
+        unit_low, unit_high = expectation["blueprint_units"]
+        if obj_low <= objectives <= obj_high and unit_low <= units <= unit_high:
+            fits.append(scope)
+    return fits
+
+
+def scope_bands_text() -> str:
+    """The legal bands, in one operator-readable sentence fragment."""
+    return "; ".join(
+        f"{scope} holds {SCOPE_EXPECTATIONS[scope]['blueprint_objectives'][0]} to "
+        f"{SCOPE_EXPECTATIONS[scope]['blueprint_objectives'][1]} objective(s) in "
+        f"{SCOPE_EXPECTATIONS[scope]['blueprint_units'][0]} to "
+        f"{SCOPE_EXPECTATIONS[scope]['blueprint_units'][1]} unit(s)"
+        for scope in SCOPES
+    )
+
+
+def _scope_band_reasons(
+    expectation: Mapping[str, Any],
+    *,
+    objectives: int,
+    units: int,
+    weeks: int | None = None,
+    by_unit: Mapping[int, int] | None = None,
+) -> list[str]:
+    """Every way a plan's own size leaves this scope's band.
+
+    Shared by the rule gate (which needs the strings as repair reasons) and by the refusal text
+    (which needs them as evidence that nothing else was wrong). A plan whose *weeks* exceed the
+    scope's cap is included: ``time_estimate.weeks`` is part of the band's promise (G5 names it as
+    the alternative source of the band), and a 10-week plan declared short is the same dead end as
+    a 24-objective plan declared short. ``by_unit`` adds the per-unit objective counts, which are
+    the same arithmetic at unit scale; the wording matches the rule gate's appends exactly so the
+    two can be compared as sets.
+    """
+    scope = str(expectation.get("scope") or "")
+    reasons: list[str] = []
+    unit_low, unit_high = expectation["blueprint_units"]
+    obj_low, obj_high = expectation["blueprint_objectives"]
+    if not unit_low <= units <= unit_high:
+        reasons.append(
+            f"scope {scope!r} requires {unit_low} to {unit_high} unit(s); the plan has {units}"
+        )
+    if not obj_low <= objectives <= obj_high:
+        reasons.append(
+            f"scope {scope!r} requires {obj_low} to {obj_high} objective(s); "
+            f"the plan has {objectives}"
+        )
+    lowest, highest = expectation["unit_objectives"]
+    for ordinal in sorted(int(key) for key in (by_unit or {})):
+        count = int((by_unit or {})[ordinal])
+        if count == 0:
+            reasons.append(f"unit {ordinal} has no objectives; a unit must author at least one")
+        elif not lowest <= count <= highest:
+            reasons.append(
+                f"unit {ordinal} has {count} objective(s); scope "
+                f"{scope!r} requires {lowest} to {highest}"
+            )
+    max_weeks = expectation.get("max_weeks")
+    if weeks is not None and max_weeks is not None and weeks > int(max_weeks):
+        reasons.append(
+            f"scope {scope!r} caps the plan at {int(max_weeks)} week(s); "
+            f"the time estimate says {weeks} week(s)"
+        )
+    return reasons
+
+
+def _scope_band_action(scope: str, *, objectives: int, units: int) -> str:
+    """The sentence that tells the learner what to do, naming the scope that does fit.
+
+    G5: a refusal that only says "requires 3 to 6" moves the dead end one step earlier. The learner
+    is told whether the goal is too large for what they chose or small enough for something
+    smaller, and which dial to pick.
+    """
+    fits = [name for name in scope_band_fit(objectives=objectives, units=units) if name != scope]
+    obj_low, obj_high = SCOPE_EXPECTATIONS["short"]["blueprint_objectives"]
+    if fits:
+        single_fits = "single" in fits and objectives <= 1
+        if scope in ("short", "full"):
+            prefix = (
+                "This goal is too large for a short course"
+                if scope == "short"
+                else "This goal is small enough for a short course"
+            )
+            if single_fits:
+                return (
+                    f"{prefix}, or for a single-session course that holds exactly 1 objective; "
+                    f"choose single instead of {scope}."
+                )
+            names = " or ".join(f"a {name} course" for name in fits)
+            if scope == "short":
+                return (
+                    f"{prefix}; start {names} instead, or narrow the goal to at most "
+                    f"{obj_high} objectives."
+                )
+            return (
+                f"{prefix}; choose short ({obj_low} to {obj_high} objectives) instead of full."
+            )
+        names = " or ".join(f"a {name} course" for name in fits)
+        return f"This goal is too large for a single-session course; start {names} instead."
+    full_high = SCOPE_EXPECTATIONS["full"]["blueprint_objectives"][1]
+    if objectives > full_high:
+        return (
+            "This goal is too large for a full course; split it into two courses of at most "
+            f"{full_high} objectives each."
+        )
+    return (
+        "This goal is smaller than every course band; a single-session course holds exactly 1 "
+        "objective, so state one outcome you can check in one sitting."
+    )
+
+
+def scope_band_refusal(
+    *,
+    scope: str,
+    objectives: int,
+    units: int,
+    weeks: int | None = None,
+    reasons: Sequence[str] = (),
+) -> ScopeBandRefused:
+    """Build the typed refusal for a plan whose size fits no legal band for its declared scope."""
+    expectation = dict(SCOPE_EXPECTATIONS.get(scope) or SCOPE_EXPECTATIONS["short"])
+    expectation.setdefault("scope", scope)
+    obj_low, obj_high = expectation["blueprint_objectives"]
+    unit_low, unit_high = expectation["blueprint_units"]
+    fits = scope_band_fit(objectives=objectives, units=units)
+    estimate = f" and a {weeks}-week estimate" if weeks is not None else ""
+    message = (
+        f"The plan has {objectives} objective(s) in {units} unit(s){estimate}, which scope "
+        f"{scope!r} does not hold: {scope} holds {obj_low} to {obj_high} objective(s) in "
+        f"{unit_low} to {unit_high} unit(s) and up to {int(expectation['max_weeks'])} week(s). "
+        f"Legal scopes are: {scope_bands_text()}. "
+        + _scope_band_action(scope, objectives=objectives, units=units)
+    )
+    return ScopeBandRefused(
+        message,
+        scope=scope,
+        objectives=objectives,
+        units=units,
+        weeks=weeks,
+        legal_scopes=fits or [name for name in SCOPES if name != scope],
+        rule_reasons=reasons,
+    )
+
 
 
 def _domain_provenance(
@@ -6780,8 +7042,28 @@ def _enforce_plan_rules_v2(
     if _vocabulary_rule_applies(subject_domain, locale):
         reasons.extend(frequency.plan_vocabulary_reasons(objectives, frequency_selection))
 
+    # G5: when the only thing wrong with the plan is its own size, the caller can refuse it typed
+    # instead of writing a parked artifact. The band reasons are recomputed from the same table
+    # rather than collected from the appends above, so an appended string can never drift from the
+    # refusal's arithmetic; ``band`` is set only when *every* reason is one of those strings.
+    band_reasons = _scope_band_reasons(
+        expectation,
+        objectives=len(objectives),
+        units=len(units),
+        weeks=_weeks_value(plan),
+        by_unit={ordinal: len(by_unit.get(ordinal, [])) for ordinal in unit_ordinals},
+    )
+    band = None
+    if band_reasons and set(reasons) <= set(band_reasons):
+        band = {
+            "scope": str(expectation["scope"]),
+            "objectives": len(objectives),
+            "units": len(units),
+            "weeks": _weeks_value(plan),
+            "reasons": band_reasons,
+        }
     if reasons:
-        raise _RuleViolation(reasons)
+        raise _RuleViolation(reasons, band=band)
 
 
 
@@ -10979,6 +11261,20 @@ def run_plan_job(
             except _RuleViolation as exc:
                 rejection_reasons = exc.reasons
                 if attempt == 2:
+                    # G5: a band-only failure after the last attempt is not a plan the learner can
+                    # approve — writing it parked ``needs_review`` produced a dead artifact that
+                    # ``plan.approve`` then refused. A count no scope holds cannot be repaired by
+                    # another authoring pass, so refuse typed, name the legal scopes, and write no
+                    # plan row. A violation with any non-band reason keeps the parked path: those
+                    # reasons are what a human review acts on.
+                    if exc.band_only and exc.band:
+                        raise scope_band_refusal(
+                            scope=str(exc.band.get("scope") or scope or "short"),
+                            objectives=int(exc.band.get("objectives") or 0),
+                            units=int(exc.band.get("units") or 0),
+                            weeks=exc.band.get("weeks"),
+                            reasons=exc.reasons,
+                        ) from exc
                     plan = candidate
                     break
                 # W2-2: attempt 2 repairs this draft against every reason, rather than starting over.

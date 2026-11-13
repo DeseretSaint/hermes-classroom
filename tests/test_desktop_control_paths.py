@@ -388,8 +388,8 @@ class CreateFlowScopeChoiceTest(unittest.TestCase):
         self.assertEqual(len(cards), 3, self.html[:800])
         expected = {
             "single": ("One lesson", "task in front of you today", "1 section"),
-            "short": ("Short course", "build on each other", "3–6 sections"),
-            "full": ("Full course", "split into units", "12–40 sections"),
+            "short": ("Short course", "build on each other", "2–10 sections"),
+            "full": ("Full course", "split into units", "9–40 sections"),
         }
         for scope_id, (label, consequence, band) in expected.items():
             match = re.search(

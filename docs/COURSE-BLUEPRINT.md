@@ -41,8 +41,21 @@ must be `single`, because a one-off brief is one verifiable task. A `single` cou
 | scope | units | objectives | owner sections | review sections | authored lessons |
 |---|---:|---:|---:|---:|---|
 | `single` | 1 | exactly 1 | exactly 1 | 0 | exactly 1 |
-| `short` | 1 to 3 | 3 to 6 | one per objective | 0 to 2 | 3 to 8 |
-| `full` | 2 to 12 | 12 to 40 | one per objective | 0 to 2 per unit, at most 8 in the course | 12 to 48 |
+| `short` | 1 to 3 | 2 to 10 | one per objective | 0 to 2 | 2 to 12 |
+| `full` | 2 to 12 | 9 to 40 | one per objective | 0 to 2 per unit, at most 8 in the course | 9 to 48 |
+
+**G5 amendment (contiguous bands).** The bands above are the enforced table; the pre-G5 design read
+short 3 to 6 and full 12 to 40. The widening covers every count from 1 to 40 objectives (1, 2-12,
+9-48 authored sections) without a hole, because the old table left two: 2 objectives had no legal
+scope at all (single is exactly 1 and the old short floor was 3), and a 10-objective plan was
+refused at short ("requires 3 to 6") and again at full ("requires 12 to 40") with no suggestion —
+the design's own 10-week, 10-objective course. The bands overlap at 9-10: the declared scope is the
+learner's dial, so the same 10-objective plan is legal as a short or a full course. The 48 is the
+section cap (40 owner + 8 review), never an objective band: the plan schema's own
+`objectives.maxItems` is 40, so a band above it would describe a document the schema refuses. A
+plan whose own size leaves its declared band after the last authoring attempt is refused typed
+(`details.reason = "scope_band"`) and writes no plan row, instead of being parked `needs_review`
+for `plan.approve` to refuse.
 
 The full range is a product cap, not a promise that 40 objectives fit one provider call. Section
 6 below requires the implementing card to measure the real structured-output ceiling and lower
@@ -228,8 +241,9 @@ reintroduce a number the pipeline ignores.
 
 Deterministic plan rules, replacing the current `enforce_plan_rules` body:
 
-1. Scope bounds hold: single has 1 unit and 1 objective; short has 1 to 3 units and 3 to 6
-   objectives; full has 2 to 12 units and 12 to 40 objectives.
+1. Scope bounds hold (G5: contiguous, short 2 to 10 and full 9 to 40 objectives): single has 1
+   unit and 1 objective; short has 1 to 3 units and 2 to 10 objectives; full has 2 to 12 units and
+   9 to 40 objectives.
 2. Unit ordinals are contiguous; objective ordinals are contiguous; objective `unit_ref` and
    section `unit_ref` name existing units.
 3. Every unit has 2 to 6 objectives for full, 1 to 6 for short, exactly 1 for single.

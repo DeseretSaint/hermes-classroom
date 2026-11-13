@@ -1321,7 +1321,7 @@
     "declared": {
       "full": {
         "objectives": [
-          12,
+          9,
           40
         ],
         "units": [
@@ -1331,8 +1331,8 @@
       },
       "short": {
         "objectives": [
-          3,
-          6
+          2,
+          10
         ],
         "units": [
           1,
@@ -3010,7 +3010,7 @@
     "plan_job": {
       "request": {
         "objective_count_rule": [
-          12,
+          9,
           40
         ],
         "prompt_version": "plan-prompt.v24",

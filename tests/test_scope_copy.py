@@ -80,7 +80,7 @@ class ScopeCopyInTheRenderedPromptsTest(unittest.TestCase):
         self.assertEqual(request.prompt_version, gen.PLAN_PROMPT_VERSION_V2)
         text = request.instructions
         self.assertIn("Scope: full", text)
-        self.assertIn("Produce 2 to 12 unit(s) and 12 to 40 objective(s)", text)
+        self.assertIn("Produce 2 to 12 unit(s) and 9 to 40 objective(s)", text)
         self.assertNotIn(self.STALE, text)
         self.assertNotIn(self.STALE, gen.SCOPE_EXPECTATIONS["full"]["note"])
 

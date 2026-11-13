@@ -920,6 +920,18 @@ def _stage_error(exc: Exception) -> dict[str, Any]:
         value = getattr(exc, attribute, None)
         if value is not None:
             details[attribute] = value
+    # G5: a typed refusal names its subsystem cause in ``details.reason`` (docs/CONTRACTS.md
+    # H-130 — the catalogue stays frozen) and carries its structured context there. The exception
+    # owns both, so the mapping does not have to learn one branch per refusal type.
+    reason = getattr(exc, "reason", None)
+    if isinstance(reason, str) and reason:
+        details["reason"] = reason
+    refusal_details = getattr(exc, "error_details", None)
+    if isinstance(refusal_details, dict):
+        for key, value in refusal_details.items():
+            if len(details) >= 32:
+                break
+            details.setdefault(key, value)
     # A shape violation quotes the model's own rejected answer, which is the only way an operator
     # can read the rule that actually failed. It is bounded by the exception itself and carries no
     # key or credential.
