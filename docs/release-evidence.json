@@ -8,14 +8,14 @@
  "record_scope": "measured_commit is the frozen release tree that the module pin and the M4 audit describe. The tests, rpc and db blocks track the master tree the release gate reads and each names its own measurement commit, because test-only merges land without moving the release pin.",
  "tests": {
   "command": "python3 -m unittest discover -s tests -t .",
-  "measured_commit": "67c1c405c84ba63882bda29e4fac07477ee12969",
-  "measured_commit_short": "67c1c405",
+  "measured_commit": "7e7a54fe599b9534c3a56b119bb0d5a15f8314d9",
+  "measured_commit_short": "7e7a54fe",
   "measured_at": "2026-11-12",
-  "ran": 4573,
+  "ran": 4577,
   "skipped": 12,
-  "seconds": 1605.0,
+  "seconds": 1524.0,
   "verdict": "OK (skipped=12)",
-  "note": "Measured 2026-11-12 on the merged E2E trunk `67c1c405`, after the E2E wave (L4/L5 `54b789a4`, the composed v28 carrying L1 `131179ac`, U3b `67abe18f`) and master's S5/S6 + G6 (`bb0feb6f`) were merged: Ran 4573 tests in 1605s, OK (skipped=12), one uninterrupted run in a dedicated scratch worktree. The 115-test delta over 4458 is the merged cards' own cases (E2E L1/L4/L5, S5/S6, G6, U3b) plus the v15 schema pins re-derived on the union. The same tree passes `bash scripts/validate-plugin.sh` 4/4 and `python3 scripts/check-docs-truth.py --skip-tests`. Previous records (4458 at 4f93f890, 4453 at 88a88744, 4444 at d616f84a, 4437 at 5e3a7759, 4434 at 170aa650, 4429 at 165d7da0, 4424 at ec99038e, 4401 at 3b82959f, 4385 at be6b3856, 4375 at 5df8dfdc, 4359 at 8eb1f944) are history."
+  "note": "Measured 2026-11-12 on `7e7a54fe`, the E2E U2 merge (`2fe0dd15`, the answer disclosure asks before it downgrades the attempt) over the merged E2E trunk `67c1c405`: Ran 4577 tests in 1524s, OK (skipped=12), one uninterrupted run in a dedicated scratch worktree. The 4-test delta over 4573 is `tests/test_desktop_u2_answer_confirm.py` (4 cases: first press writes nothing, cancel writes nothing, a refused write keeps the confirm open, and the confirm is the only path to `lesson.assist(kind:'answer_shown')`). The same tree passes `bash scripts/validate-plugin.sh` 4/4 (4425 files) and `python3 scripts/check-docs-truth.py --skip-tests`; `desktop/plugin.js` is 94104fbd. Previous records (4573 at 67c1c405, 4458 at 4f93f890, 4453 at 88a88744, 4444 at d616f84a, 4437 at 5e3a7759, 4434 at 170aa650, 4429 at 165d7da0, 4424 at ec99038e, 4375 at 5df8dfdc, 4359 at 8eb1f944) are history."
  },
  "rpc": {
   "contract": "cb.rpc",

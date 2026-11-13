@@ -53,14 +53,14 @@ land without moving the release pin:
 
 | Fact | Value | Measured on | Command |
 | --- | --- | --- | --- |
-| Suite | `Ran 4573 tests in 1605s`, `OK (skipped=12)`, exit 0 | `67c1c405` (`master`, 2026-11-12, the merged E2E trunk: L4/L5 `54b789a4`, the composed `cb.rpc` v28 carrying L1 `131179ac` and U3b `67abe18f`, over master's S5/S6 + G6 `bb0feb6f`) | `python3 -m unittest discover -s tests -t .` |
+| Suite | `Ran 4577 tests in 1524s`, `OK (skipped=12)`, exit 0 | `7e7a54fe` (`master`, 2026-11-12, E2E U2 `2fe0dd15` over the merged E2E trunk: L4/L5 `54b789a4`, the composed `cb.rpc` v28 carrying L1 `131179ac` and U3b `67abe18f`, over master's S5/S6 + G6 `bb0feb6f`) | `python3 -m unittest discover -s tests -t .` |
 | `cb.rpc` | v28, 93 declared methods, 93 handlers, no declared method without a handler and none outside the contract | `67c1c405` (`master`, 2026-11-12, the merged E2E trunk) | `contracts/rpc.v28.json`, `coursebook/contracts.py` `WIRE_CONTRACT_VERSION = 28`, `coursebook/api.py` `METHOD_HANDLERS` after importing every registering module |
 | `cb.db` | v15, `DB_SCHEMA_VERSION = 15`, migrations `0001`-`0015` | `67c1c405` (`master`, 2026-11-12, the merged E2E trunk; v15 adds the one-column `checks.revisit` flag by `0015_check_revisit.sql`) | `coursebook/db.py`, `contracts/db.v15.json` |
 
-The 2026-11-12 run on the merged E2E trunk is the count every release document now quotes:
-`Ran 4573 tests in 1605s`, `OK (skipped=12)`, exit 0, on `67c1c405` (the E2E wave merged over
-`bb0feb6f`). Its 115-test delta over the `4f93f890` count of 4458 is the merged cards' own cases —
-E2E L1/L4/L5, S5/S6, G6, U3b — plus the v15 schema pins re-derived on the union; the record in
+The 2026-11-12 run on `7e7a54fe` is the count every release document now quotes:
+`Ran 4577 tests in 1524s`, `OK (skipped=12)`, exit 0. Its 119-test delta over the `4f93f890` count of
+4458 is the merged cards' own cases — E2E L1/L4/L5, S5/S6, G6, U3b, U2 — plus the v15 schema pins
+re-derived on the union; the record in
 `docs/release-evidence.json` names `67c1c405` and the suite discovered exactly that count. The
 duration was measured while other workers were active on the host, so it is a count measurement, not
 a quiet-host timing. The previous records — 4458 at `4f93f890`, 4453 at `88a88744`, 4434 at

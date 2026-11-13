@@ -62,11 +62,12 @@ in migration `0012_fine_tune_revisions`, v13 adds GM-001's Game Mode storage —
 `courses.presentation_mode` plus eight play/homework/tutor tables — in migration
 `0013_game_mode_contracts`, and v14 removes exactly one unique key from `takehome_packs` in
 `0014_takehome_pack_revision_scope`, rebuilding that table in place with rows and indexes preserved,
-additive only. The suite is `Ran 4573 tests in 1605s … OK (skipped=12)` on `master` `67c1c405`
-(module `aad05f41…`), the tree the `tests` block of `docs/release-evidence.json` names (2026-11-12): the
+additive only. The suite is `Ran 4577 tests in 1524s … OK (skipped=12)` on `master` `7e7a54fe`
+(module `94104fbd…`), the tree the `tests` block of `docs/release-evidence.json` names (2026-11-12): the
 E2E wave was merged over `bb0feb6f` (master's S5/S6 and G6) — E2E L4/L5 `54b789a4`, the composed `cb.rpc`
 v28 that carries E2E L1 `131179ac`, and U3b's `sections_total` `67abe18f` — and the cb.db v15 pins were
-re-derived on the union. The previous record was `Ran 4458 tests in 904.597s … OK (skipped=12)` on
+re-derived on the union, and E2E U2 `2fe0dd15` then merged over it (the answer disclosure asks before it
+downgrades the attempt, 4 tests). The previous record was `Ran 4458 tests in 904.597s … OK (skipped=12)` on
 `4f93f890` (module `e87a2e01…`, 2026-11-12: six cards merged over
 the `d85c30c5` trunk — PRINT-2 `de92dd26` (`cb.pack` v4 names the `coloring_page` role), the Workshop
 share contract cases `393d51a1` (26 -> 32), CP-015g's measured per-call deadlines `918b0a01`,
@@ -331,7 +332,7 @@ holds the demo back. No recording happens without DeseretSaint's approval.
 | No release tag | Atlas's operator gate forbids publishing a release or tag until DeseretSaint signs off in chat | Atlas, DeseretSaint |
 
 Verified, so they are not blockers: 93/93 `cb.rpc` v28 methods mounted with no
-contract problems, schema v15 from migrations `0001`-`0015`, 4573 tests on `master` `67c1c405`
+contract problems, schema v15 from migrations `0001`-`0015`, 4577 tests on `master` `7e7a54fe`
 (2747 on the release tree `b9f4a19`), pack round-trip and export
 hash matching, eight `parent.*` methods, the replan carry with the Parent Studio plan guard, and the
 full replan → lessons → export loop on contest row 9 at `29bede7` (export `exp_2e068c56`, content
