@@ -722,5 +722,225 @@ process.stdout.write(JSON.stringify(out))
 """
 
 
+# -- U8-follow: the unavailable panels speak to the learner, not about the pipeline -------------
+
+NOT_IMPLEMENTED_TITLE = "Lessons cannot start here yet"
+NOT_IMPLEMENTED_BODY = (
+    "You cannot start or continue a lesson from this chat yet. Open Coursebook to read "
+    "what is already there; nothing on this panel is guessed."
+)
+UNAVAILABLE_TITLE = "The tutor cannot answer here right now"
+UNAVAILABLE_BODY = (
+    "Something went wrong reading this chat’s lesson, so you cannot ask the tutor here right now. "
+    "Open Coursebook and reopen the section to try again."
+)
+
+# The stub SDK's PanelEmpty renders only `children`, so a test that wants the real panel copy has
+# to give it the title/description shape the shipped SDK already uses for `EmptyState`/`ErrorState`
+# (both stubs below pin it). Everything else in the stub is the shared one, unmodified.
+PANEL_EMPTY_WITH_COPY = (
+    "export const PanelEmpty = (props) =>\n"
+    "  el('div', { className: 'panel-empty' }, [\n"
+    "    el('div', { key: 't', className: 'panel-title' }, props.title || null),\n"
+    "    el('div', { key: 'd', className: 'panel-desc' }, props.description || null),\n"
+    "    props.action || null\n"
+    "  ])\n"
+)
+
+UNAVAILABLE_HARNESS = r"""
+import React, { act } from 'react'
+import fs from 'node:fs'
+import { JSDOM } from 'jsdom'
+
+const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
+
+const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
+  url: 'http://127.0.0.1/',
+  pretendToBeVisual: true
+})
+globalThis.window = dom.window
+globalThis.document = dom.window.document
+globalThis.HTMLElement = dom.window.HTMLElement
+globalThis.Node = dom.window.Node
+globalThis.Event = dom.window.Event
+globalThis.IS_REACT_ACT_ENVIRONMENT = true
+
+// The focused chat is durable and on screen; the SDK stub reads this atom through the pane.
+globalThis.__CB_STORED_ATOM__ = { get: () => 'sess_1', subscribe: () => () => {} }
+
+const mod = await import('./plugin.js')
+
+const rest = (path, options) => {
+  const base = String(path).split('?')[0]
+  if (base === '/runtime') {
+    return Promise.resolve({ wire_version: 25, implemented_methods: [], single_home_host: false })
+  }
+  if (base === '/rpc') {
+    const method = options && options.body ? options.body.method : null
+    if (method === 'binding.get') {
+      return Promise.resolve({
+        ok: false,
+        error: { code: payload.code, message: payload.message }
+      })
+    }
+    return Promise.resolve({ ok: true, result: {} })
+  }
+  if (base === '/sessions/skill') return Promise.resolve({})
+  return Promise.resolve({ ok: true, result: {} })
+}
+
+const registered = []
+mod.default.register({ rest, register: (contribution) => registered.push(contribution), onDispose: () => {} })
+const pane = registered.find((contribution) => contribution && contribution.id === 'pane')
+if (!pane || typeof pane.render !== 'function') {
+  process.stdout.write(JSON.stringify({ error: 'the plugin registered no pane contribution' }))
+  process.exit(0)
+}
+
+const { createRoot } = await import('react-dom/client')
+const root = createRoot(document.getElementById('root'))
+const out = { error: null }
+try {
+  await act(async () => {
+    root.render(React.createElement(pane.render))
+  })
+  await act(async () => {
+    await new Promise((done) => setTimeout(done, 120))
+  })
+  const host = document.getElementById('root')
+  const wrapper = host.querySelector('[data-cb-binding-panel]')
+  const title = wrapper ? wrapper.querySelector('.panel-title') : null
+  const desc = wrapper ? wrapper.querySelector('.panel-desc') : null
+  const detail = wrapper ? wrapper.querySelector('[data-cb-binding-detail]') : null
+  out.panel = wrapper ? wrapper.getAttribute('data-cb-binding-panel') : null
+  out.title = title ? title.textContent : null
+  out.description = desc ? desc.textContent : null
+  // Everything a learner can read in the panel itself: the title, the sentence and the button.
+  out.panelText = [title ? title.textContent : '', desc ? desc.textContent : '', wrapper ? (wrapper.querySelector('button') || {}).textContent || '' : ''].join(' ')
+  out.detailText = detail ? detail.textContent : null
+  out.detailOpen = detail ? detail.hasAttribute('open') : null
+  out.hasOpenCoursebook = Boolean(wrapper && wrapper.querySelector('button'))
+} catch (error) {
+  out.error = { name: error.name, message: String(error.message || error), stack: String(error.stack || '').split('\n').slice(0, 5) }
+}
+process.stdout.write(JSON.stringify(out))
+"""
+
+
+class TutorPaneUnavailableCopyTest(unittest.TestCase):
+    """A failed binding read is said in the learner's words, never in the pipeline's.
+
+    U8-follow: the NOT_IMPLEMENTED panel used to name a backend, a kernel schema and a session
+    binding, and the generic panel printed the raw error code in front of its sentence. Both are
+    rendered here through the registered pane contribution so the assertion is on the DOM a learner
+    gets, not on a source-scan proxy for it.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        if shutil.which("node") is None:
+            raise unittest.SkipTest("node is required to render a runtime desktop plugin")
+        modules = _desktop_node_modules()
+        if modules is None:
+            raise unittest.SkipTest("react/react-dom are not installed beside the desktop app")
+        cls.tmp = tempfile.TemporaryDirectory(prefix="coursebook-tutor-unavailable-")
+        root = Path(cls.tmp.name)
+        (root / "plugin.js").write_text(PLUGIN_JS.read_text(encoding="utf-8"), encoding="utf-8")
+        (root / "unavailable.mjs").write_text(UNAVAILABLE_HARNESS, encoding="utf-8")
+        node_modules = root / "node_modules"
+        node_modules.mkdir()
+        for name in ("react", "react-dom", "scheduler", "jsdom"):
+            source = modules / name
+            if source.is_dir():
+                (node_modules / name).symlink_to(source, target_is_directory=True)
+        sdk = node_modules / "@hermes" / "plugin-sdk"
+        sdk.mkdir(parents=True)
+        (sdk / "package.json").write_text(
+            json.dumps({"name": "@hermes/plugin-sdk", "type": "module", "main": "index.js"}), encoding="utf-8"
+        )
+        stub = SDK_STUB.replace(
+            "focusedStoredSessionId: atom(null),",
+            "focusedStoredSessionId: (globalThis.__CB_STORED_ATOM__ || atom(null)),",
+        )
+        panel_empty_shape = "export const PanelEmpty = (props) => el('div', { className: 'panel-empty' }, textOf(props))"
+        if panel_empty_shape not in stub:
+            raise AssertionError("the shared SDK stub's PanelEmpty changed shape; re-check this test's local stub")
+        stub = stub.replace(panel_empty_shape, PANEL_EMPTY_WITH_COPY.rstrip("\n"))
+        (sdk / "index.js").write_text(stub, encoding="utf-8")
+        cls.root = root
+        cls.source = PLUGIN_JS.read_text(encoding="utf-8")
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        if hasattr(cls, "tmp"):
+            cls.tmp.cleanup()
+
+    def render(self, code: str, message: str = "the read did not complete") -> dict:
+        case = self.root / "case.json"
+        case.write_text(json.dumps({"code": code, "message": message}), encoding="utf-8")
+        result = subprocess.run(
+            ["node", str(self.root / "unavailable.mjs"), str(case)],
+            cwd=self.root,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr[-2000:])
+        return json.loads(result.stdout)
+
+    # -- the contract -----------------------------------------------------------------------
+    def test_not_implemented_says_what_the_learner_cannot_do(self) -> None:
+        out = self.render("NOT_IMPLEMENTED", "binding.get is not implemented")
+        self.assertIsNone(out["error"], out)
+        self.assertEqual(out["panel"], "not-implemented", "the state marker must single out this branch")
+        self.assertEqual(out["title"], NOT_IMPLEMENTED_TITLE)
+        self.assertEqual(out["description"], NOT_IMPLEMENTED_BODY)
+        self.assertTrue(out["hasOpenCoursebook"], "the panel must still offer the one open action")
+
+    def test_generic_unavailable_never_prints_the_code(self) -> None:
+        out = self.render("HOST_UNAVAILABLE", "The host did not answer")
+        self.assertIsNone(out["error"], out)
+        self.assertEqual(out["panel"], "unavailable")
+        self.assertEqual(out["title"], UNAVAILABLE_TITLE)
+        self.assertEqual(out["description"], UNAVAILABLE_BODY)
+        # The code and the message survive for diagnosis, closed, in the disclosure.
+        self.assertIn("HOST_UNAVAILABLE", out["detailText"])
+        self.assertIn("The host did not answer", out["detailText"])
+        self.assertFalse(out["detailOpen"], "the technical detail must not be expanded by default")
+
+    def test_no_pipeline_noun_or_error_code_reaches_the_panel_text(self) -> None:
+        banned = ("backend", "kernel schema", "session binding", "NOT_IMPLEMENTED", "HOST_UNAVAILABLE")
+        for code in ("NOT_IMPLEMENTED", "HOST_UNAVAILABLE", "E_BINDING_READ", "VALIDATION_FAILED"):
+            out = self.render(code, "the read did not complete")
+            self.assertIsNone(out["error"], out)
+            text = out["panelText"]
+            self.assertTrue(out["description"], f"{code}: the panel rendered no sentence")
+            lowered = text.lower()
+            for word in banned:
+                self.assertNotIn(word.lower(), lowered, f"{code}: '{word}' reached the learner")
+            self.assertNotIn(code, text, f"{code}: the raw code is in the panel sentence")
+            self.assertIsNone(re.search(r"\b[A-Z][A-Z0-9]*_[A-Z0-9_]+\b", text), text)
+        # An E_-style code is never part of the visible sentence, wherever it is spelled.
+        out = self.render("E_BINDING_READ", "the read did not complete")
+        self.assertIn("E_BINDING_READ", out["detailText"])
+        self.assertNotIn("E_BINDING_READ", out["panelText"])
+
+    # -- the same two strings, pinned in source -----------------------------------------------
+    def test_the_panel_source_carries_the_words_and_not_the_plumbing(self) -> None:
+        pane = function_body(self.source, "function CoursebookPane(")
+        self.assertIn(f"title: '{NOT_IMPLEMENTED_TITLE}'", pane)
+        self.assertIn(f"title: '{UNAVAILABLE_TITLE}'", pane)
+        self.assertIn(NOT_IMPLEMENTED_BODY, pane)
+        self.assertIn(UNAVAILABLE_BODY, pane)
+        self.assertIn("data-cb-binding-panel", pane)
+        self.assertIn("Technical detail", pane)
+        # The old speech and the code-in-the-sentence shape are gone.
+        self.assertNotIn("Lessons arrive with the learning kernel", pane)
+        self.assertNotIn("kernel schema", pane)
+        self.assertNotIn("Cannot read this chat", pane)
+        self.assertNotIn("`${code}: ", pane)
+        self.assertNotIn("description: code ?", pane)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1734,23 +1734,55 @@ function CoursebookPane() {
   } else if (state.status === 'loading') {
     body = jsx('div', { className: 'py-6', children: jsx(sdk.Loader, { label: 'Reading this chat’s binding' }) })
   } else if (state.status === 'unavailable') {
+    // U8-follow: both panels are the learner's view of a failed read. They say what cannot happen
+    // right now and the one action open to them, in their words — no backend, no schema, no
+    // binding, and never a raw error code inside the sentence. The code stays diagnosable in the
+    // closed "Technical detail" disclosure, marked with the same convention as the create receipt.
     const code = state.error && state.error.code
-    body =
-      code === 'NOT_IMPLEMENTED'
-        ? jsx(sdk.PanelEmpty, {
-            icon: 'book',
-            title: 'Lessons arrive with the learning kernel',
-            description:
-              'The backend is connected and answering, but this build has no kernel schema, so no ' +
-              'session binding can exist yet. Nothing here is being guessed.',
-            action: jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: openCoursebook, children: 'Open Coursebook' })
-          })
-        : jsx(sdk.PanelEmpty, {
-            icon: 'warning',
-            title: 'Cannot read this chat’s binding',
-            description: code ? `${code}: ${describeError(state.error)}` : describeError(state.error),
-            action: jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: openCoursebook, children: 'Open Coursebook' })
-          })
+    const notImplemented = code === 'NOT_IMPLEMENTED'
+    body = jsxs('div', {
+      className: 'flex flex-col gap-2',
+      'data-cb-binding-panel': notImplemented ? 'not-implemented' : 'unavailable',
+      children: [
+        notImplemented
+          ? jsx(
+              sdk.PanelEmpty,
+              {
+                icon: 'book',
+                title: 'Lessons cannot start here yet',
+                description:
+                  'You cannot start or continue a lesson from this chat yet. Open Coursebook to read what is already there; nothing on this panel is guessed.',
+                action: jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: openCoursebook, children: 'Open Coursebook' })
+              },
+              'panel'
+            )
+          : jsx(
+              sdk.PanelEmpty,
+              {
+                icon: 'warning',
+                title: 'The tutor cannot answer here right now',
+                description:
+                  'Something went wrong reading this chat’s lesson, so you cannot ask the tutor here right now. Open Coursebook and reopen the section to try again.',
+                action: jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: openCoursebook, children: 'Open Coursebook' })
+              },
+              'panel'
+            ),
+        code
+          ? jsxs(
+              'details',
+              {
+                'data-cb-binding-detail': '',
+                className: 'text-xs text-(--ui-text-secondary)',
+                children: [
+                  jsx('summary', { className: 'cursor-pointer', children: 'Technical detail' }, 'summary'),
+                  jsx('div', { className: 'mt-1', children: `${code} · ${describeError(state.error)}` }, 'detail')
+                ]
+              },
+              'detail'
+            )
+          : null
+      ]
+    })
   } else if (state.binding && storedId && state.binding.stored_session_id && state.binding.stored_session_id !== storedId) {
     // a binding for a chat that is no longer on screen is never rendered as this chat's lesson
     body = jsx('div', { className: 'py-6', children: jsx(sdk.Loader, { label: 'Reading this chat’s binding' }) })
@@ -1946,7 +1978,7 @@ function SessionDiagnostics() {
         value: `cb.rpc v${backendWire.contractVersion}`,
         detail: implemented
           ? `${plural(implemented.length, 'implemented command', 'implemented commands')}: ${implemented.join(', ')}`
-          : 'Backend method registry unavailable; commands are attempted, not assumed.'
+          : 'The command list could not be read; commands are attempted, not assumed.'
       })
     ]
   })
@@ -1960,7 +1992,7 @@ function CoursebookSettings() {
         className: 'text-xs text-(--ui-text-secondary)',
         children:
           'Preferences appear here only when the code that reads them ships. The inventory below is ' +
-          'read-only and shows the exact contracts this backend speaks.'
+          'read-only and shows the exact contracts this copy can speak.'
       }),
       jsx(CbLabel, { children: 'Session binding' }),
       jsx(SessionDiagnostics, {}),
