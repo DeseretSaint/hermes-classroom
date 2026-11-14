@@ -860,7 +860,13 @@ function HomeScene({ slots, canCreate, onStartCreate, onBrowseLibrary, onOpenCou
         jsx('div', {
           'data-cb-home-scene-tag': '',
           style: tagObject ? { backgroundImage: `url(${tagObject})` } : undefined,
-          children: CB_HOME_V3_COPY.tagNew
+          // LEG-01: the master is a tilted luggage tag, so the words are wrapped and turned onto
+          // the face's own axis (see the `[data-cb-home-scene-tag-word]` rule). A horizontal run of
+          // this copy crosses the kraft's edges and lands on the tag's dark fold.
+          children: jsx('span', {
+            'data-cb-home-scene-tag-word': '',
+            children: CB_HOME_V3_COPY.tagNew
+          }, 'word')
         }, 'tag'),
         jsx('div', { 'data-cb-home-scene-fox': '', children: jsx(FoxPose, { pose: 'clock', size: CB_HOME_SCENE.fox.size }, 'fox') }, 'fox-wrap'),
         // The plate paints four boards and a bench, not a shelf: the cards hang on the boards and

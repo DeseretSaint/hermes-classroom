@@ -7,7 +7,8 @@ adopted textless ground `docs/concept-parity/refs/home-plate-1344-textless.png` 
 `806080bb...`), and `docs/concept-parity/refs/home.png` (R-HOME-OLD) is history. `measure.json` was
 re-derived in full from the new plate and the regenerated proof: nothing was carried forward, and
 the band names now follow the plate's own composition (sky, hero sign, wall, board quads, bench,
-ground). Current row: module `ac627cd7...`, `sim_grey` **0.8922** over the full 1344x768 frame.
+ground). Current row: module `f750d8d4...`, `sim_grey` **0.8901** over the full 1344x768 frame,
+re-measured by `python3 scripts/cp053-remeasure.py` after LEG-01 moved the module.
 
 The sections below describe the pre-plate measurement history and are kept as history only; their
 numbers were taken against R-HOME-OLD and are not comparable with the G2 row.

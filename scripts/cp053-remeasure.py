@@ -57,29 +57,39 @@ def main() -> int:
 
     today = datetime.date.today().isoformat()
     record = json.loads(MEASURE.read_text(encoding="utf-8"))
+    # Measure against the reference the row itself names, so a row that was re-pinned to a new
+    # ground (G2: home-plate-1344-textless.png) is re-measured against that ground and not against
+    # the pre-plate frame still kept in the tree as history.
+    reference_path = REFERENCE
+    named = record.get("reference")
+    if named and (ROOT / named).is_file():
+        reference_path = ROOT / named
     capture(RENDER)
     rendered = Image.open(RENDER).convert("RGB")
-    reference = Image.open(REFERENCE).convert("RGB").resize(rendered.size, Image.Resampling.LANCZOS)
+    reference = Image.open(reference_path).convert("RGB").resize(rendered.size, Image.Resampling.LANCZOS)
     grey_r = rendered.convert("L")
     grey_ref = reference.convert("L")
     rmse_rgb = round(rmse(rendered, reference, 3), 3)
     rmse_grey = round(rmse(grey_r, grey_ref, 1), 3)
     module_sha = hashlib.sha256(PLUGIN.read_bytes()).hexdigest()
+    sim_grey = round(1 - rmse_grey / 255, 4)
     record.update(
         {
             "module_sha256": module_sha,
             "size": list(rendered.size),
+            "reference": str(reference_path.relative_to(ROOT)),
             "rmse_rgb": rmse_rgb,
             "rmse_grey": rmse_grey,
-            "sim_grey": round(1 - rmse_grey / 255, 4),
+            "sim_grey": sim_grey,
             "sim_rgb": round(1 - rmse_rgb / 255, 4),
             "measured_at": today,
             "note": (
                 f"Re-measured {today} on module {module_sha[:8]} after the generated page was "
                 "re-rendered from that module; fresh chromium capture at 1344x768 of "
-                "design/home-scene.html, fresh RMSE against docs/concept-parity/refs/home.png, "
-                "nothing carried over. The CP-053 reference is the pre-plate hand frame, so this row "
-                "records the approved-kit composition rather than clearing the 0.85 floor."
+                f"design/home-scene.html, fresh RMSE against {reference_path.relative_to(ROOT)}, "
+                "nothing carried over. "
+                + ("Clears the 0.85 approval floor." if sim_grey >= 0.85
+                   else "Does not clear the 0.85 approval floor.")
             ),
         }
     )
