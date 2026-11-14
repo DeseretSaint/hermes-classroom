@@ -43,7 +43,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from . import PACKAGE_ID, __version__, api, db
-from . import archive, artifacts, grading, packs, segments, store_reviews, validators
+from . import archive, artifacts, generation, grading, packs, segments, store_reviews, validators
 from . import parent_authoring as authoring
 from .api import RpcError
 from .archive import PackRejected, PackLibrary, StagingArea
@@ -2007,6 +2007,22 @@ def _authored_export_plan(connection, enrollment_id: str) -> dict[str, Any]:
         )
         return plan_record
     plan_record["plan"] = plan
+
+    # Upgrade 35: a unit whose section batch is still only partly cleared is not a lesson set.
+    # Exporting it would ship a subset of the course under the approved plan's authority, so it
+    # blocks here — the same marker `unit_authoring_state` and `lesson.page` read.
+    generation_digest = authoring.generation_plan_hash(
+        connection, str(plan["id"]), str(plan["plan_hash"] or "")
+    )
+    if generation.partial_units_for_plan(connection, str(plan["id"]), generation_digest):
+        plan_record.update(
+            blocked_reason="unit_still_partial",
+            blocked_message=(
+                "this course has a unit that is still being prepared; finish authoring its "
+                "sections before packaging."
+            ),
+        )
+        return plan_record
 
     composed = authoring.sections(connection, course, plan)
     plan_record["sections"] = {"total": len(composed), "validated": 0}
