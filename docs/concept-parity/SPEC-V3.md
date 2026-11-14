@@ -644,6 +644,267 @@ v2 keeps the v2 spec, so that row is not one of S9's six v3 rows and S9 paints n
 
 ---
 
+### 5.6 Sweep surfaces (CP-001g)
+
+The five scored screens above are measured against the concept frames. These seven families were
+authored later, from the complete shipped-string sweep in `docs/concept-parity/copy/CP-031-sweep-*.md`,
+because the deck ended at the design-system lab and every visible string on the Homework, Game,
+World Studio and Parent Studio surfaces had no row. Each id below is a `COPY.md` row; each row's
+Where cell carries the `desktop/src` file and line the words ship at. No frame is scored here, so
+this subsection adds no capture cell and no state table.
+
+Two arithmetic rules are stated here because the deck cannot name them as a `computed:` source:
+
+- `studio.regen.estimate` fills `{low}` and `{high}` as `minCalls x cost_per_call_usd` and
+  `maxCalls x cost_per_call_usd`, read from the last lessons job's recorded preflight and divided by
+  its `section_count`. When no such record exists the row is `studio.regen.no_estimate` instead; the
+  surface never prints a zero.
+- `studio.gate.export_line` fills `{kind}`, `{when}` and `{hash}` from the export record the backend
+  returned, and `studio.gate.approved_line` fills `{when}` and `{note}` from the approval record.
+  Neither is arithmetic.
+
+#### 5.6.1 Shared shell (every route can paint it)
+
+| id | Text |
+|---|---|
+| `shell.rpc.envelope` | The Coursebook backend answered with something that is not a contract envelope. |
+| `shell.rpc.no_answer` | The Coursebook backend did not answer. |
+
+#### 5.6.2 Home defaults line
+
+| id | Text |
+|---|---|
+| `home.defaults.view` | Default view · {mode} |
+| `home.defaults.classroom` | · This classroom · {mode} |
+| `home.defaults.childsafe` | · Child-safe defaults |
+| `home.defaults.session` | · Session · {n} min |
+| `home.defaults.childsafe_long` | Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no streaks · XP is cosmetic Game feedback |
+
+#### 5.6.3 Classroom tutor path
+
+| id | Text |
+|---|---|
+| `classroom.tutor.no_chat_return` | This lesson has no chat to return to yet. |
+| `classroom.tutor.not_connected` | This lesson is not connected to a chat right now. |
+| `classroom.tutor.update_app` | Update Hermes Desktop to resume a bound lesson. |
+| `classroom.tutor.open_failed` | The saved lesson chat could not be opened from this desktop. The section is still available to read. |
+| `classroom.tutor.title` | Coursebook lesson |
+| `classroom.tutor.bind_failed` | {code}: {message} |
+| `classroom.tutor.no_course` | No course was read for this action. |
+| `classroom.tutor.no_objective` | This course has no current objective yet; approve the plan first. |
+| `classroom.tutor.resumed` | Resumed the bound lesson chat. |
+| `classroom.tutor.no_saved_chat` | There is no saved lesson chat for this section yet. Read the section below, then start a new lesson when you are ready. |
+| `classroom.tutor.ready` | The lesson is ready. Your section is open below. The chat becomes this lesson’s chat when you send your first message. |
+
+#### 5.6.4 Homework
+
+| id | Text |
+|---|---|
+| `hw.state.proposed` | Planned |
+| `hw.state.self_reported_done` | Done — you recorded it |
+| `hw.state.parent_reported_done` | Done — a parent recorded it |
+| `hw.state.skipped` | Skipped |
+| `hw.state.expired` | Expired |
+| `hw.state.skipped_note` | This one is closed as skipped. A fresh task can be taken with you from another lesson. |
+| `hw.kind.real_world_use` | Use it for real |
+| `hw.kind.observe` | Notice it |
+| `hw.kind.label` | Label it |
+| `hw.kind.practice` | Say it aloud |
+| `hw.kind.make` | Make it |
+| `hw.kind.teach_back` | Tell someone |
+| `hw.sheet.guard.word` | This task would print a word a take-home sheet must not carry, so it is not shown. |
+| `hw.sheet.guard.steps` | A field card carries at most three steps, so this task is not shown. |
+| `hw.record.already_reported` | This task already carries a report; it cannot be reported twice. |
+
+#### 5.6.5 Game
+
+| id | Text |
+|---|---|
+| `game.state.not_started` | Not started |
+| `game.state.introduced` | Started |
+| `game.state.independent_evidence` | Independent evidence |
+| `game.state.delayed_evidence` | Delayed evidence |
+| `game.state.review_due` | Review due |
+| `game.state.needs_review` | Could not be written |
+| `game.state.overridden` | Moved on without a grade |
+| `game.state.unknown` | State not recorded |
+| `game.journal.stamped` | Stamped |
+| `game.journal.overflow` | The journal stops at {shown} cards. The rest are on the course page. |
+
+#### 5.6.6 World Studio
+
+| id | Text |
+|---|---|
+| `world.plates.overflow` | Only the first six motifs and the first six to avoid are shown here. |
+
+#### 5.6.7 Parent Studio
+
+| id | Text |
+|---|---|
+| `studio.banner.title` | Changes need review |
+| `studio.banner.reason.plan_edited` | You edited the plan after approving the lesson set. |
+| `studio.banner.reason.content_changed` | The generated pages changed after you approved them. |
+| `studio.banner.reason.course_edited` | You changed the course title or goal after approving the lesson set. |
+| `studio.banner.reason.replaced` | A newer approval replaced this one. |
+| `studio.banner.reason.unknown` | The lesson set you approved no longer matches the current pages. |
+| `studio.banner.export_approve` | Approve the current lesson set before exporting. |
+| `studio.review.blocked` | Export is blocked ({reason}). |
+| `studio.review.blocked_unknown` | Export is blocked and the backend returned no reason string. |
+| `studio.check.alignment` | whether each objective matches the goal |
+| `studio.check.sources` | whether each claim has a source that was actually read |
+| `studio.check.structure` | whether the units, objectives and checks fit together |
+| `studio.check.schedule` | whether the schedule and time estimates add up |
+| `studio.check.policy` | whether the plan follows the recipe and its limits |
+| `studio.revision.chip.edited` | Edited |
+| `studio.revision.chip.needs_review` | Could not be written |
+| `studio.revision.chip.approved` | Approved |
+| `studio.revision.edited_note` | This objective or section was changed by the course author; one revision row records it. |
+| `studio.revision.needs_review_note` | This change is stored and readable, but nobody has approved it. Export and any new check wait for approval. |
+| `studio.revision.approved_note` | This change was approved with the lesson set it belongs to. It is still not an independent validation. |
+| `studio.finetune.no_section` | This course serves no authored section identity, so one section cannot be revised or regenerated from here. |
+| `studio.finetune.scope` | 1 section: {title} |
+| `studio.review.title` | Review changes |
+| `studio.review.error` | The pending changes could not be read, so nothing here claims the course has none. |
+| `studio.review.loading` | Reading the pending changes. |
+| `studio.review.clean` | The approved lesson set matches the pages shown, so export is available. |
+| `studio.review.empty` | No fine-tune change is waiting for review. |
+| `studio.review.order` | plan {id} |
+| `studio.review.changed` | Changed: {change} |
+| `studio.review.now` | Now: {value} |
+| `studio.review.before` | Before: {value} |
+| `studio.review.row.lesson_page` | lesson page |
+| `studio.review.row.changed` | {path} — changed: {change} |
+| `studio.review.row.page` | page {n}… |
+| `studio.review.row.consequence` | {n} stored attempt(s) reference this section; the edit was confirmed against that consequence. |
+| `studio.finetune.move.blocked` | That move would put one unit’s objectives behind a later unit, so the stored order was kept. |
+| `studio.finetune.undo.stale` | A later change landed after that revision, so the undo would overwrite it; nothing was written. |
+| `studio.finetune.undo.done` | That structural change was already undone. |
+| `studio.finetune.undo.none` | This plan has no structural change to undo. |
+| `studio.finetune.undo.draft` | The plan is not approved, so only a draft edit applies. |
+| `studio.finetune.stale` | The course revision was refreshed; try again. |
+| `studio.finetune.order_saved` | Order saved. {detail} |
+| `studio.finetune.undone` | Undid the last structural change. Stored order: {order} |
+| `studio.finetune.no_changes` | Nothing changed yet. |
+| `studio.finetune.no_page` | This section has no authored page yet, so there is no page digest to revise. |
+| `studio.finetune.no_page_short` | Use “Regenerate this section” to author it first. |
+| `studio.finetune.consequence_error` | {n} learner attempt(s) already reference this section. {consequence} Confirm to store the edit. |
+| `studio.finetune.saved_page` | Section page saved as a new revision that needs review before export. |
+| `studio.finetune.saved_page_note` | Every stored attempt and the previous page version are untouched. |
+| `studio.finetune.saved_meta` | Section metadata saved. The edited objective is recorded as a revision that needs review before export. |
+| `studio.finetune.queued` | Queued regenerating 1 section: {section}. Other sections, their media and every attempt are untouched. |
+| `studio.finetune.title` | Fine-tune this approved course |
+| `studio.finetune.undo` | Undo last structural change |
+| `studio.finetune.note` | Reorder or retitle an objective and the change is written to storage as a revision that needs review; lesson pages, checks and attempts are not rewritten. Every move is sent with the full order, so the order you see is the order the backend returned. |
+| `studio.finetune.order_label` | {n} in stored order |
+| `studio.finetune.move_label` | {title}. {note}. Press Alt+ArrowUp or Alt+ArrowDown to move it. |
+| `studio.finetune.shortcut` | Alt+ArrowUp Alt+ArrowDown |
+| `studio.finetune.page.none` | no page yet |
+| `studio.finetune.page.version` | page v{n} |
+| `studio.finetune.no_authored_section` | no authored section |
+| `studio.finetune.move.up` | Move up |
+| `studio.finetune.move.down` | Move down |
+| `studio.finetune.edit` | Edit section |
+| `studio.finetune.close` | Close editor |
+| `studio.finetune.regenerate` | Regenerate this section |
+| `studio.finetune.field.objective_title` | {name} title |
+| `studio.finetune.field.objective_title_note` | Stored on the objective. The section page keeps its authored prose; a retitle is a plan revision that needs review. |
+| `studio.finetune.field.title` | Section page title |
+| `studio.finetune.field.title_note` | Stored on the authored page through the revision verb, fenced on the page digest this read served ({digest}…). The result is a new page revision that needs review. |
+| `studio.finetune.field.title_no_page` | This section has no authored page yet, so there is no digest to revise. Regenerate this section to author one. |
+| `studio.finetune.field.evidence_target` | Evidence target |
+| `studio.finetune.field.criteria` | Assessment criteria |
+| `studio.finetune.field.criteria_note` | One criterion per line. Saving replaces the objective’s criteria. |
+| `studio.finetune.field.criteria_unserved` | This build was not served the objective’s current criteria, so this field starts empty. |
+| `studio.finetune.field.criteria_keep` | Enter the criteria you want stored; leaving it untouched keeps whatever storage holds. |
+| `studio.finetune.save` | Save section |
+| `studio.finetune.unsaved_title` | Unsaved changes |
+| `studio.finetune.editor_note` | The section’s segment bodies are authored by the lessons job; this editor changes the page title and the objective metadata, and the revision verb stores a new page revision that needs review before export. |
+| `studio.finetune.confirm` | Confirm the evidence consequence |
+| `studio.finetune.consequence_dialog` | {n} stored attempt(s) reference this section. {consequence} |
+| `studio.finetune.confirm_action` | Confirm and save |
+| `studio.finetune.keep_editing` | Keep editing |
+| `studio.dialog.unsaved_title` | Unsaved section changes |
+| `studio.dialog.unsaved_body` | Discard the unsaved changes to this section? |
+| `studio.dialog.discard` | Discard changes |
+| `studio.dialog.keep` | Keep editing |
+| `studio.regen.estimate` | Regenerating this section costs about {low}–{high}, based on what writing lessons for this course has cost so far. The price for this section appears here once you queue it. |
+| `studio.regen.no_estimate` | We work out what one section costs when you queue it — this course has no earlier lesson run to go by yet. |
+| `studio.regen.queue` | Queue regenerating 1 section |
+| `studio.regen.queued` | Queued {section} · job {job} |
+| `studio.regen.price` | This section costs {low}–{high} to regenerate. |
+| `studio.tab.clipped` | clipped |
+| `studio.tab.clipped_note` | · the served text was clipped at the tab limit |
+| `studio.gate.stale` | The course was updated elsewhere; press Approve this lesson set again. |
+| `studio.gate.title` | Export gate |
+| `studio.gate.row.plan` | Plan |
+| `studio.gate.row.approval` | Lesson set approval |
+| `studio.gate.row.approved_hash` | Approved content hash |
+| `studio.gate.row.current_hash` | Current content hash |
+| `studio.gate.row.final` | Final approval |
+| `studio.gate.note` | Approving the plan approved the outline and its activities. This gate is separate: it approves the generated lesson set by its content hash, and any later edit to the plan, the pages or the course title clears it. |
+| `studio.gate.approved_line` | Lesson set approved{when}{note} |
+| `studio.gate.no_plan` | There is no approved plan to approve a lesson set for yet. |
+| `studio.gate.no_pages` | No generated pages exist yet, so there is nothing to approve. Generate the lessons from the Plan view first. |
+| `studio.gate.unsupported` | This backend does not implement parent.final.approve yet. |
+| `studio.gate.approving` | Approving the lesson set |
+| `studio.gate.approve` | Approve this lesson set |
+| `studio.gate.available` | Export is available: the approved lesson set matches the pages shown. |
+| `studio.gate.backend_reason` | Backend reason: {reason}. |
+| `studio.gate.format.archive` | Pack archive (parent guide, learner pages, answer guide). |
+| `studio.gate.format.pdf` | Printable PDF: selectable text, low-ink layout, no color-only answers. |
+| `studio.gate.export` | Export the approved files |
+| `studio.gate.minima` | The pack minima reported these problems: |
+| `studio.gate.files` | Exported files |
+| `studio.gate.export_line` | Export {kind} · {when} · content hash {hash} |
+| `studio.gate.pack_note` | The pack carries parent guide, learner pages and answer guide. Narration stays an audio role, so an authored text script is not exported as a narration file: it is the Audio & visuals tab and part of the parent guide. |
+| `studio.gate.privacy_note` | Exported files never include attempts, notebook notes, reflections, transcripts or provider settings. |
+| `studio.gate.download.pdf` | Download PDF |
+| `studio.gate.download.archive` | Download pack archive |
+| `studio.gate.download.record` | Download export record |
+| `studio.gate.artifact_note` | Session-bound, expiring link served by this host’s artifact route. A filesystem path never leaves the backend. |
+| `studio.gate.artifact_short` | Host artifact route. |
+
+---
+
+#### 5.6.8 Create form (GAP-37)
+
+The create form's five recipes, four dials and four filters, at `00-header.js:120-180`.
+
+| id | Text |
+|---|---|
+| `create.recipe.one_off` | One task I need to do now |
+| `create.recipe.one_off.desc` | A single thing to get right — a repair, a form, a procedure. You practise the task, not a quiz. |
+| `create.recipe.casual` | A little at a time |
+| `create.recipe.casual.desc` | Short sessions you pick up when you have ten minutes, with no schedule to keep. |
+| `create.recipe.committed` | A steady plan |
+| `create.recipe.committed.desc` | A sequence that builds on itself, with practice you come back to. |
+| `create.recipe.companion` | Alongside something else |
+| `create.recipe.companion.desc` | A subject you keep returning to while you study or work on other things. |
+| `create.recipe.parent` | Preparing for my child |
+| `create.recipe.parent.desc` | You are preparing material for a child. That happens in Parent Studio, not here. |
+| `create.dial.pace` | Pace |
+| `create.dial.pace.light` | Light |
+| `create.dial.pace.steady` | Steady |
+| `create.dial.pace.intense` | Intense |
+| `create.dial.depth` | Depth |
+| `create.dial.depth.survey` | Survey |
+| `create.dial.depth.working` | Working |
+| `create.dial.depth.deep` | Deep |
+| `create.dial.assessment` | Assessment |
+| `create.dial.assessment.none` | None |
+| `create.dial.assessment.self_check` | Self-check |
+| `create.dial.assessment.graded` | Graded |
+| `create.dial.autonomy` | Autonomy |
+| `create.dial.autonomy.guided` | Guided |
+| `create.dial.autonomy.balanced` | Balanced |
+| `create.dial.autonomy.independent` | Independent |
+| `create.filter.all` | All |
+| `create.filter.in_progress` | In progress |
+| `create.filter.review_due` | Review due |
+| `create.filter.archived` | Archived |
+
+---
+
 ## 6. Honesty table (binding for every v3 screen)
 
 Every element in the five refs, with what ships and where the value comes from. A screen that

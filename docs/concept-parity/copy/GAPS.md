@@ -498,6 +498,8 @@ refusal (`2932`) is a third.
 **Decision for CP-001:** word `assigned` ("Assigned" is the proposal) rather than folding it into
 `Planned`; the two states differ (a task the backend assigned is not one the learner proposed).
 
+**Status (CP-001g, `t_4d6d5b56`):** rowed as `hw.*` in `COPY.md` §7 — five state words, six task kinds, both sheet guards and the second-report refusal. `hw.state.assigned` is deliberately absent: the owner has not chosen the word, and the proposed row is stated in the handoff rather than printed here.
+
 ### GAP-32 — the plan-validation independence words have no rows
 
 `desktop/src/95-studio.js:3901-4446` states, in about 30 sentences, whether a second model checked
@@ -516,6 +518,8 @@ lines, which are `computed:model_identity` over the stored validation record.
 **Decision:** whether the v3 surface keeps the full family or collapses it to a badge plus one
 sentence. Collapsing is allowed only if the independent/same-model distinction and "not factual
 verification" both survive somewhere on the surface.
+
+**Status (CP-001g, `t_4d6d5b56`):** not rowed. The keep-or-collapse decision is open, so `studio.verify.*` is stated as a question in the handoff; a family authored either way would pre-empt the answer.
 
 ### GAP-33 — the fine-tune editor and its second dialog have no rows
 
@@ -546,6 +550,8 @@ this section. {consequence} **Confirm to store the edit.**"), and the review row
 revision (`4734`, "…reference this section**; the edit was confirmed against that consequence.**").
 The sweep rows them as `consequence_dialog`, `consequence_error` and `consequence_review`.
 
+**Status (CP-001g, `t_4d6d5b56`):** rowed as `studio.finetune.*`, `studio.dialog.*`, `studio.regen.*`, `studio.revision.*` and `studio.review.*` in `COPY.md` §10, including both `role="alertdialog"` blocks and the three consequence renderings as three rows.
+
 ### GAP-34 — the lesson-set export gate has no rows
 
 The gate at `desktop/src/95-studio.js:7244-7526` is the **second** approval in the product. CP-025b
@@ -558,6 +564,8 @@ approve, available, blocked, backend_reason, formats, minima, export, files, exp
 privacy_note, filename.*, download.*, artifact_note}` plus `studio.gate.format.{archive,pdf}`.
 Source is `deck` except `approved_line` and `export_line`, which are `computed:` over the approval
 and export records.
+
+**Status (CP-001g, `t_4d6d5b56`):** rowed as `studio.gate.*` in `COPY.md` §10, with `studio.review.blocked` carrying the shared blocked sentence at both renderings.
 
 ### GAP-35 — offline and overflow on the four surfaces
 
@@ -580,6 +588,8 @@ CP-025a/CP-025b said "no offline copy" and "overflow: no copy". The sweep makes 
 `shell.offline.surface` row. The shipped code has four different sentences for four routes, so one
 shared row would be a rewrite, not a restyle.
 
+**Status (CP-001g, `t_4d6d5b56`):** the overflow rows are authored (`game.journal.overflow`, `world.plates.overflow`, `studio.tab.clipped` + `studio.tab.clipped_note`). The four offline sentences are **not** rowed: the per-surface-or-shared decision is the owner's, and the proposal is in the handoff.
+
 ### GAP-36 — the `Guided` presentation word has no contract enum and no row
 
 `CB_PRESENTATION_LABEL` (`00-header.js:238`) offers `Game / Guided / Textbook`, and `guided` is a
@@ -595,6 +605,8 @@ It is not a `game.*` word either: it labels a lesson view, not the play layer.
 
 **Decision for CP-001/atlas:** word it as a device view (`studio.presentation.guided`) or drop the
 third option from the shell. It is not a `world.*` row and it is not a `game.*` row.
+
+**Status (CP-001g, `t_4d6d5b56`):** not rowed. `studio.presentation.guided` stays out pending the owner's word; note that `create.dial.autonomy.guided` is the autonomy option, a different row, and is rowed under `GAP-37`.
 
 ### GAP-37 — the create-form recipe and dial vocabulary has no rows
 
@@ -612,6 +624,8 @@ archived}`. All source `deck`.
 Needed by: CP-022 (the Home create form) and CP-025b (the parent door). This is a new gap because
 the CP-031 samples were scoped to the six screens and the create form's vocabulary fell between
 them.
+
+**Status (CP-001g, `t_4d6d5b56`):** rowed as `create.recipe.*` (ten rows, title plus description), `create.dial.*` (four dials and twelve options) and `create.filter.*` (four) in `COPY.md` §1.1.
 
 ### GAP-38 — the approval-invalidation banner and the plan-check reason labels have no rows
 
@@ -654,6 +668,8 @@ in the same banner; `3766` renders `Export is blocked ({reason}).`, the same wor
 a disclosure. If it collapses, every reason must still be reachable, and the check labels must stay
 one sentence per check — the reason list is the only place the product says which check failed.
 
+**Status (CP-001g, `t_4d6d5b56`):** rowed as `studio.banner.*` (title, four reasons, the unknown fallback, the export line) and `studio.check.*` (all five plan-check labels) in `COPY.md` §10.
+
 ### GAP-39 — the shell's contract-envelope error sentence has no row
 
 `desktop/src/00-header.js:702-716` synthesizes an `INTERNAL_ERROR` envelope when the backend answers
@@ -676,6 +692,8 @@ synthesized answer, not the backend's, so it must not read as if the backend sai
 **Decision for CP-001:** keep this diagnostic sentence (honest, but internal) or replace it with a
 plain failure line plus the code. If it is replaced, a malformed answer must stay distinguishable
 from a timeout and from an offline read (`GAP-35`).
+
+**Status (CP-001g, `t_4d6d5b56`):** rowed as `shell.rpc.envelope` and `shell.rpc.no_answer` in `COPY.md` §1, kept as shipped.
 
 ---
 
@@ -704,6 +722,8 @@ an inventory and decides whether the deck's `nochat.*` rows are restated to matc
 sentences or the code is changed to emit the deck's wording. Not blocking for CP-025a/CP-025b, which
 do not paint this path.
 
+**Status (CP-001g, `t_4d6d5b56`):** rowed as `classroom.tutor.*` (eleven rows) in `COPY.md` §4, with the shipped wording kept. Whether the code adopts the deck's `classroom.nochat.*` wording instead is still a CP-023 question, recorded in the handoff.
+
 ---
 
 ### GAP-41 — the Home defaults line claims coverage `CP-022-home.md` does not have
@@ -729,6 +749,8 @@ ranking, no random rewards, no XP or streaks"), so collapsing them would lose on
 `home.*` and not `game.*`) or CP-001 authors `home.defaults.*` from §1a of
 `CP-031-sweep-game.md`. Not blocking for CP-025a/CP-025b.
 
+**Status (CP-001g, `t_4d6d5b56`):** rowed as `home.defaults.*` (five rows: view, classroom, short child-safe, session, long child-safe) in `COPY.md` §2.
+
 ### GAP-42 — the objective-state words every Game card renders have no row
 
 `CB_COPY.state` (`desktop/src/00-header.js:63-72`) maps seven evidence states to the learner's
@@ -750,6 +772,8 @@ here rather than copied onto a Game surface.
 **Minimum:** CP-001 authors `game.state.*` (or extends `GAP-17`'s family) with all seven values, and
 decides whether *Independent evidence* / *Delayed evidence* are the same words the Classroom uses.
 Not blocking for CP-025a/CP-025b, which do not paint the journal.
+
+**Status (CP-001g, `t_4d6d5b56`):** rowed as `game.state.*` in `COPY.md` §8 — all seven values plus the `State not recorded` fallback — and `game.journal.stamped` for the earned word.
 
 ---
 

@@ -17,7 +17,7 @@ here is a request to that card.
 
 ## Sources, in precedence order
 
-1. `docs/concept-parity/COPY.md` — the only source of product wording (177 rows).
+1. `docs/concept-parity/COPY.md` — the only source of product wording (387 rows).
 2. `docs/concept-parity/SPEC-V3.md` §5.1–§5.5 — region and state maps that reference deck ids.
 3. `contracts/rpc.v24.json` — `$defs.methods.properties.<method>.response` and `$defs.<def>` for
    every `field:` source; `contracts/pack-manifest.v2.json` for `pack.inspect.manifest.*`.
@@ -45,7 +45,7 @@ Status tags: **ok** (row exists and resolves), **conflict** (body wording differ
 All machine-checked, reproducible from the docs tree:
 
 1. **Deck ↔ spec id parity.** Every copy id in `COPY.md` is referenced by `SPEC-V3.md` and every
-   copy id `SPEC-V3.md` names exists in the deck. Zero orphans in either direction (177/177).
+   copy id `SPEC-V3.md` names exists in the deck. Zero orphans in either direction (387/387).
 2. **Every `field:` source resolves.** All `field:` cells in `COPY.md` were walked against
    `contracts/rpc.v24.json` (method responses and `$defs`) and `contracts/pack-manifest.v2.json`,
    following local `$ref` chains. Every path resolves. The only non-contract names are the four
@@ -119,10 +119,10 @@ paints the rail or the companion.
 
 CP-021 to CP-024 are close: their state copy is fully written, and the gaps are **component
 labels** (a card title, a node label, the answer-surface words, the level line, the evidence
-class words) that a maker would otherwise invent. CP-025a and CP-025b are not close: the deck ends
-at the design-system lab, so every visible string on the homework, Game, World Studio and Parent
-Studio surfaces has no deck row. Those two cards cannot start until CP-001 gains `hw.*` and
-`studio.*` sections.
+class words) that a maker would otherwise invent. CP-025a and CP-025b are still not shippable: the
+deck has no section for the whole Homework, Game, World Studio or Parent Studio surface
+(`GAP-23`, `GAP-24`, `GAP-27`, `GAP-28`), and CP-001g only authored the twelve families the sweep
+found without a gap (`GAP-31`–`GAP-42`) — not the surfaces they belong to.
 
 ## Files
 
@@ -140,10 +140,15 @@ Studio surfaces has no deck row. Those two cards cannot start until CP-001 gains
 
   | file | source | rows |
   |---|---|---|
-  | `CP-031-sweep-chrome.md` | `desktop/src/00-header.js` | 51 |
+  | `CP-031-sweep-chrome.md` | `desktop/src/00-header.js` | 52 |
   | `CP-031-sweep-homework.md` | `desktop/src/90-course.js` | 331 |
-  | `CP-031-sweep-game.md` | `desktop/src/30-home.js` | 215 |
-  | `CP-031-sweep-parent-studio.md` | `desktop/src/95-studio.js` | 642 |
+  | `CP-031-sweep-game.md` | `desktop/src/30-home.js` | 216 |
+  | `CP-031-sweep-parent-studio.md` | `desktop/src/95-studio.js` | 647 |
   | `CP-031-sweep-world.md` | `desktop/src/97-world.js` | 92 |
+
+  CP-001g (`t_4d6d5b56`) rowed by hand the state words the extractor drops — `Started`, `Stamped`,
+  `Planned`, `Skipped`, `Expired`, `Plan` and `clipped` — because a single-token word is exactly the
+  family member that can vanish between sweeps. Those are the only count changes: 1331 rows became
+  1340, and each row names the deck id it feeds.
 - `GAPS.md` — every gap as a proposed deck row, with the source form, the cap, and the card that
   needs it. Proposals only.

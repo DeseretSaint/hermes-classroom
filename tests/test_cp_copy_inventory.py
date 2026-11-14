@@ -1571,5 +1571,147 @@ class TestCp031bSweep(unittest.TestCase):
             self.assertIn(name, readme, f"README does not list {name}")
 
 
+class TestCp001gDeckFamilies(unittest.TestCase):
+    """CP-001g (`t_4d6d5b56`): every family the sweep found has deck rows, by name.
+
+    ``GAPS.md``'s own minimum — the amendment order, step 6 — says CP-001 authors the rows for
+    ``GAP-31`` to ``GAP-42``. The deck's other gates count rows and resolve sources, so a restyle
+    could delete a whole family and every one of them would still pass: that is how ``GAP-41`` and
+    ``GAP-42`` were displaced onto ``CP-022-home.md`` while the sweep read as complete. This gate
+    names each family, and asserts by name that the four ids the owner has not worded are *absent*,
+    so a placeholder row cannot stand in for a decision.
+    """
+
+    DECK = COPY_DIR.parent / "COPY.md"
+
+    FAMILIES = {
+        "GAP-31 homework maps and sheet guards": (
+            "hw.state.", "hw.kind.", "hw.sheet.guard.", "hw.record.",
+        ),
+        "GAP-33 fine-tune editor, dialogs and review": (
+            "studio.finetune.", "studio.dialog.", "studio.regen.", "studio.revision.",
+            "studio.review.",
+        ),
+        "GAP-34 the lesson-set export gate": ("studio.gate.",),
+        "GAP-35 overflow on the four surfaces": (
+            "game.journal.overflow", "world.plates.overflow", "studio.tab.clipped",
+        ),
+        "GAP-37 the create-form vocabulary": (
+            "create.recipe.", "create.dial.", "create.filter.",
+        ),
+        "GAP-38 banner and plan-check reasons": ("studio.banner.", "studio.check."),
+        "GAP-39 the shell contract-envelope error": ("shell.rpc.",),
+        "GAP-40 the classroom tutor path": ("classroom.tutor.",),
+        "GAP-41 the Home defaults line": ("home.defaults.",),
+        "GAP-42 the objective-state words": ("game.state.",),
+    }
+
+    #: Owner decisions named in `GAPS.md` lines 746-750. The card is explicit: these are stated as
+    #: questions in the handoff, not printed as placeholder rows. If one appears here, someone
+    #: invented a word the owner had not chosen.
+    DEFERRED = (
+        "hw.state.assigned",
+        "studio.presentation.guided",
+        "hw.offline.",
+        "game.offline.",
+        "world.offline.",
+        "studio.offline.",
+        "shell.offline.surface",
+        "studio.verify.",
+    )
+
+    ROW = re.compile(r"^\|\s*`([a-z0-9]+\.[a-z0-9._]+)`\s*\|([^|]*)\|([^|]*)\|([^|]*)\|([^|]*)\|")
+
+    def deck_rows(self) -> list[tuple[str, str, str, str]]:
+        """(id, text, source, where) for every deck row with a backticked id."""
+        rows: list[tuple[str, str, str, str]] = []
+        for line in read(self.DECK).splitlines():
+            match = self.ROW.match(line)
+            if match:
+                rows.append(
+                    (match.group(1), match.group(2).strip(), match.group(3).strip(), match.group(5).strip())
+                )
+        return rows
+
+    def test_every_family_has_deck_rows(self):
+        ids = [row[0] for row in self.deck_rows()]
+        failures: list[str] = []
+        for family, prefixes in self.FAMILIES.items():
+            for prefix in prefixes:
+                if not any(ident == prefix or ident.startswith(prefix) for ident in ids):
+                    failures.append(f"{family}: no deck row for `{prefix}`")
+        self.assertEqual(failures, [], "a family the sweep found has no copy row:\n" + "\n".join(failures))
+
+    def test_the_seven_objective_state_words_are_all_present(self):
+        """GAP-42 names seven values; a family that keeps six is the defect this card exists for."""
+        values = {
+            "game.state.not_started": "Not started",
+            "game.state.introduced": "Started",
+            "game.state.independent_evidence": "Independent evidence",
+            "game.state.delayed_evidence": "Delayed evidence",
+            "game.state.review_due": "Review due",
+            "game.state.needs_review": "Could not be written",
+            "game.state.overridden": "Moved on without a grade",
+        }
+        rows = {ident: text for ident, text, _source, _where in self.deck_rows()}
+        self.assertEqual(
+            {ident: rows.get(ident) for ident in values}, values, "the seven state words are not all rowed"
+        )
+        # The map's own fallback is a word too: an unknown id must not read as "Not started".
+        self.assertEqual(rows.get("game.state.unknown"), "State not recorded")
+
+    def test_every_new_row_cites_the_file_and_line_it_words(self):
+        """The card requires a source citation per row; a family without one is unmaintainable."""
+        family_prefixes = tuple(p for prefixes in self.FAMILIES.values() for p in prefixes)
+        failures: list[str] = []
+        checked = 0
+        for ident, _text, _source, where in self.deck_rows():
+            if not any(ident == p or ident.startswith(p) for p in family_prefixes):
+                continue
+            checked += 1
+            if not re.search(r"`[\w.-]+\.js:\d+", where):
+                failures.append(f"{ident}: no `file.js:line` citation in the Where cell")
+        self.assertGreaterEqual(checked, 140, "the family gate went vacuous")
+        self.assertEqual(failures, [], "\n".join(failures))
+
+    def test_the_owner_decisions_are_left_open(self):
+        """The four owner-chosen words stay out until the owner answers; a placeholder fails here."""
+        ids = [row[0] for row in self.deck_rows()]
+        present = [
+            ident for ident in ids
+            if any(ident == d or ident.startswith(d) for d in self.DEFERRED)
+        ]
+        self.assertEqual(
+            present,
+            [],
+            "an owner-decision row was printed as if it were decided: "
+            f"{present} — put the proposed row in the handoff instead",
+        )
+
+    def test_each_new_family_is_attached_to_its_gap_in_the_sweep_that_owns_it(self):
+        """A deck family that no inventory proposes cannot be re-derived after a re-sweep."""
+        owners = {
+            "hw.state.": ("CP-031-sweep-parent-studio.md", "GAP-31"),
+            "studio.gate.": ("CP-031-sweep-parent-studio.md", "GAP-34"),
+            "game.state.": ("CP-031-sweep-chrome.md", "GAP-42"),
+            "game.journal.overflow": ("CP-031-sweep-game.md", "GAP-35"),
+            "world.plates.overflow": ("CP-031-sweep-world.md", "GAP-35"),
+            "shell.rpc.": ("CP-031-sweep-chrome.md", "GAP-39"),
+            "classroom.tutor.": ("CP-031-sweep-chrome.md", "GAP-40"),
+            "create.recipe.": ("CP-031-sweep-chrome.md", "GAP-37"),
+            "home.defaults.": ("CP-031-sweep-game.md", "GAP-41"),
+        }
+        failures: list[str] = []
+        for prefix, (sweep, gap) in owners.items():
+            ident = next((i for i, *_ in self.deck_rows() if i == prefix or i.startswith(prefix)), None)
+            if ident is None:
+                failures.append(f"{prefix}: no deck row")
+                continue
+            text = read(COPY_DIR / sweep)
+            if gap not in text:
+                failures.append(f"{ident}: {sweep} never names {gap}")
+        self.assertEqual(failures, [], "\n".join(failures))
+
+
 if __name__ == "__main__":
     unittest.main()

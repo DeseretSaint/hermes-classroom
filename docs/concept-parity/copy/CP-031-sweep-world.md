@@ -176,5 +176,9 @@ The state column is classified from the literal's own wording (`error`, `empty`,
 | This course was built in Textbook mode. The World Studio shows three art directions, then builds the kit, then asks for your final approval. Your plan, lessons, checks and evidence stay exactly as they are. | `97-world.js:1062` | default | `GAP-27` |
 
 
-**Offline and overflow evidence:** this file has no `useOnline()` branch and no truncating list;
-it states neither an offline sentence nor an overflow rule (`GAP-35`).
+**Offline and overflow evidence:** this file has no `useOnline()` branch and states no offline
+sentence. It is not quite free of truncation, though: the direction form sends at most six motifs and
+six forbidden items (`direction.include.split(',').slice(0, 6)` / `direction.avoid…`
+at `97-world.js:468-469`) and says nothing when the input carried more, so `GAP-35` owns a
+`world.plates.overflow` row for that cap. Offline copy is still a `GAP-35` question (`world.offline.*`
+is not worded; the owner has not chosen per-surface or shared).
