@@ -992,13 +992,24 @@ function ChallengeCard({ title, prompt, recordNote, actionLabel, onStart, classN
 }
 
 /* ── EvidenceTray ────────────────────────────────────────────────────────────────────────────
- * The evidence surface: a wooden tray object with its lip, the recorded-check tally in `sage`
- * (a fill, never a text background — every word sits on card stock beside it), the real event
- * names, and one refusal/observation sentence in `alert`. A zero state says `No checks recorded
- * yet` instead of painting an empty bar. The tray is interactive: its record toggle is a quiet
- * pill, and the focus ring belongs to that button (`.cb3-press`), never to the tray's own
- * non-focusable `div`.
- * Tokens: card-stock, wood, wood-edge, sage, ink, ink-soft, alert, rule, radius.round.
+ * The evidence surface: a wooden tray object with its lip, the recorded-check tally stamped in
+ * `ink` on the tray's own printed `card-stock` field, the real event names, and one
+ * refusal/observation sentence in `alert`. A zero state says `No checks recorded yet` instead
+ * of painting an empty bar.
+ *
+ * The tally is a mark on paper, not a sage fill floating on wood: sage on wood measures 1.29:1
+ * light and 2.17:1 dark, so the marks — the entire visual meaning of the tray — were invisible in
+ * both modes, and the photographic `passport-tray` tile under them made the real ratio worse than
+ * the token pair. The mark is `ink`, not `on-forest`: `on-forest` is a rail label and measures
+ * 1.07:1 on card stock, and the contract's `text_placements` allows it on `forest` only.
+ * `ink` on `card-stock` is 15.18:1 light and 14.05:1 dark, and because the field
+ * is an opaque flat fill over the tile, the photograph cannot vary the sample the way a pixel test
+ * over the image would. The field keeps its own 3.39:1 / 3.25:1 edge against the wood, so the tray
+ * still reads as the object and the paper as the printed field inside it.
+ *
+ * The tray is interactive: its record toggle is a quiet pill, and the focus ring belongs to that
+ * button (`.cb3-press`), never to the tray's own non-focusable `div`.
+ * Tokens: card-stock, wood, wood-edge, ink, ink-soft, alert, rule, radius.round.
  */
 function EvidenceTray({ countLabel, recorded, emptyLabel, events, note, toggleLabel, onToggle, className, style, ...rest }) {
   const marks = Math.max(0, Math.min(24, Number(recorded) || 0))
@@ -1023,13 +1034,13 @@ function EvidenceTray({ countLabel, recorded, emptyLabel, events, note, toggleLa
     children: [
       jsxs('div', {
         'aria-hidden': 'true',
+        'data-cb3-tray': 'wood',
         style: {
           position: 'relative',
           display: 'flex',
           alignItems: 'center',
-          gap: '0.2rem',
           minHeight: '12px',
-          paddingInline: '0.4rem',
+          padding: '0.2rem 0.4rem',
           backgroundImage: cb3ObjectSource('passport-tray') ? `url(${cb3ObjectSource('passport-tray')})` : undefined,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
@@ -1037,17 +1048,32 @@ function EvidenceTray({ countLabel, recorded, emptyLabel, events, note, toggleLa
           borderBottom: `1px solid ${cb3Role('wood-edge')}`,
           borderRadius: cb3Radius('square')
         },
-        children: Array.from({ length: marks }).map((_, index) =>
-          jsx('span', {
-            style: {
-              display: 'block',
-              width: '8px',
-              height: '8px',
-              borderRadius: cb3Radius('square'),
-              backgroundColor: cb3Role('sage')
-            }
-          }, `mark-${index}`)
-        )
+        children: marks
+          ? jsx('div', {
+              'data-cb3-tally-field': 'card-stock',
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.2rem',
+                minHeight: '12px',
+                paddingInline: '0.35rem',
+                backgroundColor: cb3Role('card-stock'),
+                borderRadius: cb3Radius('square')
+              },
+              children: Array.from({ length: marks }).map((_, index) =>
+                jsx('span', {
+                  'data-cb3-tally-mark': 'recorded',
+                  style: {
+                    display: 'block',
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: cb3Radius('square'),
+                    backgroundColor: cb3Role('ink')
+                  }
+                }, `mark-${index}`)
+              )
+            }, 'field')
+          : null
       }, 'tray'),
       jsx('p', {
         style: {

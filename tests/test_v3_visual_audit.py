@@ -80,7 +80,9 @@ class V3AuditStaticTest(unittest.TestCase):
         for ident in ("V-01", "V-02", "V-03"):
             self.assertEqual(statuses[ident], "PASS", f"{ident} is {statuses[ident]}")
         gate_claim = next(item for item in self.audit["claims"] if item["id"] == "V-02")
-        self.assertEqual(gate_claim["evidence"]["gates"], 60, "30 gates in two modes")
+        # 31 gates in two modes. The 31st is Upgrade 28's `card-stock` on `wood`: the evidence
+        # tray's printed field is a graphic on the tray it lies in and needs its own 3:1 edge.
+        self.assertEqual(gate_claim["evidence"]["gates"], 62, "31 gates in two modes")
         self.assertEqual(gate_claim["evidence"]["failures"], [])
         self.assertIsNotNone(gate_claim["evidence"]["tightest"])
 
