@@ -1234,6 +1234,13 @@
         "plan_hash": "sha256:988263f19033fe9c58da852acd32330b72aa025da50c9e807ba2be7175dd5226",
         "plan_id": "pln_00000000000000000000000000000003",
         "state": "approved",
+        "time_estimate": {
+          "basis": "none",
+          "confidence": "low",
+          "minutes_per_session": 60,
+          "sessions_per_week": 2,
+          "weeks": 3
+        },
         "units": [
           {
             "goal": "Name an interval from its semitone count and sound.",

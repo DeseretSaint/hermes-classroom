@@ -438,6 +438,83 @@ out.tick.text = text(container)
 await act(async () => { root.render(null) })
 await flush(30)
 
+// A full plan, in the shape `course.outline` serves it: two units, four objectives and the
+// plan's own stored estimate. The review gate must read as a plan by unit, with its time.
+const renderOutline = async (planData, objectiveRows) => {
+  const outlineData = { plan: planData, objectives: objectiveRows }
+  const book = { status: 'ready', error: null, reload: () => {}, data: { ...outlineData, sections: [] } }
+  await act(async () => {
+    root.render(
+      React.createElement(mod.StudioPlanView, {
+        course: { course_id: 'crs_0123456789abcdef', enrollment_id: 'enr_0123456789abcdef', title: 'Order at a counter' },
+        revision: 1,
+        onRevision: () => {},
+        outline: { status: 'ready', error: null, reload: () => {}, data: outlineData },
+        book,
+        brief: null,
+        planJobId: null,
+        planJobHint: null,
+        onChangeGoal: () => {},
+        onJobSettled: () => {},
+        onChanged: () => {},
+        supported: () => true,
+        surface: 'learner',
+        outlineHidden: false,
+        syllabusGate: null,
+        review: null,
+        onOpenReview: () => {},
+        onDirtyChange: () => {}
+      })
+    )
+  })
+  await flush()
+  return container.innerHTML
+}
+const fullObjectives = [
+  { objective_id: 'obj_a', ordinal: 1, title: 'Alpha greeting', evidence_target: 'recall', state: 'not_started', check_state: 'none' },
+  { objective_id: 'obj_b', ordinal: 2, title: 'Beta request', evidence_target: 'comprehension', state: 'not_started', check_state: 'none' },
+  { objective_id: 'obj_c', ordinal: 3, title: 'Gamma greeting', evidence_target: 'recall', state: 'not_started', check_state: 'none' },
+  { objective_id: 'obj_d', ordinal: 4, title: 'Delta request', evidence_target: 'comprehension', state: 'not_started', check_state: 'none' }
+]
+const fullPlan = {
+  plan_id: 'pln_0123456789abcdef',
+  state: 'draft',
+  version: 1,
+  plan_hash: 'sha256:plan',
+  validation,
+  time_estimate: {
+    weeks: 6,
+    sessions_per_week: 2,
+    minutes_per_session: 45,
+    basis: 'model',
+    confidence: 'low'
+  },
+  units: [
+    {
+      ordinal: 1,
+      title: 'Greetings',
+      goal: '',
+      prereq_unit_ordinals: [],
+      prerequisite_state: 'no_edges',
+      unmet: [],
+      objectives: [fullObjectives[0], fullObjectives[2]]
+    },
+    {
+      ordinal: 2,
+      title: 'Requests',
+      goal: '',
+      prereq_unit_ordinals: [],
+      prerequisite_state: 'no_edges',
+      unmet: [],
+      objectives: [fullObjectives[1], fullObjectives[3]]
+    }
+  ]
+}
+out.full = { html: await renderOutline(fullPlan, fullObjectives) }
+out.full.text = text(container)
+await act(async () => { root.render(null) })
+await flush(30)
+
 process.stdout.write(JSON.stringify(out))
 """
 
@@ -1044,6 +1121,27 @@ class LearnerPlanAdjust(unittest.TestCase):
         # by the intent.
         self.assertIn("plan sha256:plan", header["text"])
         self.assertIn("Plan draft · v1", header["text"])
+    def test_a_full_plan_preview_groups_units_and_shows_the_time_estimate(self) -> None:
+        full = self.out["full"]
+        text = full["text"]
+        html = full["html"]
+        # The estimate the plan stores reaches the header beside the plan state, in weeks.
+        self.assertIn('data-cb-plan-time-estimate="6"', html)
+        self.assertIn("About 6 weeks", text)
+        self.assertIn("weeks", text)
+        # Both unit headings are rendered, and each unit's rows sit under its own heading
+        # instead of one flat 4-row list.
+        self.assertIn('data-cb-plan-unit="1"', html)
+        self.assertIn('data-cb-plan-unit="2"', html)
+        self.assertLess(html.index("Greetings"), html.index("Alpha greeting"))
+        self.assertLess(html.index("Greetings"), html.index("Gamma greeting"))
+        self.assertLess(html.index("Requests"), html.index("Beta request"))
+        self.assertLess(html.index("Requests"), html.index("Delta request"))
+        # The second unit's heading follows the first unit's rows, not the whole outline.
+        self.assertLess(html.index("Gamma greeting"), html.index("Requests"))
+        # No pipeline vocabulary reached the screen.
+        for banned in ("unit_id", "schedule_json", "time_estimate"):
+            self.assertNotIn(banned, text)
 
     def test_the_elapsed_clock_ticks_while_the_job_runs(self) -> None:
         tick = self.out["tick"]

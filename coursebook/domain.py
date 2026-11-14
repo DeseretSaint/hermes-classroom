@@ -4762,6 +4762,45 @@ def _assistance_view(stored: Any, attempt_count: int, used: int) -> dict[str, An
 
 
 
+def _outline_time_estimate(plan: Any) -> dict[str, Any] | None:
+    """The plan's own stored estimate, or ``None`` when it declares no usable one.
+
+    ``plans.schedule_json`` is the bundle generation wrote: ``time_estimate`` is the authored
+    planning estimate (``generation.TIME_ESTIMATE_SCHEMA``), not an attainment claim. The read
+    projects only the bounded facts the approval gate renders, so an older or hand-edited
+    schedule cannot leak an unbounded field through ``course.outline``. A schedule whose weeks is
+    absent or outside the schema's own 1–104 bound projects ``None``: no figure is invented.
+    """
+    try:
+        schedule = json.loads(plan["schedule_json"] or "{}")
+    except (TypeError, ValueError, KeyError, IndexError):
+        return None
+    if not isinstance(schedule, dict):
+        return None
+    estimate = schedule.get("time_estimate")
+    if not isinstance(estimate, dict):
+        return None
+
+    def bounded(name: str, low: int, high: int) -> int | None:
+        value = estimate.get(name)
+        if isinstance(value, bool) or not isinstance(value, int) or not low <= value <= high:
+            return None
+        return value
+
+    weeks = bounded("weeks", 1, 104)
+    if weeks is None:
+        return None
+    basis = estimate.get("basis")
+    confidence = estimate.get("confidence")
+    return {
+        "weeks": weeks,
+        "sessions_per_week": bounded("sessions_per_week", 1, 14),
+        "minutes_per_session": bounded("minutes_per_session", 5, 240),
+        "basis": basis if basis in ("fsi", "derived", "model", "none") else None,
+        "confidence": confidence if confidence in ("low", "medium", "high") else None,
+    }
+
+
 @_handler("course.outline")
 def course_outline(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
     """The Textbook section index and the Plan tab: one read, every field derived, revision 0.
@@ -4858,6 +4897,9 @@ def course_outline(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
             # Additive in cb.rpc v11 (§14.2 R9). A legacy plan projects exactly one implicit
             # unit titled with the plan title, so every client can rely on the array.
             "units": units,
+            # Additive in cb.rpc v29. The plan's own authored estimate, read from the stored
+            # schedule bundle; null when it declares none, never a number the backend made up.
+            "time_estimate": _outline_time_estimate(plan),
         },
         "objectives": objectives,
         "total": total,

@@ -1,29 +1,37 @@
-"""Derive ``contracts/rpc.v29.json`` — the authored hint-ladder delta over v28.
+"""Derive ``contracts/rpc.v29.json`` — the composed additive delta over v28.
 
 Run from the repository root::
 
     python3 probes/derive_rpc_v29.py
 
-The card (UP-14) changes one learner surface: a check may author a ladder of up to three
-assistance rungs (nudge, cue, worked step), the pane must show the authored policy instead of
-always offering "Ask for a hint", and each press must reveal exactly one rung and record that it
-happened. The wire had no way to carry either fact: ``check_stimulus``'s allowlist drops
-``assistance_policy`` and ``lesson.assist`` accepts only the binary ``kind``.
+One contract version must carry every additive change that ships together, so this script is the
+**composition point** for the v29 wave: it applies each card's delta to a parsed v28 in one pass.
+A sibling card that derived its own v29 from the same v28 did not fork the version; its delta is
+folded in here and re-run, so the written document is byte-identical to the union of the cards.
 
-This amendment is additive and has four parts:
+Deltas carried by this script:
 
-* ``check_stimulus.assistance_policy`` may carry the authored policy (the ``hint`` gate, the
-  evidence class an answer inherits, and the ladder's rung kinds and labels). Rung *text* is
-  deliberately not projected on this read: a rung is revealed by a recorded press, not by opening
-  the check.
-* ``check.get`` may carry ``assistance``: the gate, how many rungs exist, how many were already
-  recorded for this attempt, and which rung is next. A pane that has no ladder keeps its v28
-  shape because every new key is optional.
-* ``lesson.assist`` accepts an optional ``rung`` index and answers with the one revealed rung
-  (index, kind, label, text, and whether it was the last). The request's existing ``kind`` enum is
-  untouched: the backend maps a non-final rung to ``hint_request`` and the final rung to
-  ``answer_shown``, so the recorded evidence class stays inside the existing vocabulary.
-* the four places the wire version is echoed move to 29.
+* UP-14 (t_92039128), the authored hint ladder: ``check_stimulus.assistance_policy`` may carry the
+  authored policy (the ``hint`` gate, the evidence class an answer inherits, and the ladder's rung
+  kinds and labels), ``check.get`` may carry ``assistance`` (the authored rungs, how many were
+  recorded, which rung is next), and ``lesson.assist`` accepts an optional ``rung`` index and
+  answers with the one revealed rung. Rung *text* is deliberately not projected on the read: a rung
+  is revealed by a recorded press, not by opening the check. A non-final rung records the existing
+  ``hint_request`` kind and ``hinted`` class; the final rung records ``answer_shown``, so the ladder
+  never invents a new evidence class.
+* UP-6 (t_76953421), the plan gate's own time estimate: ``outline_plan.time_estimate`` may carry the
+  plan's stored schedule estimate (``weeks``, ``sessions_per_week``, ``minutes_per_session``,
+  ``basis``, ``confidence``), or null when no usable estimate is stored. The weeks figure is a
+  planning estimate and never an attainment claim.
+
+The amendment is written **onto a parsed v28**, never typed as a second copy of a 13,000-line
+document: every record this delta does not name survives by being carried, so a hand-copy cannot
+silently drop one.
+
+The output is byte-identical to the repository's own serialisation (``json.dumps`` with
+``indent=2`` and ``ensure_ascii=False`` plus a trailing newline), which the script asserts against
+v28 first: if the round trip of the input document is not byte-exact, the formatting contract has
+changed and the script refuses to write a v29 that would diff in every line.
 
 No method, required key, error code, job kind, answer kind, verdict, evidence class or vocabulary
 value moves; ``contracts/rpc.v28.json`` stays byte-identical history and ``x-supersedes`` names it.
@@ -40,20 +48,25 @@ SOURCE = ROOT / "contracts" / "rpc.v28.json"
 TARGET = ROOT / "contracts" / "rpc.v29.json"
 
 DELTA = (
-    "v29 is one additive amendment over v28 (UP-14, the authored hint ladder): "
-    "`check_stimulus` may carry `assistance_policy` — the authored `hint` gate, the "
-    "`answer_marks_evidence_class` an answer inherits, and a ladder of at most three rungs whose "
-    "kinds are `nudge`, `cue` and `worked_step`, each with a short learner-facing label but no "
-    "rung text; `check.get` may carry `assistance` — the gate, the number of authored rungs, how "
-    "many were already recorded against this attempt, and which rung is next; and `lesson.assist` "
-    "accepts an optional `rung` index and answers with the one revealed rung (index, kind, label, "
-    "text, and whether it was the last). A non-final rung records the existing `hint_request` "
-    "kind and `hinted` class; the final rung records `answer_shown`, so the ladder never invents a "
-    "new evidence class and the full independence penalty still lands on the strongest rung. "
-    "Rung text is never projected by `check.get`: a rung is revealed by a recorded press. Every "
-    "v28 record that omits the new keys keeps its exact v28 shape and bytes. No method, required "
-    "key, error code, job kind, answer kind, verdict, evidence class or vocabulary value moves; "
-    "`contracts/rpc.v28.json` stays byte-identical history and `x-supersedes` names it."
+    "v29 is one additive amendment over v28, composed of the cards that ship together. "
+    "UP-14, the authored hint ladder: `check_stimulus` may carry `assistance_policy` — the "
+    "authored `hint` gate, the `answer_marks_evidence_class` an answer inherits, and a ladder of "
+    "at most three rungs whose kinds are `nudge`, `cue` and `worked_step`, each with a short "
+    "learner-facing label but no rung text; `check.get` may carry `assistance` — the gate, the "
+    "number of authored rungs, how many were already recorded against this attempt, and which "
+    "rung is next; and `lesson.assist` accepts an optional `rung` index and answers with the one "
+    "revealed rung (index, kind, label, text, and whether it was the last). A non-final rung "
+    "records the existing `hint_request` kind and `hinted` class; the final rung records "
+    "`answer_shown`, so the ladder never invents a new evidence class and the full independence "
+    "penalty still lands on the strongest rung. Rung text is never projected by `check.get`: a "
+    "rung is revealed by a recorded press. "
+    "UP-6: `outline_plan` may carry `time_estimate` — the plan's own stored schedule estimate "
+    "(weeks and the author's declared sessions per week, minutes per session, basis and "
+    "confidence), or null when no usable estimate is stored. `weeks` is a planning estimate, not "
+    "an attainment claim. "
+    "Every v28 record that omits the new keys keeps its exact v28 shape and bytes. No method, "
+    "required key, error code, job kind, answer kind, verdict, evidence class or vocabulary value "
+    "moves; `contracts/rpc.v28.json` stays byte-identical history and `x-supersedes` names it."
 )
 
 POLICY = {
@@ -146,6 +159,53 @@ ASSIST_RUNG = {
     ),
 }
 
+TIME_ESTIMATE = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["weeks", "sessions_per_week", "minutes_per_session", "basis", "confidence"],
+    "properties": {
+        "weeks": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 104,
+            "description": "The plan's authored `time_estimate.weeks`: a planning estimate, never an attainment claim.",
+        },
+        "sessions_per_week": {
+            "oneOf": [
+                {"type": "integer", "minimum": 1, "maximum": 14},
+                {"type": "null"},
+            ],
+            "description": "The authored sessions per week, or null when the stored estimate does not declare a usable integer.",
+        },
+        "minutes_per_session": {
+            "oneOf": [
+                {"type": "integer", "minimum": 5, "maximum": 240},
+                {"type": "null"},
+            ],
+            "description": "The authored minutes per session, or null when the stored estimate does not declare a usable integer.",
+        },
+        "basis": {
+            "oneOf": [
+                {"type": "string", "enum": ["fsi", "derived", "model", "none"]},
+                {"type": "null"},
+            ],
+            "description": "How the estimate was reached, in the plan's own vocabulary.",
+        },
+        "confidence": {
+            "oneOf": [
+                {"type": "string", "enum": ["low", "medium", "high"]},
+                {"type": "null"},
+            ],
+            "description": "The plan's own confidence in the estimate.",
+        },
+    },
+    "description": (
+        "The plan's stored schedule estimate, projected for the approval gate. `weeks` is the "
+        "only figure the screen promises; every other field is the author's own declared context "
+        "and is null when absent. The object is not a readiness, mastery or attainment claim."
+    ),
+}
+
 
 def serialise(document: dict) -> str:
     return json.dumps(document, indent=2, ensure_ascii=False) + "\n"
@@ -158,9 +218,9 @@ def _add(properties: dict, key: str, schema: dict) -> None:
 
 
 def derive(source: dict) -> dict:
-    version = int(source["x-contract-version"])
-    if version != 28:
-        raise SystemExit(f"expected rpc.v28.json, found v{version}")
+    """v28 plus the composed v29 deltas and the four wire echoes, and nothing else."""
+    if int(source["x-contract-version"]) != 28:
+        raise SystemExit(f"expected rpc.v28.json, found v{source['x-contract-version']}")
     document = json.loads(json.dumps(source))  # deep copy; the source file is never edited
     base = "https://contracts.coursebook.hermes/rpc"
     document["$id"] = f"{base}/v29"
@@ -169,6 +229,7 @@ def derive(source: dict) -> dict:
     document["x-supersedes"] = f"{base}/v28"
     document["description"] = f"{DELTA} {source['description']}"
 
+    # UP-14 (t_92039128): the authored hint ladder.
     defs = document["$defs"]
     for name, schema in (
         ("hint_rung", HINT_RUNG),
@@ -197,6 +258,27 @@ def derive(source: dict) -> dict:
     _add(methods["lesson.assist"]["response"]["properties"], "rung",
          {"oneOf": [{"$ref": "#/$defs/assist_rung"}, {"type": "null"}]})
 
+    # UP-6 (t_76953421): the plan gate's own time estimate.
+    definitions = document["$defs"]
+    if "outline_time_estimate" in definitions:
+        raise SystemExit("$defs/outline_time_estimate already exists")
+    definitions["outline_time_estimate"] = TIME_ESTIMATE
+    plan = definitions["outline_plan"]
+    if "time_estimate" in plan["properties"]:
+        raise SystemExit("outline_plan already carries time_estimate")
+    plan["properties"]["time_estimate"] = {
+        "oneOf": [
+            {"$ref": "#/$defs/outline_time_estimate"},
+            {"type": "null"},
+        ],
+        "description": (
+            "The plan's own estimate, or null when its schedule declares none. Additive in v29; "
+            "a v28 client that never reads it keeps its exact shape."
+        ),
+    }
+
+    # The four places the wire version is echoed: the request envelope and the two response
+    # envelopes of the transport, plus health.get's own result.
     echoes = [
         document["$defs"]["envelope_request"]["properties"]["contract_version"],
         document["$defs"]["envelope_response_ok"]["properties"]["contract_version"],

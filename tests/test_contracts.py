@@ -1612,6 +1612,20 @@ class V5AmendmentTest(unittest.TestCase):
         plan = contracts.contract("cb.rpc")["$defs"]["outline_plan"]
         self.assertEqual(set(plan["required"]), {"plan_id", "version", "state", "plan_hash"})
         self.assertEqual(set(plan["properties"]["state"]["enum"]), {"draft", "approved", "superseded"})
+        # UP-6: the plan's own estimate is an optional, closed object; a v28 client that omits it
+        # keeps its exact shape, and a schedule with no usable weeks projects null.
+        self.assertNotIn("time_estimate", plan["required"])
+        estimate = plan["properties"]["time_estimate"]["oneOf"]
+        self.assertEqual(estimate[1], {"type": "null"})
+        self.assertEqual(estimate[0]["$ref"], "#/$defs/outline_time_estimate")
+        closed = contracts.contract("cb.rpc")["$defs"]["outline_time_estimate"]
+        self.assertIs(closed["additionalProperties"], False)
+        self.assertEqual(
+            set(closed["required"]),
+            {"weeks", "sessions_per_week", "minutes_per_session", "basis", "confidence"},
+        )
+        self.assertEqual(closed["properties"]["weeks"]["minimum"], 1)
+        self.assertEqual(closed["properties"]["weeks"]["maximum"], 104)
 
         objective = contracts.contract("cb.rpc")["$defs"]["outline_objective"]
         self.assertEqual(
@@ -5371,6 +5385,50 @@ def _library_item_with(next_step: dict) -> dict:
         "cover_artifact_id": None,
         "last_studied_at": None,
     }
+
+
+class V29AmendmentTest(unittest.TestCase):
+    """UP-6: ``cb.rpc`` v29 is v28 plus one optional ``outline_plan.time_estimate``.
+
+    The estimate is a stored planning fact the plan gate reads; the amendment adds no method, moves
+    no required key and narrows nothing a v28 client already sent or received.
+    """
+
+    def test_v29_is_v28_plus_the_plans_time_estimate_and_nothing_else(self) -> None:
+        v28 = _document("rpc.v28.json")
+        current = contracts.contract("cb.rpc")
+        self.assertEqual(current["$defs"]["method"]["enum"], v28["$defs"]["method"]["enum"])
+        self.assertEqual(current["x-supersedes"], v28["$id"])
+        self.assertEqual(current["x-contract-version"], 29)
+        before = v28["$defs"]
+        after = current["$defs"]
+        self.assertEqual(set(after) - set(before), {"outline_time_estimate"})
+        # The four wire echoes move 28 -> 29; every other record is carried byte for byte.
+        echoed = {"envelope_request", "envelope_response_ok", "envelope_response_error", "methods"}
+        for name in before:
+            if name not in echoed and name != "outline_plan":
+                self.assertEqual(after[name], before[name], name)
+        v28_plan = before["outline_plan"]
+        self.assertEqual(
+            set(after["outline_plan"]["properties"]) - set(v28_plan["properties"]),
+            {"time_estimate"},
+        )
+        self.assertEqual(after["outline_plan"]["required"], v28_plan["required"])
+        # The v28 document stays frozen history.
+        digest = hashlib.sha256((contracts.CONTRACT_DIR / "rpc.v28.json").read_bytes()).hexdigest()
+        self.assertEqual(f"sha256:{digest}", FROZEN_RPC_SHA256["rpc.v28.json"])
+
+    def test_the_v29_file_is_the_derived_delta_not_a_hand_copy(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "derive_rpc_v29_up6",
+            contracts.CONTRACT_DIR.parent / "probes" / "derive_rpc_v29.py",
+        )
+        module = importlib.util.module_from_spec(spec)
+        assert spec is not None and spec.loader is not None
+        spec.loader.exec_module(module)
+        derived = module.serialise(module.derive(_document("rpc.v28.json")))
+        shipped = (contracts.CONTRACT_DIR / "rpc.v29.json").read_text(encoding="utf-8")
+        self.assertEqual(shipped, derived, "rpc.v29.json drifted from its derivation")
 
 
 if __name__ == "__main__":

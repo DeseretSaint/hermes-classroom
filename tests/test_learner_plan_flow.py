@@ -241,6 +241,68 @@ class LearnerPlanFlowTest(KernelCase):
             self.scalar("SELECT state FROM plans WHERE id = ?", (flow["draft_plan_id"],)), "approved"
         )
 
+    def test_course_outline_serves_the_plans_time_estimate(self) -> None:
+        """The create copy promises the estimate; `course.outline.plan` must serve it.
+
+        The estimate is authored in the plan (`plans.schedule_json.time_estimate`), not invented
+        by the read: a full course's four weeks and a short course's two both come back as stored.
+        """
+        flow = self.create_with_plan_job()
+        authored = learner_plan()
+        job = plan_job(job_id=flow["job_id"])
+        job["brief"] = dict(flow["brief"])
+        connection = db.connect()
+        try:
+            result = generation.run_plan_job(
+                connection,
+                job,
+                FakeLLM(
+                    {
+                        "coursebook.plan.generate": blueprint_response(authored),
+                        "coursebook.plan.validate": validation_responder(
+                            blueprint_response,
+                            validation_pass(),
+                            model="fake-independent-validator",
+                        ),
+                    }
+                ),
+                FakeSearch(),
+                now=NOW,
+            )
+        finally:
+            connection.close()
+        # GEN-1: the fixture cites no source, so the run is authored but parked for review; the
+        # plan row and its schedule are still written, which is what the review gate reads.
+        self.assertEqual(result["status"], "needs_review")
+
+        outline = self.ok("course.outline", {"enrollment_id": flow["enrollment_id"]})["result"]
+        estimate = outline["plan"]["time_estimate"]
+        self.assertIsNotNone(estimate, outline["plan"])
+        self.assertEqual(estimate["weeks"], authored["time_estimate"]["weeks"])
+        self.assertEqual(
+            estimate["sessions_per_week"], authored["time_estimate"]["sessions_per_week"]
+        )
+        self.assertEqual(
+            estimate["minutes_per_session"], authored["time_estimate"]["minutes_per_session"]
+        )
+        self.assertEqual(estimate["basis"], authored["time_estimate"]["basis"])
+        self.assertEqual(estimate["confidence"], authored["time_estimate"]["confidence"])
+        # The stored schedule is where it came from, so a later schedule edit is a later read.
+        with db.read() as connection:
+            stored = connection.execute(
+                "SELECT schedule_json FROM plans WHERE id = ?", (flow["draft_plan_id"],)
+            ).fetchone()
+        self.assertEqual(
+            json.loads(stored["schedule_json"])["time_estimate"], authored["time_estimate"]
+        )
+
+    def test_a_plan_with_no_schedule_serves_no_invented_time_estimate(self) -> None:
+        """An empty draft has no authored estimate, so the read serves null, never a guess."""
+        flow = self.create_with_plan_job()
+        outline = self.ok("course.outline", {"enrollment_id": flow["enrollment_id"]})["result"]
+        self.assertIn("time_estimate", outline["plan"])
+        self.assertIsNone(outline["plan"]["time_estimate"])
+
     # ── the hash rule ───────────────────────────────────────────────────────
     def test_the_one_tap_level_reaches_the_plan_rule(self) -> None:
         """CREATE-2/CREATE-3: the level the create form sends is the one the plan rule reads.

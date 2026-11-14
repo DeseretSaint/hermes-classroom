@@ -36,6 +36,12 @@ CONTRACT_FILES: dict[str, str] = {
     # optional `rung` index and answers with the one revealed rung. Rung text is withheld from the
     # read and returned only by the recorded press. Every v28 record that omits the new keys keeps
     # its exact shape; v28 stays on disk as byte-identical history.
+    # UP-6 (t_76953421): v29 is additive over v28 — the plan gate's own time estimate.
+    # `outline_plan` may carry `time_estimate`, projected from the plan's stored `schedule_json`:
+    # the authored `weeks`, `sessions_per_week`, `minutes_per_session`, `basis` and `confidence`,
+    # or null when no usable estimate is stored. One contract version must carry every additive
+    # change shipped together: two rpc.v29.json files cannot both exist, so parallel upgrade
+    # cards compose rather than fork the version.
     "cb.rpc": "rpc.v29.json",
     # E2E L1: v15 is additive over v14 — one column, `checks.revisit INTEGER NOT NULL DEFAULT 0`.
     # No row is rewritten; every check written before v15 reads as an ordinary (non-revisit) check.
@@ -98,8 +104,10 @@ CONTRACT_VERSION_FILES: dict[str, dict[int, str]] = {
     # pays XP twice. v27 stays readable so a client that pinned the drawn-label wire can still
     # validate.
     # UP-14: v29 is additive over v28 — the authored hint ladder on `check_stimulus`, the
-    # `check.get.assistance` read, and `lesson.assist`'s optional `rung` request/response. v28
-    # stays readable so a client that pinned the composed revisit/completion wire can still
+    # `check.get.assistance` read, and `lesson.assist`'s optional `rung` request/response.
+    # UP-6: v29 also carries `outline_plan.time_estimate`, the plan's own stored schedule
+    # estimate (weeks and the author's declared context), or null when none is stored.
+    # v28 stays readable so a client that pinned the composed revisit/completion wire can still
     # validate.
     "cb.rpc": {22: "rpc.v22.json", 23: "rpc.v23.json", 24: "rpc.v24.json", 25: "rpc.v25.json",
                26: "rpc.v26.json", 27: "rpc.v27.json", 28: "rpc.v28.json",
