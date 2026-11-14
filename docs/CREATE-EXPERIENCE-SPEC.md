@@ -376,7 +376,13 @@ Two corrections found while integrating, both kept:
 - **A transfer check may be a quiz.** The lesson rule that follows the evidence target refused
   `quiz` for transfer as well as procedure. A scenario question is a real way to apply a capability
   to a case the lesson did not teach, so only the procedure family is now enforced strictly
-  (`test_a_transfer_objective_may_be_measured_by_a_quiz`).
+  (`test_a_transfer_objective_may_be_measured_by_a_quiz`). *Superseded by UP-11 (2026-11-14): the
+  exemption outlived the reason for it. A three-choice scenario question was answered by
+  eliminating two options the lesson had already supplied and was then graded by exact string
+  match, so the check exercised recognition, not application. Transfer is now `verification` or
+  `observation` in both gates — the lesson rule and plan rule 5b — and a transfer check may not
+  present supplied options at all; the evidence is
+  `tests/test_upgrade_transfer_kind.py::TransferKindTest::test_a_transfer_quiz_is_refused`.*
 - **The recorded harness packet is stale, and is skipped by name.** `soldering_full` carries five
   procedure objectives whose checks are quizzes — the exact defect the rule now refuses. The packet
   is content-addressed, so one stale transcript invalidates all three scenarios; `setUpModule`

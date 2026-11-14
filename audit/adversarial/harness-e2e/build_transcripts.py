@@ -194,7 +194,9 @@ SCENARIOS: dict[str, dict] = {
                 {"objective_ref": 1, "kind": "quiz", "evidence_target": "recall"},
                 {"objective_ref": 2, "kind": "quiz", "evidence_target": "discrimination"},
                 {"objective_ref": 3, "kind": "quiz", "evidence_target": "comprehension"},
-                {"objective_ref": 4, "kind": "quiz", "evidence_target": "transfer"},
+                # UP-11: a transfer objective is a recorded attempt, not an option pick. The
+                # lesson authors its confirmation checklist from the steps below.
+                {"objective_ref": 4, "kind": "verification", "evidence_target": "transfer"},
             ],
         },
         "lessons": {
@@ -240,16 +242,17 @@ SCENARIOS: dict[str, dict] = {
                 "items": None,
             },
             "Use the circle of fifths to name the chords in a pop song": {
-                "intent": "Teach the circle as a song-analysis tool and check one mapping.",
+                "intent": "Teach the circle as a song-analysis tool and record one real analysis.",
                 "practice": "Write the song's chords, find each root on the circle, and mark the "
                             "home chord before naming the key.",
                 "criterion": "The home chord is the one the song resolves to; name it before the key.",
                 "explanation": "The circle shows which chords belong together, so a song's chord "
                                "list becomes a key and a set of functions.",
                 "example_steps": ["List the chords", "Place the roots", "Name the key"],
-                "check_prompt": "A song uses C, G, A minor and F. Which key is it in?",
-                "reference_answer": "C major",
-                "accepted_answers": ["the key of C major"],
+                "check_prompt": "Take a song this page never analysed, work its chords on the "
+                                "circle, and tick each step only after you did it.",
+                "reference_answer": "Every listed step performed on a song this page did not work",
+                "accepted_answers": ["all listed steps ticked honestly"],
                 "items": None,
             },
         },
@@ -338,11 +341,13 @@ SCENARIOS: dict[str, dict] = {
                 {"ordinal": 12, "unit_ref": 6, "title": "Prove continuity with a meter after rework",
                  "evidence_target": "transfer", "evidence_criteria": ["Chooses the continuity setting and reads it"]},
             ],
-            # A procedure is measured by a confirmation checklist of the acts, not by a question
-            # about them (CP-015g/D1-F1, `CHECK_KIND_BY_TARGET`). The five procedure objectives
-            # therefore carry `verification`; the knowledge objectives keep their quiz.
+            # A procedure or a transfer is measured by a confirmation checklist of the acts the
+            # lesson teaches, not by a question about them (CP-015g/D1-F1 and UP-11,
+            # `CHECK_KIND_BY_TARGET`). The procedure and transfer objectives therefore carry
+            # `verification`; the knowledge objectives keep their quiz.
             "check_plan": [
-                {"objective_ref": ordinal, "kind": "verification" if target == "procedure" else "quiz",
+                {"objective_ref": ordinal,
+                 "kind": "verification" if target in ("procedure", "transfer") else "quiz",
                  "evidence_target": target}
                 for ordinal, target in enumerate(
                     ["recall", "procedure", "comprehension", "discrimination", "procedure",
@@ -460,23 +465,24 @@ SCENARIOS: dict[str, dict] = {
                 "items": None,
             },
             "Inspect a finished joint against the fillet criterion": {
-                "intent": "Apply the criterion to a real joint.",
+                "intent": "Apply the criterion to a joint this page never showed.",
                 "practice": "Judge each joint on the board against the fillet criterion and mark "
                             "the ones that need rework.",
                 "criterion": "A sound joint is shiny, concave and covers the pad without a ball.",
                 "explanation": "Applying one criterion to many joints is the skill; the criterion "
                                "itself does not change.",
-                "example_steps": ["Pick a joint", "Compare to the criterion", "Mark rework"],
-                "check_prompt": "Which joint needs rework?",
-                "reference_answer": "the balled joint",
-                "accepted_answers": ["the one with a ball", "the ball"],
+                "example_steps": ["Pick a joint this page did not show", "Compare to the criterion", "Mark rework"],
+                "check_prompt": "Inspect joints on a board this page never pictured, then tick each "
+                                "step only after you did it.",
+                "reference_answer": "Every listed step performed on a board this page did not show",
+                "accepted_answers": ["all listed steps ticked honestly"],
                 "items": None,
             },
             "Wick a solder bridge without lifting the pad": {
                 "intent": "Teach bridge removal.",
                 "practice": "Add flux, lay the wick over the bridge, and heat the wick until the "
                             "solder flows into it before lifting.",
-                "criterion": "Heat through the wick and stop as soon as the bridge disappears.",
+                "criterion": "The pad stays flat and the two points are no longer joined by metal.",
                 "explanation": "Pulling the wick while the solder is solid is how pads lift.",
                 "example_steps": ["Add flux", "Lay the wick", "Heat until the bridge flows"],
                 "check_prompt": "When do you lift the wick?",
@@ -498,16 +504,17 @@ SCENARIOS: dict[str, dict] = {
                 "items": None,
             },
             "Prove continuity with a meter after rework": {
-                "intent": "Teach the final electrical check.",
+                "intent": "Teach the final electrical check on a repair this page did not build.",
                 "practice": "Set the meter to continuity, probe the two ends of the repaired path, "
                             "and confirm the beep before power.",
                 "criterion": "Continuity between the intended points proves the repair conducts.",
                 "explanation": "A joint can look right and still be open; the meter is the check "
                                "the eye cannot make.",
-                "example_steps": ["Set continuity", "Probe both ends", "Confirm the beep"],
-                "check_prompt": "Which meter setting proves the repair conducts?",
-                "reference_answer": "the continuity setting",
-                "accepted_answers": ["continuity mode"],
+                "example_steps": ["Set continuity", "Probe both ends of your own repair", "Confirm the beep"],
+                "check_prompt": "After your own rework, probe the repaired path and tick each step "
+                                "only after you did it. This page cannot see your board.",
+                "reference_answer": "Every listed step performed on the learner's own reworked board",
+                "accepted_answers": ["all listed steps ticked honestly"],
                 "items": None,
             },
         },
@@ -630,7 +637,7 @@ SHORTS: dict[str, dict[str, str]] = {
     },
     "Wick a solder bridge without lifting the pad": {
         "practice_short": "Add flux and lay the wick over the bridge.",
-        "criterion_short": "Heat through the wick and stop.",
+        "criterion_short": "The pad stays flat and the points come apart.",
         "explanation_short": "Pulling the wick while the solder is solid lifts pads.",
     },
 }
@@ -787,25 +794,25 @@ LESSON_DEPTH: dict[str, dict] = {
         ),
     },
     "Inspect a finished joint against the fillet criterion": {
-        "headings": ("Judge every joint by one criterion", "A balled joint is a fail"),
+        "headings": ("Judge every joint by one criterion", "Judge the shape, not the amount of solder"),
         "why": (
             "One criterion applied to every joint is what keeps the inspection consistent, "
             "instead of judging each joint on how it feels."
         ),
         "counter": (
-            "A balled joint is the clearest fail and the easiest to under-call, because it looks "
-            "like extra solder rather than a bad joint."
+            "The fail shape is the one people under-call, because extra solder reads as a fix "
+            "rather than a fault, and the criterion is what settles it."
         ),
     },
     "Wick a solder bridge without lifting the pad": {
-        "headings": ("Lay the wick over the bridge", "Lift only after the solder flows"),
+        "headings": ("Lay the wick over the bridge", "Lift once the braid has drawn the solder away"),
         "why": (
             "A bridge connects two points the circuit keeps apart, so it is removed before power "
             "is ever applied."
         ),
         "counter": (
-            "Lifting the wick early leaves solder behind and pulls on a solid joint, so the wick "
-            "comes up only after the solder has flowed into it."
+            "Lifting early leaves a smear and pulls on a joint that is still solid, so wait for "
+            "the braid to do the work and keep the iron resting on the braid while it does."
         ),
     },
     "Desolder a two-lead part without overheating it": {
@@ -913,12 +920,13 @@ def build(name: str) -> dict:
             raise SystemExit(f"{name}: no authored depth (headings/why/counter) for {title!r}")
         lessons[title].update(short)
         lessons[title].update(depth)
-        # A procedure objective is evidenced by a confirmation checklist of the acts the lesson
-        # already teaches (`example_steps`). Derive the items here, once, so a rebuild of the
-        # recording cannot silently regress to the quiz that the product now refuses as the
-        # measure of a procedure. Lessons that author their own item wording keep it.
+        # A procedure or a transfer objective is evidenced by a confirmation checklist of the acts
+        # the lesson already teaches (`example_steps`). Derive the items here, once, so a rebuild
+        # of the recording cannot silently regress to the quiz that the product now refuses as
+        # the measure of a procedure or a transfer. Lessons that author their own item wording
+        # keep it.
         recording = lessons[title]
-        if objective["evidence_target"] == "procedure" and not recording.get("items"):
+        if objective["evidence_target"] in ("procedure", "transfer") and not recording.get("items"):
             steps = [str(step) for step in recording.get("example_steps") or [] if str(step).strip()]
             if steps:
                 recording["items"] = [

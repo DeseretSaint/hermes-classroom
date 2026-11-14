@@ -86,9 +86,9 @@
     },
     "Use the circle of fifths to name the chords in a pop song": {
       "accepted_answers": [
-        "the key of C major"
+        "all listed steps ticked honestly"
       ],
-      "check_prompt": "A song uses C, G, A minor and F. Which key is it in?",
+      "check_prompt": "Take a song this page never analysed, work its chords on the circle, and tick each step only after you did it.",
       "counter": "A song that never settles on its home chord is still analysable, because the circle still shows the neighbouring chords it borrows from.",
       "criterion": "The home chord is the one the song resolves to; name it before the key.",
       "criterion_short": "Name the home chord before the key.",
@@ -103,11 +103,24 @@
         "Find each root on the circle",
         "Name the home chord first"
       ],
-      "intent": "Teach the circle as a song-analysis tool and check one mapping.",
-      "items": null,
+      "intent": "Teach the circle as a song-analysis tool and record one real analysis.",
+      "items": [
+        {
+          "id": "step-1",
+          "label": "List the chords"
+        },
+        {
+          "id": "step-2",
+          "label": "Place the roots"
+        },
+        {
+          "id": "step-3",
+          "label": "Name the key"
+        }
+      ],
       "practice": "Write the song's chords, find each root on the circle, and mark the home chord before naming the key.",
       "practice_short": "Write the song's chords and find each root on the circle.",
-      "reference_answer": "C major",
+      "reference_answer": "Every listed step performed on a song this page did not work",
       "why": "The circle is the map from chords to a key, and the home chord is the landmark you find first on that map."
     }
   },
@@ -145,7 +158,7 @@
       },
       {
         "evidence_target": "transfer",
-        "kind": "quiz",
+        "kind": "verification",
         "objective_ref": 4
       }
     ],

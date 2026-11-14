@@ -151,15 +151,14 @@
     },
     "Inspect a finished joint against the fillet criterion": {
       "accepted_answers": [
-        "the one with a ball",
-        "the ball"
+        "all listed steps ticked honestly"
       ],
-      "check_prompt": "Which joint needs rework?",
+      "check_prompt": "Inspect joints on a board this page never pictured, then tick each step only after you did it.",
       "counter": "The fail shape is the one people under-call, because extra solder reads as a fix rather than a fault, and the criterion is what settles it.",
       "criterion": "A sound joint is shiny, concave and covers the pad without a ball.",
       "criterion_short": "A sound joint is shiny, concave and covers the pad.",
       "example_steps": [
-        "Pick a joint",
+        "Pick a joint this page did not show",
         "Compare to the criterion",
         "Mark rework"
       ],
@@ -169,11 +168,24 @@
         "Judge every joint by one criterion",
         "Judge the shape, not the amount of solder"
       ],
-      "intent": "Apply the criterion to a real joint.",
-      "items": null,
+      "intent": "Apply the criterion to a joint this page never showed.",
+      "items": [
+        {
+          "id": "step-1",
+          "label": "Pick a joint this page did not show"
+        },
+        {
+          "id": "step-2",
+          "label": "Compare to the criterion"
+        },
+        {
+          "id": "step-3",
+          "label": "Mark rework"
+        }
+      ],
       "practice": "Judge each joint on the board against the fillet criterion and mark the ones that need rework.",
       "practice_short": "Judge each joint on the board against the fillet criterion.",
-      "reference_answer": "the balled joint",
+      "reference_answer": "Every listed step performed on a board this page did not show",
       "why": "One criterion applied to every joint is what keeps the inspection consistent, instead of judging each joint on how it feels."
     },
     "Inspect a pad for lift before inserting a part": {
@@ -232,15 +244,15 @@
     },
     "Prove continuity with a meter after rework": {
       "accepted_answers": [
-        "continuity mode"
+        "all listed steps ticked honestly"
       ],
-      "check_prompt": "Which meter setting proves the repair conducts?",
+      "check_prompt": "After your own rework, probe the repaired path and tick each step only after you did it. This page cannot see your board.",
       "counter": "Continuity across the wrong two points proves nothing, so the probes go on the ends of the repaired path, not on the nearest metal.",
       "criterion": "Continuity between the intended points proves the repair conducts.",
       "criterion_short": "Continuity proves the repair conducts.",
       "example_steps": [
         "Set continuity",
-        "Probe both ends",
+        "Probe both ends of your own repair",
         "Confirm the beep"
       ],
       "explanation": "A joint can look right and still be open; the meter is the check the eye cannot make.",
@@ -249,11 +261,24 @@
         "Probe the ends of the repaired path",
         "Continuity across the wrong points"
       ],
-      "intent": "Teach the final electrical check.",
-      "items": null,
+      "intent": "Teach the final electrical check on a repair this page did not build.",
+      "items": [
+        {
+          "id": "step-1",
+          "label": "Set continuity"
+        },
+        {
+          "id": "step-2",
+          "label": "Probe both ends of your own repair"
+        },
+        {
+          "id": "step-3",
+          "label": "Confirm the beep"
+        }
+      ],
       "practice": "Set the meter to continuity, probe the two ends of the repaired path, and confirm the beep before power.",
       "practice_short": "Set the meter to continuity and probe the two ends.",
-      "reference_answer": "the continuity setting",
+      "reference_answer": "Every listed step performed on the learner's own reworked board",
       "why": "The meter answers the one question the eye cannot: does the repair conduct from one intended point to the other."
     },
     "Read a resistor value from its colour bands": {
@@ -499,7 +524,7 @@
       },
       {
         "evidence_target": "transfer",
-        "kind": "quiz",
+        "kind": "verification",
         "objective_ref": 9
       },
       {
@@ -514,7 +539,7 @@
       },
       {
         "evidence_target": "transfer",
-        "kind": "quiz",
+        "kind": "verification",
         "objective_ref": 12
       }
     ],
