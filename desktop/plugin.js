@@ -39488,6 +39488,15 @@ function StudioPlanView({
     ((lessonJobs && lessonJobs.data && lessonJobs.data.jobs) || [])
       .filter((job) => (job.brief || {}).stage === 'lessons')
       .sort((left, right) => (Number(right.updated_at) || 0) - (Number(left.updated_at) || 0))[0] || null
+  // The same list carries the plan-authoring jobs (a missing `brief.stage` is the plan stage the
+  // earliest rows were written without). A course whose plan row is a placeholder is only
+  // distinguishable from one whose plan is already being written by this read, so the resume door
+  // below waits for it to settle instead of guessing from an absent job id.
+  const storedPlanJob =
+    ((lessonJobs && lessonJobs.data && lessonJobs.data.jobs) || [])
+      .filter((job) => (((job.brief || {}).stage) || 'plan') === 'plan')
+      .sort((left, right) => (Number(right.updated_at) || 0) - (Number(left.updated_at) || 0))[0] || null
+  const planJobsRead = Boolean(lessonJobs && lessonJobs.status === 'ready')
   // The job whose checkpoint this screen reads. A settle beats a stored row for the job on screen;
   // once the id moves (a retry or the next unit) the stale local read stops applying.
   const lessonStateJob =
@@ -39515,7 +39524,12 @@ function StudioPlanView({
   // second poller.
   const [retryPlanJobId, setRetryPlanJobId] = useState(null)
   const retryPlanKey = useRef(null)
-  const activePlanJobId = retryPlanJobId || planJobId
+  // A plan queued from the resume door below. Its own state is what turns the empty screen into
+  // the same waiting panel a fresh create shows; nothing here is inferred from the course rows.
+  const [resumePlanJobId, setResumePlanJobId] = useState(null)
+  const [resumeBusy, setResumeBusy] = useState(false)
+  const [resumeError, setResumeError] = useState(null)
+  const activePlanJobId = resumePlanJobId || retryPlanJobId || planJobId
   // A caller that already read the job (the create result carries the first job it queued, the
   // learner route finds one by enrolment) passes it in; the panel then shares that read instead
   // of polling the same id twice. A retry minted a new id, so the injected row stops applying.
@@ -39759,6 +39773,55 @@ function StudioPlanView({
     if (lessonJobs.reload) lessonJobs.reload()
   }, [plan, course.enrollment_id, lessonRequestOrdinal, lessonJobs])
 
+  // The resume door: a course and its enrolment exist, the plan row is a placeholder and no plan
+  // job was ever queued. The stored course row is the brief — the same composed goal, recipe,
+  // dials, locale, level, subject domain and scope the create flow sent — so the missing step is
+  // replayed from the record instead of asking for the same research twice. The key is keyed on
+  // the course alone, so a double press or a second visit replays the one job rather than queueing
+  // another.
+  const startPlanResume = useCallback(async () => {
+    if (!course || !course.course_id || !course.enrollment_id) return
+    setResumeBusy(true)
+    setResumeError(null)
+    const stored = await rpc('course.get', { course_id: course.course_id })
+    const row = stored && stored.ok && stored.result ? stored.result.course : null
+    if (!row) {
+      setResumeBusy(false)
+      // Learner surface: the error's own words, never its code.
+      setResumeError(
+        `${describeError(stored && stored.error)} The saved choices could not be read, so no plan was started.`
+      )
+      return
+    }
+    const response = await rpc(
+      'jobs.create',
+      {
+        kind: 'plan',
+        brief: planJobBrief({
+          courseId: course.course_id,
+          enrollmentId: course.enrollment_id,
+          goal: row.goal,
+          recipe: row.recipe,
+          dials: row.dials || {},
+          locale: row.locale,
+          level: row.level,
+          subjectDomain: row.subject_domain,
+          scope: row.scope
+        })
+      },
+      { idempotencyKey: `cb-plan-resume-${course.course_id}` }
+    )
+    setResumeBusy(false)
+    if (!response || !response.ok) {
+      setResumeError(
+        `${describeError(response && response.error)} Nothing was lost: your goal and choices are still saved.`
+      )
+      return
+    }
+    setResumePlanJobId(response.result.job_id)
+    if (lessonJobs.reload) lessonJobs.reload()
+  }, [course, lessonJobs])
+
   const startRevision = useCallback(async () => {
     if (!plan || objectives.length === 0) return
     setBusy(true)
@@ -39926,21 +39989,61 @@ function StudioPlanView({
         ]
       })
     }
-    if (planJobId) {
+    if (activePlanJobId) {
       // CREATE-EXPERIENCE items 3–5: the wait is legible instead of opaque. The clock, stage and
       // band come from the job this screen is already polling; nothing here invents a percentage.
       return jsx(PlanWritingPanel, {
-        jobId: planJobId,
+        jobId: activePlanJobId,
         job: planRun,
         scope: waitScope,
         onSettled: onJobSettled,
         onRunAgain: onChanged
       })
     }
+    // A course whose plan row is a placeholder and whose enrolment has no plan job is a create
+    // that stopped between the course and its first job: the app was closed, or the job request
+    // was refused after the rows were written. Every choice the learner made is still stored on
+    // the course, so the missing step is offered from that record. It is offered only once the
+    // jobs read has settled and found none — pressing from a guess could queue a second plan.
+    const canResume =
+      learner &&
+      !activePlanJobId &&
+      !injectedPlanRun &&
+      !storedPlanJob &&
+      planJobsRead &&
+      (!plan || plan.state === 'draft') &&
+      Boolean(course && course.course_id) &&
+      Boolean(course && course.enrollment_id) &&
+      supported('course.get') &&
+      supported('jobs.create')
+    if (canResume) {
+      return jsxs('div', {
+        className: 'flex flex-col gap-3',
+        'data-cb-plan-resume': 'offered',
+        children: [
+          jsx('div', { className: 'text-sm font-semibold', children: 'This course has no plan yet' }),
+          jsx('div', {
+            className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+            children:
+              'Your goal and the choices you made are saved. Write the plan to pick up where it stopped — you do not need to start a new course.'
+          }),
+          jsx(CbAction, {
+            variant: 'primary',
+            'data-cb-plan-resume-action': 'write',
+            disabled: resumeBusy,
+            onClick: startPlanResume,
+            children: resumeBusy ? 'Writing the plan' : "Write this course's plan"
+          }),
+          resumeError
+            ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: resumeError })
+            : null
+        ]
+      })
+    }
     return jsx(EmptyState, {
       title: 'No plan yet',
       description: learner
-        ? 'This course has no plan attached. Start a new course to generate one; nothing is invented to fill the gap.'
+        ? 'This course has no plan attached and nothing is stored to resume from; nothing is invented to fill the gap.'
         : 'No plan is attached to this course, so there is nothing to review. Start a new brief.'
     })
   }
