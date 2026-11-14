@@ -29,7 +29,7 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v4.json` | 4 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v28.json` | 28 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune + engagement + tutor + the `library.list` shelf facts + the plate's `route_anchors` + the terminal `complete` and `repair_lesson` next steps), Sable (transport + `world.*` policy/prompts/media), Lattice (`pack.*` + `lesson_document` + `takehome.*` + `homework.*` + `takehome.html`), easel (the media child's own `labels`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.rpc` | `contracts/rpc.v29.json` | 29 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune + engagement + tutor + the `library.list` shelf facts + the plate's `route_anchors` + the terminal `complete` and `repair_lesson` next steps + the review item's `interval_reason`), Sable (transport + `world.*` policy/prompts/media), Lattice (`pack.*` + `lesson_document` + `takehome.*` + `homework.*` + `takehome.html`), easel (the media child's own `labels`) | Desktop half, Coursebook tools, `pre_llm_call` |
 | `cb.db` | `contracts/db.v14.json` | 14 | Cinder (GM-001 storage), Lattice (GM-005 migration 0014) | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v5.json` | 5 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v3.json` (v1, v2 and v4 also accepted) | 3 (v1/v2/v4 accepted) | Cinder (v2 media link, H-137; v4 `coloring_page` + `text/html`, PRINT-2, 2026-11-12); CP-015g (v3 presentation, 2026-11-11) | import/export, bundled demo packs, take-home print packs |
@@ -2912,3 +2912,34 @@ optionality, the frozen v27 document and that the shipped v28 is byte-identical 
 `tests/test_e2e_l1_revisit.py` passes a generated check, reopens it as a revisit, proves the
 objective state and `engagement.read.xp_total` do not move, and proves `progression.challenge_out`
 reaches the same clone.
+
+### v29 delta (UP-18): the review item explains its own date
+
+A review item's due date was "last pass plus the rung the evidence target's ladder names", so a
+first-try pass with no help and a pass that needed two tries, a hint and a retry were given the
+same next interval. The scheduler now reads the *starting* rung from the attempt record
+(`coursebook.review._earned_rung`, `_short_beat`) and tells the learner why:
+
+* `review_item.interval_reason` — optional. One short sentence in the learner's own words naming
+  what their record shows ("You needed two tries, so this comes back tomorrow."), or `null` when no
+  committed attempt stands behind the date. It is prose: never a reason code, a stage name or an
+  evidence class.
+* The interval itself is unchanged arithmetic over the declared ladder. An unaided first-try pass
+  now starts one rung above the target's floor, a hinted or retried pass keeps the floor, and a
+  pass whose answer was shown, or that followed a miss or more than one attempt, returns on the
+  one-day short beat. No learner is scheduled *sooner* than the ladder's floor except on that
+  short beat.
+* No method is added or removed, no required key, error code, job kind, answer kind, verdict,
+  evidence class or vocabulary value moves, and every v28 record that omits the key keeps its exact
+  shape and bytes. `rpc.v28.json` stays byte-identical history and `x-supersedes` names it. The
+  wire echoes move to 29.
+* `rpc.v29.json` is derived from the frozen v28 document by
+  `probes/derive_rpc_v29_review_interval.py`, never hand-copied. A sibling card that derives its
+  own v29 from the same v28 composes: the script reads an existing v29 as its source and applies
+  only this delta, so the merged tree ships the union instead of forking the version.
+
+Regression guard: `tests/test_contracts.py::V29AmendmentTest` pins the added property's
+optionality and type and proves a v28-shaped item still validates;
+`tests/test_upgrade_review_interval.py` proves a hinted pass keeps the ladder's floor while a cold
+first-try pass earns the next rung, that a miss or a shown answer returns on the short beat, and
+that the reason is the learner's words rather than the pipeline's.

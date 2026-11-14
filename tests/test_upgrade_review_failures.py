@@ -94,7 +94,7 @@ class HintedPassSchedulesAShorterReturnTest(ReviewFailureCase):
         self.assertEqual(cold["result"]["verdict"], "pass")
         self.assertEqual(self.scalar("SELECT state FROM objectives"), "independent_evidence")
         cold_item = self.queue(lesson["enrollment_id"])["items"][0]
-        self.assertEqual(cold_item["interval_days"], 3)  # procedure ladder, first cold rung
+        self.assertEqual(cold_item["interval_days"], 7)  # procedure ladder, earned cold: rung 1
         self.backdate_attempt(lesson["objective_id"], days=10)
 
         # A second check on the same objective, answered after a hint: a pass that is not cold.
@@ -119,13 +119,14 @@ class HintedPassSchedulesAShorterReturnTest(ReviewFailureCase):
         self.assertEqual(self.scalar("SELECT COUNT(*) FROM evidence WHERE layer = 2"), 1)
 
         item = self.queue(lesson["enrollment_id"])["items"][0]
-        # One rung before the rung a cold pass would have left behind: a cold second pass writes
-        # `delayed_retrieval` and advances to step 1 (ladder[1] = 7); the hinted pass does not
-        # advance, so the return stays on the gate rung. The clock restarts at the hinted attempt.
-        self.assertEqual(item["step"], 0)
-        self.assertEqual(item["interval_days"], 3)
+        # The gate pass was earned cold, so the ladder itself started one rung up (7 days). The
+        # hinted pass does not advance it, so the return stays on the rung the gate earned — one
+        # rung before the 16 days a cold second pass would have left. The clock restarts at the
+        # hinted attempt.
+        self.assertEqual(item["step"], cold_item["step"])
         self.assertEqual(item["interval_days"], cold_item["interval_days"])
-        self.assertNotEqual(item["interval_days"], 7)
+        self.assertEqual(item["interval_days"], 7)
+        self.assertNotEqual(item["interval_days"], item["ladder_days"][cold_item["step"] + 1])
         self.assertEqual(item["ladder_days"], [3, 7, 16, 35])
         self.assertFalse(item["overdue"])
         self.assertEqual(item["last_evidence_at"],

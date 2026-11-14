@@ -42,8 +42,12 @@ class ReviewCase(KernelCase):
         return response["result"]
 
     def backdate(self, objective_id: str, days: float = 10) -> None:
+        # Age the whole learner-time record, not only the layer-2 pass: the scheduler now reads
+        # the attempt record behind the pass (UP-18), so an attempt left at "now" would fall
+        # outside the window and the test would assert the no-record branch by accident.
         self.execute(
-            "UPDATE evidence SET created_at = ? WHERE objective_id = ? AND layer = 2",
+            "UPDATE evidence SET created_at = ? WHERE objective_id = ?"
+            " AND (layer = 2 OR (layer = 1 AND kind = 'attempt'))",
             (_iso(days), objective_id),
         )
 
@@ -58,7 +62,7 @@ class ReviewQueueTest(ReviewCase):
         self.assertEqual(queue["total_due"], 1)
         item = queue["items"][0]
         self.assertTrue(item["overdue"])
-        self.assertEqual(item["interval_days"], 3)  # procedure ladder, first step
+        self.assertEqual(item["interval_days"], 7)  # procedure ladder, second rung: earned cold
         self.assertEqual(item["evidence_target"], "procedure")
 
     def test_an_upcoming_review_is_not_overdue(self) -> None:
@@ -104,8 +108,8 @@ class ReviewQueueTest(ReviewCase):
                                 objective_id=objective_id, action="stretch")
         with db.read() as connection:
             queue = review.queue(connection, lesson["enrollment_id"])
-        self.assertEqual(queue["items"][0]["interval_days"], 7)  # second step of the procedure ladder
-        self.assertEqual(queue["items"][0]["step"], 1)
+        self.assertEqual(queue["items"][0]["interval_days"], 16)  # third rung, one step past the cold start
+        self.assertEqual(queue["items"][0]["step"], 2)
 
     def test_drop_removes_the_item_and_resume_puts_it_back(self) -> None:
         lesson = self.prepare_multi(1)

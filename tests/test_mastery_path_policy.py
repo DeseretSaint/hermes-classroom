@@ -294,14 +294,16 @@ class CheckpointStateTest(MasteryKernelCase):
 
 
 class SpacingRuleTest(MasteryKernelCase):
-    def test_a_gate_pass_starts_at_the_first_rung_not_the_last(self) -> None:
+    def test_a_gate_pass_starts_one_rung_up_not_at_the_last(self) -> None:
         lesson = self.prepare_multi(1)
         objective_id = lesson["objective_ids"][0]
         self.pass_objective(lesson, objective_id)
         item = self.queue_item(lesson["enrollment_id"], objective_id)
         ladder = mp.LADDERS["procedure"]
-        self.assertEqual(item["step"], 0)
-        self.assertEqual(item["interval_days"], ladder[0])
+        # A cold first-try pass earns one rung above the ladder's floor (UP-18): the floor is the
+        # return for a pass that needed a hint, so the unaided pass may not share it.
+        self.assertEqual(item["step"], 1)
+        self.assertEqual(item["interval_days"], ladder[1])
         self.assertNotEqual(item["interval_days"], ladder[-1])
 
     def test_a_delayed_pass_advances_exactly_one_rung(self) -> None:
@@ -313,14 +315,14 @@ class SpacingRuleTest(MasteryKernelCase):
         self.pass_objective(lesson, objective_id)
         item = self.queue_item(lesson["enrollment_id"], objective_id)
         ladder = mp.LADDERS["procedure"]
-        self.assertEqual(item["step"], 1)
-        self.assertEqual(item["interval_days"], ladder[1])
+        self.assertEqual(item["step"], 2)
+        self.assertEqual(item["interval_days"], ladder[2])
         self.assertNotEqual(item["interval_days"], ladder[-1])
 
     def test_a_failed_review_keeps_its_rung_and_sets_needs_review(self) -> None:
         lesson = self.prepare_multi(1)
         objective_id = lesson["objective_ids"][0]
-        # gate pass, then two delayed passes: the item is on rung 2.
+        # gate pass, then two delayed passes: the item is on rung 3.
         self.pass_objective(lesson, objective_id)
         for _ in range(2):
             self.backdate(objective_id, days=10)
@@ -328,8 +330,8 @@ class SpacingRuleTest(MasteryKernelCase):
             self.pass_objective(lesson, objective_id)
         item = self.queue_item(lesson["enrollment_id"], objective_id)
         ladder = mp.LADDERS["procedure"]
-        self.assertEqual(item["step"], 2)
-        self.assertEqual(item["interval_days"], ladder[2])
+        self.assertEqual(item["step"], 3)
+        self.assertEqual(item["interval_days"], ladder[3])
 
         failed = self.fail_objective(lesson, objective_id)
         self.assertNotEqual(failed["verdict"], "pass")
@@ -339,8 +341,8 @@ class SpacingRuleTest(MasteryKernelCase):
         )
         after = self.queue_item(lesson["enrollment_id"], objective_id)
         self.assertEqual(after["state"], "needs_review")
-        self.assertEqual(after["step"], 2)  # never reset to the first rung
-        self.assertEqual(after["interval_days"], ladder[2])
+        self.assertEqual(after["step"], 3)  # never reset to the first rung
+        self.assertEqual(after["interval_days"], ladder[3])
         self.assertNotEqual(after["interval_days"], ladder[0])
         # The path is not locked: the objective is still in the review queue.
         self.assertGreaterEqual(after["interval_days"], 1)

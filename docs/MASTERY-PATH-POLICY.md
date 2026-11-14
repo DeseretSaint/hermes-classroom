@@ -117,18 +117,31 @@ A single wrong answer is a provisional misconception, never a diagnosis. The pol
 
 ## 7. Spacing and interleaving
 
-**Spacing — two structural rules, both implemented.** `mastery_path.review_step()` is the one
-advance function; `coursebook.review._item` folds review events through it.
+**Spacing — three implemented rules.** `mastery_path.review_step()` is the one advance function;
+`coursebook.review._item` folds review events through it, and the rung it starts from is read from
+the attempt record rather than from the evidence target alone (UP-18).
 
+- The **starting rung** comes from the record that opened the ladder: one unaided first try starts
+  it one rung above the target's floor, and a hint, a retry or a miss starts it on the floor. The
+  offset lasts for the ladder's whole life. A pass whose answer was shown, or that followed a miss
+  or more than one attempt, returns on the short beat (one day) instead of the ladder's floor.
+  The table is declared in `coursebook.review`'s module docstring; it is a product heuristic, not a
+  measured optimum (`AUDIT.md` R9/R10).
 - A **failed** review keeps its rung. A failure writes no layer-2 pass event, so the queue's index
   does not move; it does not restart at the first rung ("day 1") and it does not reset the course.
 - A **pass** advances exactly one rung, capped at the last one. It does not jump to the end of the
   ladder. A learner action (`stretch`) advances one rung; `snooze` restarts the interval from now
   but does not move the rung.
 
+The learner is told which rule set the date: `review_item.interval_reason` carries one sentence in
+their own words ("You needed two tries, so this comes back tomorrow."), never a reason code, a
+stage name or an evidence class.
+
 Proof: `test_a_failed_review_keeps_its_rung_and_sets_needs_review`,
 `test_a_delayed_pass_advances_exactly_one_rung`,
-`test_a_gate_pass_starts_at_the_first_rung_not_the_last`.
+`test_a_gate_pass_starts_one_rung_up_not_at_the_last`,
+`test_a_hinted_pass_starts_one_rung_lower_than_a_cold_pass`,
+`test_a_pass_after_a_miss_returns_on_the_short_beat`.
 
 **Interleaving — policy API, no runtime caller yet.** Block first acquisition; interleave only
 confusable sets; never random-mix vocabulary (research §5; words are the one category where

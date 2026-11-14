@@ -21,6 +21,31 @@ Intervals are a declared **heuristic**, not a validated forgetting curve (``AUDI
 the ladder is a product default, shown to the learner, and never presented as an attainment
 prediction.
 
+The **starting rung** is read from the attempt record, not from the evidence target alone
+(UP-18). The table below is declared, ordered and tiny on purpose — five cases, no learned
+parameters, no score:
+
+* the pass that needed no help on its first try starts one rung above the ladder's floor;
+* a pass on the first try *with* a hint starts on the floor. The help was already priced into the
+  evidence class (``coursebook.engagement.EVIDENCE_CLASS_WEIGHT``), so the scheduler does not
+  invent an interval shorter than the target declares: the ladder's own floor is the return;
+* a pass after a miss, or after more than one attempt, returns on the short beat
+  (:data:`MISS_RETURN_DAYS`): the record says the item was not available first time. This *is* a
+  second charge on the same fact — the card that introduced it says so plainly — and it is a
+  declared spacing decision, never a mastery claim;
+* a pass whose answer was shown returns on the short beat too — the strongest assistance is not
+  earning spacing;
+* an objective with no attempt record at all (hand-seeded layer-2 evidence, a pack import) keeps
+  the floor: no record is not the same as a cold first-try record, so it earns nothing extra.
+
+The first two are the ladder's *offset*, decided once from the record that opened it and kept for
+the ladder's life; the short beat is decided per cycle from that cycle's record. A failed review
+therefore keeps the rung it reached instead of falling back to the floor.
+
+:data:`COLD_START_RUNG` and the short beat are the whole mechanism. The learner is told which
+rule produced the date through ``interval_reason``, in their own words — never a reason code, an
+evidence class or the word "rung".
+
 Two rules are structural, not stylistic (``docs/MASTERY-PATH-POLICY.md`` §7): a failed review
 writes no layer-2 pass event, so the objective keeps its rung instead of resetting to the first
 one, and a pass advances exactly one rung via :func:`coursebook.mastery_path.review_step` instead
@@ -72,6 +97,12 @@ ELIGIBLE_STATES: tuple[str, ...] = (
 #: rung of any ladder, never a same-day backlog entry.
 MISS_RETURN_DAYS = 1
 
+#: The rung a pass starts on when the attempt record shows it was earned unaided on the first
+#: try. The ladder's floor stays reserved for a pass that needed help, so a cold first-try pass
+#: earns exactly one rung more than a hinted one and two more than the short beat. A ladder with
+#: a single rung cannot express that and keeps its floor.
+COLD_START_RUNG = 1
+
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -93,7 +124,8 @@ def _ladder(target: str | None) -> tuple[int, ...]:
 
 def _events(connection, enrollment_id: str, objective_id: str) -> list[Any]:
     return connection.execute(
-        "SELECT kind, created_at FROM evidence WHERE enrollment_id = ? AND objective_id = ?"
+        "SELECT kind, created_at, rowid AS row_id FROM evidence"
+        " WHERE enrollment_id = ? AND objective_id = ?"
         " AND kind IN ('independent_evidence','delayed_retrieval','review_snooze','review_stretch',"
         " 'review_drop','review_resume')"
         " ORDER BY created_at ASC, rowid ASC",
@@ -109,7 +141,7 @@ def _last_attempt(connection, enrollment_id: str, objective_id: str) -> Any:
     failure is not a verdict about the learner, so it may not move the schedule.
     """
     return connection.execute(
-        "SELECT e.created_at AS created_at, a.verdict AS verdict,"
+        "SELECT e.created_at AS created_at, e.rowid AS row_id, a.verdict AS verdict,"
         " a.evidence_class AS evidence_class"
         " FROM evidence e JOIN attempts a ON a.id = e.attempt_id"
         " WHERE e.enrollment_id = ? AND e.objective_id = ? AND e.layer = 1"
@@ -117,6 +149,94 @@ def _last_attempt(connection, enrollment_id: str, objective_id: str) -> Any:
         " ORDER BY e.created_at DESC, e.rowid DESC LIMIT 1",
         (enrollment_id, objective_id),
     ).fetchone()
+
+
+def _pass_record(connection, enrollment_id: str, objective_id: str, *, until: int,
+                 since: int | None = None) -> dict[str, Any]:
+    """The attempt record inside one evidence window, both bounds inclusive.
+
+    The window is the committed attempts and the durable help events since the previous layer-2
+    pass, inclusive of ``until`` — usually the pass itself. One pass, one window: an earlier
+    cycle's hint cannot shorten a later cycle's spacing, and the record of a pack-imported
+    objective is empty rather than borrowed from a neighbour.
+
+    The bounds are evidence row ids, not timestamps. Row ids are the order the backend recorded
+    the learner's actions in, and that is the question being asked ("what happened before this
+    pass?"); an import or a repair that rewrites ``created_at`` must not be able to manufacture an
+    attempt record that never existed.
+
+    ``hints`` counts the rows the pane and the chat hook write before an answer (``hint_request``,
+    ``answer_shown``), whether or not the answer consumed them: a consumed hint is linked to the
+    attempt it contaminated, and it still happened.
+    """
+    since_clause = ""
+    params: list[Any] = [enrollment_id, objective_id, int(until)]
+    if since is not None:
+        since_clause = " AND e.rowid > ?"
+        params.append(int(since))
+    attempts = connection.execute(
+        "SELECT a.verdict AS verdict FROM evidence e JOIN attempts a ON a.id = e.attempt_id"
+        " WHERE e.enrollment_id = ? AND e.objective_id = ? AND e.layer = 1"
+        " AND e.kind = 'attempt' AND a.state = 'committed' AND e.rowid <= ?"
+        + since_clause +
+        " ORDER BY e.rowid ASC",
+        tuple(params),
+    ).fetchall()
+    help_rows = connection.execute(
+        "SELECT e.kind AS kind FROM evidence e"
+        " WHERE e.enrollment_id = ? AND e.objective_id = ? AND e.layer = 1"
+        " AND e.kind IN ('hint_request', 'answer_shown') AND e.rowid <= ?"
+        + since_clause +
+        " ORDER BY e.rowid ASC",
+        tuple(params),
+    ).fetchall()
+    return {
+        "attempts": len(attempts),
+        "misses": sum(1 for row in attempts if str(row["verdict"]) != "pass"),
+        "hints": sum(1 for row in help_rows if str(row["kind"]) == "hint_request"),
+        "shown": any(str(row["kind"]) == "answer_shown" for row in help_rows),
+    }
+
+
+def _earned_rung(record: dict[str, Any], rungs: list[int]) -> int:
+    """The rung the ladder *started* on, read from the record that opened it.
+
+    One unaided first try earns one rung above the ladder's floor; a hint, a retry or a miss
+    starts on the floor. This is the ladder's offset for its whole life — it is not re-decided by
+    every review pass, which is why a later failed review keeps the rung it reached.
+    """
+    if not record["attempts"]:
+        return 0                          # no record: earn nothing extra
+    if record["hints"] or record["shown"] or record["misses"] or record["attempts"] > 1:
+        return 0                          # the ladder began with help or a miss: the floor
+    return min(COLD_START_RUNG, max(0, len(rungs) - 1))
+
+
+def _short_beat(record: dict[str, Any]) -> bool:
+    """Whether this cycle's pass was not available first time, so it returns on the short beat."""
+    if not record["attempts"]:
+        return False
+    return bool(record["shown"] or record["misses"] or record["attempts"] > 1)
+
+
+def _interval_reason(record: dict[str, Any], *, days: int) -> str | None:
+    """Why this date, in the learner's words. ``None`` when there is no record to explain.
+
+    Never a reason code, a stage name, an evidence class or the scheduler's own nouns: a learner
+    reading this should see what they did, not the pipeline's name for it.
+    """
+    if not record["attempts"]:
+        return None
+    when = "tomorrow" if days == 1 else f"in {days} days"
+    if record["shown"]:
+        return f"The answer was shown, so this comes back {when}."
+    if record["misses"]:
+        return f"You missed it before you got it, so this comes back {when}."
+    if record["attempts"] > 1:
+        return f"You needed {record['attempts']} tries, so this comes back {when}."
+    if record["hints"]:
+        return f"You used a hint, so this comes back {when}."
+    return f"You got this first try with no help, so this comes back {when}."
 
 
 def _clock_start(passes: list[Any], attempt: Any,
@@ -160,8 +280,32 @@ def _item(connection, objective, *, enrollment_id: str, now: datetime) -> dict[s
     start_at, rungs = _clock_start(passes, attempt, ladder)
     if start_at is None:
         return None
+    # Two windows, because two different questions are being asked.
+    #
+    # The *ladder's* offset comes from the record that opened it (the first layer-2 pass), and
+    # lasts for the ladder's whole life: one unaided first try starts it a rung up.
+    ladder_until = int(passes[0]["row_id"]) if passes else (
+        int(attempt["row_id"]) if attempt is not None else None)
+    if ladder_until is None:  # pragma: no cover - _clock_start returned a start, so one exists
+        return None
+    ladder_record = _pass_record(connection, enrollment_id, objective["id"], until=ladder_until)
+    start_index = _earned_rung(ladder_record, rungs)
+    # The *current cycle's* record decides only whether this return is the short beat: it runs
+    # back to the previous layer-2 pass, never further, so one cycle's help cannot shorten the
+    # next cycle's spacing.
+    if passes and str(passes[-1]["created_at"]) == str(start_at):
+        until_row = int(passes[-1]["row_id"])
+        previous_row = int(passes[-2]["row_id"]) if len(passes) > 1 else None
+    elif attempt is not None:
+        until_row = int(attempt["row_id"])
+        previous_row = int(passes[-1]["row_id"]) if passes else None
+    else:  # pragma: no cover - _clock_start only returns a start when one of the two exists
+        return None
+    current_record = _pass_record(connection, enrollment_id, objective["id"],
+                                  until=until_row, since=previous_row)
+    capped_days = MISS_RETURN_DAYS if _short_beat(current_record) else None
     dropped = False
-    index = 0
+    index = start_index
     base = _parse(start_at)
     for event in events:
         if event["kind"] == "review_drop":
@@ -175,6 +319,11 @@ def _item(connection, objective, *, enrollment_id: str, now: datetime) -> dict[s
     if dropped or base is None:
         return None
     step = rungs[index] if rungs else 0
+    if capped_days is not None and index <= start_index:
+        # The ladder's floor is a target default, not a floor for a pass the record says was not
+        # available first time: that pass returns sooner. A stretch the learner asked for still
+        # wins, because it moves the index past the starting rung.
+        step = min(step, capped_days)
     due = base + timedelta(days=step)
     return {
         "objective_id": objective["id"],
@@ -189,6 +338,8 @@ def _item(connection, objective, *, enrollment_id: str, now: datetime) -> dict[s
         "due_at": due.astimezone(timezone.utc).isoformat(timespec="seconds"),
         "overdue": due < now,
         "overdue_days": max(0, (now - due).days) if due < now else 0,
+        "interval_reason": _interval_reason(
+            current_record if current_record["attempts"] else ladder_record, days=step),
     }
 
 
