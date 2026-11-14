@@ -5,6 +5,13 @@ a deliberate constraint of ``cb.db`` v2, which has no review-schedule table: a s
 "what is due" would be a competing authority (``AUDIT.md`` R5). What is durable is the evidence:
 
 * a cold layer-2 pass (``independent_evidence`` / ``delayed_retrieval``) is the clock start;
+* the newest **committed attempt** starts the clock even when it was not a cold pass. An
+  objective whose ladder never started returns on its first rung: the short beat after a miss,
+  the ladder's own first rung after a pass that only *introduced* it. An objective that already
+  earned a rung keeps it — a failed review never resets to the first rung and a hinted pass never
+  advances — so the harder-earned spacing survives. Scheduling a return is not evidence: the L2
+  rule is untouched, so a return pass is still not independent until it is cold
+  (``coursebook.domain._objective_state_after``);
 * learner review actions are layer-1 events (``review_snooze``, ``review_stretch``,
   ``review_drop``) recorded with ``evidence_class='self_reported'`` — the learner's own statement
   about scheduling, never evidence of mastery;
@@ -48,13 +55,22 @@ ACTION_KINDS = {
 _CURRENT_PLAN = "pl.id = (SELECT id FROM plans WHERE course_id = pl.course_id AND state = 'approved' ORDER BY version DESC LIMIT 1)"
 
 #: Objective states the queue may show. ``review_due``/``needs_review`` are already scheduled;
-#: ``independent_evidence``/``delayed_evidence`` get their clock start from a cold layer-2 pass.
+#: ``independent_evidence``/``delayed_evidence`` get their clock start from a cold layer-2 pass;
+#: ``introduced`` is in because a non-cold pass that only introduced an objective is exactly the
+#: claim a cold re-check must retire. Omitting it left the objectives that most need retrieval
+#: as the only ones never scheduled.
 ELIGIBLE_STATES: tuple[str, ...] = (
     "independent_evidence",
     "delayed_evidence",
     "review_due",
     "needs_review",
+    "introduced",
 )
+
+#: The short beat a miss comes back on. It is the contract's minimum interval
+#: (``review_item.interval_days`` has ``minimum: 1``): a miss earns a return sooner than any cold
+#: rung of any ladder, never a same-day backlog entry.
+MISS_RETURN_DAYS = 1
 
 
 def _now_iso() -> str:
@@ -85,16 +101,68 @@ def _events(connection, enrollment_id: str, objective_id: str) -> list[Any]:
     ).fetchall()
 
 
+def _last_attempt(connection, enrollment_id: str, objective_id: str) -> Any:
+    """The newest committed attempt for one objective, or ``None``.
+
+    The evidence row is the learner-time record; ``verdict``/``evidence_class`` live on the
+    attempt it is linked to. A ``needs_retry`` attempt is not committed and is excluded: a grading
+    failure is not a verdict about the learner, so it may not move the schedule.
+    """
+    return connection.execute(
+        "SELECT e.created_at AS created_at, a.verdict AS verdict,"
+        " a.evidence_class AS evidence_class"
+        " FROM evidence e JOIN attempts a ON a.id = e.attempt_id"
+        " WHERE e.enrollment_id = ? AND e.objective_id = ? AND e.layer = 1"
+        " AND e.kind = 'attempt' AND a.state = 'committed'"
+        " ORDER BY e.created_at DESC, e.rowid DESC LIMIT 1",
+        (enrollment_id, objective_id),
+    ).fetchone()
+
+
+def _clock_start(passes: list[Any], attempt: Any,
+                 ladder: tuple[int, ...]) -> tuple[Any, list[int]]:
+    """``(created_at, rungs)`` for this objective's return clock, or ``(None, rungs)``.
+
+    A cold layer-2 pass starts the declared ladder. An attempt that was *not* a cold pass starts
+    the clock from that attempt:
+
+    * on an objective that has never recorded a cold pass, the ladder has not started, so the
+      return is its first rung — the short beat after a miss, the cold re-check when a non-cold
+      pass only *introduced* the objective;
+    * on an objective that already earned a rung, the rung is kept (a failed review never resets
+      to the first rung, ``docs/MASTERY-PATH-POLICY.md`` §7) and a hinted pass simply does not
+      advance it: the next return is the rung a cold pass would have left behind.
+    """
+    rungs = [int(step) for step in ladder]
+    if attempt is not None and not (
+        attempt["verdict"] == "pass" and attempt["evidence_class"] == "cold"
+    ):
+        if passes:
+            return attempt["created_at"], rungs
+        if attempt["verdict"] == "pass":
+            return attempt["created_at"], rungs  # introduced: a cold re-check on the first rung
+        return attempt["created_at"], [MISS_RETURN_DAYS] + rungs
+    if passes:
+        return passes[-1]["created_at"], rungs
+    if attempt is not None:
+        # A cold pass with no layer-2 row (a revisit records the pass without moving the
+        # objective) still starts a return.
+        return attempt["created_at"], rungs
+    return None, rungs
+
+
 def _item(connection, objective, *, enrollment_id: str, now: datetime) -> dict[str, Any] | None:
     """One schedulable objective, or ``None`` when it is not eligible."""
     events = _events(connection, enrollment_id, objective["id"])
     passes = [e for e in events if e["kind"] in ("independent_evidence", "delayed_retrieval")]
-    if not passes:
+    attempt = _last_attempt(connection, enrollment_id, objective["id"])
+    ladder = _ladder(objective["evidence_target"])
+    start_at, rungs = _clock_start(passes, attempt, ladder)
+    if start_at is None:
         return None
     dropped = False
     index = 0
-    base = _parse(passes[-1]["created_at"])
-    ladder = _ladder(objective["evidence_target"])
+    base = _parse(start_at)
     for event in events:
         if event["kind"] == "review_drop":
             dropped = True
@@ -102,13 +170,11 @@ def _item(connection, objective, *, enrollment_id: str, now: datetime) -> dict[s
             dropped = False
         elif event["kind"] == "review_snooze":
             base = _parse(event["created_at"])
-        elif event["kind"] == "review_stretch":
-            index = review_step(index, passed=True, ladder=ladder)
-        elif event["kind"] == "delayed_retrieval":
-            index = review_step(index, passed=True, ladder=ladder)
+        elif event["kind"] in ("review_stretch", "delayed_retrieval"):
+            index = review_step(index, passed=True, ladder=rungs)
     if dropped or base is None:
         return None
-    step = ladder[index]
+    step = rungs[index] if rungs else 0
     due = base + timedelta(days=step)
     return {
         "objective_id": objective["id"],
@@ -118,8 +184,8 @@ def _item(connection, objective, *, enrollment_id: str, now: datetime) -> dict[s
         "state": objective["state"],
         "interval_days": step,
         "step": index,
-        "ladder_days": list(ladder),
-        "last_evidence_at": passes[-1]["created_at"],
+        "ladder_days": rungs,
+        "last_evidence_at": start_at,
         "due_at": due.astimezone(timezone.utc).isoformat(timespec="seconds"),
         "overdue": due < now,
         "overdue_days": max(0, (now - due).days) if due < now else 0,
@@ -207,7 +273,10 @@ def refresh_due(connection, enrollment_id: str, *, now: datetime | None = None) 
 
     Idempotent: it only changes state in the contracted direction ``independent_evidence`` /
     ``delayed_evidence`` → ``review_due``. It never un-schedules, never writes new evidence rows
-    and never touches ``needs_review`` (that objective already has an open problem).
+    and never touches ``needs_review`` (that objective already has an open problem) or
+    ``introduced`` (a non-cold pass only opened it). Those two are still *scheduled*: :func:`queue`
+    derives their short return from their own committed attempt, and relabelling them
+    ``review_due`` here would claim a cold review the learner has not been given.
     """
     now = now or datetime.now(timezone.utc)
     if now.tzinfo is None:

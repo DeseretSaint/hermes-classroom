@@ -222,15 +222,19 @@ class ParkedLessonRepairTest(KernelCase):
 
 
 class ReviewQueueConsistencyTest(KernelCase):
-    """The queue stays derived from evidence; a failed attempt with no pass is not schedulable."""
+    """The queue stays derived from evidence; a miss is scheduled short, never silently dropped."""
 
-    def test_a_fresh_needs_review_objective_is_not_in_the_review_queue(self) -> None:
+    def test_a_fresh_needs_review_objective_is_scheduled_but_not_yet_due(self) -> None:
         lesson = self.prepare_lesson()
         self.submit(lesson, "5")
         with db.read() as connection:
             queue = review.queue(connection, lesson["enrollment_id"], now=datetime.now(timezone.utc))
+        # A fresh miss earns the short return: it is scheduled, and it is not overdue yet, so one
+        # struggling attempt does not become an instant backlog.
         self.assertEqual(queue["total_due"], 0)
-        self.assertEqual(queue["items"], [])
+        self.assertEqual(queue["total_scheduled"], 1)
+        self.assertEqual(queue["items"][0]["interval_days"], 1)
+        self.assertFalse(queue["items"][0]["overdue"])
 
 
 if __name__ == "__main__":
