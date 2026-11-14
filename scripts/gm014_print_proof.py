@@ -27,6 +27,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from coursebook import homework_print as hp  # noqa: E402
+from coursebook import print_geometry  # noqa: E402
 from tests.test_procedure_document import head_gasket_document  # noqa: E402
 
 PROOF = ROOT / "docs" / "visual-review" / "gm-014"
@@ -76,6 +77,20 @@ def add_document(
     ok, missing = require_text(pdf_path, required)
     if not ok:
         raise SystemExit(f"{relative}: page text missing (possible clipping): {missing}")
+    # Text surviving extraction is not the same claim as text sitting inside the declared box: a
+    # caption pushed into the margin, or a table row that spilled past the bottom of the content
+    # area, keeps every word. Locate each glyph and compare it with the box the sheet declares.
+    geometry = print_geometry.measure(
+        pdf_path,
+        margins_mm=hp.paper_margins(paper),
+        footer=hp.folio_footer(paper),
+    )
+    if not geometry["inside"]:
+        first = geometry["violations"][0]
+        raise SystemExit(
+            f"{relative}: {len(geometry['violations'])} glyph(s) outside the declared box; "
+            + print_geometry.describe(first)
+        )
     stem = pdf_path.stem
     for png in hp.pdf_to_png(pdf_path, pdf_path.parent / stem, dpi=144):
         pngs.append({"file": str(png.relative_to(PROOF)), "source": relative, "dpi": 144})
@@ -92,6 +107,9 @@ def add_document(
             "required_text": required,
             "required_text_present": ok,
             "missing_text": missing,
+            "glyphs_measured": geometry["glyphs"],
+            "content_box_mm": hp.paper_margins(paper),
+            "glyphs_outside_box": len(geometry["violations"]),
         }
     )
     return pdf_path
@@ -141,12 +159,18 @@ def compute_checks(
         and "<svg" not in technical_html
         and "data:image" not in technical_html
     )
+    # Every written PDF was measured glyph by glyph in ``add_document``; a failure exits there.
+    # This check restates that measurement for the manifest, from the numbers stored per document.
+    glyphs_measured = sum(int(entry.get("glyphs_measured") or 0) for entry in documents)
+    glyphs_outside = sum(int(entry.get("glyphs_outside_box") or 0) for entry in documents)
+    glyph_box_ok = bool(documents) and glyphs_measured > 0 and glyphs_outside == 0
     problems = hp.validate_fixture(fixture)
     checks = {
         "content_rules": "pass" if not problems else "fail",
         "page_size_matches_requested_paper": "pass" if size_ok else "fail",
         "page_count_matches_html_sheet_count": "pass",
         "required_text_and_tail_present_in_pdf": "pass",
+        "glyphs_inside_declared_page_box": "pass" if glyph_box_ok else "fail",
         "answer_guide_separate_from_learner_page": "pass" if separation_ok else "fail",
         "no_generated_image_in_technical_sheet": "pass" if no_image_ok else "fail",
         "low_ink_backgrounds": "pass" if low_ink_ok else "fail",
@@ -185,6 +209,12 @@ def main() -> int:
             display = target.get("display") or target.get("title")
         docs = hp.render_documents(fixture, task_id, paper="A4")
         for role, html_text in docs.items():
+            if role not in tail:
+                # PRINT-2 (t_6418b9dd) added ``coloring_page`` to ``render_documents``. It is not in
+                # this proof's role set: when it was printed here its drawing and word bank did not
+                # render, which is a defect in that page, not in the proof, and it is reported
+                # separately rather than papered over by a shorter required-text list.
+                continue
             required = [task["title"], display, tail[role], "Page 1 of"]
             if role == "parent_guide":
                 required = [task["title"], display, "The four steps", tail[role], "Page 2 of 2"]
@@ -256,6 +286,7 @@ def main() -> int:
             "pdfinfo": Path(shutil.which("pdfinfo") or "unavailable").name,
             "pdftotext": Path(shutil.which("pdftotext") or "unavailable").name,
             "pdftoppm": Path(shutil.which("pdftoppm") or "unavailable").name,
+            "pdfplumber": print_geometry.version(),
             "japanese_font_expected": "Noto Sans CJK JP",
         },
         "documents": documents,
@@ -274,9 +305,16 @@ def main() -> int:
 def write_report(manifest: dict, path: Path) -> None:
     rows = "\n".join(
         f"| `{entry['file']}` | {entry['paper']} | {entry['role']} | {entry['pages']} | "
-        f"{entry['page_size']} | {'yes' if entry['required_text_present'] else 'NO'} |"
+        f"{entry['page_size']} | {'yes' if entry['required_text_present'] else 'NO'} | "
+        f"{entry.get('glyphs_measured', 0)} / {entry.get('glyphs_outside_box', 0)} |"
         for entry in manifest["documents"]
     )
+    papers = sorted({str(entry["paper"]) for entry in manifest["documents"]})
+    margins = "; ".join(
+        f"{paper}: " + ", ".join(f"{side} {value:g} mm" for side, value in hp.paper_margins(paper).items())
+        for paper in papers
+    )
+    folio_bottom = f"{hp.FOLIO_BOTTOM_MM:g}"
     text = f"""# GM-014 print proof
 
 Generated by `scripts/gm014_print_proof.py` on {manifest['generated']}. This file and the PDFs
@@ -284,8 +322,8 @@ beside it are the real proof, not a description of one.
 
 ## What was printed
 
-| file | paper | role | pages | PDF page size | all page text present |
-|---|---|---|---|---|---|
+| file | paper | role | pages | PDF page size | all page text present | glyphs measured / outside box |
+|---|---|---|---|---|---|---|
 {rows}
 
 - Fixture: `{manifest['fixture']['path']}` (`{manifest['fixture']['fixture_id']}`).
@@ -298,16 +336,27 @@ beside it are the real proof, not a description of one.
 ## How the no-clipping claim is checked
 
 Every sheet is a fixed paper box with real margins; the page count, the ``Page n of N`` folio
-and the *last body sentence* of each role are read back out of the PDF. A clipped page loses the
-tail sentence and the script exits non-zero instead of writing this manifest. The table above
-records `all page text present = yes` from that live extraction.
+and the *last body sentence* of each role are read back out of the PDF, so a page that loses its
+tail fails the run instead of writing this manifest.
+
+Text surviving extraction is not the same claim as text *sitting inside the declared box*, so the
+written PDF is also measured glyph by glyph: `pdfplumber` locates every character, the character's
+box is converted to PDF points on the page's bottom-left origin (millimetres are converted by an
+explicit `72 / 25.4`, and a rotated page is measured in its displayed orientation, not its raw media
+box), and each box is compared with the content box `coursebook/homework_print.py` declares for
+that paper — `{margins}` for this sheet. The running folio is measured against the band it is
+declared to occupy (the bottom margin, from {folio_bottom} mm down from the paper's bottom edge);
+any *other* glyph found in that band, or any glyph past any margin, exits non-zero naming the
+glyph, its bbox and the box it left.
 
 ## What the manifest checks measure
 
 `checks` in `MANIFEST.json` is computed by `scripts/gm014_print_proof.py`, not typed by hand:
 page size is read from `pdfinfo` on each written PDF, answer-guide separation and low-ink
-backgrounds come from the rendered HTML, and the technical-sheet check inspects that HTML for any
-image element. If any check fails the script exits without writing a manifest.
+backgrounds come from the rendered HTML, `glyphs_inside_declared_page_box` is the count of glyphs
+located in every written PDF minus the count found outside their declared box, and the
+technical-sheet check inspects that HTML for any image element. If any check fails the script exits
+without writing a manifest.
 
 ## What is not claimed
 

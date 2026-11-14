@@ -1,7 +1,7 @@
 {
   "contract": "cb.print_proof",
   "contract_version": 1,
-  "generated": "2026-11-09",
+  "generated": "2026-11-14",
   "generated_by": "scripts/gm014_print_proof.py",
   "fixture": {
     "path": "bundled/homework/japanese-l0-mealtime/fixture.json",
@@ -22,6 +22,7 @@
     "pdfinfo": "pdfinfo",
     "pdftotext": "pdftotext",
     "pdftoppm": "pdftoppm",
+    "pdfplumber": "pdfplumber 0.11.10",
     "japanese_font_expected": "Noto Sans CJK JP"
   },
   "documents": [
@@ -32,7 +33,7 @@
       "task_id": "hw_premeal",
       "pages": 2,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:4be19dbce67975cb90b81c63be0189dd7a592d49ca6892c3c345a7c57927f78c",
+      "sha256": "sha256:4ebf76d4ad25fecb01adbf7a93d54de305e86492932e6fb5284f63ef128b991f",
       "bytes": 94298,
       "required_text": [
         "Say the before-meal greeting at one meal",
@@ -42,7 +43,15 @@
         "Page 2 of 2"
       ],
       "required_text_present": true,
-      "missing_text": []
+      "missing_text": [],
+      "glyphs_measured": 2927,
+      "content_box_mm": {
+        "top": 18.0,
+        "right": 16.0,
+        "bottom": 16.0,
+        "left": 16.0
+      },
+      "glyphs_outside_box": 0
     },
     {
       "file": "a4/hw_premeal-learner-page.pdf",
@@ -51,7 +60,7 @@
       "task_id": "hw_premeal",
       "pages": 1,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:2c04e8111d1b502e607698b06c3f2df3bd5ebe403fef2021ce410234d21ef01e",
+      "sha256": "sha256:3020b95ac41f5ea2c2f4f5bc7cb4fe257045ec1ec38258b6c099c459a1bf4c27",
       "bytes": 63453,
       "required_text": [
         "Say the before-meal greeting at one meal",
@@ -60,7 +69,15 @@
         "Page 1 of"
       ],
       "required_text_present": true,
-      "missing_text": []
+      "missing_text": [],
+      "glyphs_measured": 741,
+      "content_box_mm": {
+        "top": 18.0,
+        "right": 16.0,
+        "bottom": 16.0,
+        "left": 16.0
+      },
+      "glyphs_outside_box": 0
     },
     {
       "file": "a4/hw_premeal-answer-guide.pdf",
@@ -69,7 +86,7 @@
       "task_id": "hw_premeal",
       "pages": 1,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:4dc607fa9614174fa279f98fb00791f5c2cc5d4f3a4fa26c60ee9575db27d44d",
+      "sha256": "sha256:b2abbf7632e656c1a31cbb74756da3f49067755278d07af8f6ebf16630a8cc97",
       "bytes": 60495,
       "required_text": [
         "PARENT ONLY",
@@ -79,7 +96,15 @@
         "Page 1 of 1"
       ],
       "required_text_present": true,
-      "missing_text": []
+      "missing_text": [],
+      "glyphs_measured": 985,
+      "content_box_mm": {
+        "top": 18.0,
+        "right": 16.0,
+        "bottom": 16.0,
+        "left": 16.0
+      },
+      "glyphs_outside_box": 0
     },
     {
       "file": "a4/hw_premeal-homework-sheet.pdf",
@@ -88,7 +113,7 @@
       "task_id": "hw_premeal",
       "pages": 1,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:b828dd02ada81493ead702ff1874b6f6d8efd6df37902fd944c4d2eaedb16654",
+      "sha256": "sha256:ead5add4b7bb5ea374ebc4c1a6abf131feb11c0184fa76da734316c1e480d45e",
       "bytes": 61464,
       "required_text": [
         "Say the before-meal greeting at one meal",
@@ -97,7 +122,15 @@
         "Page 1 of"
       ],
       "required_text_present": true,
-      "missing_text": []
+      "missing_text": [],
+      "glyphs_measured": 601,
+      "content_box_mm": {
+        "top": 18.0,
+        "right": 16.0,
+        "bottom": 16.0,
+        "left": 16.0
+      },
+      "glyphs_outside_box": 0
     },
     {
       "file": "a4/hw_postmeal-parent-guide.pdf",
@@ -106,7 +139,7 @@
       "task_id": "hw_postmeal",
       "pages": 2,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:38895f5790a042ec356442750b46bb002287c97b8602c42ffc6340882c8a02c0",
+      "sha256": "sha256:4b5d162080461ca8c1afd436180b11e7c56f65ff201d2390d7a626e06c15210d",
       "bytes": 98399,
       "required_text": [
         "Say the after-meal greeting when you finish",
@@ -116,7 +149,15 @@
         "Page 2 of 2"
       ],
       "required_text_present": true,
-      "missing_text": []
+      "missing_text": [],
+      "glyphs_measured": 2797,
+      "content_box_mm": {
+        "top": 18.0,
+        "right": 16.0,
+        "bottom": 16.0,
+        "left": 16.0
+      },
+      "glyphs_outside_box": 0
     },
     {
       "file": "a4/hw_postmeal-learner-page.pdf",
@@ -125,7 +166,7 @@
       "task_id": "hw_postmeal",
       "pages": 1,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:09b564ca32e2b08e417a661bad5e789d86b1bf514f698e9ee85b93f26b35ec75",
+      "sha256": "sha256:a420248c7b3063ca358e994e76882d31c50b3bdb131771c72418568ef3a72a83",
       "bytes": 64840,
       "required_text": [
         "Say the after-meal greeting when you finish",
@@ -134,7 +175,15 @@
         "Page 1 of"
       ],
       "required_text_present": true,
-      "missing_text": []
+      "missing_text": [],
+      "glyphs_measured": 756,
+      "content_box_mm": {
+        "top": 18.0,
+        "right": 16.0,
+        "bottom": 16.0,
+        "left": 16.0
+      },
+      "glyphs_outside_box": 0
     },
     {
       "file": "a4/hw_postmeal-answer-guide.pdf",
@@ -143,7 +192,7 @@
       "task_id": "hw_postmeal",
       "pages": 1,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:07e7f80eea4df142c5918e17c18d28ea5fc0309211a9ccd1f84e41181f218be7",
+      "sha256": "sha256:9bd085c043084ea10823f752ccfc79d7af554e47383c647efba309155c256646",
       "bytes": 62037,
       "required_text": [
         "PARENT ONLY",
@@ -153,7 +202,15 @@
         "Page 1 of 1"
       ],
       "required_text_present": true,
-      "missing_text": []
+      "missing_text": [],
+      "glyphs_measured": 998,
+      "content_box_mm": {
+        "top": 18.0,
+        "right": 16.0,
+        "bottom": 16.0,
+        "left": 16.0
+      },
+      "glyphs_outside_box": 0
     },
     {
       "file": "a4/hw_postmeal-homework-sheet.pdf",
@@ -162,7 +219,7 @@
       "task_id": "hw_postmeal",
       "pages": 1,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:e5ff2094ea1a92f6c7fefb706f5d28bb16c26f29b5e26dce21c8c4521020346e",
+      "sha256": "sha256:50deee66f5514a09142231ef603376bf9e628b9b22ae81e552ad7c027d600a00",
       "bytes": 63015,
       "required_text": [
         "Say the after-meal greeting when you finish",
@@ -171,7 +228,15 @@
         "Page 1 of"
       ],
       "required_text_present": true,
-      "missing_text": []
+      "missing_text": [],
+      "glyphs_measured": 619,
+      "content_box_mm": {
+        "top": 18.0,
+        "right": 16.0,
+        "bottom": 16.0,
+        "left": 16.0
+      },
+      "glyphs_outside_box": 0
     },
     {
       "file": "a4/hw_labels-parent-guide.pdf",
@@ -180,8 +245,8 @@
       "task_id": "hw_labels",
       "pages": 2,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:cedeaf5c50cbef085d93c10aa6d5b997abcc8cdcdb59ba10e414f879a34d7079",
-      "bytes": 106209,
+      "sha256": "sha256:145801f8cd32397e8672bd5b75d795e26ac7feb88da013018d567a7d64bc56bb",
+      "bytes": 109552,
       "required_text": [
         "Label three household objects",
         "ドア・まど・いす",
@@ -190,7 +255,15 @@
         "Page 2 of 2"
       ],
       "required_text_present": true,
-      "missing_text": []
+      "missing_text": [],
+      "glyphs_measured": 2963,
+      "content_box_mm": {
+        "top": 18.0,
+        "right": 16.0,
+        "bottom": 16.0,
+        "left": 16.0
+      },
+      "glyphs_outside_box": 0
     },
     {
       "file": "a4/hw_labels-learner-page.pdf",
@@ -199,7 +272,7 @@
       "task_id": "hw_labels",
       "pages": 1,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:bddddcd3bc11be760abee5b8bc3d81aa777411199fb093b2feda6d275e74b5fd",
+      "sha256": "sha256:1aeaa814ed58d21485902fd92b76b8d0c73b2518cbf9725cb3886c3c41e92fcf",
       "bytes": 69631,
       "required_text": [
         "Label three household objects",
@@ -208,7 +281,15 @@
         "Page 1 of"
       ],
       "required_text_present": true,
-      "missing_text": []
+      "missing_text": [],
+      "glyphs_measured": 908,
+      "content_box_mm": {
+        "top": 18.0,
+        "right": 16.0,
+        "bottom": 16.0,
+        "left": 16.0
+      },
+      "glyphs_outside_box": 0
     },
     {
       "file": "a4/hw_labels-answer-guide.pdf",
@@ -217,7 +298,7 @@
       "task_id": "hw_labels",
       "pages": 1,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:e9cc486bd5e607c06e26e3f1329e4a4eec47b05e647132c5b21ab13fb0eb6010",
+      "sha256": "sha256:8362ea4d15405f29e5b9956d96cfb43e655b192daed4970fa1d669b1e75b71a2",
       "bytes": 62450,
       "required_text": [
         "PARENT ONLY",
@@ -227,7 +308,15 @@
         "Page 1 of 1"
       ],
       "required_text_present": true,
-      "missing_text": []
+      "missing_text": [],
+      "glyphs_measured": 904,
+      "content_box_mm": {
+        "top": 18.0,
+        "right": 16.0,
+        "bottom": 16.0,
+        "left": 16.0
+      },
+      "glyphs_outside_box": 0
     },
     {
       "file": "a4/hw_labels-homework-sheet.pdf",
@@ -236,7 +325,7 @@
       "task_id": "hw_labels",
       "pages": 1,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:381e317ff71d6d1e8064df11bc36a88adeb585f2b2a4cd8ac7e0384261897f14",
+      "sha256": "sha256:34493f742861c9254a0de01bdd08def2ae83cc3b6df2a86b5ed5661a3ddf9399",
       "bytes": 68696,
       "required_text": [
         "Label three household objects",
@@ -245,7 +334,15 @@
         "Page 1 of"
       ],
       "required_text_present": true,
-      "missing_text": []
+      "missing_text": [],
+      "glyphs_measured": 752,
+      "content_box_mm": {
+        "top": 18.0,
+        "right": 16.0,
+        "bottom": 16.0,
+        "left": 16.0
+      },
+      "glyphs_outside_box": 0
     },
     {
       "file": "letter/hw_premeal-parent-guide.pdf",
@@ -254,7 +351,7 @@
       "task_id": "hw_premeal",
       "pages": 2,
       "page_size": "612 x 792 pts (letter)",
-      "sha256": "sha256:32c355af9c76f06fb05aa3f2ee1b52bc36ab02079d7731af1dc016464d80136b",
+      "sha256": "sha256:c95fcaaadfa1be09145a60a371db771e65840d639f1667968c42b69128a1a954",
       "bytes": 94303,
       "required_text": [
         "Say the before-meal greeting at one meal",
@@ -264,7 +361,15 @@
         "Page 2 of 2"
       ],
       "required_text_present": true,
-      "missing_text": []
+      "missing_text": [],
+      "glyphs_measured": 2927,
+      "content_box_mm": {
+        "top": 17.779999999999998,
+        "right": 16.509999999999998,
+        "bottom": 15.748,
+        "left": 16.509999999999998
+      },
+      "glyphs_outside_box": 0
     },
     {
       "file": "letter/hw_premeal-learner-page.pdf",
@@ -273,7 +378,7 @@
       "task_id": "hw_premeal",
       "pages": 1,
       "page_size": "612 x 792 pts (letter)",
-      "sha256": "sha256:e395bbc51e2ba2e121b5592180cb770943c2d15c5542e6b6915fa3679444934b",
+      "sha256": "sha256:cd96a7557bc0ed24387fff4482fe7863d119e8a18a07bb84e833ac1a449f292e",
       "bytes": 63431,
       "required_text": [
         "Say the before-meal greeting at one meal",
@@ -282,7 +387,15 @@
         "Page 1 of 1"
       ],
       "required_text_present": true,
-      "missing_text": []
+      "missing_text": [],
+      "glyphs_measured": 741,
+      "content_box_mm": {
+        "top": 17.779999999999998,
+        "right": 16.509999999999998,
+        "bottom": 15.748,
+        "left": 16.509999999999998
+      },
+      "glyphs_outside_box": 0
     },
     {
       "file": "letter/hw_premeal-answer-guide.pdf",
@@ -291,7 +404,7 @@
       "task_id": "hw_premeal",
       "pages": 1,
       "page_size": "612 x 792 pts (letter)",
-      "sha256": "sha256:b5b2693541c9fdd71266120b147dca692d08ed30b2b691684ba84d86d4ef3dd2",
+      "sha256": "sha256:cd33c5f358cf1d5eddbef22da9332cd3edc471d9287ebc4993d51f52d7784ce3",
       "bytes": 60475,
       "required_text": [
         "PARENT ONLY",
@@ -301,7 +414,15 @@
         "Page 1 of 1"
       ],
       "required_text_present": true,
-      "missing_text": []
+      "missing_text": [],
+      "glyphs_measured": 985,
+      "content_box_mm": {
+        "top": 17.779999999999998,
+        "right": 16.509999999999998,
+        "bottom": 15.748,
+        "left": 16.509999999999998
+      },
+      "glyphs_outside_box": 0
     },
     {
       "file": "letter/hw_premeal-homework-sheet.pdf",
@@ -310,7 +431,7 @@
       "task_id": "hw_premeal",
       "pages": 1,
       "page_size": "612 x 792 pts (letter)",
-      "sha256": "sha256:9e9433c6bd4896c78caf098fbd7708dae7f5ce54ee595d3db7c9ad4d35a0cfca",
+      "sha256": "sha256:6e070dd61b02f274ea9ede1dc7b686b8c30626a981c991ea24cf698c56350c94",
       "bytes": 61431,
       "required_text": [
         "Say the before-meal greeting at one meal",
@@ -319,7 +440,15 @@
         "Page 1 of 1"
       ],
       "required_text_present": true,
-      "missing_text": []
+      "missing_text": [],
+      "glyphs_measured": 601,
+      "content_box_mm": {
+        "top": 17.779999999999998,
+        "right": 16.509999999999998,
+        "bottom": 15.748,
+        "left": 16.509999999999998
+      },
+      "glyphs_outside_box": 0
     },
     {
       "file": "a4/technical-head-gasket.pdf",
@@ -328,7 +457,7 @@
       "task_id": null,
       "pages": 2,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:19bfa91797433fa98e504db5f509d3c12f5e48853ac1d5702619fe4174400d3c",
+      "sha256": "sha256:dda4e3b7cddd2d93dc71f3a08ef245582f2bbf4fca78e3149cc0b5ed7666e382",
       "bytes": 74559,
       "required_text": [
         "Replace the head gasket",
@@ -341,7 +470,15 @@
         "Page 2 of 2"
       ],
       "required_text_present": true,
-      "missing_text": []
+      "missing_text": [],
+      "glyphs_measured": 1687,
+      "content_box_mm": {
+        "top": 18.0,
+        "right": 16.0,
+        "bottom": 16.0,
+        "left": 16.0
+      },
+      "glyphs_outside_box": 0
     }
   ],
   "png_proofs": [
@@ -505,6 +642,7 @@
     "page_size_matches_requested_paper": "pass",
     "page_count_matches_html_sheet_count": "pass",
     "required_text_and_tail_present_in_pdf": "pass",
+    "glyphs_inside_declared_page_box": "pass",
     "answer_guide_separate_from_learner_page": "pass",
     "no_generated_image_in_technical_sheet": "pass",
     "low_ink_backgrounds": "pass"

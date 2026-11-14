@@ -82,6 +82,15 @@ and refuses to write `MANIFEST.json` if any page loses its last body sentence. I
 `chromium`, `pdfinfo`, `pdftotext` and `pdftoppm` on `PATH`, and a system font with Japanese
 coverage (`Noto Sans CJK JP` is used when present). Nothing is uploaded or sent.
 
+It also measures the margins it prints under. `coursebook/print_geometry.py` opens each written PDF
+with `pdfplumber`, converts the sheet's declared padding and every glyph box into PDF points on the
+page's bottom-left origin, and fails the run if a glyph's laid-out box leaves the declared content
+box or the body of the page. The running folio is the one exception: it is declared to sit in the
+bottom margin (`FOLIO_BOTTOM_MM`), so folio glyphs are measured against that band and any other
+glyph found in it is a violation. A rotated page is measured in its displayed orientation. Without
+`pdfplumber` the text checks still run and `MANIFEST.json` records the geometry version as
+`unavailable`.
+
 Re-running rewrites each PDF's creation timestamp, so the recorded SHA-256 changes even when the
 pages are identical. Regenerate and commit the whole set together; do not mix old and new files
 under one manifest.

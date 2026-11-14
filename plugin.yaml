@@ -40,6 +40,12 @@ python_dependencies:
   # The range must overlap the host's core `documents` pin (pypdf==6.x) or plugin admission refuses
   # the whole plugin; this was the live enable blocker on 2026-11-07.
   - "pypdf>=4.0,<7"
+  # Print-proof geometry and syllabus table geometry: locates each glyph's box in a written PDF and
+  # reads a ruled table's rows, so the proof measures the margins its stylesheet declares instead of
+  # asserting them, and a weekly schedule keeps its cells together. MIT. Optional at runtime — when
+  # it is absent the proof's geometry check is reported unavailable and the syllabus parser falls
+  # back to pypdf's page text, which is what shipped before.
+  - "pdfplumber>=0.11,<0.12"
 
 # No requires_env in the skeleton: Coursebook stores no secrets. Every key below has a reader
 # wired in this build (`coursebook/tools.py::configure` <- `ctx.get_config`); a settings field

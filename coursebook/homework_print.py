@@ -48,6 +48,70 @@ PAPER_SIZES: dict[str, dict[str, str]] = {
     "Letter": {"size": "Letter", "width": "8.5in", "height": "11in", "pad": "0.7in 0.65in 0.62in"},
 }
 
+#: The running folio sits in the bottom margin on purpose: it is furniture, not body text, and the
+#: paper's bottom margin is where a folio belongs. The band below is the claim a geometry check can
+#: measure — folio glyphs live between 9 mm and the bottom margin, and nothing else does.
+FOLIO_BOTTOM_MM = 9.0
+
+#: The folio prints the running copy then the folio itself, on one line: ``Coursebook · learner pagePage 1 of 1``.
+FOLIO_LINE_PATTERN = r"^Coursebook · .*Page \d+ of \d+$"
+
+_CSS_UNITS_TO_MM = {"mm": 1.0, "cm": 10.0, "in": 25.4, "pt": 25.4 / 72.0, "px": 25.4 / 96.0}
+
+
+def css_length_mm(value: str) -> float:
+    """A CSS length in millimetres. The sheets only use ``mm``, ``cm``, ``in`` and ``pt``."""
+    match = re.fullmatch(r"\s*([0-9]*\.?[0-9]+)\s*(mm|cm|in|pt|px)?\s*", str(value))
+    if not match:
+        raise ValueError(f"not a CSS length: {value!r}")
+    number, unit = float(match.group(1)), (match.group(2) or "mm")
+    return number * _CSS_UNITS_TO_MM[unit]
+
+
+def paper_margins(paper: str) -> dict[str, float]:
+    """The sheet's own declared margins in millimetres, parsed from ``PAPER_SIZES[paper]["pad"]``.
+
+    ``pad`` is a CSS padding shorthand: one value is all four sides, two are vertical/horizontal,
+    three are top/horizontal/bottom, four are top/right/bottom/left. The geometry proof reads this
+    rather than a copied number, so the box it asserts and the box the stylesheet prints are the
+    same declaration.
+    """
+    parts = str(PAPER_SIZES[paper]["pad"]).split()
+    values = [css_length_mm(part) for part in parts]
+    if len(values) == 1:
+        top = right = bottom = left = values[0]
+    elif len(values) == 2:
+        top = bottom = values[0]
+        right = left = values[1]
+    elif len(values) == 3:
+        top, right, bottom = values
+        left = right
+    elif len(values) == 4:
+        top, right, bottom, left = values
+    else:
+        raise ValueError(f"paper {paper!r} declares a padding shorthand with {len(values)} values")
+    return {"top": top, "right": right, "bottom": bottom, "left": left}
+
+
+def folio_band(paper: str) -> tuple[float, float]:
+    """``(bottom_mm, top_mm)`` of the band a folio may occupy: the paper's bottom margin."""
+    margins = paper_margins(paper)
+    return (FOLIO_BOTTOM_MM, margins["bottom"])
+
+
+def folio_footer(paper: str) -> Any:
+    """The declared folio band as a ``print_geometry.FooterBand``, for a geometry measurement."""
+    from .print_geometry import FooterBand
+
+    margins = paper_margins(paper)
+    bottom, top = folio_band(paper)
+    return FooterBand(
+        pattern=re.compile(FOLIO_LINE_PATTERN),
+        bottom_mm=bottom, top_mm=top,
+        left_mm=margins["left"], right_mm=margins["right"],
+    )
+
+
 #: Task kinds the fixture and print templates accept (plan §10A.4).
 TASK_KINDS = ("real_world_use", "observe", "label", "practice", "make", "teach_back")
 
@@ -341,7 +405,7 @@ figcaption {{ font-size: 8.5pt; color: #5c5347; margin-top: 1.5mm; }}
   position: absolute;
   left: {pad_left};
   right: {pad_right};
-  bottom: 9mm;
+  bottom: {folio_bottom}mm;
   display: flex;
   justify-content: space-between;
   align-items: baseline;
@@ -374,6 +438,7 @@ def _css(paper: str) -> str:
         pad=spec["pad"],
         pad_left=horizontal_pad,
         pad_right=horizontal_pad,
+        folio_bottom=f"{FOLIO_BOTTOM_MM:g}",
     )
 
 
