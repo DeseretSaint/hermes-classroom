@@ -553,6 +553,8 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   font-family: var(--cb3-font-display);
   font-size: var(--cb3-text-meta);
   color: var(--cb3-ink);
+  text-align: center;
+  line-height: 1.1;
 }
 
 /* G2 — the fox stands where the plate's own fox stands (E1 §5: 868,506..967,683): its painted feet

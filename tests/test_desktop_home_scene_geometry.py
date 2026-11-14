@@ -1,18 +1,20 @@
-"""CP-053 — the wide Home scene: geometry from the binding reference, paint from the token layer.
+"""CP-053 / G2 — the wide Home scene: E1's plate geometry, paint from the token layer.
 
-The reference frame is `docs/concept-parity/refs/home.png` (R-HOME; 1344x768). The scene's numbers
-were measured off it and now live in the v3 stylesheet (`desktop/src/76-v3-scope.js`, addressed by
-`data-cb-home-scene-*` hooks), while every colour, shadow and type size comes from the token
-contract. These tests assert four things:
+The binding reference is now the owner-adopted Home ground
+(`docs/concept-parity/refs/home-plate-1344-textless.png`, 1344x768). The scene's numbers were
+measured on E1's plate (`docs/concept-parity/refs/home-plate-geometry.md`) and live in the v3
+stylesheet (`desktop/src/76-v3-scope.js`, addressed by `data-cb-home-scene-*` hooks), while every
+colour, shadow and type size comes from the token contract. These tests assert four things:
 
   * the scene mounts only at the route breakpoint, and the narrow Home is untouched;
-  * the shipped stylesheet still carries the measured geometry;
+  * the shipped stylesheet still carries E1's measured geometry, and the retired kit props (the two
+    planks, the clock) stay retired;
   * the rendered scene markup carries hooks and no inline paint — colour, shadow and font size
     cannot leak back into the module, which is what `test_desktop_tokens*` and
     `test_desktop_type_scale` police;
   * a card's bar is `sections_done/sections_total` and nothing invents a rating.
 
-Pixel parity with the reference is a capture measurement (`docs/concept-parity/cp053/PASSES.md`),
+Pixel parity with the plate is a capture measurement (`docs/concept-parity/cp053/PASSES.md`),
 not a unit test.
 """
 
@@ -186,49 +188,44 @@ class HomeSceneTest(unittest.TestCase):
 
     # --- the measured geometry lives in the stylesheet --------------------------------------
 
-    def test_card_is_the_measured_collectible_size(self) -> None:
+    def test_card_is_the_e1_board_size(self) -> None:
+        # E1: board1 (261, 319.1)..(379, 458.9) = 118 x 139.8, so the card is 118 x 140.
         card = css_block(self.source, "data-cb-home-scene-card")
-        self.assertEqual(declaration(card, "width"), "176px")
-        self.assertEqual(declaration(card, "height"), "175px")
+        self.assertEqual(declaration(card, "width"), "118px")
+        self.assertEqual(declaration(card, "height"), "140px")
         cover = css_block(self.source, "data-cb-home-scene-card] img,\n[data-cb-v3] [data-cb-home-scene-cover")
-        self.assertEqual(declaration(cover, "height"), "106px")
+        self.assertEqual(declaration(cover, "height"), "75px")
 
-    def test_cards_sit_on_the_measured_shelf_line(self) -> None:
+    def test_cards_hang_on_the_e1_board_quads(self) -> None:
         scene = css_block(self.source, "data-cb-home-scene")
         self.assertEqual(declaration(scene, "max-width"), "1344px")
         self.assertEqual(declaration(scene, "height"), "768px")
         cards = css_block(self.source, "data-cb-home-scene-cards")
-        self.assertEqual(declaration(cards, "top"), "384px")
-        self.assertEqual(declaration(cards, "left"), "273px")
-        self.assertEqual(declaration(cards, "height"), "175px")
-        self.assertEqual(declaration(cards, "gap"), "24px")
+        self.assertEqual(declaration(cards, "top"), "319px")
+        self.assertEqual(declaration(cards, "left"), "261px")
+        self.assertEqual(declaration(cards, "height"), "140px")
+        self.assertEqual(declaration(cards, "gap"), "16px")
 
-    def test_planks_and_objects_hold_the_reference_positions(self) -> None:
-        one = css_block(self.source, "data-cb-home-scene-plank-one")
-        self.assertEqual(declaration(one, "left"), "219px")
-        self.assertEqual(declaration(one, "width"), "915px")
-        self.assertEqual(declaration(one, "top"), "559px")
-        self.assertEqual(declaration(one, "height"), "18px")
-        two = css_block(self.source, "data-cb-home-scene-plank-two")
-        self.assertEqual(declaration(two, "left"), "130px")
-        self.assertEqual(declaration(two, "width"), "1150px")
-        self.assertEqual(declaration(two, "top"), "684px")
-        self.assertEqual(declaration(two, "height"), "30px")
+    def test_objects_hold_the_e1_positions_and_the_retired_props_stay_retired(self) -> None:
+        # E1: tag on the plaster patch 790..864 x 350..486; fox (868, 506)..(967, 683); the hero
+        # panel covers the baked copy x 210..354, y 54..124 and starts at the pill's left edge.
         tag = css_block(self.source, "data-cb-home-scene-tag")
-        self.assertEqual(declaration(tag, "left"), "888px")
-        self.assertEqual(declaration(tag, "top"), "559px")
-        self.assertEqual(declaration(tag, "width"), "148px")
-        self.assertEqual(declaration(tag, "height"), "148px")
-        clock = css_block(self.source, "data-cb-home-scene-clock")
-        self.assertEqual(declaration(clock, "left"), "1042px")
-        self.assertEqual(declaration(clock, "top"), "568px")
-        self.assertEqual(declaration(clock, "width"), "118px")
-        self.assertEqual(declaration(clock, "height"), "118px")
+        self.assertEqual(declaration(tag, "left"), "790px")
+        self.assertEqual(declaration(tag, "top"), "356px")
+        self.assertEqual(declaration(tag, "width"), "74px")
+        self.assertEqual(declaration(tag, "height"), "74px")
         fox = css_block(self.source, "data-cb-home-scene-fox")
-        self.assertEqual(declaration(fox, "left"), "1110px")
-        self.assertEqual(declaration(fox, "top"), "481px")
+        self.assertEqual(declaration(fox, "left"), "791px")
+        self.assertEqual(declaration(fox, "top"), "480px")
         hero = css_block(self.source, "data-cb-home-scene-hero")
-        self.assertEqual(declaration(hero, "top"), "128px")
+        self.assertEqual(declaration(hero, "left"), "196px")
+        self.assertEqual(declaration(hero, "top"), "30px")
+        self.assertEqual(declaration(hero, "width"), "520px")
+        self.assertEqual(declaration(hero, "height"), "162px")
+        # The plate paints no shelf and no clock, so the kit's props are retired from this surface.
+        for retired in ("data-cb-home-scene-plank-one", "data-cb-home-scene-plank-two",
+                        "data-cb-home-scene-clock"):
+            self.assertNotIn(retired, self.source, "%s came back without a painted object" % retired)
 
     def test_the_tag_plate_keeps_the_master_aspect(self) -> None:
         # VQ-011: the plate paints the square 256x256 tag object, so its box is square and its size
@@ -247,25 +244,15 @@ class HomeSceneTest(unittest.TestCase):
         self.assertNotIn("box-shadow", tag,
                          "a box shadow paints a square around the transparent corners")
 
-    def test_the_fox_and_clock_stand_on_plank_two_and_do_not_overlap(self) -> None:
-        # Scope override item 3: feet and clock base sit on the plank's top edge (+/- 2 px). The card's
-        # own 526/588 boxes put feet 45 px and the base 20 px below 684, so the seating instruction
-        # (the later authority) wins. Insets are the painted-art opaque bounds inside each box,
-        # measured on the rendered proof (alpha bottom 203.1/208 fox, 115.7/118 clock; opaque right
-        # 100.5/118 clock, opaque left 43.9/208 fox).
-        plank_top = 684
+    def test_the_fox_stands_on_the_plates_painted_fox_row(self) -> None:
+        # E1: the painted fox's feet are the paving row at y 683 (868,506..967,683). The kit fox's
+        # painted feet sit 203.1 px above its 208 px box bottom, so top 480 lands them at 683.1.
+        plate_fox_feet = 683
         fox_top = int(declaration(css_block(self.source, "data-cb-home-scene-fox"), "top")[:-2])
-        clock_top = int(declaration(css_block(self.source, "data-cb-home-scene-clock"), "top")[:-2])
         feet = fox_top + 203.1
-        base = clock_top + 115.7
-        self.assertLessEqual(abs(feet - plank_top), 2, f"fox feet at {feet}, plank edge {plank_top}")
-        self.assertLessEqual(abs(base - plank_top), 2, f"clock base at {base}, plank edge {plank_top}")
-        fox_left = int(declaration(css_block(self.source, "data-cb-home-scene-fox"), "left")[:-2])
-        clock_left = int(declaration(css_block(self.source, "data-cb-home-scene-clock"), "left")[:-2])
-        fox_opaque_left = fox_left + 43.9
-        clock_opaque_right = clock_left + 100.5
-        self.assertGreaterEqual(fox_opaque_left - clock_opaque_right, 11,
-                                "the fox and clock opaque art still overlap")
+        self.assertLessEqual(abs(feet - plate_fox_feet), 2, f"fox feet at {feet}, plate row {plate_fox_feet}")
+        # The clock has no painted object on this plate and stays retired.
+        self.assertNotIn("data-cb-home-scene-clock", self.source)
 
     def test_the_hero_holds_its_contrast_on_the_plate(self) -> None:
         question = css_block(self.source, "data-cb-home-scene-question")
@@ -295,9 +282,8 @@ class HomeSceneTest(unittest.TestCase):
                      "data-cb-home-scene-subline", "data-cb-home-scene-cta",
                      "data-cb-home-scene-cards", "data-cb-home-scene-card",
                      "data-cb-home-scene-title", "data-cb-home-scene-progress",
-                     "data-cb-home-scene-meta", "data-cb-home-scene-plank-one",
-                     "data-cb-home-scene-plank-two", "data-cb-home-scene-tag",
-                     "data-cb-home-scene-fox"):
+                     "data-cb-home-scene-meta", "data-cb-home-scene-tag",
+                     "data-cb-home-scene-fox", "data-cb-home-scene-backdrop"):
             self.assertIn(hook, html)
         scene = markup_only(html[html.index('data-cb-home-scene=""'):])
         for prop in ("color:", "background:", "box-shadow:", "font-size:", "transform: rotate"):
@@ -346,7 +332,7 @@ class HomeSceneTest(unittest.TestCase):
                 self.assertIn(kind, ("kit", "art"), kind)
                 src = attr(image.group(0), "src") or ""
                 self.assertTrue(src.startswith("data:image/webp"), src[:48])
-                self.assertTrue(src in approved, "a scene cover is not an approved field_atlas@2 row")
+                self.assertTrue(src in approved, "a scene cover is not an approved field_atlas@3 row")
                 self.assertNotEqual(src, rows["cb.asset.kit.field_atlas.field-atlas-lesson-room"],
                                     "a card wears the painted lesson room as its cover")
             else:
@@ -435,12 +421,12 @@ class HomeSceneTest(unittest.TestCase):
         self.assertEqual(len(set(positions)), 4, f"a crop repeats: {positions}")
         self.assertEqual(len(set(scales)), 4, f"a zoom repeats: {scales}")
 
-    def test_the_stage_backdrop_is_the_home_hero_plate(self) -> None:
+    def test_the_stage_backdrop_is_the_home_ground_plate(self) -> None:
         rows = self.kit_rows()
         html = self.render(1344)
         backdrops = [tag for tag in img_tags(html) if attr(tag, "data-cb-home-scene-backdrop") is not None]
         self.assertEqual(len(backdrops), 1, "the stage has no painted backdrop")
-        self.assertEqual(attr(backdrops[0], "src"), rows["cb.asset.kit.field_atlas.home-hero"])
+        self.assertEqual(attr(backdrops[0], "src"), rows["cb.asset.kit.field_atlas.home-ground"])
         self.assertIn("data-cb-home-scene-panel", html, "the hero text has no token scrim panel")
 
     def test_narrow_home_carries_the_same_covers_and_a_hero_band(self) -> None:

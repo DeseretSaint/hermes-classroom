@@ -353,7 +353,9 @@ class CoursebookHomeTest(Base):
 
     def test_home_has_no_fake_rating_or_xp(self) -> None:
         html = self.home(rows=[row(1), row(2), row(3)])
-        lowered = html.lower()
+        # Data URLs are image bytes, not claims: a base64 plate can contain any letter pair. The
+        # assertion is about the words the Home paints, so strip the inline image payloads first.
+        lowered = re.sub(r'data:[^"\s)]+', 'data:', html).lower()
         for banned in (r"\bstars?\b", r"\brating", "recently played", r"\bxp\b", "streak", "mastery", r"\blevel\b"):
             self.assertIsNone(re.search(banned, lowered), f"global Home invented a {banned!r} claim")
 

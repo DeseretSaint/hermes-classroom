@@ -109,7 +109,8 @@ class TestReferencePins(unittest.TestCase):
         self.assertGreaterEqual(len(pins), 6, "REFS.md must pin all six frames")
         for ref, digest in pins.items():
             name = {
-                "R-HOME": "home.png",
+                "R-HOME": "home-plate-1344-textless.png",
+                "R-HOME-OLD": "home.png",
                 "R-BOARD": "board.png",
                 "R-DISC": "discover.png",
                 "R-CLASS": "classroom.png",

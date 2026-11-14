@@ -29,9 +29,11 @@ rmse_grey = float(np.sqrt(((ga - gb) ** 2).mean()))
 sim_grey = 1 - rmse_grey / 255.0
 sim_rgb = 1 - rmse_rgb / 255.0
 
-# Per-band breakdown, so a pass can name its largest deltas.
-bands = {"header": (0, 110), "hero": (110, 340), "cards": (340, 560),
-         "shelf1": (555, 640), "objects": (600, 690), "shelf2": (680, 768)}
+# Per-band breakdown, so a pass can name its largest deltas. The bands follow the adopted Home
+# ground's own composition (E1): sky above the sign, the sign/hero band y 30..192, the wall between
+# sign and boards, the four board quads y 319..459, the bench band, and the paved ground.
+bands = {"sky": (0, 30), "hero": (30, 192), "wall": (192, 319),
+         "boards": (319, 459), "bench": (459, 560), "ground": (560, 768)}
 band_rows = {}
 for name, (y0, y1) in bands.items():
     sub = ((ga[y0:y1] - gb[y0:y1]) ** 2)

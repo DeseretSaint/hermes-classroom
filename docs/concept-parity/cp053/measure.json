@@ -1,29 +1,30 @@
 {
-  "card": "CP-053 / D-007 Home quality pass (t_831137dd)",
+  "card": "CP-053 / G2 Home re-pin (t_8db56021)",
   "surface": "desktop/plugin.js CoursebookHome at route width 1344, rendered by design/home-scene.html (generated from the module by scripts/gen-home-proof.py)",
   "capture": "chromium --headless=new --window-size=1344,768 --force-device-scale-factor=1",
-  "module_sha256": "46f03ab9da0c4f7aee79c179e26e27ffe006429c5f72656c860c9cb966d4d02b",
-  "reference": "docs/concept-parity/refs/home.png",
-  "reference_sha256": "fd75bed31cd773ab50a5b5ad62daa46566d50b1b7f3ed1582a52915a14f3ffe3",
+  "module_sha256": "ac627cd7f392c1b0668b0e44c0f50db59a409547dcf58907c50fe66ca55d917e",
+  "reference": "docs/concept-parity/refs/home-plate-1344-textless.png",
+  "reference_sha256": "806080bbcdca5376e936fe02975ce605fe9af01415f6768ec8c12dd5d402b4b6",
+  "reference_role": "the owner-adopted Home ground (G1 ruling 2, Home only); docs/concept-parity/refs/home.png stays in the tree as history and is no longer the Home reference",
   "render": "docs/concept-parity/cp053/home-scene-1344.png",
   "size": [
     1344,
     768
   ],
   "metric": "sim_grey = 1 - RMSE(grey)/255 over the full frame at native 1344x768",
-  "rmse_rgb": 94.34,
-  "rmse_grey": 94.709,
-  "sim_grey": 0.6286,
-  "sim_rgb": 0.63,
+  "rmse_rgb": 29.141,
+  "rmse_grey": 27.486,
+  "sim_grey": 0.8922,
+  "sim_rgb": 0.8857,
   "bands_sim_grey": {
-    "header": 0.6419,
-    "hero": 0.5904,
-    "cards": 0.6409,
-    "shelf1": 0.6784,
-    "objects": 0.6508,
-    "shelf2": 0.7562
+    "sky": 0.993,
+    "hero": 0.826,
+    "wall": 0.982,
+    "boards": 0.8587,
+    "bench": 0.9487,
+    "ground": 0.9337
   },
-  "not_a_desktop_capture": "no host, no backend; the scene canvas only. Cards now carry the approved field_atlas@2 display plates, so the frame is measured against A1 as a record, not as a gate: D-007 changed the target from pixel parity with the mockup to the approved kit composition.",
+  "not_a_desktop_capture": "no host, no backend; the scene canvas only. This row measures the shipped scene against the adopted Home ground it is pinned to. The remaining deltas are the scene's own live paint (opaque hero sign, four card faces, tag, fox) laid over the ground, not drift.",
   "measured_at": "2026-11-13",
-  "note": "Re-measured 2026-11-13 on module 098e65d9 after the generated page was re-rendered from that module; fresh chromium capture at 1344x768 of design/home-scene.html, fresh RMSE against docs/concept-parity/refs/home.png, nothing carried over. The CP-053 reference is the pre-plate hand frame, so this row records the approved-kit composition rather than clearing the 0.85 floor. Re-pinned 2026-11-13 to module 46f03ab9 after the third-party notices surface (A2) changed only non-Home plugin bytes: the regenerated design/home-scene.html differs from the 098e65d9 render by its module-sha comment alone, so every recorded metric still describes the same Home markup and pixels."
+  "note": "Re-derived 2026-11-13 entirely, carrying nothing forward from the 46f03ab9 row: fresh chromium capture of the regenerated design/home-scene.html at 1344x768, fresh RMSE against the adopted plate, and band boundaries redrawn to the plate's own composition (sky, hero sign, wall, board quads, bench, ground). The previous reference was the pre-plate mockup and the previous band names described a shelf layout this scene no longer has."
 }

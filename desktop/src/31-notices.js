@@ -304,6 +304,15 @@ const CB_NOTICE_ROWS = Object.freeze([
     "resolved": true
   },
   {
+    "asset_id": "cb.asset.kit.field_atlas.home-ground",
+    "kind": "image",
+    "licence": "CC0-1.0",
+    "evidence": "<https://creativecommons.org/publicdomain/zero/1.0/legalcode.en>",
+    "commercial_use": "Yes",
+    "manifest": "assets/kit/manifest.json",
+    "resolved": true
+  },
+  {
     "asset_id": "cb.asset.kit.field_atlas.home-hero",
     "kind": "image",
     "licence": "CC0-1.0",

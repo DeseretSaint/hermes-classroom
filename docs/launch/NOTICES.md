@@ -15,12 +15,12 @@ inventory.
 | `assets/art/material/manifest.json` | 8 | `a4aa3f0f77a4555c8d31cb5ddbded4f57f85834dae12c55aa1ac07353f713349` |
 | `assets/fonts/manifest.json` | 2 | `2cd7e3f2d603a445f3fcb9cd2cae2e31a0e9139fca232b53225ca9fb04df6622` |
 | `assets/fox/manifest.json` | 28 | `b3b05303c591a6aa54aadf2ca43aeb08df3088ef0ae70ee2b181b5a1548141d2` |
-| `assets/kit/manifest.json` | 8 | `241fd3a6678715b50880fc4d4f50f3cac798305d5327cf962e0647a898cf0ce7` |
+| `assets/kit/manifest.json` | 9 | `6422d35de9981ca3c1dd1875ccf377541cd5c6ae0632a16e22b84076c99d29fc` |
 | `assets/masters/manifest.json` | 22 | `09af75c27416134c07bfeb9bbb28c46c2da7af3633baf59d2879e2273274ab18` |
 | `assets/material/manifest.json` | 6 | `7bc1a9f192d09b050d5df01f09f878ca5071e80f646ba0aa6d39dd9d7ef24932` |
 | `assets/objects/manifest.json` | 7 | `ec9f95aa719ad5b31d361e730a29e804cf10683ca30359054effc29f982cd334` |
 
-7 manifests, 81 asset sources.
+7 manifests, 82 asset sources.
 
 ## Licence registry
 
@@ -71,6 +71,7 @@ particular asset.
 | `cb.asset.fox.wave.512` | image | `CC0-1.0` | <https://creativecommons.org/publicdomain/zero/1.0/legalcode.en> | Yes |
 | `cb.asset.fox.wave.64` | image | `CC0-1.0` | <https://creativecommons.org/publicdomain/zero/1.0/legalcode.en> | Yes |
 | `cb.asset.kit.field_atlas.field-atlas-lesson-room` | image | `CC0-1.0` | <https://creativecommons.org/publicdomain/zero/1.0/legalcode.en> | Yes |
+| `cb.asset.kit.field_atlas.home-ground` | image | `CC0-1.0` | <https://creativecommons.org/publicdomain/zero/1.0/legalcode.en> | Yes |
 | `cb.asset.kit.field_atlas.home-hero` | image | `CC0-1.0` | <https://creativecommons.org/publicdomain/zero/1.0/legalcode.en> | Yes |
 | `cb.asset.kit.field_atlas.japanese-cover-3x2` | image | `CC0-1.0` | <https://creativecommons.org/publicdomain/zero/1.0/legalcode.en> | Yes |
 | `cb.asset.kit.field_atlas.japanese-cover-4x5` | image | `CC0-1.0` | <https://creativecommons.org/publicdomain/zero/1.0/legalcode.en> | Yes |
@@ -124,7 +125,7 @@ particular asset.
 
 ## Summary
 
-- asset sources: 81
-- licence ids: CC0-1.0 77, OFL-1.1 4
-- commercial use: Yes 81
+- asset sources: 82
+- licence ids: CC0-1.0 78, OFL-1.1 4
+- commercial use: Yes 82
 - rows with an unresolved licence: 0

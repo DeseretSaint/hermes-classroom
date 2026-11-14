@@ -238,7 +238,7 @@ function WorkshopCover({ item, layout, hero, caption, revealStyle }) {
   const preview = useArtifactPreview(cover.kind === 'artifact' ? cover.artifact_id : null)
   const tone = workshopTone(item && item.pack_id)
   const image = cover.kind === 'artifact' && preview.state === 'ready' ? preview.data_url : null
-  // A real artifact always wins. With no ready artifact the approved field_atlas@2 display cover
+  // A real artifact always wins. With no ready artifact the approved field_atlas@3 display cover
   // for this pack is the plate (D-007), so a mapped pack never falls back to a typographic cover.
   // `cb3KitCoverFor` answers the full asset key; `cb3Asset` is the one lookup that reads it.
   const kit = image ? null : cb3KitCoverFor(item)
@@ -1313,7 +1313,7 @@ function cb3PackSubject(item) {
  * One cover resolver for the Store card, the pack detail and the Library tab's same row.
  *
  * A pack's own cover artifact always wins. When it has none — or its bytes have not arrived yet —
- * the approved field_atlas@2 display cover for that pack is the plate (D-007), so no pack ever
+ * the approved field_atlas@3 display cover for that pack is the plate (D-007), so no pack ever
  * resolves to a typographic cover. The plate id comes from `cb3KitCoverFor`, which already answers
  * the full `cb.asset.kit.field_atlas.*` asset key; `cb3Asset` is the one lookup that reads it.
  */

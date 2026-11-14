@@ -112,7 +112,7 @@ class NoticeDataTest(unittest.TestCase):
 
     def test_rendered_notice_count_equals_the_generator_row_count(self):
         rows = generated_rows()
-        self.assertEqual(len(rows), 81, "A1 generated 81 rows; the generator moved")
+        self.assertEqual(len(rows), 82, "the generator moved: 81 A1 rows + the adopted Home ground")
         self.assertEqual(len(shipped_rows()), len(rows))
         self.assertEqual(len(rows), len({row["asset_id"] for row in rows}), "duplicate asset id")
 
@@ -130,7 +130,7 @@ class NoticeDataTest(unittest.TestCase):
             timeout=120,
         )
         self.assertEqual(result.returncode, 0, result.stderr[-2000:])
-        self.assertIn("81 rows", result.stdout)
+        self.assertIn("82 rows", result.stdout)
 
     def test_no_licence_string_outside_the_generated_data(self):
         source = segment_source()

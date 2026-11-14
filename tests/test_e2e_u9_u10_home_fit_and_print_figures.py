@@ -3,9 +3,9 @@
 Two defects, one shipped module (`desktop/plugin.js`):
 
 * **U9** — the room is authored at 1344x768 and chosen from 1200 px of route width up, so at 1250
-  the fixed frame plus `overflow: hidden` cut the fox (left 1110 + 208) by more than half. The stage
-  now scales into the box it is measured in, and a fifth course is reachable from the room's own
-  `See all`.
+  the fixed frame plus `overflow: hidden` cut the right-hand props off the frame (pre-G2 the fox at
+  1110 + 208; post-G2 the fox sits at 791). The stage now scales into the box it is measured in,
+  and a fifth course is reachable from the room's own `See all`.
 * **U10** — the print sheet emitted one `.caption` per media child and the sheet carries no `<img>`,
   so paper said "A cutaway of the brake caliper" under nothing. Each media child now prints its own
   omission line, the sheet never falls back to the structural `label`, and a block whose only
@@ -35,7 +35,7 @@ PLUGIN_JS = ROOT / "desktop" / "plugin.js"
 FRAME_WIDTH = 1344
 FRAME_HEIGHT = 768
 ROUTE_1250 = 1250
-FOX_LEFT = 1110
+FOX_LEFT = 791
 FOX_SIZE = 208
 FIGURE_OMITTED = "Figure not printed - see the lesson screen."
 

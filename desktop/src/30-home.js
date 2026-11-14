@@ -333,7 +333,7 @@ const HOME_KIT_REPEAT_FRAMES = Object.freeze([
   Object.freeze({ position: '60% 76%', scale: 1.52 })
 ])
 
-/** The approved field_atlas@2 display plate a Home card reads in, or null. A cover is an asset. */
+/** The approved field_atlas@3 display plate a Home card reads in, or null. A cover is an asset. */
 function homeKitCover(row) {
   const kit = cb3KitCoverFor(row)
   if (!kit) return null
@@ -791,7 +791,11 @@ function useHomeSceneFit() {
 
 function HomeScene({ slots, canCreate, onStartCreate, onBrowseLibrary, onOpenCourse, onShowAll, overflow }) {
   const tagObject = cb3ObjectSource('tag')
-  const heroPlate = cb3KitSource('home-hero')
+  // G2: the adopted Home ground. It is a 1344x768 textless street plate (no baked copy, CTA pill or
+  // course boards), so the scene's controls sit on painted objects they can cover. `home-hero`
+  // stays the alley plate for `90-course.js` and the narrow Home's hero band; it is not this
+  // surface's ground.
+  const groundPlate = cb3KitSource('home-ground')
   const coverPlan = homeCoverPlan(slots)
   // E2E U9: the authored frame is 1344x768 and the scene is chosen from 1200 px up, so a narrower
   // room scales the whole plate instead of cropping the fox and the ledge off its right edge.
@@ -809,8 +813,8 @@ function HomeScene({ slots, canCreate, onStartCreate, onBrowseLibrary, onOpenCou
       'data-cb-home-scene': '',
       style: { '--cb-home-scene-scale': String(scale) },
       children: [
-        heroPlate
-          ? jsx('img', { 'data-cb-home-scene-backdrop': '', src: heroPlate, alt: '', 'aria-hidden': 'true' }, 'backdrop')
+        groundPlate
+          ? jsx('img', { 'data-cb-home-scene-backdrop': '', src: groundPlate, alt: '', 'aria-hidden': 'true' }, 'backdrop')
           : null,
         jsx('div', {
           'data-cb-home-scene-hero': '',
