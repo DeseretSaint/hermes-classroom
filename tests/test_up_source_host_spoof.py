@@ -3,8 +3,9 @@
 ``_classify_source`` ranks the type it returns against ``SOURCE_TYPE_RANK``, where ``government``
 sorts first and therefore wins the page budget. A host that merely *contains* ``.gov.`` anywhere —
 ``foo.gov.attacker.example`` — is not published by a government, so it must classify as the
-ordinary ``web_page`` it is. The decision is made on the host's public suffix from the Public
-Suffix List (``tldextract``, offline: ``suffix_list_urls=()``), never on a substring.
+ordinary ``web_page`` it is. The decision is made on the host's public suffix from the vendored
+Public Suffix List (``coursebook/data/public_suffix_list.dat``, read from disk so the lookup is
+offline and needs no install), never on a substring.
 """
 
 from __future__ import annotations
