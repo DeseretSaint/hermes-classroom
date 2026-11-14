@@ -191,6 +191,27 @@ class RubricFileTest(unittest.TestCase):
         self.assertIn("separate lens", bar)
         self.assertIn("separate bar", review)
 
+    def test_every_document_that_names_a_quality_bar_names_an_existing_file(self) -> None:
+        """A review that names its own quality bar must name a file a reader can open.
+
+        The reverse of the positive linkage test above: that one proves two documents point at
+        the rubric; this one proves every document that names a bar points at a bar that exists.
+
+        The leading ``(?<![\\w-])`` is load-bearing. Without it the two filename alternatives match
+        inside longer hyphenated names — ``docs/H173-COURSE-QUALITY-REVIEW.md`` yields a phantom
+        ``docs/QUALITY-REVIEW.md`` and ``DESIGN-RENDER-QUALITY-GATES.md`` a phantom
+        ``docs/QUALITY-GATES.md`` — so the test would report three non-existent bars that no
+        document ever cites and hide the one that is real. A quality-bar reference is a whole
+        filename token, not a suffix of one.
+        """
+        pattern = r"(?<![\w-])(?:docs/)?(?:[A-Z0-9-]*RUBRIC|QUALITY-[A-Z-]*)\.md"
+        refs = set()
+        for path in sorted(DOCS.glob("*.md")):
+            for m in re.finditer(pattern, path.read_text(encoding="utf-8")):
+                refs.add((path.name, "docs/" + m.group(0).replace("docs/", "")))
+        missing = [(d, r) for d, r in sorted(refs) if not (ROOT / r).is_file()]
+        self.assertEqual(missing, [], f"documents cite a quality bar that does not exist: {missing}")
+
 
 class PacketTest(unittest.TestCase):
     def test_packet_writes_facts_blank_scores_and_the_validator_verdict(self) -> None:
