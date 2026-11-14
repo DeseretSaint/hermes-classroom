@@ -184,7 +184,8 @@ class PlanRejectModelTest(unittest.TestCase):
         self.assertEqual(model["action"]["id"], "try_again")
         self.assertEqual(model["action"]["label"], "Try again")
 
-    def test_unsourced_plan_names_trying_again(self) -> None:
+    def test_an_unsourced_learner_draft_offers_adjusting_the_kept_draft(self) -> None:
+        """UP-10: the held draft is the thing to repair; a repeated brief repairs nothing."""
         out = self.run_case(
             {
                 "kind": "model",
@@ -197,7 +198,8 @@ class PlanRejectModelTest(unittest.TestCase):
         )
         model = out["model"]
         self.assertEqual(model["kind"], "unsourced")
-        self.assertEqual(model["action"]["label"], "Try again")
+        self.assertEqual(model["action"], {"id": "edit_plan", "label": "Adjust this plan"})
+        self.assertEqual(model["secondary"], {"id": "try_again", "label": "Try again"})
         self.assertTrue(model["draftKept"])
         self.assertIn("source", model["body"].lower())
 
@@ -216,8 +218,13 @@ class PlanRejectModelTest(unittest.TestCase):
         self.assertEqual(model["action"]["label"], "Edit the plan")
         self.assertIn("outline", model["title"].lower())
 
-    def test_structural_reject_on_a_learner_surface_names_trying_again(self) -> None:
-        """A learner cannot call `parent.plan.edit`, so the action must be one they can take."""
+    def test_a_learner_structural_refusal_offers_adjusting_the_kept_draft(self) -> None:
+        """UP-10: the kept draft is editable, and a repeated brief cannot fix an outline.
+
+        The learner reaches the same `parent.plan.edit` the backend already serves for manual
+        authoring; the edit is stored as manual, so the approval that follows says it was not
+        validated. Try again stays as the secondary door, not the only one.
+        """
         out = self.run_case(
             {
                 "kind": "model",
@@ -227,8 +234,13 @@ class PlanRejectModelTest(unittest.TestCase):
                 "surface": "learner",
             }
         )
-        self.assertEqual(out["model"]["kind"], "structural")
-        self.assertEqual(out["model"]["action"]["label"], "Try again")
+        model = out["model"]
+        self.assertEqual(model["kind"], "structural")
+        self.assertEqual(model["action"]["id"], "edit_plan")
+        self.assertEqual(model["action"]["label"], "Adjust this plan")
+        self.assertEqual(model["secondary"]["id"], "try_again")
+        self.assertEqual(model["secondary"]["label"], "Try again")
+        self.assertTrue(model["draftKept"])
 
     def test_provider_failure_names_trying_again_and_keeps_the_brief(self) -> None:
         out = self.run_case(
@@ -337,7 +349,8 @@ class PlanRejectModelTest(unittest.TestCase):
         self.assertIn('data-cb-plan-reject="structural"', html)
         self.assertIn('data-cb-plan-reject-draft="kept"', html)
 
-    def test_a_learner_reject_panel_has_no_edit_action(self) -> None:
+    def test_a_learner_reject_panel_offers_adjusting_and_trying_again(self) -> None:
+        """UP-10: the refusal leads with the kept draft, and a retry is still one press away."""
         out = self.run_case(
             {
                 "kind": "render",
@@ -348,8 +361,12 @@ class PlanRejectModelTest(unittest.TestCase):
             }
         )
         html = out["html"]
-        self.assertEqual(html.count("<button"), 1, html)
+        self.assertEqual(html.count("<button"), 2, html)
+        self.assertIn('data-cb-plan-reject-action="edit_plan"', html)
+        self.assertIn("Adjust this plan", html)
+        self.assertIn('data-cb-plan-reject-secondary="try_again"', html)
         self.assertIn("Try again", html)
+        # The learner never sees the parent's label for the same control.
         self.assertNotIn("Edit the plan", html)
 
     # ── H-182/D3: the durable gate keeps the panel up and Approve withheld ─
@@ -518,6 +535,30 @@ class PlanRejectWiringTest(unittest.TestCase):
         self.assertGreaterEqual(source.count("onChangeGoal,"), 3)
         self.assertIn("beginCreate(seed || null)", source)
         self.assertIn("seed: createSeed", source)
+
+    def test_the_learner_adjust_action_opens_the_editor(self) -> None:
+        """UP-10: "Adjust this plan" must open the kept draft, never queue a fresh brief.
+
+        The panel sends the model's action id through `runPlanRepair`. The `edit_plan` branch has
+        to reach `startEditing` and return before the retry that calls `jobs.create`, because a
+        repeated identical brief is the repair least likely to change a structural fault.
+        """
+        source = _source()
+        models = source[source.index("const models = {"):source.index("const copy = models[kind]")]
+        # Both kept-draft refusals lead with the editor and keep the retry as the secondary.
+        self.assertEqual(models.count("? { id: 'edit_plan', label: 'Adjust this plan' }"), 2)
+        self.assertEqual(models.count(": { id: 'edit_plan', label: 'Edit the plan' }"), 2)
+        self.assertEqual(
+            models.count("secondary: { id: 'try_again', label: learner ? 'Try again' : 'Run research again' }"),
+            2,
+        )
+        handler = source[source.index("const runPlanRepair = useCallback"):]
+        handler = handler[: handler.index("// Clear the gap")]
+        edit = handler[handler.index("if (action === 'edit_plan')"):handler.index("if (action === 'change_goal')")]
+        self.assertIn("startEditing()", edit)
+        self.assertIn("return", edit)
+        self.assertNotIn("jobs.create", edit)
+        self.assertLess(handler.index("if (action === 'edit_plan')"), handler.index("'jobs.create'"))
 
     def test_the_dead_change_goal_sentence_is_gone(self) -> None:
         """CREATE-5: the control returns to the form or is not offered at all."""

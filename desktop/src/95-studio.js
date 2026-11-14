@@ -4311,23 +4311,27 @@ function planRejectView({ job, plan, planValidation, objectiveCount, surface, go
         ? `${count === 1 ? 'One part' : `${count} parts`} of the draft could not be tied to a source the research pass actually read. This run returned the draft that was already refused instead of starting a new attempt, so nothing about it changed; the draft is saved and nothing was lost.`
         : `${count === 1 ? 'One part' : `${count} parts`} of the draft could not be tied to a source the research pass actually read. The draft is saved, so nothing is lost. ${
             learner
-              ? 'Trying again runs the research pass again and writes a new plan version; if the sources still do not cover it, this same check refuses the new attempt.'
+              ? 'Adjust this plan to what the sources you have can actually support, then approve it as your own; the approval says it was not validated. Trying again runs the research pass again and writes a new plan version, and if the sources still do not cover it this same check refuses the new attempt.'
               : 'Run research again to start a new attempt — it runs the research pass from scratch and writes a new plan version, never this draft again — or edit the objectives to what the sources you have can actually support, then approve that as your own plan.'
           }`,
       where: first.place ? `${first.place}: ${planCheckLabel(first.why)}` : planCheckLabel(first.why),
       action: learner
-        ? { id: 'try_again', label: 'Try again' }
+        ? { id: 'edit_plan', label: 'Adjust this plan' }
         : { id: 'edit_plan', label: 'Edit the plan' },
-      secondary: learner ? null : { id: 'try_again', label: 'Run research again' }
+      secondary: { id: 'try_again', label: learner ? 'Try again' : 'Run research again' }
     },
     structural: {
       title: 'The outline does not fit together yet',
-      body: `The plan was written but failed an outline check${first.why ? `: ${first.why}` : ''}. The draft is saved, so you can repair the outline instead of starting over.`,
+      body: `The plan was written but failed an outline check${first.why ? `: ${first.why}` : ''}. The draft is saved, so you can repair the outline instead of starting over.${
+        learner
+          ? ' Adjust this plan to fix the outline, then approve it as your own; the approval says it was not validated. Running the same brief again would write the same outline.'
+          : ''
+      }`,
       where: first.place ? `${first.place}: ${planCheckLabel(first.why)}` : planCheckLabel(first.why),
       action: learner
-        ? { id: 'try_again', label: 'Try again' }
+        ? { id: 'edit_plan', label: 'Adjust this plan' }
         : { id: 'edit_plan', label: 'Edit the plan' },
-      secondary: learner ? null : { id: 'try_again', label: 'Run research again' }
+      secondary: { id: 'try_again', label: learner ? 'Try again' : 'Run research again' }
     }
   }
   const copy = models[kind]
@@ -6100,8 +6104,9 @@ function StudioPlanView({
 
   // H-103/H-182: the repair actions on a rejected plan.
   //
-  // `edit_plan` opens the existing editor on this draft, and saving is the parent's explicit
-  // manual decision: the plan is then approvable *as manual*, never as validated. `change_goal`
+  // `edit_plan` opens the existing editor on this draft on either surface, and saving is the
+  // human's explicit manual decision: the plan is then approvable *as manual*, never as
+  // validated. `change_goal`
   // hands the same choices back to the create form so a new goal is a new course, not a silent
   // overwrite. `try_again` queues a new job from the brief this job stored; the backend no longer
   // replays a rejected draft to a new job, so this is a real new attempt and the notice only
