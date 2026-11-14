@@ -165,7 +165,11 @@ def derive(source: dict, *, composed: bool = False) -> dict:
     required[at:at] = ["min_word_confidence", "gated", "caveat"]
     assessment["required"] = required
 
-    if not str(document.get("description", "")).startswith(DELTA):
+    # Set, not add: a composed v29 may already carry this delta. Test the whole description, not
+    # its prefix: ``derive_rpc_v29.py`` folds the siblings in alphabetical order and each prepends
+    # its own delta, so by the time this one is re-applied a later sibling (UP-18) sits ahead of it
+    # and a ``startswith`` test would duplicate this prose every re-derivation.
+    if DELTA not in str(document.get("description", "")):
         document["description"] = f"{DELTA} {document['description']}"
 
     # The four places the wire version is echoed. The sibling already moved them to 29; this script
