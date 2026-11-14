@@ -1432,8 +1432,8 @@
         "units": 2,
         "usage": {
           "budget": {
-            "max_calls": 20,
-            "max_cost_usd": 0.8,
+            "max_calls": 36,
+            "max_cost_usd": 1.44,
             "source": "declared"
           },
           "by_purpose": {
