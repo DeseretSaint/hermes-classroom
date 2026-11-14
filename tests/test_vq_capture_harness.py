@@ -68,11 +68,15 @@ def png_bytes(width: int, height: int, salt: int = 0) -> bytes:
 
 def image(selector: str, kind: str, natural: tuple[int, int], rendered: tuple[int, int],
           *, data_uri: bool = False, bundled: dict | None = None, complete: bool = True,
-          src: str | None = None) -> dict:
+          src: str | None = None, scene_artifact: str | None = None) -> dict:
+    markers = [f"data-cb3-{kind}"]
+    if scene_artifact:
+        markers.append(f"data-cb3-scene-artifact={scene_artifact}")
     return {
         "selector": selector,
         "kind": kind,
-        "markers": [f"data-cb3-{kind}"],
+        "markers": markers,
+        "scene_artifact": scene_artifact,
         "current_src": src if src is not None else (
             "data:image/webp;base64,AAAA" if data_uri else f"http://127.0.0.1/media/{selector.strip('/')}.webp"
         ),
@@ -781,7 +785,7 @@ class TestMatrix(HarnessCase):
         self.assertEqual(summary["passed"], 1)
         self.assertEqual(summary["failed"], 1)
         self.assertEqual(summary["not_captured"], len(vq.DESTINATIONS) * len(vq.WIDTHS) - 2)
-        self.assertEqual(summary["matrix_cells"], 24)
+        self.assertEqual(summary["matrix_cells"], len(vq.DESTINATIONS) * len(vq.WIDTHS))
         self.assertFalse(summary["ok"])
 
     def test_the_packet_wording_separates_failed_from_never_captured(self):
@@ -791,7 +795,9 @@ class TestMatrix(HarnessCase):
         (self.dir / f"{broken['cell']['name']}.json").write_text(json.dumps(broken))
         manifest = vq.build_manifest(self.dir)
         text = vq.render_markdown(manifest, self.dir)
-        self.assertIn("1 passed / 1 failed / 22 never captured", text)
+        self.assertIn(
+            f"1 passed / 1 failed / {len(vq.DESTINATIONS) * len(vq.WIDTHS) - 2} never captured", text
+        )
         self.assertIn("## Never captured", text)
         self.assertNotIn("matrix cells not captured", text)
         self.assertIn("- classroom at 1344px", text)
@@ -818,7 +824,8 @@ class TestMatrix(HarnessCase):
 
     def test_manifest_requires_every_destination_and_width(self):
         self.assertEqual(set(vq.DESTINATIONS), {
-            "home", "discover", "course-home", "classroom", "world-studio", "design-system",
+            "home", "discover", "course-home", "course-desk", "classroom", "world-studio",
+            "design-system",
         })
         self.assertEqual(set(vq.WIDTHS), {1344, 1049, 900, 460})
 
@@ -834,7 +841,195 @@ class TestMatrix(HarnessCase):
         self.assertIn("not required at 460px", fox["skipped"])
 
 
+class CourseSurfaceCase(HarnessCase):
+    """Course home and the course desk share a route destination; the record must name the surface."""
+
+    def course_home_record(self, images: list[dict], *, mode: str | None = "map",
+                           desk: str | None = None, probed_v3: bool = False) -> dict:
+        rec = record("course-home", images)
+        if mode is not None:
+            rec["route"]["course_home_v3"] = mode
+        rec["route"]["course_detail"] = "overview"
+        if desk:
+            rec["route"]["course_home"] = desk
+        if probed_v3:
+            rec["route"]["surfaces_probed"] = [
+                {"selector": "[data-cb-course-home-v3]", "present": True},
+                {"selector": "[data-cb-course-detail=\"overview\"]", "present": True},
+            ]
+        return rec
+
+    def plate(self, artifact: str | None = "course-map", *, kind: str = "scene_plate",
+              bundled: dict | None = None) -> dict:
+        return image("[data-cb-course-plate-art=\"\"] > img", kind, (2688, 1536), (952, 305),
+                     scene_artifact=artifact, bundled=bundled)
+
+    def fox(self) -> dict:
+        return image("[data-cb3-fox=\"point\"] > img", "fox_pose", (512, 512), (208, 208),
+                     data_uri=True,
+                     bundled={"key": "cb.asset.fox.point.512",
+                              "path": "assets/fox/fox-point-512.webp",
+                              "role": "mascot.pose.point@512"})
+
+
+class TestCourseSurfaceIdentity(CourseSurfaceCase):
+    """Finding 1: a frame of FieldDesk is not the course home."""
+
+    def test_a_desk_frame_refused_as_course_home(self):
+        # The committed VQ-006 shape: the desk mounted, no CourseHomeV3 anywhere.
+        rec = self.course_home_record([], mode=None, desk="crs_92e950b34ffe4970a1e6760a60bf8c8b")
+        verdict = self.judge(rec)
+        self.assert_fails_with(verdict, "this frame is FieldDesk, not the course-home surface")
+        self.assert_fails_with(verdict, "the course-home surface did not mount")
+
+    def test_course_home_with_the_v3_surface_passes_the_surface_rule(self):
+        verdict = self.judge(self.course_home_record([self.plate(), self.fox()]))
+        self.assertTrue(verdict["ok"], verdict["problems"])
+        self.assertIsNone(verdict["route"]["course_home"])
+        self.assertEqual(verdict["route"]["course_home_v3"], "map")
+
+    def test_course_home_still_mounting_the_desk_is_refused(self):
+        rec = self.course_home_record([self.plate(), self.fox()], desk="crs_desk")
+        verdict = self.judge(rec)
+        self.assert_fails_with(verdict, "this frame is FieldDesk")
+
+    def test_a_pre_v3_field_record_is_judged_on_its_probe(self):
+        # The committed UI-K5 packet predates `route.course_home_v3`; its probe list is the
+        # evidence that CourseHomeV3 mounted, so a committed packet is not refused for a key its
+        # camera never wrote.
+        rec = self.course_home_record([self.plate(), self.fox()], mode=None, probed_v3=True)
+        verdict = self.judge(rec)
+        self.assertFalse(any("did not mount" in problem for problem in verdict["problems"]),
+                         verdict["problems"])
+
+    def test_a_course_home_frame_refused_as_course_desk(self):
+        rec = record("course-desk", [])
+        rec["route"]["course_home_v3"] = "map"
+        rec["route"]["course_home"] = "crs_desk"
+        verdict = self.judge(rec)
+        self.assert_fails_with(
+            verdict, "this frame is the course home (CourseHomeV3), not the course-desk surface"
+        )
+
+    def test_the_desk_is_its_own_cell_with_no_display_role(self):
+        rec = record("course-desk", [])
+        rec["route"]["course_home"] = "crs_desk"
+        verdict = self.judge(rec)
+        self.assertTrue(verdict["ok"], verdict["problems"])
+        self.assertEqual(verdict["requirements"], [])
+
+
+class TestCourseMapIdentity(CourseSurfaceCase):
+    """Finding 2: `course_map` names one plate; the kind class cannot stand in for it."""
+
+    def course_map_requirement(self, verdict: dict) -> dict:
+        return next(row for row in verdict["requirements"] if row["role"] == "course_map")
+
+    def test_any_scene_plate_does_not_satisfy_the_course_map(self):
+        # UI-K5's own packet: the kit's `home-hero` is a scene plate, and it greened the role.
+        verdict = self.judge(self.course_home_record([self.plate("home-hero"), self.fox()]))
+        self.assert_fails_with(verdict, "required image missing: course_map 0/1")
+        self.assertIn("present: home-hero", " | ".join(verdict["problems"]))
+        row = self.course_map_requirement(verdict)
+        self.assertEqual(row["found"], 0)
+        self.assertFalse(row["ok"])
+        self.assertEqual(row["artifact_ids"], ["course-map"])
+
+    def test_a_lesson_room_plate_does_not_satisfy_the_course_map(self):
+        verdict = self.judge(self.course_home_record([self.plate(None), self.fox()]))
+        self.assert_fails_with(verdict, "required image missing: course_map 0/1")
+        self.assertEqual(self.course_map_requirement(verdict)["found"], 0)
+
+    def test_a_cover_plate_does_not_satisfy_the_course_map_by_kind(self):
+        verdict = self.judge(self.course_home_record([self.plate("course-map", kind="cover_plate"),
+                                                      self.fox()]))
+        self.assert_fails_with(verdict, "required image missing: course_map 0/1")
+
+    def test_the_course_map_artifact_satisfies_the_role(self):
+        verdict = self.judge(self.course_home_record([self.plate(), self.fox()]))
+        self.assertTrue(verdict["ok"], verdict["problems"])
+        row = self.course_map_requirement(verdict)
+        self.assertTrue(row["ok"])
+        self.assertEqual(row["found"], 1)
+        self.assertIn("course-map", row["matched"])
+
+    def test_the_kit_role_identifies_the_plate_without_a_marker(self):
+        plate = self.plate(None, bundled={"key": "cb.asset.kit.field_atlas.course-map",
+                                          "path": "assets/kit/field_atlas-course-map.webp",
+                                          "role": "kit.hero.course-map"})
+        verdict = self.judge(self.course_home_record([plate, self.fox()]))
+        self.assertTrue(verdict["ok"], verdict["problems"])
+        self.assertEqual(self.course_map_requirement(verdict)["found"], 1)
+
+    def test_marker_fallback_identifies_a_packet_captured_before_the_field(self):
+        plate = self.plate(None)
+        plate["markers"].append("data-cb3-scene-artifact=course-map")
+        plate.pop("scene_artifact")
+        verdict = self.judge(self.course_home_record([plate, self.fox()]))
+        self.assertTrue(verdict["ok"], verdict["problems"])
+
+
+class TestCommittedPackets(unittest.TestCase):
+    """Re-judge the committed packets' own records. No hand-edited cell JSON: these bytes are the
+    evidence UI-K5 and VQ-006 were reviewed on, and the tool must now read them honestly."""
+
+    def judge_packet_cell(self, relative: str) -> dict:
+        cell_dir = ROOT / Path(relative).parent
+        record = json.loads((ROOT / relative).read_text())
+        return vq.judge_cell(record, cell_dir, vq.press_plate_registry())
+
+    def test_ui_k5_packet_no_longer_greens_a_home_hero_as_the_course_map(self):
+        relative = "docs/visual-review/ui-k5/course-home--1344.json"
+        if not (ROOT / relative).is_file():
+            self.skipTest("committed UI-K5 packet is not in this checkout")
+        verdict = self.judge_packet_cell(relative)
+        course_map = next(row for row in verdict["requirements"] if row["role"] == "course_map")
+        self.assertEqual(course_map["found"], 0, "the home-hero plate is not the course map")
+        self.assertFalse(course_map["ok"])
+        self.assertIn("present: home-hero", " | ".join(verdict["problems"]))
+
+    def test_vq006_packet_course_home_cell_is_named_as_the_desk(self):
+        relative = "docs/visual-review/vq-006/course-home--1344.json"
+        if not (ROOT / relative).is_file():
+            self.skipTest("committed VQ-006 packet is not in this checkout")
+        verdict = self.judge_packet_cell(relative)
+        self.assertIn("this frame is FieldDesk, not the course-home surface",
+                      " | ".join(verdict["problems"]))
+
+
 class TestCameraStatic(unittest.TestCase):
+    def test_course_home_is_the_v3_surface_not_the_desk(self):
+        """Finding 1, camera side: the course-home destination must land on CourseHomeV3.
+
+        Static because reaching it needs the Electron rig; the judge half of the same contract is
+        executed in TestCourseSurfaceIdentity against the committed VQ-006 cell.
+        """
+        source = (SCRIPTS / "vq-capture.mjs").read_text()
+        match = re.search(r"const PROBES = \{(.*?)\n\}", source, re.S)
+        assert match is not None
+        probes = match.group(1)
+        self.assertIn("'course-home': ['[data-cb-course-home-v3]'", probes)
+        self.assertIn("'course-desk': ['[data-cb-course-home]'", probes)
+        # The course home opens through the desk's own control, then names both markers in the wait.
+        self.assertIn("async function openCourseHome", source)
+        self.assertIn("'[data-cb-trailhead-see-plan]'", source)
+        self.assertIn("[data-cb-course-detail=\\\"overview\\\"] [data-cb-course-home-v3]", source)
+        self.assertIn("openCourseHome(cdp, courseId)", source)
+        self.assertIn("openCourseDesk(cdp, courseId)", source)
+        # The desk keeps its own destination instead of being captured as the course home.
+        self.assertIn("if (destination === 'course-desk')", source)
+        self.assertNotIn("async function openCourse(cdp", source)
+
+    def test_camera_records_the_plate_identity(self):
+        source = (SCRIPTS / "vq-capture.mjs").read_text()
+        self.assertIn("scene_artifact: markerValue(marks, 'data-cb3-scene-artifact')", source)
+        self.assertIn("course_home_v3:", source)
+        self.assertIn("course_detail:", source)
+
+    def test_capture_script_captures_the_desk_as_its_own_cell(self):
+        script = (SCRIPTS / "vq-capture.sh").read_text()
+        self.assertIn("course-home course-desk", script)
+
     def test_camera_never_substitutes_a_proof_page(self):
         source = (SCRIPTS / "vq-capture.mjs").read_text()
         self.assertIn("proof_markers", source)

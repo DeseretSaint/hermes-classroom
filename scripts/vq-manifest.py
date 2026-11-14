@@ -30,8 +30,13 @@ Rules applied to every cell (from `docs/launch/VISUAL-QUALITY-PROGRAM.md` Gate 2
 1. **live product** — the page must be http(s), carry no proof markers and no proof fixture script.
    A proof HTML, a component-lab render harness or a design fixture is not product evidence.
 2. **surface** — the destination must exist on the installed build and the route must have rendered
-   it (no render-error marker, fonts loaded, v3 ready).
-3. **required images** — the destination's declared roles must be present in the required count.
+   it (no render-error marker, fonts loaded, v3 ready). Two surfaces that share a route destination
+   are told apart by the surface they declare: `course-home` must be CourseHomeV3 and `course-desk`
+   must be FieldDesk, so a frame of one is refused when the cell asked for the other.
+3. **required images** — the destination's declared roles must be present in the required count. A
+   role that names a specific plate (`course_map`) is matched by that plate's identity — the
+   authored `data-cb3-scene-artifact` id or the bundled kit role — not by the generic `kind` class,
+   because every scene plate reports the same kind.
 4. **asset quality** — every image that stands in for a kit or display asset must be complete,
    carry a sha256, have natural size at least 2x its rendered size, and not be a data URI unless it
    is a hashed bundled brand asset from `desktop/cb-assets.generated.js`. The same rules apply to
@@ -64,6 +69,7 @@ DESTINATIONS = (
     "home",
     "discover",
     "course-home",
+    "course-desk",
     "classroom",
     "world-studio",
     "design-system",
@@ -75,9 +81,22 @@ EXPECTED_DESTINATION = {
     "home": "home",
     "discover": "workshop",
     "course-home": "home",
+    "course-desk": "home",
     "classroom": "home",
     "world-studio": "home",
     "design-system": None,
+}
+
+#: Two product surfaces share the `home` route destination and must never be confused for one
+#: another. `course-home` is the course detail's `overview` view — `CourseHomeV3`, the R-MAP
+#: composition — and `course-desk` is GM-002's FieldDesk. The record names both surfaces
+#: (`route.course_home` = desk course id, `route.course_home_v3` = plan mode), so the judge can
+#: refuse a frame that photographed one while the cell asked for the other.
+EXPECTED_SURFACE = {
+    "course-home": {"mounted": "course_home_v3", "forbidden": "course_home",
+                    "forbidden_name": "FieldDesk"},
+    "course-desk": {"mounted": "course_home", "forbidden": "course_home_v3",
+                    "forbidden_name": "the course home (CourseHomeV3)"},
 }
 
 #: The display-asset roles each surface needs, from VISUAL-QUALITY-PROGRAM §2. `kinds` is the set of
@@ -100,10 +119,22 @@ REQUIREMENTS = {
          "note": "fox read pose (hidden below 620 px by design)"},
     ),
     "course-home": (
-        {"role": "course_map", "min": 1, "kinds": ("scene_plate", "cover_plate"), "note": "course-map plate"},
+        # A role that names one plate is matched by that plate's identity, not by the generic
+        # `kind` class. `scene_plate` is what a lesson room, a pack cover and the kit's home hero
+        # all report, so accepting any of them greened a false course map the moment someone
+        # painted a hero. The identity is the authored `data-cb3-scene-artifact` id or the
+        # bundled kit role.
+        {"role": "course_map", "min": 1, "kinds": ("scene_plate",),
+         "artifact_ids": ("course-map",),
+         "asset_roles": ("kit.hero.course-map",),
+         "note": "the course-map plate, identified by its artifact id (not any scene plate)"},
         {"role": "fox_pose", "min": 1, "kinds": ("fox_pose",), "min_width": 620,
          "note": "fox point pose (hidden below 620 px by design)"},
     ),
+    # FieldDesk (GM-002) is the selected-course trailhead: text, the Continue plate and the path.
+    # It carries no display plate by design, so it holds no display role; its own quality card is
+    # about hierarchy and copy, not illustration. Capturing it under `course-home` was the bug.
+    "course-desk": (),
     "world-studio": (
         {"role": "world_plate", "min": 1, "kinds": ("cover_plate", "scene_plate"), "note": "approved world plate"},
     ),
@@ -150,6 +181,110 @@ def evidence_kinds() -> frozenset[str]:
         for requirement in requirements
         for kind in requirement["kinds"]
     )
+
+
+def route_probe_present(route: dict, selector: str) -> bool:
+    """Whether the camera recorded `selector` as present. Used only where a field may be absent."""
+    for probe in route.get("surfaces_probed") or []:
+        if probe.get("selector") == selector:
+            return bool(probe.get("present"))
+    return False
+
+
+def surface_identity_problems(destination: str | None, route: dict) -> list[str]:
+    """Refuse a frame taken of the wrong one of two surfaces that share a route destination.
+
+    `course-home` and `course-desk` both render on the `home` route destination, so the route
+    attribute cannot tell them apart. The record carries the surface itself: `route.course_home`
+    is FieldDesk's course id, `route.course_home_v3` is the course detail overview's plan mode.
+    A record that names the surface the cell did not ask for is refused, and so is one that names
+    neither.
+
+    Older packets predate `route.course_home_v3`; for those the camera's probe list
+    (`surfaces_probed`) is the evidence that the surface mounted, so a committed packet is judged
+    on what it recorded instead of being refused for a key its camera never wrote.
+    """
+    expected = EXPECTED_SURFACE.get(str(destination))
+    if not expected:
+        return []
+    mounted = route.get(expected["mounted"])
+    if expected["mounted"] == "course_home_v3" and not mounted:
+        mounted = route_probe_present(route, "[data-cb-course-home-v3]")
+    problems: list[str] = []
+    if not mounted:
+        label = "CourseHomeV3 ([data-cb-course-home-v3])" if expected["mounted"] == "course_home_v3" \
+            else "FieldDesk ([data-cb-course-home])"
+        problems.append(f"the {destination} surface did not mount: {label} is absent from the frame")
+    if route.get(expected["forbidden"]):
+        problems.append(
+            f"this frame is {expected['forbidden_name']}, not the {destination} surface"
+        )
+    return problems
+
+
+def row_artifact_id(image: dict) -> str | None:
+    """The authored scene artifact id a row declares, e.g. `course-map` or `home-hero`.
+
+    Read from the camera's own `scene_artifact` field, falling back to the marker list so a packet
+    captured before that field existed is still judged by the identity it recorded.
+    """
+    value = image.get("scene_artifact")
+    if value:
+        return str(value)
+    for marker in image.get("markers") or []:
+        text = str(marker)
+        if text.startswith("data-cb3-scene-artifact="):
+            return text.split("=", 1)[1].strip('"')
+    return None
+
+
+def row_asset_roles(image: dict) -> set[str]:
+    """The bundled-asset identities a row carries: its kit role and its registry key."""
+    bundled = image.get("bundled_asset") or {}
+    return {str(value) for value in (bundled.get("role"), bundled.get("key")) if value}
+
+
+def row_identities(row: dict) -> set[str]:
+    """Every identity an inventory row can be recognised by."""
+    identities = set(row.get("asset_roles") or [])
+    if row.get("scene_artifact"):
+        identities.add(str(row["scene_artifact"]))
+    return identities
+
+
+def requirement_matches(requirement: dict, row: dict) -> bool:
+    """Whether one inventory row satisfies a role.
+
+    A role with no identity constraint is satisfied by its `kind` class. A role that names a
+    specific plate (`course_map`) must match the plate's identity, because the kind class alone is
+    shared by every scene plate on the surface.
+    """
+    if row["kind"] not in requirement["kinds"]:
+        return False
+    artifact_ids = tuple(requirement.get("artifact_ids") or ())
+    asset_roles = tuple(requirement.get("asset_roles") or ())
+    if not artifact_ids and not asset_roles:
+        return True
+    if artifact_ids and row.get("scene_artifact") in artifact_ids:
+        return True
+    if asset_roles and set(row.get("asset_roles") or ()) & set(asset_roles):
+        return True
+    return False
+
+
+def row_identity_label(row: dict) -> str:
+    """The plate's own name for a row that did not match a required identity.
+
+    The authored scene artifact id wins: it is what the surface declares and what the requirement
+    names. Falling back to the kit role keeps a row identifiable when a build predates the marker.
+    """
+    if row.get("scene_artifact"):
+        return str(row["scene_artifact"])
+    identities = sorted(row.get("asset_roles") or [])
+    if identities:
+        return identities[0]
+    digest = row.get("sha256") or "no sha256"
+    return str(digest)[:12]
 
 
 def _png_dimensions(data: bytes) -> tuple[int, int] | None:
@@ -539,6 +674,9 @@ def judge_cell(record: dict, cell_dir: Path, press_plates: dict[str, str] | None
     expected = EXPECTED_DESTINATION.get(str(destination))
     if expected and route.get("destination") and route.get("destination") != expected:
         problems.append(f"rendered destination {route.get('destination')!r}, expected {expected!r}")
+    # The route destination does not identify every surface: `course-home` and `course-desk` are
+    # both the `home` destination. The frame must name the surface the cell asked for.
+    problems.extend(surface_identity_problems(destination, route))
 
     # 2. surface
     if surface.get("missing"):
@@ -579,6 +717,9 @@ def judge_cell(record: dict, cell_dir: Path, press_plates: dict[str, str] | None
             "rendered": image.get("rendered"),
             "sha256": image.get("sha256"),
             "kind": verdict["kind"],
+            # The authored plate identity, so a role that names one plate can be judged on it.
+            "scene_artifact": row_artifact_id(image),
+            "asset_roles": sorted(row_asset_roles(image)),
             "placeholder": verdict["placeholder"],
             "press_plate": verdict["press_plate"],
             "press_plate_source": verdict["press_plate_source"],
@@ -633,7 +774,7 @@ def judge_cell(record: dict, cell_dir: Path, press_plates: dict[str, str] | None
                 "note": requirement["note"],
             })
             continue
-        satisfying = [row for row in usable if row["kind"] in requirement["kinds"]]
+        satisfying = [row for row in usable if requirement_matches(requirement, row)]
         # One asset may not satisfy several copies of the same role. The camera writes one file per
         # distinct asset, so rows that share evidence bytes are the same picture counted twice: four
         # rows pointing at one real cover is a missing display set, not a complete one.
@@ -649,17 +790,39 @@ def judge_cell(record: dict, cell_dir: Path, press_plates: dict[str, str] | None
                 f"{evidence_shas.count(sha)} times ({sha[:12]}); each row of a role needs its own asset"
             )
         distinct = len(satisfying) - sum(evidence_shas.count(sha) - 1 for sha in reused)
-        requirement_rows.append({
+        identity_bound = bool(requirement.get("artifact_ids") or requirement.get("asset_roles"))
+        requirement_row = {
             "role": requirement["role"],
             "required": requirement["min"],
             "found": distinct,
             "ok": distinct >= requirement["min"],
             "note": requirement["note"],
-        })
+        }
+        if identity_bound:
+            requirement_row["artifact_ids"] = list(requirement.get("artifact_ids") or ())
+            requirement_row["asset_roles"] = list(requirement.get("asset_roles") or ())
+            requirement_row["matched"] = sorted({
+                label
+                for row in satisfying
+                for label in row_identities(row)
+            })
+        requirement_rows.append(requirement_row)
         if distinct < requirement["min"]:
-            problems.append(
-                f"required image missing: {requirement['role']} {distinct}/{requirement['min']}"
-            )
+            missing = f"required image missing: {requirement['role']} {distinct}/{requirement['min']}"
+            if identity_bound:
+                # Name what was on the surface instead. A scene plate that is not the course map is
+                # a real, visible near-miss, and the record should say which plate it found.
+                near_misses = sorted({
+                    row_identity_label(row)
+                    for row in inventory
+                    if row["kind"] in requirement["kinds"]
+                    and not requirement_matches(requirement, row)
+                })
+                wanted = ", ".join(requirement.get("artifact_ids") or ()) \
+                    or ", ".join(requirement.get("asset_roles") or ())
+                missing += f" (no row identifies as {wanted}"
+                missing += f"; present: {'; '.join(near_misses)})" if near_misses else ")"
+            problems.append(missing)
 
     press_rows = [row for row in inventory + background_inventory if row["press_plate"]]
     if press_rows and REQUIREMENTS.get(str(destination)):
@@ -713,6 +876,9 @@ def judge_cell(record: dict, cell_dir: Path, press_plates: dict[str, str] | None
         "route": {
             "marker": route.get("marker"),
             "destination": route.get("destination"),
+            "course_home": route.get("course_home"),
+            "course_home_v3": route.get("course_home_v3"),
+            "course_detail": route.get("course_detail"),
             "width": route.get("width"),
             "height": route.get("height"),
             "v3_ready": route.get("v3_ready"),
@@ -973,18 +1139,19 @@ def render_markdown(manifest: dict, output_dir: Path) -> str:
         lines.append(f"**{cell['cell']}** — {len(cell['images'])} image(s), "
                      f"{len(cell['backgrounds'])} background layer(s)")
         lines.append("")
-        lines.append("| selector | kind | natural | rendered | ratio | sha256 | evidence |")
-        lines.append("|---|---|---|---|---|---|---|")
+        lines.append("| selector | kind | plate identity | natural | rendered | ratio | sha256 | evidence |")
+        lines.append("|---|---|---|---|---|---|---|---|")
         for image in cell["images"]:
             natural = image.get("natural") or {}
             rendered = image.get("rendered") or {}
             digest = image.get("sha256") or "none"
+            identity = image.get("scene_artifact") or ", ".join(image.get("asset_roles") or []) or "none"
             if image.get("evidence_required"):
                 backing = "verified" if image.get("evidence_ok") else "**missing**"
             else:
                 backing = "not required"
             lines.append(
-                f"| `{image.get('selector')}` | {image.get('kind')} | "
+                f"| `{image.get('selector')}` | {image.get('kind')} | {identity} | "
                 f"{natural.get('width')}x{natural.get('height')} | "
                 f"{rendered.get('width')}x{rendered.get('height')} | "
                 f"{image.get('scale_ratio')} | `{digest}` | {backing} |"

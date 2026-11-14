@@ -63,7 +63,7 @@ The parent edge means "it writes my file first", never "it is the next screen".
 
 ### One capture per wave
 
-`scripts/vq-capture.sh` walks six destinations × four widths in one rig. It is the wave gate: one
+`scripts/vq-capture.sh` walks seven destinations × four widths in one rig. It is the wave gate: one
 rebuild, one relaunch, one matrix, one contact sheet for every screen that landed in the wave, then
 critics score crops in parallel. A per-card capture run is spend with no new evidence; a card whose
 only claim is a branch capture has not landed.
