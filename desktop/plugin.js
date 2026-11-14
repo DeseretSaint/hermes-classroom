@@ -44813,7 +44813,11 @@ function WorldPlate({ artifactId, caption, height, kind }) {
   })
 }
 
-/** The durable mode badge. It is a word, never a colour-only signal, and it is not a control. */
+/**
+ * The durable mode badge. It is a word, never a colour-only signal, and it is not a control.
+ * The hue stays on the border and the dot; the word is ink so the 12 px caption clears AA on
+ * card stock in both appearances (gold-on-stock measured 3.55:1 light).
+ */
 function ModeBadge({ mode, pending }) {
   const game = mode === 'game'
   return jsx('span', {
@@ -44828,7 +44832,7 @@ function ModeBadge({ mode, pending }) {
       fontFamily: 'var(--cb3-font-ui)',
       fontSize: cb3Type('caption'),
       fontWeight: 600,
-      color: game ? 'var(--cb3-gold)' : 'var(--cb3-terracotta)',
+      color: 'var(--cb3-ink)',
       background: 'var(--cb3-card-stock)'
     },
     children: [
