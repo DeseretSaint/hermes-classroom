@@ -287,7 +287,7 @@ const approvedBook = {
     sections: []
   }
 }
-const render = async (book) => {
+const render = async (book, extra = {}) => {
   await act(async () => {
     root.render(
       React.createElement(mod.StudioPlanView, {
@@ -304,7 +304,7 @@ const render = async (book) => {
         brief: null,
         planJobId: null,
         planJobHint: null,
-        onChangeGoal: () => {},
+        onChangeGoal: (seed) => { goalSeeds.push(seed) },
         onJobSettled: () => {},
         onChanged: () => {},
         supported: () => true,
@@ -313,7 +313,8 @@ const render = async (book) => {
         syllabusGate: null,
         review: null,
         onOpenReview: () => {},
-        onDirtyChange: () => {}
+        onDirtyChange: () => {},
+        ...extra
       })
     )
   })
@@ -321,8 +322,10 @@ const render = async (book) => {
 }
 
 const out = { before: {}, calls, after: {}, approved: {} }
+const goalSeeds = []
 await render(draftBook)
 out.before.adjust = Boolean(byText('Adjust this plan'))
+out.before.changeGoal = Boolean(container.querySelector('[data-cb-plan-change-goal]'))
 out.before.primaryCount = primaries().length
 out.before.primaryLabels = primaries().map(text)
 
@@ -344,9 +347,42 @@ out.after.adjust = Boolean(byText('Adjust this plan'))
 out.after.primaryCount = primaries().length
 out.after.primaryLabels = primaries().map(text)
 
-await render(approvedBook)
+// The plan job that wrote the approved plan: the brief is the record of every choice that ran, so
+// it is where "Change the goal" reads the goal, the outcome and the rest of the create decisions.
+const approvedJob = {
+  job_id: 'job_0123456789abcdef',
+  kind: 'plan',
+  state: 'completed',
+  brief: {
+    stage: 'plan',
+    course_id: 'crs_0123456789abcdef',
+    enrollment_id: 'enr_0123456789abcdef',
+    goal: 'Learn Spanish\n\nWhen this course is done I want to be able to: hold a conversation',
+    title: 'Order at a counter',
+    recipe: 'casual',
+    dials: { depth: 'balanced' },
+    locale: 'es',
+    level: 'none',
+    subject_domain: 'language',
+    scope: 'short'
+  },
+  checkpoint: { validation_verdict: 'pass' },
+  created_at: 1794466000,
+  updated_at: 1794466010
+}
+await render(approvedBook, { planJob: approvedJob })
 out.approved.askForChange = Boolean(byText('Ask for a change'))
 out.approved.adjust = Boolean(byText('Adjust this plan'))
+out.approved.changeGoal = Boolean(container.querySelector('[data-cb-plan-change-goal]'))
+out.approved.changeGoalNote = text(container).includes(
+  'This starts a new course; this one and its evidence stay.'
+)
+// Clicking it hands the brief back to the create form: no plan.replan, no course mutation.
+const callsBeforeGoal = calls.length
+await click(container.querySelector('[data-cb-plan-change-goal]'))
+out.approved.goalCalls = calls.length - callsBeforeGoal
+out.approved.goalSeeds = goalSeeds
+out.approved.replanCalls = calls.filter((call) => call.method === 'plan.replan').length
 
 // The clock really ticks: mount the wait panel with a running job and read the clock twice.
 await act(async () => {
@@ -773,6 +809,33 @@ class LearnerPlanAdjust(unittest.TestCase):
         approved = self.out["approved"]
         self.assertTrue(approved["askForChange"], "an approved learner plan must offer Ask for a change")
         self.assertFalse(approved["adjust"], "an approved plan is changed by a new version, not edited in place")
+
+    def test_an_approved_plan_can_hand_its_goal_back_to_create(self) -> None:
+        # The goal is not an outline edit: "Ask for a change" keeps every objective and supersedes
+        # this course's plan, so it can never say the goal itself was wrong. This control hands the
+        # brief that ran back to the create form, where a new goal is a new course and this one's
+        # committed evidence stays bound to the plan it was recorded against.
+        approved = self.out["approved"]
+        self.assertTrue(approved["changeGoal"], "an approved learner plan must offer Change the goal")
+        self.assertTrue(approved["changeGoalNote"], "the control must say what it does before the press")
+        self.assertFalse(self.out["before"]["changeGoal"], "a draft plan is changed in place, not by a new course")
+
+        seeds = approved["goalSeeds"]
+        self.assertEqual(len(seeds), 1, seeds)
+        seed = seeds[0]
+        # The composed goal is split back into the learner's own goal and their outcome.
+        self.assertEqual(seed["goal"], "Learn Spanish")
+        self.assertEqual(seed["outcome"], "hold a conversation")
+        self.assertEqual(seed["title"], "Order at a counter")
+        self.assertEqual(seed["recipe"], "casual")
+        self.assertEqual(seed["dials"], {"depth": "balanced"})
+        self.assertEqual(seed["locale"], "es")
+        self.assertEqual(seed["level"], "none")
+        self.assertEqual(seed["subjectDomain"], "language")
+        self.assertEqual(seed["scope"], "short")
+        # Handing the goal back is not a plan version of this course: no replan, no write at all.
+        self.assertEqual(approved["goalCalls"], 0, "the control calls no RPC of its own")
+        self.assertEqual(approved["replanCalls"], 0, "an approved plan's goal is never replanned in place")
 
     def test_the_elapsed_clock_ticks_while_the_job_runs(self) -> None:
         tick = self.out["tick"]
