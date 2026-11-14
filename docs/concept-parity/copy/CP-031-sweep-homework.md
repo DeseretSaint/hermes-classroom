@@ -1,8 +1,8 @@
 # CP-031c — Homework (classroom and notebook) shipped-string sweep
 
-Card: **CP-031c** (`t_0458a135`), re-swept by **CP-031c-R** (`t_54a44039`) at `e6fe4f71`. Docs only; no product string changed.
+Card: **CP-031c** (`t_0458a135`), re-swept by **CP-031c-R** (`t_54a44039`) at `a11bc0e4`. Docs only; no product string changed.
 
-**Revision swept:** `origin/master` at **`e6fe4f7119ad97d85eee2406890e0ea1a72fb2af`** (90-course.js, 5088 lines, whole file).
+**Revision swept:** `origin/master` at **`a11bc0e4bdf55683ea3c1660f8031d0f5a5f3ef6`** (90-course.js, 5496 lines, whole file).
 **Rows:** 331 inventory rows; 331 distinct literals. Every row cites the line(s)
 that carry its words in this revision.
 
@@ -38,20 +38,20 @@ The state column is classified from the literal's own wording (`error`, `empty`,
 
 | string | source file:line | state | proposed copy id (GAP-nn) |
 |---|---|---|---|
-| This course | `90-course.js:107`; `90-course.js:724`; `90-course.js:4534` | default | `GAP-23` |
-| No objective recorded yet | `90-course.js:156`; `90-course.js:4182` | empty | `GAP-23` |
+| This course | `90-course.js:107`; `90-course.js:724`; `90-course.js:4942` | default | `GAP-23` |
+| No objective recorded yet | `90-course.js:156`; `90-course.js:4589` | empty | `GAP-23` |
 | Next: {…} | `90-course.js:171` | default | `GAP-23` |
 | The backend did not return a next step for this course. | `90-course.js:171` | error | `GAP-23` |
 | Read this section | `90-course.js:191` | default | `GAP-23` |
 | Course sections | `90-course.js:211` | default | `GAP-23` |
 | Recent evidence | `90-course.js:222` | default | `GAP-23` |
-| {…} {…} due for review. | `90-course.js:223`; `90-course.js:739`; `90-course.js:4703` | default | `GAP-23` |
+| {…} {…} due for review. | `90-course.js:223`; `90-course.js:739`; `90-course.js:5111` | default | `GAP-23` |
 | No attempt has been recorded on this course yet. | `90-course.js:255` | empty | `GAP-23` |
 | Start with the oldest: {…} | `90-course.js:263` | default | `GAP-23` |
 | Course details | `90-course.js:277` | default | `GAP-23` |
 | How you will use it | `90-course.js:283` | default | `GAP-23` |
 | Not recorded | `90-course.js:284` | default | `GAP-23` |
-| {…} independent | `90-course.js:292`; `90-course.js:5057` | default | `GAP-23` |
+| {…} independent | `90-course.js:292`; `90-course.js:5465` | default | `GAP-23` |
 | Where it came from | `90-course.js:296` | default | `GAP-23` |
 | authored on this profile | `90-course.js:298` | default | `GAP-23` |
 | Exporting the pack is a Library action; it never includes your answers or notes. | `90-course.js:301` | default | `GAP-23` |
@@ -101,7 +101,7 @@ The state column is classified from the literal's own wording (`error`, `empty`,
 
 ### NotebookView (`90-course.js` from line 817)
 
-`NotebookView` is `90-course.js:817-1215` — the **whole** component. The card's
+`NotebookView` is `90-course.js:817-1215`` — the **whole** component. The card's
 `880-1000` slice stopped before its own action row, edit form and only dialog; every one of
 them is rowed here because they render directly under the saved-moment list. §1b is this
 section.
@@ -189,7 +189,7 @@ section.
 | The plan is not approved, or this build cannot read the objective list. | `90-course.js:1536` | error | `GAP-23` |
 | next review {…} | `90-course.js:1558` | default | `GAP-23` |
 | interval {…}d · step {…} | `90-course.js:1559` | default | `GAP-23` |
-| Open section | `90-course.js:1571`; `90-course.js:3858` | default | `GAP-23` |
+| Open section | `90-course.js:1571`; `90-course.js:4265` | default | `GAP-23` |
 | Challenge out | `90-course.js:1573` | default | `GAP-23` |
 | This build cannot edit evidence criteria, attempt counts or settings yet. Nothing is filled in to hide that. | `90-course.js:1585` | error | `GAP-23` |
 
@@ -292,7 +292,7 @@ section.
 | Reading this course’s sources | `90-course.js:2013` | default | `GAP-23` |
 | The sources could not be read | `90-course.js:2017` | error | `GAP-23` |
 | {…}{…} Nothing is shown from a cached list. | `90-course.js:2018` | default | `GAP-23` |
-| Try again | `90-course.js:2019`; `90-course.js:2279`; `90-course.js:2558`; `90-course.js:4220`; `90-course.js:4919` | default | `GAP-23` |
+| Try again | `90-course.js:2019`; `90-course.js:2279`; `90-course.js:2558`; `90-course.js:4627`; `90-course.js:5327` | default | `GAP-23` |
 | No source has been read yet | `90-course.js:2027` | empty | `GAP-23` |
 | A source list is read with this course’s lesson page. Until that read runs, nothing is presented as cited. | `90-course.js:2029` | default | `GAP-23` |
 | No source is recorded | `90-course.js:2037` | empty | `GAP-23` |
@@ -395,7 +395,7 @@ section.
 | string | source file:line | state | proposed copy id (GAP-nn) |
 |---|---|---|---|
 | Back to sections | `90-course.js:2503` | default | `GAP-23` |
-| Why this is next | `90-course.js:2504`; `90-course.js:2510`; `90-course.js:4570` | default | `GAP-23` |
+| Why this is next | `90-course.js:2504`; `90-course.js:2510`; `90-course.js:4978` | default | `GAP-23` |
 | Start the lesson | `90-course.js:2508` | default | `GAP-23` |
 | Open the textbook | `90-course.js:2509` | default | `GAP-23` |
 
@@ -427,117 +427,117 @@ section.
 |---|---|---|---|
 | {…} of {…} sections have evidence | `90-course.js:2566` | default | `GAP-23` |
 
-### REVIEW_SCHEDULE_COPY (`90-course.js` from line 3638)
+### REVIEW_SCHEDULE_COPY (`90-course.js` from line 4045)
 
 | string | source file:line | state | proposed copy id (GAP-nn) |
 |---|---|---|---|
-| Start the interval again from today. | `90-course.js:3639` | default | `GAP-23` |
-| Wait one interval longer before this returns. | `90-course.js:3640` | default | `GAP-23` |
-| Take it out of the review queue. The evidence stays. | `90-course.js:3641` | default | `GAP-23` |
-| Put this section back in the review queue. | `90-course.js:3642` | default | `GAP-23` |
+| Start the interval again from today. | `90-course.js:4046` | default | `GAP-23` |
+| Wait one interval longer before this returns. | `90-course.js:4047` | default | `GAP-23` |
+| Take it out of the review queue. The evidence stays. | `90-course.js:4048` | default | `GAP-23` |
+| Put this section back in the review queue. | `90-course.js:4049` | default | `GAP-23` |
 
-### reviewDueLabel (`90-course.js` from line 3651)
-
-| string | source file:line | state | proposed copy id (GAP-nn) |
-|---|---|---|---|
-| no due date recorded | `90-course.js:3652` | empty | `GAP-23` |
-
-### reviewBacklogNotice (`90-course.js` from line 3714)
+### reviewDueLabel (`90-course.js` from line 4058)
 
 | string | source file:line | state | proposed copy id (GAP-nn) |
 |---|---|---|---|
-| Showing {…} of {…} due sections. One more returns as you clear these. | `90-course.js:3717` | default | `GAP-23` |
-| Showing {…} of {…} due sections. The other {…} return as you clear these. | `90-course.js:3719` | default | `GAP-23` |
+| no due date recorded | `90-course.js:4059` | empty | `GAP-23` |
 
-### ReviewDuePanel (`90-course.js` from line 3726)
-
-| string | source file:line | state | proposed copy id (GAP-nn) |
-|---|---|---|---|
-| The backend did not answer the review action, so nothing here changed. | `90-course.js:3768` | error | `GAP-23` |
-| Untitled section | `90-course.js:3820` | default | `GAP-23` |
-| section {…}: {…} | `90-course.js:3821` | default | `GAP-23` |
-| {…} · dropped {…} | `90-course.js:3823` | default | `GAP-23` |
-| {…} · due {…} | `90-course.js:3824` | default | `GAP-23` |
-| Open {…} | `90-course.js:3855`; `90-course.js:3856` | default | `GAP-23` |
-| You took this out of the queue. Resume puts it back. | `90-course.js:3869` | default | `GAP-23` |
-| Decide when this comes back. | `90-course.js:3870` | default | `GAP-23` |
-| {…} review of {…} | `90-course.js:3881` | default | `GAP-23` |
-| {…} recorded. | `90-course.js:3899` | default | `GAP-23` |
-| State now {…}; | `90-course.js:3900` | default | `GAP-23` |
-| next due {…}; | `90-course.js:3901` | default | `GAP-23` |
-| recorded {…}. | `90-course.js:3902` | default | `GAP-23` |
-| {…} The queue is unchanged; read it again before retrying. | `90-course.js:3919` | default | `GAP-23` |
-| Read the queue again | `90-course.js:3926` | default | `GAP-23` |
-
-### CourseDetail (`90-course.js` from line 3941)
+### reviewBacklogNotice (`90-course.js` from line 4121)
 
 | string | source file:line | state | proposed copy id (GAP-nn) |
 |---|---|---|---|
-| This course has no current objective yet; approve the plan first. | `90-course.js:4081` | default | `GAP-23` |
-| A new lesson chat is open. Send the first message to connect it to this lesson. | `90-course.js:4103` | default | `GAP-23` |
-| Open the lesson chat | `90-course.js:4107` | default | `GAP-23` |
-| Start anyway | `90-course.js:4120`; `90-course.js:4996` | default | `GAP-23` |
-| The saved plan could not be read yet, so this page cannot be written from here. Open Plan to start it. | `90-course.js:4152` | error | `GAP-23` |
-| This page could not be written again. The plan and every page already written are unchanged. | `90-course.js:4169` | error | `GAP-23` |
-| Writing this page again. Pages already written for this plan are kept. | `90-course.js:4174` | default | `GAP-23` |
-| The notebook could not be read | `90-course.js:4218` | error | `GAP-23` |
-| This build cannot name the authored section for this objective, so it cannot repair it from here. | `90-course.js:4292` | error | `GAP-23` |
-| The repair could not be queued. | `90-course.js:4308` | error | `GAP-23` |
-| Queued one new page for this section. Other sections, their media and every attempt are untouched. | `90-course.js:4313` | default | `GAP-23` |
-| In this course | `90-course.js:4369` | default | `GAP-23` |
-| {…} of {…} | `90-course.js:4373` | default | `GAP-23` |
-| With independent evidence | `90-course.js:4373` | default | `GAP-23` |
-| Due for review | `90-course.js:4375` | default | `GAP-23` |
-| All courses | `90-course.js:4503` | default | `GAP-23` |
-| Course surfaces | `90-course.js:4638` | default | `GAP-23` |
-| More · {…} | `90-course.js:4650` | default | `GAP-23` |
-| You are reading {…} from More. Overview, Learn, Notebook and Evidence stay one click away above. | `90-course.js:4680` | default | `GAP-23` |
-| Nothing is due for review right now. | `90-course.js:4704` | empty | `GAP-23` |
-| {…} {…} out of the queue. | `90-course.js:4706` | default | `GAP-23` |
-| See what is due | `90-course.js:4715` | default | `GAP-23` |
+| Showing {…} of {…} due sections. One more returns as you clear these. | `90-course.js:4124` | default | `GAP-23` |
+| Showing {…} of {…} due sections. The other {…} return as you clear these. | `90-course.js:4126` | default | `GAP-23` |
 
-### SnapshotLossNotice (`90-course.js` from line 4760)
+### ReviewDuePanel (`90-course.js` from line 4133)
 
 | string | source file:line | state | proposed copy id (GAP-nn) |
 |---|---|---|---|
-| {…} teaching {…} could not be saved to this lesson. The chat has them; this page does not. | `90-course.js:4774` | error | `GAP-23` |
-| Last recorded {…}. | `90-course.js:4779` | default | `GAP-23` |
-| Coursebook could not check whether any teaching turn was lost. | `90-course.js:4789` | error | `GAP-23` |
+| The backend did not answer the review action, so nothing here changed. | `90-course.js:4175` | error | `GAP-23` |
+| Untitled section | `90-course.js:4227` | default | `GAP-23` |
+| section {…}: {…} | `90-course.js:4228` | default | `GAP-23` |
+| {…} · dropped {…} | `90-course.js:4230` | default | `GAP-23` |
+| {…} · due {…} | `90-course.js:4231` | default | `GAP-23` |
+| Open {…} | `90-course.js:4262`; `90-course.js:4263` | default | `GAP-23` |
+| You took this out of the queue. Resume puts it back. | `90-course.js:4276` | default | `GAP-23` |
+| Decide when this comes back. | `90-course.js:4277` | default | `GAP-23` |
+| {…} review of {…} | `90-course.js:4288` | default | `GAP-23` |
+| {…} recorded. | `90-course.js:4306` | default | `GAP-23` |
+| State now {…}; | `90-course.js:4307` | default | `GAP-23` |
+| next due {…}; | `90-course.js:4308` | default | `GAP-23` |
+| recorded {…}. | `90-course.js:4309` | default | `GAP-23` |
+| {…} The queue is unchanged; read it again before retrying. | `90-course.js:4326` | default | `GAP-23` |
+| Read the queue again | `90-course.js:4333` | default | `GAP-23` |
 
-### LessonPaneBody (`90-course.js` from line 4800)
+### CourseDetail (`90-course.js` from line 4348)
 
 | string | source file:line | state | proposed copy id (GAP-nn) |
 |---|---|---|---|
-| Focused the bound lesson chat. | `90-course.js:4865` | default | `GAP-23` |
-| A new lesson run is ready. Its chat connects when you send your first message. | `90-course.js:4893` | default | `GAP-23` |
-| This Desktop build cannot open a new chat; start one from the sidebar. | `90-course.js:4894` | error | `GAP-23` |
-| Abandoned from the Coursebook pane. | `90-course.js:4904` | default | `GAP-23` |
-| Binding abandoned. Start a new governed run when you are ready. | `90-course.js:4910` | default | `GAP-23` |
-| Cannot read this lesson | `90-course.js:4917` | error | `GAP-23` |
-| The course list could not be read. | `90-course.js:4918` | error | `GAP-23` |
-| Bound, but not listed | `90-course.js:4925` | default | `GAP-23` |
-| This chat is connected to a course the library did not return. Nothing is guessed: reopen Coursebook to check it. | `90-course.js:4927` | error | `GAP-23` |
-| Open Coursebook | `90-course.js:4928`; `90-course.js:4968` | default | `GAP-23` |
-| binding {…} | `90-course.js:4945` | default | `GAP-23` |
-| This chat is not part of a lesson yet. Open Coursebook and start a lesson; the first message in its new chat connects it. | `90-course.js:4961` | default | `GAP-23` |
-| Current check | `90-course.js:4976` | default | `GAP-23` |
-| The lesson page could not be read. | `90-course.js:4980` | error | `GAP-23` |
-| No check could be opened. | `90-course.js:5002` | empty | `GAP-23` |
-| Opening the current check | `90-course.js:5005` | default | `GAP-23` |
-| Open lesson chat | `90-course.js:5032` | default | `GAP-23` |
-| Continue lesson | `90-course.js:5040` | default | `GAP-23` |
-| Full course | `90-course.js:5042` | default | `GAP-23` |
-| {…} due for review | `90-course.js:5052` | default | `GAP-23` |
-| Nothing due | `90-course.js:5053` | empty | `GAP-23` |
-| Review is unavailable right now | `90-course.js:5054` | error | `GAP-23` |
-| {…} sources | `90-course.js:5059` | default | `GAP-23` |
-| This lesson has no durable chat to continue yet. | `90-course.js:5072` | default | `GAP-23` |
-| This lesson is not connected to its chat right now. Open it from the course page first. | `90-course.js:5073` | default | `GAP-23` |
-| Opening the lesson chat failed: {…} | `90-course.js:5078` | error | `GAP-23` |
-| Continue the lesson. | `90-course.js:5083` | default | `GAP-23` |
-| Asked the lesson chat to continue. | `90-course.js:5084` | default | `GAP-23` |
-| The lesson chat is not on screen, so nothing was sent. Open it and continue there. | `90-course.js:5085` | default | `GAP-23` |
-| This Desktop build cannot send a message; open the lesson chat and continue there. | `90-course.js:5087` | error | `GAP-23` |
+| This course has no current objective yet; approve the plan first. | `90-course.js:4488` | default | `GAP-23` |
+| A new lesson chat is open. Send the first message to connect it to this lesson. | `90-course.js:4510` | default | `GAP-23` |
+| Open the lesson chat | `90-course.js:4514` | default | `GAP-23` |
+| Start anyway | `90-course.js:4527`; `90-course.js:5404` | default | `GAP-23` |
+| The saved plan could not be read yet, so this page cannot be written from here. Open Plan to start it. | `90-course.js:4559` | error | `GAP-23` |
+| This page could not be written again. The plan and every page already written are unchanged. | `90-course.js:4576` | error | `GAP-23` |
+| Writing this page again. Pages already written for this plan are kept. | `90-course.js:4581` | default | `GAP-23` |
+| The notebook could not be read | `90-course.js:4625` | error | `GAP-23` |
+| This build cannot name the authored section for this objective, so it cannot repair it from here. | `90-course.js:4699` | error | `GAP-23` |
+| The repair could not be queued. | `90-course.js:4715` | error | `GAP-23` |
+| Queued one new page for this section. Other sections, their media and every attempt are untouched. | `90-course.js:4720` | default | `GAP-23` |
+| In this course | `90-course.js:4776` | default | `GAP-23` |
+| {…} of {…} | `90-course.js:4780` | default | `GAP-23` |
+| With independent evidence | `90-course.js:4780` | default | `GAP-23` |
+| Due for review | `90-course.js:4782` | default | `GAP-23` |
+| All courses | `90-course.js:4911` | default | `GAP-23` |
+| Course surfaces | `90-course.js:5046` | default | `GAP-23` |
+| More · {…} | `90-course.js:5058` | default | `GAP-23` |
+| You are reading {…} from More. Overview, Learn, Notebook and Evidence stay one click away above. | `90-course.js:5088` | default | `GAP-23` |
+| Nothing is due for review right now. | `90-course.js:5112` | empty | `GAP-23` |
+| {…} {…} out of the queue. | `90-course.js:5114` | default | `GAP-23` |
+| See what is due | `90-course.js:5123` | default | `GAP-23` |
+
+### SnapshotLossNotice (`90-course.js` from line 5168)
+
+| string | source file:line | state | proposed copy id (GAP-nn) |
+|---|---|---|---|
+| {…} teaching {…} could not be saved to this lesson. The chat has them; this page does not. | `90-course.js:5182` | error | `GAP-23` |
+| Last recorded {…}. | `90-course.js:5187` | default | `GAP-23` |
+| Coursebook could not check whether any teaching turn was lost. | `90-course.js:5197` | error | `GAP-23` |
+
+### LessonPaneBody (`90-course.js` from line 5208)
+
+| string | source file:line | state | proposed copy id (GAP-nn) |
+|---|---|---|---|
+| Focused the bound lesson chat. | `90-course.js:5273` | default | `GAP-23` |
+| A new lesson run is ready. Its chat connects when you send your first message. | `90-course.js:5301` | default | `GAP-23` |
+| This Desktop build cannot open a new chat; start one from the sidebar. | `90-course.js:5302` | error | `GAP-23` |
+| Abandoned from the Coursebook pane. | `90-course.js:5312` | default | `GAP-23` |
+| Binding abandoned. Start a new governed run when you are ready. | `90-course.js:5318` | default | `GAP-23` |
+| Cannot read this lesson | `90-course.js:5325` | error | `GAP-23` |
+| The course list could not be read. | `90-course.js:5326` | error | `GAP-23` |
+| Bound, but not listed | `90-course.js:5333` | default | `GAP-23` |
+| This chat is connected to a course the library did not return. Nothing is guessed: reopen Coursebook to check it. | `90-course.js:5335` | error | `GAP-23` |
+| Open Coursebook | `90-course.js:5336`; `90-course.js:5376` | default | `GAP-23` |
+| binding {…} | `90-course.js:5353` | default | `GAP-23` |
+| This chat is not part of a lesson yet. Open Coursebook and start a lesson; the first message in its new chat connects it. | `90-course.js:5369` | default | `GAP-23` |
+| Current check | `90-course.js:5384` | default | `GAP-23` |
+| The lesson page could not be read. | `90-course.js:5388` | error | `GAP-23` |
+| No check could be opened. | `90-course.js:5410` | empty | `GAP-23` |
+| Opening the current check | `90-course.js:5413` | default | `GAP-23` |
+| Open lesson chat | `90-course.js:5440` | default | `GAP-23` |
+| Continue lesson | `90-course.js:5448` | default | `GAP-23` |
+| Full course | `90-course.js:5450` | default | `GAP-23` |
+| {…} due for review | `90-course.js:5460` | default | `GAP-23` |
+| Nothing due | `90-course.js:5461` | empty | `GAP-23` |
+| Review is unavailable right now | `90-course.js:5462` | error | `GAP-23` |
+| {…} sources | `90-course.js:5467` | default | `GAP-23` |
+| This lesson has no durable chat to continue yet. | `90-course.js:5480` | default | `GAP-23` |
+| This lesson is not connected to its chat right now. Open it from the course page first. | `90-course.js:5481` | default | `GAP-23` |
+| Opening the lesson chat failed: {…} | `90-course.js:5486` | error | `GAP-23` |
+| Continue the lesson. | `90-course.js:5491` | default | `GAP-23` |
+| Asked the lesson chat to continue. | `90-course.js:5492` | default | `GAP-23` |
+| The lesson chat is not on screen, so nothing was sent. Open it and continue there. | `90-course.js:5493` | default | `GAP-23` |
+| This Desktop build cannot send a message; open the lesson chat and continue there. | `90-course.js:5495` | error | `GAP-23` |
 
 
 **Offline and overflow evidence:** this file adds no offline sentence — a failed read renders a

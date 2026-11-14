@@ -1,8 +1,8 @@
 # CP-031c — World Studio shipped-string sweep
 
-Card: **CP-031c** (`t_0458a135`), re-swept by **CP-031c-R** (`t_54a44039`) at `e6fe4f71`. Docs only; no product string changed.
+Card: **CP-031c** (`t_0458a135`), re-swept by **CP-031c-R** (`t_54a44039`) at `a11bc0e4`. Docs only; no product string changed.
 
-**Revision swept:** `origin/master` at **`e6fe4f7119ad97d85eee2406890e0ea1a72fb2af`** (97-world.js, 1135 lines, whole file).
+**Revision swept:** `origin/master` at **`a11bc0e4bdf55683ea3c1660f8031d0f5a5f3ef6`** (97-world.js, 1135 lines, whole file).
 **Rows:** 92 inventory rows; 92 distinct literals. Every row cites the line(s)
 that carry its words in this revision.
 

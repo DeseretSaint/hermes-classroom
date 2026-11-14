@@ -9,7 +9,7 @@ the card that needs it. Rows marked **decision** are not mine to word — they n
 (`atlas`) or the deck owner (`CP-001`).
 
 **Inventory revision (CP-031c-R, card `t_54a44039`):** every sweep row and every line citation in
-this file is re-derived from `origin/master` at **`e6fe4f7119ad97d85eee2406890e0ea1a72fb2af`**. The
+this file is re-derived from `origin/master` at **`a11bc0e4bdf55683ea3c1660f8031d0f5a5f3ef6`**. The
 line numbers below are that revision's. The gate in `tests/test_cp_copy_inventory.py` keys its
 required rows on `(file, exact string)`, so a required row is located in the shipped file at test
 time instead of being trusted to a stored line number; it also re-extracts the literal population
@@ -351,7 +351,7 @@ Full inventory: `CP-025b-studio.md`. Minimum load-bearing rows:
 | `world.direction.include` | Motifs to include | deck | 20 |
 | `world.direction.avoid` | Motifs to avoid | deck | 20 |
 
-The eight world archetype names and descriptions (`97-world.js:27-45`) are a fixed enum→prose map and
+The eight world archetype names and descriptions (`97-world.js:27-45``) are a fixed enum→prose map and
 need their own table; CP-001 owns that wording, because the descriptions make a claim about what the
 art is.
 
@@ -420,12 +420,12 @@ source. A stored NULL reads as Textbook (`world.read` response description, `con
 `CP-025a-homework-game.md` and `CP-025b-studio.md` cite the visible strings of the v2 surfaces they
 replace, but a literal-by-literal sweep was outstanding. **CP-031b (`t_adc9bdee`) performed it**;
 **CP-031c (`t_0458a135`) re-derived it whole-file at `5d2b303e`, and CP-031c-R (`t_54a44039`)
-re-swept and re-anchored it at `e6fe4f71`.** The complete inventories are:
+re-swept and re-anchored it at `a11bc0e4`.** The complete inventories are:
 
 | file | in-scope source | rows |
 |---|---|---|
 | `CP-031-sweep-chrome.md` | `desktop/src/00-header.js` (all 1214 lines; rail, route title, learner vocabulary, create form, settings sheet, tutor path, shell errors) | 51 |
-| `CP-031-sweep-homework.md` | `desktop/src/90-course.js` (all 5088 lines; the whole `NotebookView` plus the classroom, textbook, quiz, plan, evidence and export surfaces) | 331 |
+| `CP-031-sweep-homework.md` | `desktop/src/90-course.js` (all 5496 lines; the whole `NotebookView` plus the classroom, textbook, quiz, plan, evidence and export surfaces) | 331 |
 | `CP-031-sweep-game.md` | `desktop/src/30-home.js` (all 5215 lines; Home shelf, the defaults line, `ChildSafeLine`, the Game band, its play layer and the field journal) | 215 |
 | `CP-031-sweep-parent-studio.md` | `desktop/src/95-studio.js` (all 7934 lines; Parent Studio, the plan shape and outline repair, the fine-tune block, the take-home pack and the homework surface hosted in the same file; §3.1 rows the Home twin of `ChildSafeLine` in `30-home.js`) | 642 |
 | `CP-031-sweep-world.md` | `desktop/src/97-world.js` (all 1135 lines) | 92 |
@@ -563,7 +563,7 @@ and export records.
 
 CP-025a/CP-025b said "no offline copy" and "overflow: no copy". The sweep makes that precise:
 
-- **Offline:** the shell has one sentence per route (`30-home.js:191-193` rendered at `1191`, `32-desk.js:352`,
+- **Offline:** the shell has one sentence per route (`30-home.js:191-193`` rendered at `1191`, `32-desk.js:352`,
   `98-page.js:632`, `10-primitives.js:273`), and **none of the four surfaces mounts it** —
   `95-studio.js`, `97-world.js` and the Game block in `30-home.js` never call `useOnline()`.
   A failed read says "could not be read", which misnames the cause. Proposed: `hw.offline.*`,
@@ -668,7 +668,7 @@ restyle must not soften it into "something went wrong".
 | `shell.rpc.envelope` | The Coursebook backend answered with something that is not a contract envelope. | deck | 90 |
 | `shell.rpc.no_answer` | The Coursebook backend did not answer. | deck | 40 |
 
-The second row is the same defect on the other branch: `describeError()` (`00-header.js:1057-1062`)
+The second row is the same defect on the other branch: `describeError()` (`00-header.js:1057-1062``)
 falls back to that sentence whenever the error object carries no `message` and no string — so a
 failed read on any surface can print it, and `95-studio.js` calls the helper 20 times. It is a
 synthesized answer, not the backend's, so it must not read as if the backend said it.
@@ -733,7 +733,7 @@ ranking, no random rewards, no XP or streaks"), so collapsing them would lose on
 
 `CB_COPY.state` (`desktop/src/00-header.js:63-72`) maps seven evidence states to the learner's
 words, and the Game journal card renders it through `CB_COPY.stateWord(card.state)`
-(`desktop/src/30-home.js:5203`), with `Stamped` as the earned-word at `5192`:
+(`desktop/src/30-home.js:5204`), with `Stamped` as the earned-word at `5192`:
 
 `not_started` → *Not started*, `introduced` → *Started*, `independent_evidence` → *Independent
 evidence*, `delayed_evidence` → *Delayed evidence*, `review_due` → *Review due*, `needs_review` →

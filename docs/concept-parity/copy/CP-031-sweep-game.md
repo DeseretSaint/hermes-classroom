@@ -1,8 +1,8 @@
 # CP-031c — Game and Home shipped-string sweep
 
-Card: **CP-031c** (`t_0458a135`), re-swept by **CP-031c-R** (`t_54a44039`) at `e6fe4f71`. Docs only; no product string changed.
+Card: **CP-031c** (`t_0458a135`), re-swept by **CP-031c-R** (`t_54a44039`) at `a11bc0e4`. Docs only; no product string changed.
 
-**Revision swept:** `origin/master` at **`e6fe4f7119ad97d85eee2406890e0ea1a72fb2af`** (30-home.js, 5215 lines, whole file).
+**Revision swept:** `origin/master` at **`a11bc0e4bdf55683ea3c1660f8031d0f5a5f3ef6`** (30-home.js, 5215 lines, whole file).
 **Rows:** 215 inventory rows; 215 distinct literals. Every row cites the line(s)
 that carry its words in this revision.
 
@@ -95,7 +95,7 @@ The state column is classified from the literal's own wording (`error`, `empty`,
 
 | string | source file:line | state | proposed copy id (GAP-nn) |
 |---|---|---|---|
-| Untitled course | `30-home.js:479`; `30-home.js:733`; `30-home.js:1492`; `30-home.js:1773`; `30-home.js:1972`; `30-home.js:1987` | default | `GAP-03` |
+| Untitled course | `30-home.js:194`; `30-home.js:479`; `30-home.js:733`; `30-home.js:1773`; `30-home.js:1972`; `30-home.js:1987` | default | `GAP-03` |
 | Open {…} | `30-home.js:503`; `30-home.js:785` | default | `GAP-03` |
 
 ### cbShelfEdgeMask (`30-home.js` from line 633)

@@ -1,8 +1,8 @@
 # CP-031c — Parent Studio shipped-string sweep
 
-Card: **CP-031c** (`t_0458a135`), re-swept by **CP-031c-R** (`t_54a44039`) at `e6fe4f71`. Docs only; no product string changed.
+Card: **CP-031c** (`t_0458a135`), re-swept by **CP-031c-R** (`t_54a44039`) at `a11bc0e4`. Docs only; no product string changed.
 
-**Revision swept:** `origin/master` at **`e6fe4f7119ad97d85eee2406890e0ea1a72fb2af`** (95-studio.js, 7934 lines, whole file).
+**Revision swept:** `origin/master` at **`a11bc0e4bdf55683ea3c1660f8031d0f5a5f3ef6`** (95-studio.js, 7934 lines, whole file).
 **Rows:** 642 inventory rows; 642 distinct literals. Every row cites the line(s)
 that carry its words in this revision.
 
@@ -1052,19 +1052,19 @@ copy and leave the other. `GAP-41` is the defaults line, `GAP-42` is the objecti
 | Default view · | `30-home.js:4751` | default | `GAP-41` |
 | · This classroom · | `30-home.js:4760` | default | `GAP-41` |
 | · Child-safe defaults | `30-home.js:4770` | default | `GAP-41` |
-| · Session · {…} min | `30-home.js:4775` | default | `GAP-41` |
+| · Session · {…} min | `30-home.js:4775`; `30-home.js:4802` | default | `GAP-41` |
 | Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no streaks · XP is cosmetic Game feedback | `30-home.js:4798` | default | `GAP-41` |
 | Open Coursebook settings (accessible name) | `30-home.js:4811` | default | `GAP-41` |
 
-### Rows removed in the e6fe4f71 re-derivation
+### Rows removed in the a11bc0e4 re-derivation
 
-Two strings rowed at `5d2b303e` do not ship at `e6fe4f71`, and one earlier string stays retired.
+Two strings rowed at `5d2b303e` do not ship at `a11bc0e4`, and one earlier string stays retired.
 Each is shown with the wording that replaced it, so a reviewer reads a re-word, not a silent
 deletion.
 
 | retired string | replaced by |
 |---|---|
-| The plan was written but failed an outline check{…}. The draft is saved, so you can repair the outline instead of starting over. (`5d2b303e`) | The plan was written but failed an outline check{…}. The draft is saved, so you can repair the outline instead of starting over.{…} (`95-studio.js:4377-4381`) |
+| The plan was written but failed an outline check{…}. The draft is saved, so you can repair the outline instead of starting over. (`5d2b303e`) | The plan was written but failed an outline check{…}. The draft is saved, so you can repair the outline instead of starting over.{…} (`95-studio.js:4377-4381``) |
 | This course has no plan attached. Start a new course to generate one; nothing is invented to fill the gap. (`5d2b303e`) | This course has no plan attached and nothing is stored to resume from; nothing is invented to fill the gap. (`95-studio.js:6395`) |
 | Research and drafting run in the background; this screen fills itself when the plan is written. Nothing is shown from a template, and there is no progress percentage to show. (retired at `475efefc`) | — the sentence is gone; the writing state is now worded by `PLAN_WAIT_BAND` and `planWaitBand`, rowed above. |
 

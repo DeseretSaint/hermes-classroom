@@ -3,7 +3,7 @@
 Card: **CP-031**. Scope: CP-021, CP-022, CP-023, CP-024, CP-025a, CP-025b. Docs only.
 
 **Inventory revision:** the complete sweep and every cited line are re-derived from `origin/master`
-at **`e6fe4f7119ad97d85eee2406890e0ea1a72fb2af`** (CP-031c-R, card `t_54a44039`, re-sweeping
+at **`a11bc0e4bdf55683ea3c1660f8031d0f5a5f3ef6`** (CP-031c-R, card `t_54a44039`, re-sweeping
 CP-031c's `5d2b303e` sweep and keeping CP-031b-R's `t_adc9bdee` substance). Docs only; no product
 string changed. The swept revision is pinned on **content**: `00-header.js` `ab62cbd7`, `30-home.js`
 `14fda088`, `90-course.js` `2cafd20b`, `95-studio.js` `20e07391`, `97-world.js` `00d46dcf`. A master
@@ -132,7 +132,7 @@ Studio surfaces has no deck row. Those two cards cannot start until CP-001 gains
   records that the sweep is incomplete; neither file is a licence to author the whole section.
 - `CP-031-sweep-parent-studio.md`, `CP-031-sweep-world.md`, `CP-031-sweep-game.md`,
   `CP-031-sweep-homework.md`, `CP-031-sweep-chrome.md` — the **complete** literal sweep (CP-031b,
-  card `t_adc9bdee`; re-derived whole-file by CP-031c, card `t_0458a135`; re-swept at `e6fe4f71`
+  card `t_adc9bdee`; re-derived whole-file by CP-031c, card `t_0458a135`; re-swept at `a11bc0e4`
   by CP-031c-R, card `t_54a44039`) of the whole of `95-studio.js`, `97-world.js`, `30-home.js`,
   `90-course.js` and `00-header.js`. Every row carries
   `string | source file:line | state | proposed id`. These are the files
