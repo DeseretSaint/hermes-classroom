@@ -408,6 +408,25 @@ Coursebook has not established that it improves learning. Parent observations ar
 
 ## Development
 
+The suite needs wheels the running plugin does not, and Hermes only installs the plugin's declared
+dependencies for the plugin — not for a bare test process. Run the gate on the interpreter Hermes
+runs (the one `hermes serve` uses, which `scripts/test.sh` calls `python3` or `COURSEBOOK_PYTHON`),
+with `requirements-dev.txt` installed into it:
+
+```
+uv pip install --python "$(command -v python3)" -r requirements-dev.txt
+python3 -m unittest discover -s tests -t .
+```
+
+A standalone venv cannot be this gate: the suite imports the Hermes agent itself
+(`plugins.plugin_storage`, the dashboard API) and the agent's own dependencies, so a fresh venv fails
+on those imports before it reaches Coursebook. `requirements-dev.txt` names `pdfplumber`, the print
+proof's glyph measurer, and mirrors the runtime pins from `plugin.yaml` so the Hermes interpreter runs
+everything. `pdfplumber` is deliberately not a runtime dependency: `coursebook/print_geometry.py`
+refuses with a typed `GeometryUnavailable` when it is absent, and `tests/test_up_print_geometry.py`
+reports a named skip quoting the install command rather than erroring twenty-one times on an
+interpreter without the wheel.
+
 ```
 bash scripts/test.sh            # unit tests, then node --check desktop/plugin.js
 bash scripts/validate.sh        # pre-merge gate: tests, syntax, admission on an export, doctor, probe
