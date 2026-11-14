@@ -117,6 +117,9 @@ PINNED_NON_TEXT_GATE_ROSTER = (
     ("wood", "canvas", 3.0),
     ("wood", "card-stock", 3.0),
     ("wood-edge", "wood", 1.5),
+    # Upgrade 28: the evidence tray's tally moved onto a card-stock printed field inside the wooden
+    # tray, so the field is a graphic on wood and needs the same 3:1 object separation.
+    ("card-stock", "wood", 3.0),
     ("gold", "canvas", 3.0),
     ("sage", "canvas", 1.5),
     ("sage", "card-stock", 1.5),

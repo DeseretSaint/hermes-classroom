@@ -113,8 +113,9 @@ carries the full rule for each; this is the readable version.
 
 - **`gold`** — a rim or a seal: a medallion edge, a completion stamp, a Game-mode XP chip border.
   It is a graphic, never a text background.
-- **`sage`** — a soft evidence fill: the recorded-check tally, a progress ground. Also never a text
-  background.
+- **`sage`** — a soft evidence fill: a progress ground. It is not the recorded-check tally — a
+  tally mark is `ink` stamped on the tray's printed `card-stock` field, because `sage` on `wood`
+  measures 1.29:1 in light. Also never a text background.
 
 ### Objects
 
@@ -287,6 +288,13 @@ a plank or a tray without its lip is a flat rectangle pretending to be an object
 clears its 3:1 floor on the ground it actually sits on, which is why `wood` is gated on both
 `canvas` (the shelf) and `card-stock` (the evidence tray), not just on the one that was measured
 first.
+
+**Paper inside an object is paper, not the object.** The evidence tray's recorded-check tally is
+stamped on a `card-stock` field that lies in the wooden tray, never painted straight onto the wood
+or its photographic tile: the marks are the tray's whole meaning, so they are `ink` on paper
+(15.18:1 light, 14.05:1 dark) and the field itself is gated at 3:1 against the `wood` it rests in.
+A mark painted onto the tile fails twice — once on contrast and once because the photograph moves
+under the sample.
 
 **Every surface here is interactive, so every surface can show focus.** Each surface declares the
 grounds it paints on, and a surface with a control must permit `focus` and carry a focus gate for
