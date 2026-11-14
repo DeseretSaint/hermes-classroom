@@ -1,7 +1,11 @@
 # probes/legibility-2026-11 — cap height and contrast for every Home scene text run
 
 Owner: `cbqa` (Sentinel). Result document: `docs/concept-parity/text-legibility-2026-11.json`.
-Measured tree: `origin/master` **b7ed6cf0** (`desktop/plugin.js` sha256 `098e65d9…bd47`).
+Measured tree: `wt/t_6fc6a7bd` **abdbdc9d** (`desktop/plugin.js` sha256 `6129271b…68ad`, `design/home-scene.html`
+sha256 `68e75fa6…8ddf`). The audit's original basis was `origin/master` **b7ed6cf0** (module `098e65d9…bd47`);
+`subject.measured_files_identical_to_base` stays `false` because the module has moved since that tree, and
+`subject.measured_against` in the document still names b7ed6cf0 as that basis — the run's own tree is
+`subject.worktree_head`.
 
 This probe answers two questions the CP-TEXT-GATE does not: how tall is each run's capital in
 rendered pixels, and what colour is actually behind its glyphs. It reuses CP-TEXT-GATE's page,
@@ -34,10 +38,17 @@ python3 scripts/gen-home-proof.py --width 1200 --height 768 --out "$work/pages/h
 units="$(cat tests/fixtures/scene-text/scene.units.json)"
 node probes/legibility-2026-11/measure.mjs "$work/pages/home-1344.html" "$units" "$work/run-1344" 1344 > "$work/run-1344.json"
 node probes/legibility-2026-11/measure.mjs "$work/pages/home-1200.html" "$units" "$work/run-1200" 1200 > "$work/run-1200.json"
-python3 probes/legibility-2026-11/analyse.py . "$work/run-1344" "$work/run-1200" docs/concept-parity/text-legibility-2026-11.json
+cp "$work/run-1344.json" "$work/run-1344/result.json"
+cp "$work/run-1200.json" "$work/run-1200/result.json"
+python3 probes/legibility-2026-11/analyse.py . "$work/run-1344" "$work/run-1200" docs/concept-parity/text-legibility-2026-11.json "$work/pages/home-1344.html" "$work/pages/home-1200.html"
 ```
 
-`measure.mjs` writes its capture JSON to stdout and its PNGs into the directory given as the third
+`measure.mjs` prints its capture JSON to stdout; `analyse.py` reads it from `<dir>/result.json`, which is
+why the two `cp` lines are part of the run. The two trailing page arguments are optional: pass them and
+`subject.page_1344_sha256` / `page_1200_sha256` name the pages this run measured; omit them and the 1200
+hash is `null` and the 1344 hash falls back to the committed `design/home-scene.html`.
+
+`measure.mjs` writes its PNGs into the directory given as the third
 argument (`base.png`, `base-again.png`, one `without-<n>.png` and `cap-<n>.png` per run,
 `raised-<n>.png` for runs under the floor, and `restored.png`). Requirements: `node`, `chromium`,
 `numpy`, `Pillow`, and React/React-DOM installed beside the desktop app (what `scripts/gen-home-proof.py`

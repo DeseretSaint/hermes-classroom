@@ -1,15 +1,15 @@
 {
   "schema": "coursebook.text-legibility/1",
-  "generated_at": "2026-11-14T10:29:47+00:00",
+  "generated_at": "2026-11-14T13:13:53+00:00",
   "subject": {
     "scene": "wide Home scene (design/home-scene.html, generated from desktop/plugin.js)",
     "measured_against": "origin/master b7ed6cf0 (2026-11-13)",
     "measured_files_identical_to_base": false,
-    "worktree_head": "c3f4e34bb415c8e6dd6d17940a0c5c2845dd7ab6",
-    "worktree_head_subject": "c3f4e34b docs: fifty upgrades, each with the failure it fixes and the test that proves it",
-    "plugin_sha256": "ba5bf0dd5d1ed9f3435feba1153df535a806f953306ff7252cc3f61f454a247d",
-    "page_1344_sha256": "20c6d4699b7ac462f45e8a878b6e9580becaca8f9a5b9e1158c6795fc3f7ab78",
-    "page_1200_sha256": "346f89c0807160833638c7f27fdcef17acfdd6d222aca3020b0385072ad3c8e8"
+    "worktree_head": "abdbdc9d3914ad9fbe224b63281c6562f0e3a70b",
+    "worktree_head_subject": "abdbdc9d A scope-band refusal offers the shape that holds it, not a retry that cannot",
+    "plugin_sha256": "6129271b6c13ffea61245411018527096209f1f58517a5ad3dfd2dc1df5d68ad",
+    "page_1344_sha256": "68e75fa6d84d22f536af348c9e2758887457c848f9008cd13ccfc532c3d48ddf",
+    "page_1200_sha256": "a20d2e7fa609da1fb9b97254f15cc7b03fe3110f1bcc3243713ab06862df3cd7"
   },
   "floors": {
     "cap_px": 11.0,
@@ -1465,7 +1465,7 @@
                 "dx": 0,
                 "dy": 0
               },
-              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/legibility-rederive-2/run-1344/raised-4.png"
+              "file": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/leg-6129271b-r2/run-1344/raised-4.png"
             },
             "1200": {
               "applied": true,
@@ -1514,7 +1514,7 @@
                 "dx": 0,
                 "dy": 0
               },
-              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/legibility-rederive-2/run-1200/raised-4.png"
+              "file": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/leg-6129271b-r2/run-1200/raised-4.png"
             }
           },
           "decision": "object can grow",
@@ -1761,7 +1761,7 @@
                 "dx": 1,
                 "dy": 0
               },
-              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/legibility-rederive-2/run-1344/raised-5.png"
+              "file": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/leg-6129271b-r2/run-1344/raised-5.png"
             },
             "1200": {
               "applied": true,
@@ -1823,7 +1823,7 @@
                 "dx": 1,
                 "dy": 0
               },
-              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/legibility-rederive-2/run-1200/raised-5.png"
+              "file": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/leg-6129271b-r2/run-1200/raised-5.png"
             }
           },
           "decision": "run must shorten",
@@ -2258,7 +2258,7 @@
                 "dx": 0,
                 "dy": 0
               },
-              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/legibility-rederive-2/run-1344/raised-7.png"
+              "file": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/leg-6129271b-r2/run-1344/raised-7.png"
             },
             "1200": {
               "applied": true,
@@ -2320,7 +2320,7 @@
                 "dx": 0,
                 "dy": 0
               },
-              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/legibility-rederive-2/run-1200/raised-7.png"
+              "file": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/leg-6129271b-r2/run-1200/raised-7.png"
             }
           },
           "decision": "run must shorten",
@@ -2552,7 +2552,7 @@
                 "dx": 0,
                 "dy": 0
               },
-              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/legibility-rederive-2/run-1344/raised-8.png"
+              "file": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/leg-6129271b-r2/run-1344/raised-8.png"
             },
             "1200": {
               "applied": true,
@@ -2601,7 +2601,7 @@
                 "dx": 0,
                 "dy": 0
               },
-              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/legibility-rederive-2/run-1200/raised-8.png"
+              "file": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/leg-6129271b-r2/run-1200/raised-8.png"
             }
           },
           "decision": "object can grow",
@@ -3021,7 +3021,7 @@
                 "dx": 0,
                 "dy": 0
               },
-              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/legibility-rederive-2/run-1344/raised-10.png"
+              "file": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/leg-6129271b-r2/run-1344/raised-10.png"
             },
             "1200": {
               "applied": true,
@@ -3070,7 +3070,7 @@
                 "dx": 0,
                 "dy": 0
               },
-              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/legibility-rederive-2/run-1200/raised-10.png"
+              "file": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/leg-6129271b-r2/run-1200/raised-10.png"
             }
           },
           "decision": "object can grow",
