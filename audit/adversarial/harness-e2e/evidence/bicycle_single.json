@@ -31,7 +31,7 @@
   },
   "lesson_rows": [
     {
-      "lesson_id": "000000000000001e",
+      "lesson_id": "000000000000001c",
       "page": {
         "check": {
           "assistance_policy": {
@@ -97,7 +97,7 @@
           ]
         }
       },
-      "section_id": "0000000000000018",
+      "section_id": "0000000000000017",
       "state": "validated"
     }
   ],
@@ -117,17 +117,17 @@
     },
     "attempt_rows": [
       {
-        "check_id": "000000000000001f",
+        "check_id": "000000000000001d",
         "evidence_class": "self_reported",
         "grading_provenance_json": "{\"confirmed_items\":3,\"declared_items\":3,\"grader\":\"provider-free:confirmation\",\"reference_sha256\":\"sha256:c9f28941ee122f56fd10f7feabd55f3e9e7dd93b9578ffa9ce14457718805d39\"}",
-        "id": "att_00000000000000000000000000000027",
+        "id": "att_00000000000000000000000000000023",
         "state": "committed",
         "verdict": "pass"
       }
     ],
     "check_lanes": [
       {
-        "objective_id": "000000000000000a",
+        "objective_id": "000000000000000b",
         "reference_kind": "rubric_only",
         "state": "closed",
         "stimulus_format": "verification",
@@ -186,7 +186,7 @@
         "evidence_target": "procedure",
         "ordinal": 1,
         "source_ids": [
-          "0000000000000008"
+          "0000000000000009"
         ],
         "source_quote": "the tyre must be fully deflated, the bead seated by hand, and the brake quick-release closed before riding",
         "support": "sourced",
@@ -304,13 +304,13 @@
     ],
     "approve": {
       "approval_provenance": null,
-      "plan_hash": "sha256:2757e4000dd5cfb41c46f9b7a39ad1bc8e3b5520e815b657263b36c3db372ac3",
+      "plan_hash": "sha256:6c2412211a9b9636dadbea181ca59d63b412bf8f68c5a17b9f1b98d1ee28159b",
       "revision": 1,
       "state_after": "approved"
     },
     "grading": [
       {
-        "check_id": "000000000000001f",
+        "check_id": "000000000000001d",
         "label": "correct",
         "objective_ordinal": 1,
         "open": {
@@ -321,9 +321,9 @@
         "submit": {
           "contract_version": 28,
           "ok": true,
-          "operation_id": "op-h40-attempt-submit-000026",
+          "operation_id": "op-h40-attempt-submit-000022",
           "result": {
-            "attempt_id": "att_00000000000000000000000000000027",
+            "attempt_id": "att_00000000000000000000000000000023",
             "criteria": [
               {
                 "id": "item_1",
@@ -357,7 +357,7 @@
         {
           "attempt_count": 0,
           "audit_state": "passed",
-          "check_id": "000000000000001f",
+          "check_id": "000000000000001d",
           "evidence_target": "procedure",
           "revisit": false,
           "state": "open",
@@ -381,7 +381,7 @@
             "source_ids": []
           },
           {
-            "check_id": "000000000000001f",
+            "check_id": "000000000000001d",
             "deep": "Seat the new tube by hand, inflate in small steps, and close the quick-release before you spin the wheel. Forcing the bead with a lever marks the tyre, and a marked bead seats unevenly, so the hand check stays the last step.",
             "headline": "Seat the bead, then check the brakes",
             "id": "blk_3cc7cf2f48c0416a82be",
@@ -411,10 +411,10 @@
             "source_ids": []
           }
         ],
-        "check_id": "000000000000001f",
-        "content_hash": "sha256:cbfd2848a4525095251fdab59a96ca1e6ff80e15dbce3a37dbb273832e094e3a",
+        "check_id": "000000000000001d",
+        "content_hash": "sha256:5171858bb10f6cd534fa3bfc0539cc1e5f544716a453f8f6e30ff52b24c8f1a0",
         "direction": "ltr",
-        "document_id": "doc_cbfd2848a4525095251f",
+        "document_id": "doc_5171858bb10f6cd534fa",
         "lang": "en-US",
         "objective_id": null,
         "schema_version": 1,
@@ -444,10 +444,10 @@
         "evidence_target": "procedure",
         "last_opened_at": null,
         "lesson_state": "validated",
-        "objective_id": "000000000000000a",
+        "objective_id": "000000000000000b",
         "ordinal": 1,
         "rejection_reasons": [],
-        "section_id": "0000000000000018",
+        "section_id": "0000000000000017",
         "sections_total": 1,
         "state": "not_started",
         "title": "Remove the rear wheel, replace the inner tube and check the brakes"
@@ -463,7 +463,7 @@
           "modality": null,
           "published_at": null,
           "publisher": "example.invalid",
-          "source_id": "0000000000000008",
+          "source_id": "0000000000000009",
           "source_type": "web_page",
           "support_assessment": "unverified",
           "support_status": "unassessed",
@@ -484,13 +484,13 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_0000000000000000000000000000001d",
+          "job_id": "job_0000000000000000000000000000001a",
           "job_kind": "lesson",
           "lessons": [
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "000000000000001f",
+              "check_id": "000000000000001d",
               "generation": {
                 "known": true,
                 "model": "recorded-transcript-h40",
@@ -498,9 +498,9 @@
                 "prompt_version": "lesson-prompt.v18",
                 "provider": "recorded"
               },
-              "lesson_id": "000000000000001e",
+              "lesson_id": "000000000000001c",
               "reused": false,
-              "section_id": "0000000000000018",
+              "section_id": "0000000000000017",
               "state": "validated",
               "validation": {
                 "canonical": {
@@ -529,14 +529,14 @@
                 "waived_unknown_reasons": {},
                 "warning": null
               },
-              "validation_id": "0000000000000020",
+              "validation_id": "000000000000001e",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             }
           ],
           "needs_review": [],
           "next_unit_ordinal": null,
-          "plan_hash": "sha256:c39af2d9ba8e77f22ae06bec6b3066079c1333b71302dcf84327c066943f2098",
+          "plan_hash": "sha256:6fa720b723009df77aa58e1c3787462a000ab29d638277bd714342eb377595d9",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -596,15 +596,15 @@
           "last_opened_at": null,
           "lesson_rejection_reasons": [],
           "lesson_state": "validated",
-          "objective_id": "000000000000000a",
+          "objective_id": "000000000000000b",
           "ordinal": 1,
-          "section_id": "0000000000000018",
+          "section_id": "0000000000000017",
           "state": "not_started",
           "title": "Remove the rear wheel, replace the inner tube and check the brakes"
         }
       ],
       "plan": {
-        "plan_hash": "sha256:2757e4000dd5cfb41c46f9b7a39ad1bc8e3b5520e815b657263b36c3db372ac3",
+        "plan_hash": "sha256:6c2412211a9b9636dadbea181ca59d63b412bf8f68c5a17b9f1b98d1ee28159b",
         "plan_id": "pln_00000000000000000000000000000003",
         "state": "approved",
         "units": [
@@ -619,9 +619,9 @@
                 "last_opened_at": null,
                 "lesson_rejection_reasons": [],
                 "lesson_state": "validated",
-                "objective_id": "000000000000000a",
+                "objective_id": "000000000000000b",
                 "ordinal": 1,
-                "section_id": "0000000000000018",
+                "section_id": "0000000000000017",
                 "state": "not_started",
                 "title": "Remove the rear wheel, replace the inner tube and check the brakes"
               }
@@ -707,8 +707,8 @@
         "locale": "en-US",
         "next_unit_ordinal": 1,
         "objectives": 1,
-        "plan_content_hash": "sha256:2757e4000dd5cfb41c46f9b7a39ad1bc8e3b5520e815b657263b36c3db372ac3",
-        "plan_hash": "sha256:c39af2d9ba8e77f22ae06bec6b3066079c1333b71302dcf84327c066943f2098",
+        "plan_content_hash": "sha256:6c2412211a9b9636dadbea181ca59d63b412bf8f68c5a17b9f1b98d1ee28159b",
+        "plan_hash": "sha256:6fa720b723009df77aa58e1c3787462a000ab29d638277bd714342eb377595d9",
         "plan_id": "pln_00000000000000000000000000000003",
         "plan_schema": "coursebook.plan.v2",
         "plan_version": 1,
@@ -720,7 +720,7 @@
           "reason": null,
           "status": "ok"
         },
-        "research_id": "000000000000000b",
+        "research_id": "000000000000000c",
         "reuse_declined": null,
         "reused": false,
         "scope": "single",
@@ -790,7 +790,7 @@
           "waived_unknown_reasons": {},
           "warning": null
         },
-        "validation_id": "000000000000000c",
+        "validation_id": "000000000000000d",
         "validation_verdict": "pass",
         "vocabulary": {
           "band": null,
@@ -836,17 +836,17 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_00000000000000000000000000000017",
+          "job_id": "job_00000000000000000000000000000015",
           "job_kind": "unit_sections",
           "next_unit_ordinal": null,
           "owners": 1,
-          "plan_hash": "sha256:c39af2d9ba8e77f22ae06bec6b3066079c1333b71302dcf84327c066943f2098",
+          "plan_hash": "sha256:6fa720b723009df77aa58e1c3787462a000ab29d638277bd714342eb377595d9",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
           "reviews": 0,
           "section_ids": [
-            "0000000000000018"
+            "0000000000000017"
           ],
           "sections": 1,
           "stage": "unit_sections",
@@ -878,7 +878,7 @@
             "unknown_calls": 0,
             "unknown_cost": false
           },
-          "validation_id": "0000000000000019",
+          "validation_id": "0000000000000018",
           "validation_verdict": "pass"
         },
         "unit_ordinal": 1

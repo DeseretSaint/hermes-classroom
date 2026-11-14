@@ -178,7 +178,7 @@ class _Resolvers:
             try:
                 result = generation.run_plan_job(
                     connection,
-                    {"job_id": lease.job_id, "brief": brief},
+                    {"job_id": lease.job_id, "attempt_id": lease.attempt_id, "brief": brief},
                     self._llm(),
                     search=self.search,
                     now=self.now,
@@ -268,7 +268,7 @@ class _Resolvers:
                     requested_unit = int(unit_state["next_unit_ordinal"])
                 result = generation.run_unit_sections_job(
                     connection,
-                    {"job_id": lease.job_id, "brief": brief},
+                    {"job_id": lease.job_id, "attempt_id": lease.attempt_id, "brief": brief},
                     self._llm(),
                     plan_id=brief.get("plan_id"),
                     unit_ordinal=requested_unit,
@@ -329,7 +329,7 @@ class _Resolvers:
                         unit_ordinal = int(unit_state["next_unit_ordinal"])
                 result = generation.run_lesson_job(
                     connection,
-                    {"job_id": lease.job_id, "brief": brief},
+                    {"job_id": lease.job_id, "attempt_id": lease.attempt_id, "brief": brief},
                     self._llm(),
                     plan_id=brief.get("plan_id"),
                     unit_ordinal=unit_ordinal,
