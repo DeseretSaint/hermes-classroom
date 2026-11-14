@@ -443,6 +443,11 @@ class ResearchRun:
     ``failures`` is the per-URL half of the ledger: a fetch that failed is recorded with its URL,
     the query that found it and the error, so a partial pass is auditable instead of reduced to
     one reason string. No failure entry is ever promoted into a source.
+
+    ``query_failures`` is the other half and is derived from ``queries`` rather than stored
+    separately, so the per-query error and the run's failure report can never disagree: a search
+    that raised left its error on the query entry, and every entry with an error is a question
+    the pass never got an answer for.
     """
 
     status: str  # "ok" | "degraded" | "unavailable"
@@ -451,10 +456,16 @@ class ResearchRun:
     reason: str | None = None
     failures: list[dict[str, str]] = field(default_factory=list)
 
+    @property
+    def query_failures(self) -> list[dict[str, Any]]:
+        """The search calls that raised, with their query text, result_count and error."""
+        return [dict(entry) for entry in self.queries if entry.get("error")]
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "status": self.status,
             "queries": [dict(q) for q in self.queries],
+            "query_failures": self.query_failures,
             "sources": [s.to_dict() for s in self.sources],
             "reason": self.reason,
             "failures": [dict(item) for item in self.failures],
@@ -1027,7 +1038,9 @@ def run_research(
     * no seam at all -> ``status="unavailable"`` with zero sources (the plan may still be
       proposed from model knowledge, every claim marked ``unverified``);
     * a seam that errors on every query -> ``status="unavailable"`` with the recorded errors;
-    * a seam that yields some sources -> ``status="ok"`` or ``"degraded"`` when fetches failed.
+    * a seam that yields some sources -> ``status="ok"`` or ``"degraded"`` when fetches failed or
+      when a majority of the bounded queries raised (the count is carried in ``reason``, and the
+      per-query errors stay on the query entries as ``query_failures``).
 
     No branch invents a URL, a title or a fetch date. ``subject_domain`` and ``level`` are the
     declared cb.rpc v10 inputs; they shape the query set, never the provenance rules.
@@ -1198,14 +1211,27 @@ def run_research(
             reason=_bound(reason, _MAX_REASON),
             failures=failures,
         )
-    reason = None
+    # A search failure is not a fetch failure, but it is not silence either: the queries that
+    # raised never contributed a candidate, so a pass where most of the bounded questions went
+    # unanswered rests on a fraction of the brief. The count is the finding, so the status names
+    # it rather than flipping a boolean. A lone flaky query in an otherwise answered pass stays
+    # ``ok`` (its error is still on its query entry and in ``query_failures``) — otherwise every
+    # plan would carry the degraded warning and reviewers would learn to ignore it.
+    query_failed = sum(1 for entry in records if entry.get("error"))
+    query_total = len(records)
+    query_failures_material = bool(query_failed) and query_failed * 2 > query_total
+    degraded = bool(failures) or query_failures_material
+    reasons: list[str] = []
     if failures:
-        reason = _bound(
-            f"{len(failures)} fetch failure(s); first: {failures[0]['url']}: {failures[0]['error']}",
-            _MAX_REASON,
+        reasons.append(f"{len(failures)} fetch failure(s); first: {failures[0]['url']}: {failures[0]['error']}")
+    if query_failures_material:
+        first_error = next(entry["error"] for entry in records if entry.get("error"))
+        reasons.append(
+            f"{query_failed} of {query_total} search queries failed; first: {first_error}"
         )
+    reason = _bound("; ".join(reasons), _MAX_REASON) if reasons else None
     return ResearchRun(
-        status="degraded" if failures else "ok",
+        status="degraded" if degraded else "ok",
         queries=records,
         sources=sources,
         reason=reason,

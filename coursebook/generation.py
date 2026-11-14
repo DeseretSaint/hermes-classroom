@@ -10034,6 +10034,16 @@ def build_plan_request(
             "status": research_run.status,
             "reason": research_run.reason,
             "queries": [entry.get("query") for entry in research_run.queries],
+            # Upgrade 32: the author is told which question went unanswered and how many results
+            # it returned, so it cannot claim coverage the pass never gathered.
+            "query_results": [
+                {
+                    "query": entry.get("query"),
+                    "result_count": entry.get("result_count", 0),
+                    "error": entry.get("error"),
+                }
+                for entry in research_run.queries
+            ],
         },
         "sources": [],
         "rules": (
@@ -12550,6 +12560,19 @@ def run_plan_job(
                 "status": research_run.status,
                 "reason": research_run.reason,
                 "queries": [entry.get("query") for entry in research_run.queries],
+                # Upgrade 32: per-query honesty on the job result. The reviewer sees which
+                # question went unanswered, its result_count and its error, instead of a status
+                # that says "ok" over a ledger gathered from a third of the brief.
+                "query_results": [
+                    {
+                        "query": entry.get("query"),
+                        "result_count": entry.get("result_count", 0),
+                        "error": entry.get("error"),
+                    }
+                    for entry in research_run.queries
+                ],
+                "query_failures": research_run.query_failures,
+                "fetch_failures": len(research_run.failures),
             },
             "warnings": _plan_warnings(recipe, research_run, verdict)
             + list(verdict.get("provenance_flags") or [])
@@ -12863,9 +12886,18 @@ def _plan_warnings(recipe: str, research_run: ResearchRun, verdict: dict[str, An
     elif research_run.status == "degraded":
         # Partial failure is not silence: say which half is missing and keep citations bounded to
         # the rows that were actually fetched. Support still belongs to independent validation.
+        # The arithmetic is named, never a boolean: "8 of 9 queries failed" is what tells a
+        # reviewer the ledger came from a third of the questions.
+        arithmetic: list[str] = []
+        if research_run.query_failures:
+            arithmetic.append(
+                f"{len(research_run.query_failures)} of {len(research_run.queries)} queries failed"
+            )
+        if research_run.failures:
+            arithmetic.append(f"{len(research_run.failures)} fetch(es) failed")
         warnings.append(
-            f"research degraded: {len(research_run.failures)} fetch(es) failed; only the "
-            f"{len(research_run.sources)} fetched source(s) are cited and their support comes from "
+            f"research degraded: {'; '.join(arithmetic)}; the plan rests on "
+            f"{len(research_run.sources)} fetched source(s), and their support comes from "
             "independent validation, not from the fetch"
         )
     if recipe == "casual":

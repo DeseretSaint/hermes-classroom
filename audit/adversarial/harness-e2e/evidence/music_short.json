@@ -1407,6 +1407,7 @@
         "plan_schema": "coursebook.plan.v2",
         "plan_version": 1,
         "research": {
+          "fetch_failures": 0,
           "queries": [
             "Understand intervals, triads and the circle of fifths well enough to analyse a pop song.",
             "Understand intervals",
@@ -1414,6 +1415,39 @@
             "the circle of fifths well enough to analyse a pop song",
             "Understand intervals, triads and the circle of fifths well enough to analyse a pop song. how to teach curriculum sequence",
             "Understand intervals, triads and the circle of fifths well enough to analyse a pop song. syllabus learning objectives"
+          ],
+          "query_failures": [],
+          "query_results": [
+            {
+              "error": null,
+              "query": "Understand intervals, triads and the circle of fifths well enough to analyse a pop song.",
+              "result_count": 1
+            },
+            {
+              "error": null,
+              "query": "Understand intervals",
+              "result_count": 1
+            },
+            {
+              "error": null,
+              "query": "triads",
+              "result_count": 1
+            },
+            {
+              "error": null,
+              "query": "the circle of fifths well enough to analyse a pop song",
+              "result_count": 1
+            },
+            {
+              "error": null,
+              "query": "Understand intervals, triads and the circle of fifths well enough to analyse a pop song. how to teach curriculum sequence",
+              "result_count": 1
+            },
+            {
+              "error": null,
+              "query": "Understand intervals, triads and the circle of fifths well enough to analyse a pop song. syllabus learning objectives",
+              "result_count": 1
+            }
           ],
           "reason": null,
           "status": "ok"
@@ -1451,7 +1485,7 @@
           "calls": 4,
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
-          "input_tokens": 5212,
+          "input_tokens": 5424,
           "output_tokens": 1257,
           "unknown_calls": 0,
           "unknown_cost": false
