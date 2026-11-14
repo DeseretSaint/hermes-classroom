@@ -1,0 +1,32 @@
+# Development and gate dependencies for Coursebook.
+#
+# The release gate is `python3 -m unittest discover -s tests -t .`, and it needs wheels the running
+# plugin does not. Run it on the interpreter Hermes runs — the one `hermes serve` uses and the one
+# `scripts/test.sh` calls `python3` (or `COURSEBOOK_PYTHON`) — with these installed into it:
+#
+#   uv pip install --python "$(command -v python3)" -r requirements-dev.txt
+#   python3 -m unittest discover -s tests -t .
+#
+# A standalone venv is not this gate. The suite imports the Hermes agent itself
+# (`plugins.plugin_storage`, the dashboard API) and the agent's own dependencies, which only the
+# Hermes install carries; a fresh venv fails on those imports before it ever reaches Coursebook.
+#
+# `pdfplumber` is the case that made this file necessary. `coursebook/print_geometry.py` imports it
+# behind a typed refusal (`GeometryUnavailable`), so a host without the wheel still answers a
+# learner; `tests/test_up_print_geometry.py` measures PDFs glyph by glyph and cannot be honest
+# without it. It is deliberately NOT in `plugin.yaml` `python_dependencies`: that list drives plugin
+# admission for the shipped runtime, and this wheel is used by the print proof and its test.
+#
+# The remaining pins mirror `plugin.yaml` so that one clean venv can run the whole suite. Hermes
+# provisions them for the running plugin (`hermes plugins validate . --install-deps`), but the
+# test process imports them directly and does not get that provisioning for free.
+
+pdfplumber>=0.11,<0.12
+
+# Mirrored from `plugin.yaml` `python_dependencies`; keep the ranges in step with it.
+jsonschema>=4.18,<5
+faster-whisper>=1.0,<2
+pypdf>=4.0,<7
+networkx>=3.7,<4
+json_repair>=0.64,<1
+Pillow>=12.2,<14
