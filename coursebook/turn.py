@@ -25,7 +25,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
-from . import api, db, evidence, practice, prompts, segments
+from . import api, db, evidence, grading, practice, prompts, segments
 
 # ── classification ──────────────────────────────────────────────────────────
 
@@ -456,6 +456,46 @@ def record_practice_tutor_turn(*, session_id: str | None, assistant_response: st
     return True
 
 
+def chat_answer_for(check: Any, user_message: str) -> tuple[dict[str, Any] | None, str | None]:
+    """Shape one typed chat message into the answer kind this check can actually collect.
+
+    Returns ``(answer, None)`` when the chat lane can collect it, or ``(None, readable reason)``
+    when it cannot. Two cases are refused **before** ``attempt.submit``:
+
+    * a verification checklist that the message did not answer with step numbers (the lane
+      collects a self-report of numbered steps, never a model reading the learner's prose);
+    * a ``rubric_only`` check that is not a checklist, because this build configures no open-lane
+      grader and submitting it can only produce ``needs_retry`` forever.
+
+    Everything else keeps the existing behaviour: a closed-form check is still answered with the
+    learner's text, graded deterministically.
+    """
+    reference = _json_load(check["reference_json"], {})
+    stimulus = _json_load(check["stimulus_json"], {})
+    items = grading.confirmation_items(reference, stimulus)
+    if items is not None:
+        selection = grading.parse_confirmation_numbers(user_message, items)
+        if not selection:
+            return None, _checklist_numbering_message(items)
+        return {"kind": "selection", "selection": selection}, None
+    refusal = grading.chat_collection_refusal(reference, stimulus)
+    if refusal is not None:
+        return None, refusal
+    return {"kind": "text", "text": user_message}, None
+
+
+def _checklist_numbering_message(items: list[dict[str, str]]) -> str:
+    """The readable chat prompt for a checklist: the numbered steps and nothing recorded yet."""
+    lines = [
+        "This check is a list of steps, so chat records it by number. Send the numbers of the "
+        "steps you have done — for example 1, 2 and 3. Nothing has been recorded yet."
+    ]
+    for index, item in enumerate(items[:40], start=1):
+        label = " ".join(str(item.get("label") or "").split())
+        lines.append(f"{index}. {label[:160]}")
+    return "\n".join(lines)
+
+
 def pre_turn(
     session_id: str,
     user_message: str,
@@ -566,6 +606,17 @@ def pre_turn(
 
     # classification.kind == "answer"
     assert check is not None
+    # The chat lane is check-shaped: a typed message becomes the answer *kind* this check can
+    # collect, or the gate refuses it before anything is submitted. A checklist is collected as
+    # numbered steps; a check no lane in this build can grade is refused here instead of being
+    # submitted into ``needs_retry`` forever (docs/CHAT-CHECK-GATE.md).
+    answer, refusal = chat_answer_for(check, user_message)
+    if answer is None:
+        return GateOutcome(
+            hook={"action": "block", "message": refusal or grading.CHAT_CHECK_UNCOLLECTABLE},
+            classification=classification,
+            revision=revision,
+        )
     response = dispatch(
         _envelope(
             "attempt.submit",
@@ -574,7 +625,7 @@ def pre_turn(
                 "check_id": check["id"],
                 "check_version": int(check["version"]),
                 "attempt_nonce": nonce,
-                "answer": {"kind": "text", "text": user_message},
+                "answer": answer,
             },
             operation_id=f"hook.submit.{nonce}",
             idempotency_key=idempotency_key(session_id, nonce),
