@@ -16494,6 +16494,119 @@ function AssistUsedFlag({ kind, children }) {
 }
 
 /**
+ * UP-15 — the section's worked answer, read from the page the learner already has.
+ *
+ * `lesson.page` projects the authored `worked_example` onto exactly one `example` block
+ * (`coursebook/lesson_document.py`): its `headline` is the worked prompt and its `deep` is the
+ * steps plus the worked answer. That is authored teaching text the Textbook view already paints,
+ * so disclosing it beside the check adds no new backend field and no new surface — the check's
+ * reference answer still never leaves the backend.
+ *
+ * The block is refused when it restates the open check's own prompt. A "worked example" that is
+ * the check's case is the check's key, and a disclosure must never be that.
+ */
+function workedAnswerFromPage(page, stimulus) {
+  const document = page && page.document ? page.document : null
+  const blocks = document && Array.isArray(document.blocks) ? document.blocks : []
+  const block = blocks.find((entry) => entry
+    && entry.role === 'example'
+    && typeof entry.headline === 'string' && entry.headline.trim()
+    && typeof entry.deep === 'string' && entry.deep.trim()
+    && !(Array.isArray(entry.media) && entry.media.length > 0)
+    && entry.headline.trim() !== 'Media')
+  if (!block) return null
+  // Compare words, not formatting: the same solved case asked with different punctuation is the
+  // same case. Only an equality refusal — a shared topic is what a worked example is for.
+  const normal = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+  const prompt = stimulus && typeof stimulus.prompt === 'string' ? stimulus.prompt : ''
+  if (prompt && normal(prompt) === normal(block.headline)) return null
+  return {
+    prompt: block.headline.trim(),
+    body: block.deep.trim(),
+    short: typeof block.short === 'string' && block.short.trim() ? block.short.trim() : null
+  }
+}
+
+/**
+ * The disclosed worked answer beside the check.
+ *
+ * It paints exactly the authored `worked_example` block the page already carries: the worked
+ * prompt, its steps and its worked answer. Nothing is fetched, generated or inferred here, so the
+ * check's own key cannot arrive on this panel, and a section with no authored worked answer paints
+ * nothing rather than a promise.
+ */
+function WorkedAnswerPanel({ workedAnswer }) {
+  if (!workedAnswer) return null
+  return jsxs('section', {
+    'data-cb-assist-worked-example': '',
+    'aria-labelledby': 'cb-worked-answer-heading',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.3rem',
+      flexBasis: '100%',
+      minWidth: 0,
+      padding: '0.6rem 0.75rem',
+      border: '1px solid var(--cb-rule)',
+      background: 'var(--cb-paper)',
+      boxSizing: 'border-box',
+      maxWidth: CB_MEASURE
+    },
+    children: [
+      jsx('h4', {
+        id: 'cb-worked-answer-heading',
+        style: {
+          margin: 0,
+          fontFamily: CB_SANS,
+          fontSize: CB_TYPE.caption,
+          fontWeight: 600,
+          lineHeight: 1.3,
+          color: 'var(--cb-ink-soft)'
+        },
+        children: 'Worked example'
+      }, 'heading'),
+      jsx('p', {
+        'data-cb-assist-worked-prompt': '',
+        style: {
+          margin: 0,
+          fontFamily: CB_SERIF,
+          fontSize: CB_TYPE.body,
+          lineHeight: 1.35,
+          color: 'var(--cb-ink)',
+          overflowWrap: 'anywhere'
+        },
+        children: workedAnswer.prompt
+      }, 'prompt'),
+      jsx('p', {
+        'data-cb-assist-worked-body': '',
+        style: {
+          margin: 0,
+          fontFamily: CB_SANS,
+          fontSize: CB_TYPE.caption,
+          lineHeight: 1.55,
+          color: 'var(--cb-ink)',
+          whiteSpace: 'pre-wrap',
+          overflowWrap: 'anywhere'
+        },
+        children: workedAnswer.body
+      }, 'body'),
+      jsx('p', {
+        'data-cb-assist-worked-note': '',
+        style: {
+          margin: 0,
+          fontFamily: CB_SANS,
+          fontSize: CB_TYPE.caption,
+          lineHeight: 1.45,
+          color: 'var(--cb-ink-soft)'
+        },
+        children:
+          'This is a worked example from this section, not the check’s own answer. This attempt is recorded as answer shown.'
+      }, 'note')
+    ]
+  })
+}
+
+/**
  * L7 — one award path for every lesson surface.
  *
  * `engagement.award` pays for one real committed attempt, so the surface that commits must not
@@ -16583,7 +16696,11 @@ function AttemptControls({
   onRetryStimulus = null,
   playerMode = false,
   playerController = null,
-  onPlayerState = null
+  onPlayerState = null,
+  // UP-15: the section's authored worked answer (`workedAnswerFromPage`). Disclosing it is the
+  // content half of "I saw the answer"; `null` means this section has none on file, and the
+  // confirm must not promise one.
+  workedAnswer = null
 }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const phone = cbLayoutFor(useCbViewportWidth()) === 'phone'
@@ -17406,7 +17523,21 @@ function AttemptControls({
                             ]
                           }),
                       answerUsed
-                        ? jsx(AssistUsedFlag, { kind: 'answer_shown', children: 'Answer shown' })
+                        ? jsxs('div', {
+                            'data-cb-assist-answer-shown': '',
+                            style: {
+                              display: 'flex',
+                              flexWrap: 'wrap',
+                              alignItems: 'flex-start',
+                              gap: '0.35rem 0.6rem',
+                              flexBasis: '100%',
+                              minWidth: 0
+                            },
+                            children: [
+                              jsx(AssistUsedFlag, { kind: 'answer_shown', children: 'Answer shown' }, 'flag'),
+                              jsx(WorkedAnswerPanel, { workedAnswer }, 'worked')
+                            ]
+                          })
                         : answerConfirmOpen
                           ? jsxs('div', {
                               'data-cb-assist-confirm': 'answer_shown',
@@ -17443,7 +17574,9 @@ function AttemptControls({
                                     color: 'var(--cb-ink)'
                                   },
                                   children:
-                                    'This marks the attempt "answer shown". The answer you send next cannot count as independent evidence, and this cannot be undone.'
+                                    workedAnswer
+                                      ? 'This shows the worked example from this section and marks the attempt "answer shown". The answer you send next cannot count as independent evidence, and this cannot be undone.'
+                                      : 'This section has no worked example on file. Confirming records that you saw the answer somewhere else and marks the attempt "answer shown". The answer you send next cannot count as independent evidence, and this cannot be undone.'
                                 }, 'note'),
                                 jsxs('div', {
                                   style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem 0.6rem' },
@@ -26034,6 +26167,10 @@ function SectionPage({
   // The check surface prints one label per structured item; the document prose must not print the
   // same line again on the teaching block or the practice block.
   const checkStimulus = check.check && check.check.stimulus ? check.check.stimulus : null
+  // UP-15: the same check card carries the section's authored worked answer, so "I saw the
+  // answer" can disclose it instead of only recording the penalty. Read from the page this
+  // surface already holds; a section with none passes null and the confirm says so.
+  const workedAnswer = workedAnswerFromPage(page, checkStimulus)
   const checkLabels =
     checkStimulus && Array.isArray(checkStimulus.items)
       ? checkStimulus.items.map((item) => item && item.label).filter(Boolean)
@@ -26097,6 +26234,7 @@ function SectionPage({
           implemented,
           bindingState: runtime ? runtime.binding_status : 'detached',
           parentLed,
+          workedAnswer,
           // L7: the reading path pays through the same award path as the desk. `gameMode` is the
           // durable course mode its host read from `world.read`; unknown (`false`) never pays.
           courseId: row.course_id || null,
@@ -26124,6 +26262,7 @@ function SectionPage({
           implemented,
           bindingState: runtime ? runtime.binding_status : 'detached',
           parentLed,
+          workedAnswer,
           // L7: the Field player is the same commit path as the reader, so it pays identically.
           courseId: row.course_id || null,
           gameMode,
@@ -33711,6 +33850,8 @@ function LessonPaneBody({ binding, storedId }) {
                 revision,
                 implemented: backendWire.implemented,
                 bindingState: bindingStatus,
+                // UP-15: the bound pane discloses the same authored worked answer as the reader.
+                workedAnswer: workedAnswerFromPage(page.data, check.check && check.check.stimulus),
                 // L7: a pass committed in the bound pane pays on the same terms as the reader.
                 courseId: row ? row.course_id || null : null,
                 gameMode: courseGame,
@@ -47782,6 +47923,9 @@ export {
   // render test of the refused-bind note has to arm the exact run before it mounts the pane.
   armPendingBind,
   AttemptControls,
+  // UP-15 test seam: the disclosure is the page's own example block, and the refusal of a block
+  // that restates the check's prompt is a pure function a Node test can exercise directly.
+  workedAnswerFromPage,
   TakeHomeStudio,
   TakeHomeShelf,
   TakeHomeSourcePanel,

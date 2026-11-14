@@ -4973,6 +4973,8 @@ function LessonPaneBody({ binding, storedId }) {
                 revision,
                 implemented: backendWire.implemented,
                 bindingState: bindingStatus,
+                // UP-15: the bound pane discloses the same authored worked answer as the reader.
+                workedAnswer: workedAnswerFromPage(page.data, check.check && check.check.stimulus),
                 // L7: a pass committed in the bound pane pays on the same terms as the reader.
                 courseId: row ? row.course_id || null : null,
                 gameMode: courseGame,
