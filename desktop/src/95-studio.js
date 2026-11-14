@@ -6000,6 +6000,35 @@ function StudioPlanView({
     startEditing()
   }, [plan, objectives, course.enrollment_id, revision, onRevision, onChanged, startEditing])
 
+  // The goal the create form is seeded with when an *approved* plan hands its goal back.
+  //
+  // An approved plan's outline cannot change its goal: the plan document is the course's identity
+  // and its evidence is recorded against it, so rewriting the goal in place would invalidate the
+  // XP and checks already committed. The repair is a new course; this action only says so and
+  // returns the brief that ran. The job brief is the record the planner actually read, so it is
+  // the first source; a surface that read the course earlier can pass the same facts on `course`.
+  const planRunBrief = (planRun && planRun.brief) || (brief && brief.brief) || null
+  const planGoal =
+    (planRunBrief && planRunBrief.goal) || (plan && plan.goal) || (course && course.goal) || ''
+  const changeGoal = useCallback(() => {
+    if (typeof onChangeGoal !== 'function') return
+    const source = planRunBrief || {}
+    // The stored goal composes the outcome sentence; split it so pressing Create again cannot
+    // append the same sentence twice and the outcome keeps the learner's own words.
+    const parts = splitComposedGoal(planGoal)
+    onChangeGoal({
+      goal: parts.goal,
+      outcome: parts.outcome,
+      title: (course && course.title) || source.title || '',
+      recipe: source.recipe || (course && course.recipe) || null,
+      dials: source.dials || (course && course.dials) || null,
+      locale: source.locale || (course && course.locale) || null,
+      level: source.level || (course && course.level) || null,
+      subjectDomain: source.subject_domain || (course && course.subject_domain) || null,
+      scope: source.scope || (course && course.scope) || null
+    })
+  }, [onChangeGoal, planRunBrief, planGoal, course])
+
   // H-103/H-182: the repair actions on a rejected plan.
   //
   // `edit_plan` opens the existing editor on this draft, and saving is the parent's explicit
@@ -6223,11 +6252,30 @@ function StudioPlanView({
                     onClick: startRevision,
                     children: learner ? 'Ask for a change' : 'Start a new plan version'
                   })
+                : null,
+              !isDraft && !editing && learner && typeof onChangeGoal === 'function'
+                ? jsx(sdk.Button, {
+                    size: 'sm',
+                    variant: 'text',
+                    'data-cb-plan-change-goal': 'approved',
+                    // The seed is the brief that ran, so the goal is prefilled on the create form's
+                    // own first step. It never calls plan.replan: an approved plan's goal is not a
+                    // new version of this course, it is a new course.
+                    onClick: changeGoal,
+                    children: 'Change the goal'
+                  })
                 : null
             ]
           })
         ]
       }),
+      !isDraft && !editing && learner && typeof onChangeGoal === 'function'
+        ? jsx('span', {
+            className: 'text-xs text-(--ui-text-secondary)',
+            'data-cb-plan-change-goal-note': 'approved',
+            children: 'This starts a new course; this one and its evidence stay.'
+          })
+        : null,
 
       shownRejection
         ? jsx(PlanRejectPanel, {
