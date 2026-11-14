@@ -138,7 +138,7 @@ const CB_USE_OPTIONS = Object.freeze([
 
 /**
  * Honest time expectation per scope. No invented minutes: a plan has no `time_estimate` until it
- * exists, and no read in this contract serves one, so this says what is true before the run starts.
+ * exists, and until then this says what is true before the run starts.
  */
 const SCOPE_TIME_COPY = {
   single: 'One lesson. Research and drafting may take several minutes; there is no progress percentage until the plan exists.',

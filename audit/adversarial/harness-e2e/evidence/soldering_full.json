@@ -1613,7 +1613,7 @@
         },
         "stimulus_format": null,
         "submit": {
-          "contract_version": 28,
+          "contract_version": 29,
           "ok": true,
           "operation_id": "op-h40-attempt-submit-0000b6",
           "result": {
@@ -1643,7 +1643,7 @@
         },
         "stimulus_format": null,
         "submit": {
-          "contract_version": 28,
+          "contract_version": 29,
           "ok": true,
           "operation_id": "op-h40-attempt-submit-0000bb",
           "result": {
@@ -3125,6 +3125,13 @@
         "plan_hash": "sha256:8e94bd93c167a363b763897b27594c3ab7c6a9f3e6d970518f66ef60e919bd55",
         "plan_id": "pln_00000000000000000000000000000003",
         "state": "approved",
+        "time_estimate": {
+          "basis": "none",
+          "confidence": "low",
+          "minutes_per_session": 60,
+          "sessions_per_week": 2,
+          "weeks": 12
+        },
         "units": [
           {
             "goal": "Set up a safe bench and a controlled iron.",

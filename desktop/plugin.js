@@ -11144,7 +11144,7 @@ const CB_USE_OPTIONS = Object.freeze([
 
 /**
  * Honest time expectation per scope. No invented minutes: a plan has no `time_estimate` until it
- * exists, and no read in this contract serves one, so this says what is true before the run starts.
+ * exists, and until then this says what is true before the run starts.
  */
 const SCOPE_TIME_COPY = {
   single: 'One lesson. Research and drafting may take several minutes; there is no progress percentage until the plan exists.',
@@ -39949,6 +39949,25 @@ function StudioPlanView({
   const contentReady = lessonPages
   const setting = brief && brief.brief ? brief.brief.setting : null
   const sources = (book && book.data && book.data.sources) || []
+  // H-182/R9's plan already carries its unit index. A plan with two or more units is reviewed
+  // under unit headings; a one-unit or legacy plan keeps the flat list it had. Rows whose
+  // objective is not in any unit are never dropped: they follow the groups, unlabelled.
+  const planUnits = (plan && plan.units) || []
+  const indexedObjectives = displayObjectives.map((objective, index) => ({ objective, index }))
+  let unitGroups = [{ unit: null, rows: indexedObjectives }]
+  if (planUnits.length > 1) {
+    const assigned = new Set()
+    unitGroups = planUnits
+      .map((unit) => {
+        const members = new Set((unit.objectives || []).map((item) => item.objective_id))
+        const rows = indexedObjectives.filter(({ objective }) => members.has(objective.objective_id))
+        rows.forEach(({ objective }) => assigned.add(objective.objective_id))
+        return { unit, rows }
+      })
+      .filter((group) => group.rows.length > 0)
+    const leftover = indexedObjectives.filter(({ objective }) => !assigned.has(objective.objective_id))
+    if (leftover.length > 0) unitGroups.push({ unit: null, rows: leftover })
+  }
 
   return jsxs('div', {
     className: 'flex flex-col gap-4',
@@ -39960,6 +39979,15 @@ function StudioPlanView({
             className: 'flex flex-wrap items-center gap-2',
             children: [
               jsx(PlanStateBadge, { plan }),
+              plan && plan.time_estimate && Number.isInteger(plan.time_estimate.weeks)
+                ? jsx('span', {
+                    className: 'text-xs text-(--ui-text-secondary)',
+                    'data-cb-plan-time-estimate': String(plan.time_estimate.weeks),
+                    // The plan's own authored estimate, projected from its stored schedule. It is
+                    // a planning aid, never an attainment claim, and absent means absent.
+                    children: `About ${plan.time_estimate.weeks} week${plan.time_estimate.weeks === 1 ? '' : 's'}`
+                  })
+                : null,
               jsx('span', { className: 'text-xs text-(--ui-text-secondary)', children: `plan ${String(planHash || '').slice(0, 19)}…` })
             ]
           }),
@@ -40142,7 +40170,24 @@ function StudioPlanView({
                 children: PLAN_BREADTH_DISCLOSURE
               }),
               jsx(CbLabel, { children: `OUTLINE AND ACTIVITIES (${objectives.length})` }),
-              ...displayObjectives.map((objective, index) => {
+              ...unitGroups.flatMap((group) => [
+                group.unit
+                  ? jsxs(
+                      'div',
+                      {
+                        className: 'mt-1 flex flex-col gap-1 border-t border-(--ui-stroke-tertiary) pt-2',
+                        'data-cb-plan-unit': String(group.unit.ordinal),
+                        children: [
+                          jsx(CbLabel, { children: `UNIT ${group.unit.ordinal}` }),
+                          // The unit's own authored title. Grouping is the plan's structure, not a
+                          // client-side guess: a plan with two or more units is reviewed by unit.
+                          jsx('h3', { className: 'text-sm font-semibold break-words', children: group.unit.title })
+                        ]
+                      },
+                      `unit-${group.unit.ordinal}`
+                    )
+                  : null,
+                ...group.rows.map(({ objective, index }) => {
                 const draft = drafts[objective.objective_id] || {}
                 const isRemoved = removed.includes(objective.objective_id)
                 return jsxs(
@@ -40260,7 +40305,8 @@ function StudioPlanView({
                   },
                   objective.objective_id
                 )
-              }),
+                }),
+              ]),
               editing
                 ? jsxs('div', {
                     className: 'flex flex-col gap-2 border-t border-(--ui-stroke-tertiary) pt-2',
