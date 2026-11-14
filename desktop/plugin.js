@@ -2333,6 +2333,30 @@ function bytesLabel(value) {
 }
 
 /**
+ * A pack is untrusted data: only an absolute `http(s)` URL with a host may become a link.
+ *
+ * Mirrors `coursebook/packs.py::is_http_url` (the write-time rule) so a pack adopted before that
+ * rule cannot put `javascript:`, `data:`, `file:` or a scheme-relative value into `href`. Every
+ * caller renders a refused value as text instead, so it stays visible for review and never
+ * becomes an href. Private and link-local hosts still pass — filtering those belongs to the
+ * fetch seam (`source.revalidate`), not to link construction.
+ *
+ * Host-issued routes (`artifact.download.url`, `facts.download.url`) are relative backend paths
+ * and deliberately do not pass through this guard.
+ */
+function safeHttpHref(value) {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  if (!/^https?:\/\//i.test(trimmed)) return null
+  try {
+    const parsed = new URL(trimmed)
+    return parsed.hostname ? trimmed : null
+  } catch {
+    return null
+  }
+}
+
+/**
  * Host intake capability. The backend cannot accept a path from the wire; the host adapter mints
  * the grant. Until that route exists, the import action is absent and this state says why.
  */
@@ -25370,6 +25394,7 @@ function ProcedureSchematic({ schematic, sources, blockId }) {
 /** The cited manual with its permission status; never an unlabelled link. */
 function ProcedureSourceCard({ source, sources }) {
   const meta = procedureSourceMeta(source.source_id, sources)
+  const metaHref = safeHttpHref(meta && meta.url)
   const permission = PROCEDURE_PERMISSION_COPY[source.permission] || source.permission
   return jsxs('section', {
     'data-cb-procedure-source': source.source_id,
@@ -25391,15 +25416,20 @@ function ProcedureSourceCard({ source, sources }) {
           jsx(sdk.Badge, { size: 'xs', variant: source.permission === 'licensed' ? 'muted' : 'outline', children: permission })
         ]
       }),
-      meta && meta.url
+      metaHref
         ? jsx('a', {
-            href: meta.url,
+            href: metaHref,
             rel: 'noreferrer noopener',
             target: '_blank',
             style: { fontSize: CB_TYPE.meta, color: 'var(--cb-accent)', overflowWrap: 'anywhere' },
             children: meta.url
           })
-        : null,
+        : meta && meta.url
+          ? jsx('span', {
+              style: { fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)', overflowWrap: 'anywhere' },
+              children: meta.url
+            })
+          : null,
       jsx('p', {
         style: { margin: 0, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
         children: 'Torque values and sequence come from this reference and the structured schematic; the illustration is context only.'
@@ -31355,6 +31385,9 @@ function SourceProvenanceCard({ source, dense = false }) {
   const publisher = source && source.publisher ? source.publisher : null
   const modality = source && source.modality ? source.modality : null
   const licence = source && source.licence ? source.licence : null
+  // A source URL is pack data. It is printed as text unconditionally, but it only becomes an
+  // `href` when it is an absolute http(s) address with a host.
+  const sourceHref = safeHttpHref(source && source.url)
   const facts = []
   facts.push(publisher ? `Published by ${publisher}` : 'Publisher not recorded')
   facts.push(sourceTypeLabel(source && source.source_type))
@@ -31417,14 +31450,16 @@ function SourceProvenanceCard({ source, dense = false }) {
                 style: { minWidth: 0, overflowWrap: 'anywhere' },
                 children: source.url
               }),
-              jsx('a', {
-                href: source.url,
-                target: '_blank',
-                rel: 'noreferrer noopener',
-                'data-cb-source-open': '',
-                style: { color: 'var(--cb-ink)', textDecoration: 'underline' },
-                children: 'Open source'
-              })
+              sourceHref
+                ? jsx('a', {
+                    href: sourceHref,
+                    target: '_blank',
+                    rel: 'noreferrer noopener',
+                    'data-cb-source-open': '',
+                    style: { color: 'var(--cb-ink)', textDecoration: 'underline' },
+                    children: 'Open source'
+                  })
+                : null
             ]
           })
         : null,
@@ -37055,23 +37090,28 @@ function HomeworkSheetCard({ task, compact = false }) {
             },
             children: [
               jsx('span', { children: task.sources.length === 1 ? 'Source · ' : 'Sources · ' }, 'word'),
-              ...task.sources.map((source, index) =>
-                jsxs(
+              ...task.sources.map((source, index) => {
+                // The sheet's sources are pack data: only an absolute http(s) URL becomes a link.
+                const sourceHref = safeHttpHref(source.url)
+                const label = source.title || source.source_id
+                return jsxs(
                   'span',
                   {
                     children: [
                       index > 0 ? jsx('span', { children: '; ' }, 'sep') : null,
-                      jsx('a', {
-                        href: source.url,
-                        style: { color: 'inherit', textDecoration: 'underline' },
-                        children: source.title || source.source_id
-                      }, 'link'),
+                      sourceHref
+                        ? jsx('a', {
+                            href: sourceHref,
+                            style: { color: 'inherit', textDecoration: 'underline' },
+                            children: label
+                          }, 'link')
+                        : jsx('span', { children: label }, 'link'),
                       source.accessed ? jsx('span', { children: ` (accessed ${source.accessed})` }, 'date') : null
                     ]
                   },
                   source.source_id || `src-${index}`
                 )
-              )
+              })
             ]
           }, 'sources')
         : null
@@ -43584,13 +43624,15 @@ function WorkshopDetail({ item, layout, motion, onBack, onInstall, onContinue, b
                       }),
                       jsx('ul', {
                         style: { margin: 0, paddingLeft: '1.1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' },
-                        children: item.sources.map((source, index) =>
-                          jsxs('li', {
+                        children: item.sources.map((source, index) => {
+                          // Workshop sources are pack data: a URL is only a link when it is http(s).
+                          const sourceHref = safeHttpHref(source.url)
+                          return jsxs('li', {
                             style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink)' },
                             children: [
-                              source.url
+                              sourceHref
                                 ? jsx('a', {
-                                    href: source.url,
+                                    href: sourceHref,
                                     target: '_blank',
                                     rel: 'noreferrer noopener',
                                     style: { color: 'var(--cb-accent)' },
@@ -43603,7 +43645,7 @@ function WorkshopDetail({ item, layout, motion, onBack, onInstall, onContinue, b
                                 : null
                             ]
                           }, `source-${index}`)
-                        )
+                        })
                       })
                     ]
                   })

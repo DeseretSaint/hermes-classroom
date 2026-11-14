@@ -42,6 +42,30 @@ function bytesLabel(value) {
 }
 
 /**
+ * A pack is untrusted data: only an absolute `http(s)` URL with a host may become a link.
+ *
+ * Mirrors `coursebook/packs.py::is_http_url` (the write-time rule) so a pack adopted before that
+ * rule cannot put `javascript:`, `data:`, `file:` or a scheme-relative value into `href`. Every
+ * caller renders a refused value as text instead, so it stays visible for review and never
+ * becomes an href. Private and link-local hosts still pass — filtering those belongs to the
+ * fetch seam (`source.revalidate`), not to link construction.
+ *
+ * Host-issued routes (`artifact.download.url`, `facts.download.url`) are relative backend paths
+ * and deliberately do not pass through this guard.
+ */
+function safeHttpHref(value) {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  if (!/^https?:\/\//i.test(trimmed)) return null
+  try {
+    const parsed = new URL(trimmed)
+    return parsed.hostname ? trimmed : null
+  } catch {
+    return null
+  }
+}
+
+/**
  * Host intake capability. The backend cannot accept a path from the wire; the host adapter mints
  * the grant. Until that route exists, the import action is absent and this state says why.
  */

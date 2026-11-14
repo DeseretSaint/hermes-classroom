@@ -3394,6 +3394,7 @@ function ProcedureSchematic({ schematic, sources, blockId }) {
 /** The cited manual with its permission status; never an unlabelled link. */
 function ProcedureSourceCard({ source, sources }) {
   const meta = procedureSourceMeta(source.source_id, sources)
+  const metaHref = safeHttpHref(meta && meta.url)
   const permission = PROCEDURE_PERMISSION_COPY[source.permission] || source.permission
   return jsxs('section', {
     'data-cb-procedure-source': source.source_id,
@@ -3415,15 +3416,20 @@ function ProcedureSourceCard({ source, sources }) {
           jsx(sdk.Badge, { size: 'xs', variant: source.permission === 'licensed' ? 'muted' : 'outline', children: permission })
         ]
       }),
-      meta && meta.url
+      metaHref
         ? jsx('a', {
-            href: meta.url,
+            href: metaHref,
             rel: 'noreferrer noopener',
             target: '_blank',
             style: { fontSize: CB_TYPE.meta, color: 'var(--cb-accent)', overflowWrap: 'anywhere' },
             children: meta.url
           })
-        : null,
+        : meta && meta.url
+          ? jsx('span', {
+              style: { fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)', overflowWrap: 'anywhere' },
+              children: meta.url
+            })
+          : null,
       jsx('p', {
         style: { margin: 0, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
         children: 'Torque values and sequence come from this reference and the structured schematic; the illustration is context only.'

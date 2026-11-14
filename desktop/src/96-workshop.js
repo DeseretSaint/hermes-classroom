@@ -1100,13 +1100,15 @@ function WorkshopDetail({ item, layout, motion, onBack, onInstall, onContinue, b
                       }),
                       jsx('ul', {
                         style: { margin: 0, paddingLeft: '1.1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' },
-                        children: item.sources.map((source, index) =>
-                          jsxs('li', {
+                        children: item.sources.map((source, index) => {
+                          // Workshop sources are pack data: a URL is only a link when it is http(s).
+                          const sourceHref = safeHttpHref(source.url)
+                          return jsxs('li', {
                             style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink)' },
                             children: [
-                              source.url
+                              sourceHref
                                 ? jsx('a', {
-                                    href: source.url,
+                                    href: sourceHref,
                                     target: '_blank',
                                     rel: 'noreferrer noopener',
                                     style: { color: 'var(--cb-accent)' },
@@ -1119,7 +1121,7 @@ function WorkshopDetail({ item, layout, motion, onBack, onInstall, onContinue, b
                                 : null
                             ]
                           }, `source-${index}`)
-                        )
+                        })
                       })
                     ]
                   })

@@ -2500,23 +2500,28 @@ function HomeworkSheetCard({ task, compact = false }) {
             },
             children: [
               jsx('span', { children: task.sources.length === 1 ? 'Source · ' : 'Sources · ' }, 'word'),
-              ...task.sources.map((source, index) =>
-                jsxs(
+              ...task.sources.map((source, index) => {
+                // The sheet's sources are pack data: only an absolute http(s) URL becomes a link.
+                const sourceHref = safeHttpHref(source.url)
+                const label = source.title || source.source_id
+                return jsxs(
                   'span',
                   {
                     children: [
                       index > 0 ? jsx('span', { children: '; ' }, 'sep') : null,
-                      jsx('a', {
-                        href: source.url,
-                        style: { color: 'inherit', textDecoration: 'underline' },
-                        children: source.title || source.source_id
-                      }, 'link'),
+                      sourceHref
+                        ? jsx('a', {
+                            href: sourceHref,
+                            style: { color: 'inherit', textDecoration: 'underline' },
+                            children: label
+                          }, 'link')
+                        : jsx('span', { children: label }, 'link'),
                       source.accessed ? jsx('span', { children: ` (accessed ${source.accessed})` }, 'date') : null
                     ]
                   },
                   source.source_id || `src-${index}`
                 )
-              )
+              })
             ]
           }, 'sources')
         : null
