@@ -319,7 +319,7 @@
         },
         "stimulus_format": null,
         "submit": {
-          "contract_version": 28,
+          "contract_version": 29,
           "ok": true,
           "operation_id": "op-h40-attempt-submit-000026",
           "result": {
@@ -604,6 +604,9 @@
         }
       ],
       "plan": {
+        "exclusions": [
+          "Does not certify competence; a supervisor checks the first attempt."
+        ],
         "plan_hash": "sha256:2757e4000dd5cfb41c46f9b7a39ad1bc8e3b5520e815b657263b36c3db372ac3",
         "plan_id": "pln_00000000000000000000000000000003",
         "state": "approved",

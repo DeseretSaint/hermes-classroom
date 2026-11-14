@@ -5639,6 +5639,24 @@ function lessonsUnitTarget(job) {
  * right. The parent can edit every meaningful field of a **draft** plan; an approved plan is
  * changed in place through the H-194 fine-tune commands, which record a reviewable revision.
  */
+//: The two prefixes the authoring rules put in front of an exclusion sentence (CP-015). They are
+//: the pipeline's words, so the review shows the sentence without them and keeps the plan's raw
+//: entry behind a disclosure. A new prefix would show raw, which is why the read is bounded.
+const PLAN_EXCLUSION_PREFIXES = [
+  'Not covered — no supporting source:',
+  'Scope shortfall — fewer supporting capabilities:'
+]
+
+function planExclusionSentence(entry) {
+  const text = String(entry == null ? '' : entry)
+    .replace(/\s+/g, ' ')
+    .trim()
+  for (const prefix of PLAN_EXCLUSION_PREFIXES) {
+    if (text.startsWith(prefix)) return text.slice(prefix.length).trim()
+  }
+  return text
+}
+
 function StudioPlanView({
   course,
   revision,
@@ -5670,6 +5688,12 @@ function StudioPlanView({
   const hideOutline = Boolean(outlineHidden)
   const plan = outline.data && outline.data.plan
   const objectives = (outline.data && outline.data.objectives) || []
+  // The plan's own exclusions, served bounded by `course.outline`. A plan that declared none
+  // serves an empty array and this review renders nothing: absence is not a claim.
+  const planExclusions = ((plan && Array.isArray(plan.exclusions) ? plan.exclusions : []) || [])
+    .map((entry) => String(entry == null ? '' : entry).replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .slice(0, 8)
   // `course.outline.plan.plan_hash` echoes the digest generation stored with the plan document,
   // while `plan.approve` / `parent.plan.edit` fence on the digest recomputed from the plan rows.
   // `parent.blueprint.read` serves the recomputed one, so that is the value the studio sends.
@@ -6354,6 +6378,58 @@ function StudioPlanView({
                 'data-cb-breadth': 'plan',
                 children: PLAN_BREADTH_DISCLOSURE
               }),
+              planExclusions.length > 0
+                ? jsxs('div', {
+                    className: 'flex max-w-prose flex-col gap-2 border-t border-(--ui-stroke-tertiary) pt-3',
+                    'data-cb-plan-exclusions': String(planExclusions.length),
+                    children: [
+                      jsx(CbLabel, { children: 'What this plan does not cover' }),
+                      jsx(QuietNote, {
+                        children:
+                          'The plan declares these parts of the goal it will not teach. Read them before you approve: approving this outline approves the course without them.'
+                      }),
+                      jsx('ul', {
+                        className: 'flex flex-col gap-1 text-xs leading-relaxed text-(--ui-text-primary)',
+                        'data-cb-plan-exclusion-list': String(planExclusions.length),
+                        children: planExclusions.map((entry, index) =>
+                          jsxs(
+                            'li',
+                            {
+                              className: 'flex gap-2',
+                              'data-cb-plan-exclusion': String(index + 1),
+                              children: [
+                                jsx('span', {
+                                  className: 'shrink-0 tabular-nums text-(--ui-text-secondary)',
+                                  children: `${index + 1}.`
+                                }),
+                                jsx('span', { children: planExclusionSentence(entry) })
+                              ]
+                            },
+                            `plan-exclusion-${index}`
+                          )
+                        )
+                      }),
+                      // The plan's own wording stays available: the list above removes the two
+                      // authoring prefixes for the learner's sake, and this keeps what was said.
+                      jsxs('details', {
+                        className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                        'data-cb-plan-exclusions-raw': String(planExclusions.length),
+                        children: [
+                          jsx('summary', {
+                            className: 'cursor-pointer',
+                            children: 'The plan’s own wording'
+                          }),
+                          jsx('ul', {
+                            className: 'mt-1 flex flex-col gap-1',
+                            children: planExclusions.map((entry, index) =>
+                              jsx('li', { children: entry }, `plan-exclusion-raw-${index}`)
+                            )
+                          })
+                        ]
+                      })
+                    ]
+                  })
+                : null,
               jsx(CbLabel, { children: `OUTLINE AND ACTIVITIES (${objectives.length})` }),
               ...displayObjectives.map((objective, index) => {
                 const draft = drafts[objective.objective_id] || {}

@@ -4400,6 +4400,12 @@ def evidence_disputes(payload: dict[str, Any], envelope: dict[str, Any]) -> tupl
 #: reach the pane through a read.
 STIMULUS_FORMATS: tuple[str, ...] = ("text", "selection", "verification")
 OUTLINE_OBJECTIVE_LIMIT = 400
+#: The plan's own exclusions, bounded for a review surface. The generation rules write them into
+#: ``plans.schedule_json``; a review that never showed them let a learner approve a narrower
+#: course than the goal asked for. Eight sentences of 240 characters each is a disclosure, not a
+#: second document, and it matches the wire (``outline_plan.exclusions``).
+OUTLINE_EXCLUSION_LIMIT = 8
+OUTLINE_EXCLUSION_CHARS = 240
 STIMULUS_PROMPT_LIMIT = 8000
 STIMULUS_ITEM_LIMIT = 24
 STIMULUS_ITEM_ID_LIMIT = 64
@@ -4549,6 +4555,34 @@ def _practice_view(stored: Any) -> dict[str, Any] | None:
         return None
 
 
+def _plan_exclusions(plan: Any) -> list[str]:
+    """The plan's declared exclusions, bounded for the review that approves it.
+
+    The generation rules record what a course will not cover in ``plans.schedule_json`` (the
+    ``exclusions`` list built by the plan stage, CP-015). A review surface that hides them lets a
+    learner approve a course narrower than the goal without knowing it, so this read carries the
+    plan's own disclosure. Entries are normalised to one line and truncated; the two rule prefixes
+    (``Not covered — no supporting source:`` and ``Scope shortfall — fewer supporting
+    capabilities:``) are left intact here, because the raw text is what the plan said and the
+    review keeps it behind a disclosure while showing the stripped sentence in the list.
+    """
+    schedule = _json_load(plan["schedule_json"], {})
+    if not isinstance(schedule, dict):
+        return []
+    raw = schedule.get("exclusions")
+    if not isinstance(raw, list):
+        return []
+    exclusions: list[str] = []
+    for entry in raw:
+        text = " ".join(str(entry).split())
+        if not text:
+            continue
+        exclusions.append(text[:OUTLINE_EXCLUSION_CHARS])
+        if len(exclusions) >= OUTLINE_EXCLUSION_LIMIT:
+            break
+    return exclusions
+
+
 @_handler("course.outline")
 def course_outline(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
     """The Textbook section index and the Plan tab: one read, every field derived, revision 0.
@@ -4642,6 +4676,10 @@ def course_outline(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
             "plan_hash": plan["plan_hash"],
             # Additive in cb.rpc v20 (H-182 amendment). Read-only facts about approvability.
             "validation": plan_validation,
+            # Additive in cb.rpc v29 (upgrade 7): the plan's own declaration of what this course
+            # will not cover, bounded. An empty list is the honest reading of a plan that named
+            # none; the review renders nothing for it.
+            "exclusions": _plan_exclusions(plan),
             # Additive in cb.rpc v11 (§14.2 R9). A legacy plan projects exactly one implicit
             # unit titled with the plan title, so every client can rely on the array.
             "units": units,

@@ -37,7 +37,12 @@ CONTRACT_FILES: dict[str, str] = {
     # lesson.page.section.sections_total, which the base commit already projected. One contract
     # version must carry every additive change shipped together: two rpc.v28.json files cannot
     # both exist, so these cards compose rather than fork the version.
-    "cb.rpc": "rpc.v28.json",
+    # UP-7 (t_277daa90): v29 is additive over v28 — the plan's own declaration of what the course
+    # will not cover. `outline_plan` may carry an optional `exclusions` array (bounded: eight
+    # entries of at most 240 characters), projected from `plans.schedule_json` so a review that
+    # approves the plan shows it. A plan that declared none omits the key; every v28 record keeps
+    # its exact shape. v28 stays on disk as byte-identical history.
+    "cb.rpc": "rpc.v29.json",
     # E2E L1: v15 is additive over v14 — one column, `checks.revisit INTEGER NOT NULL DEFAULT 0`.
     # No row is rewritten; every check written before v15 reads as an ordinary (non-revisit) check.
     "cb.db": "db.v15.json",
@@ -64,7 +69,7 @@ CONTRACT_FILES: dict[str, str] = {
 
 #: The contract whose version the plugin speaks on the wire.
 WIRE_CONTRACT_ID = "cb.rpc"
-WIRE_CONTRACT_VERSION = 28
+WIRE_CONTRACT_VERSION = 29
 
 
 #: Version -> file name for every contract that accepts more than one document version.
@@ -98,8 +103,12 @@ CONTRACT_VERSION_FILES: dict[str, dict[int, str]] = {
     # is a clone of the newest closed authored check; it never moves the objective again and never
     # pays XP twice. v27 stays readable so a client that pinned the drawn-label wire can still
     # validate.
+    # UP-7: v29 is additive over v28 — `outline_plan.exclusions`, the plan's own bounded
+    # disclosure of what this course will not cover. v28 stays readable so a client that pinned
+    # the composed revisit/completion wire can still validate.
     "cb.rpc": {22: "rpc.v22.json", 23: "rpc.v23.json", 24: "rpc.v24.json", 25: "rpc.v25.json",
-               26: "rpc.v26.json", 27: "rpc.v27.json", 28: "rpc.v28.json"},
+               26: "rpc.v26.json", 27: "rpc.v27.json", 28: "rpc.v28.json",
+               29: "rpc.v29.json"},
     # t_d33984eb: the v1 projection stays readable by explicit version as immutable history; v2
     # is the inventory current (one trust-label sentence corrected, no rule or output moved).
     "cb.projection": {1: "projection.v1.json", 2: "projection.v2.json"},

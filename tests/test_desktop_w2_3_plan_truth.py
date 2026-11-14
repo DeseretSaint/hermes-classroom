@@ -303,8 +303,21 @@ const render = async (book) => {
   })
   await flush()
 }
-
-const out = { before: {}, calls, after: {}, approved: {} }
+const exclusionsBook = {
+  ...draftBook,
+  data: {
+    plan: {
+      ...draftBook.data.plan,
+      exclusions: [
+        'Not covered — no supporting source: writing a handwritten letter',
+        'Scope shortfall — fewer supporting capabilities: negotiating a refund'
+      ]
+    },
+    objectives,
+    sections: []
+  }
+}
+const out = { before: {}, calls, after: {}, approved: {}, exclusions: {} }
 await render(draftBook)
 out.before.adjust = Boolean(byText('Adjust this plan'))
 out.before.primaryCount = primaries().length
@@ -331,6 +344,12 @@ out.after.primaryLabels = primaries().map(text)
 await render(approvedBook)
 out.approved.askForChange = Boolean(byText('Ask for a change'))
 out.approved.adjust = Boolean(byText('Adjust this plan'))
+
+// A draft plan that declares what it will not teach shows that before the learner approves it.
+await render(exclusionsBook)
+out.exclusions.html = container.innerHTML
+out.exclusions.text = text(container)
+out.exclusions.primaryLabels = primaries().map(text)
 
 // The clock really ticks: mount the wait panel with a running job and read the clock twice.
 await act(async () => {
@@ -551,6 +570,37 @@ class LearnerPlanAdjust(unittest.TestCase):
         self.assertTrue(approved["askForChange"], "an approved learner plan must offer Ask for a change")
         self.assertFalse(approved["adjust"], "an approved plan is changed by a new version, not edited in place")
 
+    def test_a_plan_with_disclosed_exclusions_shows_them_before_approve(self) -> None:
+        exclusions = self.out["exclusions"]
+        html = exclusions["html"]
+        text = exclusions["text"]
+        # Two declared exclusions are two rows, named on the surface that asks for approval.
+        self.assertIn('data-cb-plan-exclusions="2"', html)
+        self.assertIn('data-cb-plan-exclusion-list="2"', html)
+        self.assertEqual(exclusions["primaryLabels"], ["Approve plan"], exclusions["primaryLabels"])
+        # The list says what the plan will not teach, in its own stripped sentences…
+        list_html = html[html.index("data-cb-plan-exclusion-list"):html.index("data-cb-plan-exclusions-raw")]
+        list_text = visible_text(list_html)
+        self.assertIn("writing a handwritten letter", list_text)
+        self.assertIn("negotiating a refund", list_text)
+        # …above the outline, so it is read before the plan is approved.
+        self.assertLess(
+            html.index("data-cb-plan-exclusions"),
+            html.index("OUTLINE AND ACTIVITIES"),
+        )
+        self.assertIn("What this plan does not cover", text)
+        # The two authoring prefixes are pipeline words, never the learner's sentence…
+        self.assertNotIn("Not covered — no supporting source:", list_text)
+        self.assertNotIn("Scope shortfall — fewer supporting capabilities:", list_text)
+        # …and the plan's raw entries stay available in the disclosure.
+        raw_html = html[html.index("data-cb-plan-exclusions-raw"):]
+        raw_text = visible_text(raw_html)
+        self.assertIn("The plan’s own wording", raw_text)
+        self.assertIn("Not covered — no supporting source: writing a handwritten letter", raw_text)
+        self.assertIn(
+            "Scope shortfall — fewer supporting capabilities: negotiating a refund", raw_text
+        )
+
     def test_the_elapsed_clock_ticks_while_the_job_runs(self) -> None:
         tick = self.out["tick"]
         self.assertIsNotNone(tick["start"])
@@ -595,6 +645,48 @@ class LearnerEditIsVersionedBackend(KernelCase):
         self.assertEqual(
             [row["objective_id"] for row in outline["objectives"]],
             [second, first],
+        )
+
+
+class PlanExclusionsBackend(KernelCase):
+    """The plan's declared exclusions travel to the review that approves it, bounded.
+
+    The Desktop test proves the render; this proves the read it renders from. A plan stage records
+    each exclusion in ``plans.schedule_json`` (CP-015), so ``course.outline.plan`` must carry them
+    or no review can show them and a learner approves a course narrower than the goal.
+    """
+
+    def _outline_with(self, exclusions) -> dict:
+        course_id, plan_id = self.new_course(recipe="casual")
+        self.execute(
+            "UPDATE plans SET schedule_json = ? WHERE id = ?",
+            (json.dumps({"exclusions": exclusions}), plan_id),
+        )
+        enrollment_id = self.new_enrollment(course_id, label="Learner")
+        return self.ok("course.outline", {"enrollment_id": enrollment_id})["result"]
+
+    def test_course_outline_serves_the_plans_declared_exclusions(self) -> None:
+        declared = [
+            "Not covered — no supporting source: writing a handwritten letter",
+            "Scope shortfall — fewer supporting capabilities: negotiating a refund",
+        ]
+        outline = self._outline_with(declared)
+        # The raw entries are served; stripping the two rule prefixes is the review's job, so the
+        # raw text survives for the disclosure behind the list.
+        self.assertEqual(outline["plan"]["exclusions"], declared)
+
+    def test_an_absent_declaration_is_an_empty_array_not_a_missing_key(self) -> None:
+        outline = self._outline_with([])
+        self.assertEqual(outline["plan"]["exclusions"], [])
+
+    def test_the_served_exclusions_are_bounded(self) -> None:
+        declared = [f"Not covered — no supporting source: capability {index}" for index in range(12)]
+        declared.append("Not covered — no supporting source: " + "x" * 400)
+        outline = self._outline_with(declared)
+        served = outline["plan"]["exclusions"]
+        self.assertEqual(len(served), domain.OUTLINE_EXCLUSION_LIMIT)
+        self.assertLessEqual(
+            max(len(entry) for entry in served), domain.OUTLINE_EXCLUSION_CHARS
         )
 
 
