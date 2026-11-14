@@ -19,6 +19,9 @@ module_sha256, component, width, height, host_header, fonts, and `installed` —
 ~/.hermes/desktop-plugins/coursebook/plugin.js at run time. When the two differ the frame is still
 valid evidence of the branch, and the manifest says so: never present it as the installed build.
 
+The renderer deps live in `visual/node_modules`, which is gitignored: run `cd visual && npm ci` once
+per checkout. `--preflight` refuses with that instruction instead of dying in Node.
+
 The SDK stub renders `Codicon` as a visible stand-in glyph (the published stub returns null, which
 would hide every state mark in the frame). It is an icon-font stand-in, not a product asset.
 """
@@ -193,6 +196,45 @@ export const Select = (props) => {
 PLUGIN = ROOT / "desktop" / "plugin.js"
 INSTALLED = Path.home() / ".hermes" / "desktop-plugins" / "coursebook" / "plugin.js"
 CHROMIUM = "/usr/lib/chromium/chromium"
+VISUAL = ROOT / "visual"
+
+#: The shot script is spawned with NODE_PATH=<repo>/visual/node_modules, and that directory is
+#: gitignored: a fresh clone, `git clean`, or a pruned scratch worktree never has it. Without this
+#: check the first frame dies in Node with `Cannot find module 'playwright'` and no frame is written.
+FRAME_MODULES = ("axe-core", "pixelmatch", "pngjs", "playwright")
+
+
+def frame_deps(visual: Path | None = None) -> dict[str, str | None]:
+    """Resolved version of every renderer dependency, or None where it is not installed."""
+    base = (visual if visual is not None else VISUAL) / "node_modules"
+    deps: dict[str, str | None] = {}
+    for name in FRAME_MODULES:
+        manifest = base / name / "package.json"
+        version = None
+        if manifest.is_file():
+            try:
+                version = json.loads(manifest.read_text(encoding="utf-8")).get("version")
+            except (OSError, ValueError):
+                version = None
+        deps[name] = version
+    return deps
+
+
+def deps_report(visual: Path | None = None) -> tuple[bool, list[str]]:
+    """Preflight lines for the renderer deps; the second element of a failure names the fix."""
+    deps = frame_deps(visual)
+    missing = [name for name, version in deps.items() if not version]
+    if missing:
+        return False, [
+            "renderer deps      missing: " + ", ".join(missing),
+            "",
+            "REFUSE a frame: visual/node_modules is not installed in this checkout.",
+            "It is gitignored, so a fresh clone, `git clean` and a pruned worktree never have it.",
+            "Install it once per checkout (the lockfile is committed):",
+            "  cd visual && npm ci",
+        ]
+    return True, ["renderer deps      " + ", ".join(f"{name} {version}" for name, version in deps.items())]
+
 
 #: component -> {component export, fixture, route height}. Fixtures are the deck's own shapes:
 #: a course home reads `row`, `objectives`, `page`, `plate`, `others`.
@@ -578,6 +620,11 @@ def render_destinations(selected: list[dict], widths: list[int], mode: str, out:
     """Render every requested route destination at every width, with a manifest per frame."""
     from scripts import cb_frame_fixtures as fixtures_mod
 
+    ok, lines = deps_report()
+    if not ok:
+        print("\n".join(lines), file=sys.stderr)
+        return 1
+
     if data is None:
         print("reading real backend fixtures for the route destinations ...", file=sys.stderr)
         data = fixtures_mod.build()
@@ -729,6 +776,10 @@ def main() -> int:
     args = ap.parse_args()
 
     if args.preflight:
+        ok, lines = deps_report()
+        print("\n".join(lines))
+        if not ok:
+            return 1
         sha = hashlib.sha256(PLUGIN.read_bytes()).hexdigest()
         installed = hashlib.sha256(INSTALLED.read_bytes()).hexdigest() if INSTALLED.is_file() else None
         fresh_build = subprocess.run(
@@ -780,6 +831,11 @@ def main() -> int:
         return 0
     if args.component not in COMPONENTS:
         raise SystemExit(f"unknown component {args.component!r}; --list shows the registry")
+
+    ok, lines = deps_report()
+    if not ok:
+        print("\n".join(lines), file=sys.stderr)
+        return 1
 
     out = Path(args.out).resolve()
     out.mkdir(parents=True, exist_ok=True)

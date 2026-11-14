@@ -11,6 +11,10 @@ Dispatch and merge: cron supervisor `85d2218453f7` only. New cards are unassigne
 > The Home quality card `t_831137dd` uses display covers and the 86 px header band. Game-mode
 > courses use the same visual kit as built-in courses, including when the user generated the
 > lesson.
+>
+> **Frame tooling 2026-11-13.** `scripts/cb-frame.py` needs the renderer deps in `visual/node_modules`,
+> which is gitignored: on a fresh checkout run `cd visual && npm ci` before any frame
+> (`python3 scripts/cb-frame.py --preflight` refuses and names that fix if it is missing).
 
 ## Order — parallel lanes (amended 2026-11-11, decision D-008)
 
