@@ -21,6 +21,7 @@ the truth is that this build cannot say. :func:`activity_for` raises
 from __future__ import annotations
 
 import json
+import sqlite3
 from datetime import datetime, timezone
 from typing import Any
 
@@ -147,7 +148,58 @@ def activity_for(
         "readable": True,
         "message": str(progress.get("message") or "")[:300],
         "last_progress_at": last_progress_at,
+        "retry": None,
         "usage": dict(usage) if usage is not None else empty_usage(),
+    }
+
+
+def _row_value(row: Any, key: str, default: Any = None) -> Any:
+    try:
+        return row[key]
+    except (IndexError, KeyError, TypeError):
+        return default
+
+
+def retry_for_job(connection: Any, job_id: str) -> dict[str, Any] | None:
+    """The last *failed* section attempt recorded against this job, or ``None``.
+
+    Upgrade 36: a lesson job re-authors a refused section up to ``LESSON_ATTEMPTS`` times, and
+    nothing durable used to mark those attempts until the section finished, so a run that would
+    end in a repair screen looked identical to one that was going well. The authoring loop now
+    writes one bounded row per refusal at the attempt boundary; this reads the newest one so a
+    waiting pane can say "section 3, attempt 2 of 3: <reason>".
+
+    ``attempt`` is the attempt that *failed* (1-based), not the one about to run. A job with no
+    recorded refusal — or a database written before the rows existed — answers ``None`` rather
+    than inventing an attempt.
+    """
+    try:
+        row = connection.execute(
+            "SELECT section_ordinal, attempt_index, attempts_total, reason, prompt_version,"
+            " created_at FROM gen_lesson_attempts WHERE job_id = ?"
+            " ORDER BY created_at DESC, rowid DESC LIMIT 1",
+            (str(job_id),),
+        ).fetchone()
+    except sqlite3.OperationalError:
+        # No attempts table in this store: nothing has been recorded, which is not a read failure.
+        return None
+    if row is None:
+        return None
+    attempt = _int_or_none(_row_value(row, "attempt_index"))
+    total = _int_or_none(_row_value(row, "attempts_total"))
+    ordinal = _int_or_none(_row_value(row, "section_ordinal"))
+    reason = str(_row_value(row, "reason") or "")[:240]
+    if attempt is None or total is None or ordinal is None or not reason:
+        return None
+    at = _row_value(row, "created_at")
+    return {
+        "kind": "lesson_section",
+        "section_ordinal": ordinal,
+        "attempt": attempt,
+        "attempts_total": total,
+        "reason": reason,
+        "prompt_version": str(_row_value(row, "prompt_version") or "")[:80],
+        "at": at if isinstance(at, str) else None,
     }
 
 
@@ -171,6 +223,7 @@ def unreadable_activity(*, terminal: bool = False) -> dict[str, Any]:
         "readable": False,
         "message": "",
         "last_progress_at": None,
+        "retry": None,
         "usage": empty_usage(),
     }
 
@@ -257,7 +310,8 @@ def usage_for_job(connection, job_id: str) -> dict[str, Any]:
 
 
 def activity_with_usage(connection, row: Any, *, now: datetime | None = None) -> dict[str, Any]:
-    """``activity_for`` plus the usage recorded against this job id."""
+    """``activity_for`` plus the usage recorded against this job id and any recorded retry."""
     activity = activity_for(row, now=now)
     activity["usage"] = usage_for_job(connection, str(row["id"]))
+    activity["retry"] = retry_for_job(connection, str(row["id"]))
     return activity

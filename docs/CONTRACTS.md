@@ -29,21 +29,22 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v4.json` | 4 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v28.json` | 28 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune + engagement + tutor + the `library.list` shelf facts + the plate's `route_anchors` + the terminal `complete` and `repair_lesson` next steps), Sable (transport + `world.*` policy/prompts/media), Lattice (`pack.*` + `lesson_document` + `takehome.*` + `homework.*` + `takehome.html`), easel (the media child's own `labels`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.rpc` | `contracts/rpc.v29.json` | 29 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune + engagement + tutor + the `library.list` shelf facts + the plate's `route_anchors` + the terminal `complete` and `repair_lesson` next steps), Sable (transport + `world.*` policy/prompts/media), Lattice (`pack.*` + `lesson_document` + `takehome.*` + `homework.*` + `takehome.html`), easel (the media child's own `labels`) | Desktop half, Coursebook tools, `pre_llm_call` |
 | `cb.db` | `contracts/db.v14.json` | 14 | Cinder (GM-001 storage), Lattice (GM-005 migration 0014) | migrations, every command, evidence views |
-| `cb.jobs` | `contracts/jobs.v5.json` | 5 | Cinder | job service, Activity view |
+| `cb.jobs` | `contracts/jobs.v6.json` | 6 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v3.json` (v1, v2 and v4 also accepted) | 3 (v1/v2/v4 accepted) | Cinder (v2 media link, H-137; v4 `coloring_page` + `text/html`, PRINT-2, 2026-11-12); CP-015g (v3 presentation, 2026-11-11) | import/export, bundled demo packs, take-home print packs |
 | `cb.projection` | `contracts/projection.v2.json` (v1 also accepted) | 2 (v1 accepted) | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 | `cb.frequency_inventory` | `contracts/frequency-inventory.v1.json` | 1 | Atlas | plan author + validator, imported/pack-supplied frequency inventories (H-89; no third-party list is bundled — see `docs/FREQUENCY-INVENTORY.md`) |
 
-The v1 **to v22** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
+The v1 **to v23** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
 `rpc.v12.json`, `rpc.v13.json`, `rpc.v14.json`, `rpc.v15.json`, `rpc.v16.json`, `rpc.v17.json`,
-`rpc.v18.json`, `rpc.v19.json`, `rpc.v20.json`, `rpc.v21.json` and `rpc.v22.json`), the
+`rpc.v18.json`, `rpc.v19.json`, `rpc.v20.json`, `rpc.v21.json`, `rpc.v22.json` and
+`rpc.v23.json`), the
 v1 **to v13** files for `cb.db` (including `db.v3.json`, `db.v5.json`, `db.v7.json`,
-`db.v8.json`, `db.v9.json`, `db.v10.json`, `db.v11.json`, `db.v12.json` and `db.v13.json`), and the v1
-**to v3** files for `cb.errors` and the v1 to v4 files for `cb.jobs` remain on disk, unmodified,
-as immutable history: the superseded current files are `rpc.v27.json`, `db.v13.json`,
-`errors.v3.json` and `jobs.v4.json`.
+`db.v8.json`, `db.v9.json`, `db.v10.json`, `db.v11.json`, `db.v12.json` and `db.v13.json`), the v1
+**to v3** files for `cb.errors` and the v1 to v5 files for `cb.jobs` remain on disk, unmodified,
+as immutable history: the superseded current files are `rpc.v28.json`, `db.v13.json`,
+`errors.v3.json` and `jobs.v5.json`.
 
 `cb.pack` is the one contract with a version map: v1 (`pack-manifest.v1.json`), v2
 (`pack-manifest.v2.json`), v3 (`pack-manifest.v3.json`) and v4 (`pack-manifest.v4.json`) all live on
@@ -1967,6 +1968,7 @@ required object to it:
 | `activity.can_cancel`, `can_retry`, `terminal` | the frozen `cb.jobs` transition table, not a UI guess |
 | `activity.message`, `last_progress_at` | the checkpoint message and the instant it was written |
 | `activity.usage` | `usage_events` for this `operation_id`: calls, the four token counts, `cost_usd`, `unknown_cost_calls`, artifacts, providers, models |
+| `activity.retry` (v6) | the last **failed** lesson-section attempt for this job: `{kind, section_ordinal, attempt, attempts_total, reason, prompt_version, at}`, or `null` when no attempt has failed |
 
 **No percentage.** There is no `percent` field and no computed rate: `steps_done`/`steps_total`
 are the real counts, and the total is `null` when the plan is not known. A client that wants a
@@ -2912,3 +2914,50 @@ optionality, the frozen v27 document and that the shipped v28 is byte-identical 
 `tests/test_e2e_l1_revisit.py` passes a generated check, reopens it as a revisit, proves the
 objective state and `engagement.read.xp_total` do not move, and proves `progression.challenge_out`
 reaches the same clone.
+
+## v29 delta (Upgrade 36) — a repair attempt is readable while it happens
+
+A lesson section that a deterministic rule or the independent validator refuses is re-authored up
+to `LESSON_ATTEMPTS` (3) times. Nothing durable marked a refusal, so the first sign of trouble was
+the parked page minutes later: a run that would end on a repair screen looked identical to one that
+was going well, and the learner watched a job that said nothing (see `docs/SILENT-FAILURES.md`).
+**The wire does not gain a method.** `jobs.get` already returns the job; `cb.jobs` **v6** adds one
+required, nullable object to `job.activity`:
+
+| Field | Source (all durable) | What it may never be |
+|---|---|---|
+| `activity.retry.kind` | the retrying unit; today always `lesson_section` | a stage name, job id or reason code on a learner surface |
+| `activity.retry.section_ordinal` | the plan section's own ordinal | a position the plan does not hold |
+| `activity.retry.attempt` | the attempt that **failed** (1-based) | the attempt about to run, or a guess when none failed |
+| `activity.retry.attempts_total` | the stage's bounded limit (`LESSON_ATTEMPTS`) | a computed or raised limit |
+| `activity.retry.reason` | the first refusal reason, `<= 240` characters, answer key withheld | model prose unbounded, or the check's reference answer |
+| `activity.retry.prompt_version` | the authoring prompt label the refused draft was written under | a version the draft did not use |
+| `activity.retry.at` | the instant the refusal was recorded | a re-derived or rounded time |
+
+The row is written by `coursebook/generation.py::_record_lesson_attempt` **at the attempt
+boundary** — after the refusal is known and before the next authoring call — so the extra write
+rides the same connection as the H-199 call-wait heartbeat at a point where no provider call is in
+flight. It is bookkeeping like `gen_call_waits`: no lesson, check or validation row is touched, and
+the section's own record is still written once it finishes. `activity.retry` is `null` when no
+attempt has failed, so a job that is progressing is never described as retrying.
+
+**No storage contract change.** `cb.db` stays **v15**: the rows live in the additive
+`gen_lesson_attempts` table the generation module owns (`id`, `job_id`, `plan_id`, `section_id`,
+`section_ordinal`, `attempt_index`, `attempts_total`, `reason`, `prompt_version`, `created_at`), the
+same way `gen_call_waits` and the other `gen_*` authoring tables do.
+
+**Wire refresh.** `cb.rpc` is **v29**: v28 byte-for-byte apart from `$id`, `x-contract-version`,
+`x-supersedes`, the description, the four wire-version echoes and the one `cb.jobs/v5#/job`
+reference — `jobs.list`'s item `$ref`, which moves to `cb.jobs/v6#/job`. `jobs.get`'s `job` is the
+documented open object, so the read that surfaces `retry` needs no retype of its own; `jobs.list`
+carries the same activity object, which is why its item schema must be the v6 record.
+`rpc.v28.json` stays byte-identical on disk (sha256
+`6d09c8d8f5d246e4f6b684ec0ee0bd3f42068f6fe27fee673744b1b61335d35a`) and `x-supersedes` names
+`.../rpc/v28`. `rpc.v29.json` and `jobs.v6.json` are derived by `probes/derive_rpc_v29.py` and
+`probes/derive_jobs_v6.py`, not hand-copied.
+
+Regression guard: `tests/test_contracts.py::V29AmendmentTest` pins the additive property set, the
+nullable `retry`, the frozen v28 document and that both shipped files are byte-identical to their
+derivations; `tests/test_up_repair_progress.py::RepairProgressTest` proves a model that fails
+attempt 1 for a named rule leaves an attempt row readable through `jobs.get` before attempt 2 is
+called.
