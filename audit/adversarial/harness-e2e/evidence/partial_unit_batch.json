@@ -84,7 +84,8 @@
       "unknown_cost": false
     },
     "validation_id": "000000000000001d",
-    "validation_verdict": "pass"
+    "validation_verdict": "pass",
+    "warnings": []
   },
   "unit_stage_refusal": null
 }

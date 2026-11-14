@@ -1953,7 +1953,10 @@ class LessonCheckKindFollowsEvidenceTargetTest(unittest.TestCase):
                 section=plan["sections"][0],
                 objective={**plan["objectives"][0], "evidence_target": "procedure"},
                 recipe="committed",
-                locale=None,
+                # The fixture is a Japanese plan; its locale is part of it. With no locale the
+                # section is read as a general-domain course and UP-38's media floor fires before
+                # the check-kind rule this case is about.
+                locale="ja-JP",
                 dials={},
             )
         reasons = " ".join(caught.exception.reasons)
@@ -2026,7 +2029,9 @@ class LessonCheckKindFollowsEvidenceTargetTest(unittest.TestCase):
                 section=plan["sections"][0],
                 objective={**plan["objectives"][0], "evidence_target": "discrimination"},
                 recipe="committed",
-                locale=None,
+                # A language course: the discrimination target is evidenced by the phrase, so the
+                # media floor does not stand between this case and the check-kind rule.
+                locale="ja-JP",
                 dials={},
             )
         self.assertTrue(

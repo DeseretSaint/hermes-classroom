@@ -363,6 +363,35 @@ class RecordedLLM:
         }
 
     # ── unit sections ───────────────────────────────────────────────────────
+    def _floor_media_need(self, objective: dict) -> dict:
+        """The section's declared media need, as a compliant author would write it.
+
+        A procedure section in a domain that is neither symbolic nor verbal cannot declare
+        ``none``: the learner has to see the step table. This replay declares the deterministic
+        schematic the rule accepts — never an AI illustration, which is never evidence — and
+        leaves every other section with no media. The rule is restated here rather than called
+        from the product policy so the recorded author stays independent of the gate it faces.
+        """
+        scenario = self.transcript["scenario"]
+        domain = str(scenario.get("subject_domain") or "general")
+        recipe = str(scenario.get("recipe") or "casual")
+        needs_schematic = (
+            str(objective.get("evidence_target") or "") == "procedure"
+            and domain not in ("mathematics", "grammar", "language")
+            and recipe not in ("one_off", "parent")
+        )
+        if needs_schematic:
+            return {
+                "construct": f"the labelled step diagram for {objective['title']}",
+                "image": {"level": "required", "role": "schematic"},
+                "audio": {"level": "none", "role": "none"},
+            }
+        return {
+            "construct": "",
+            "image": {"level": "none", "role": "none"},
+            "audio": {"level": "none", "role": "none"},
+        }
+
     def _unit_sections(self, payload: dict) -> dict:
         unit = payload["unit"]
         ordinal = int(unit["ordinal"])
@@ -382,11 +411,7 @@ class RecordedLLM:
                 "lesson_intent": by_title[title]["intent"],
                 "context_needs": [],
                 "source_ids": [],
-                "media_need": {
-                    "construct": "",
-                    "image": {"level": "none", "role": "none"},
-                    "audio": {"level": "none", "role": "none"},
-                },
+                "media_need": self._floor_media_need(objective),
             })
         # Upgrade 35: on a resumed unit the request names only the review slots that remain, so
         # the count comes from the payload's own rule and a review may need to reinforce an owner
@@ -513,6 +538,28 @@ class RecordedLLM:
                     {"id": item["id"], "label": f"From memory: {item['label']}"}
                     for item in check["stimulus"]["items"]
                 ]
+        # The deterministic schematic the section declared: a step table rendered from the
+        # lesson's own recorded steps, never an AI illustration and never an invented fact.
+        media: list[dict] = []
+        if (
+            str(capability.get("image") or "") == "required"
+            and str(capability.get("image_role") or "") == "schematic"
+        ):
+            steps = [str(step) for step in recording["example_steps"]]
+            text_equivalent = " ".join(steps)[:1150]
+            media.append({
+                "kind": "visual",
+                "role": "schematic",
+                "purpose": f"Show the ordered steps of {section['title']}",
+                "spec": "A deterministic step table rendered from the lesson's own steps",
+                "text_equivalent": text_equivalent,
+                "facts": {
+                    "rows": [
+                        {"label": f"Step {index}", "value": step}
+                        for index, step in enumerate(steps, start=1)
+                    ]
+                },
+            })
         return {
             "section_title": section["title"],
             "segments": [
@@ -534,7 +581,7 @@ class RecordedLLM:
             "learner_explanation_short": explanation_short,
             "check": check,
             "sources": [],
-            "media": [],
+            "media": media,
             "parent_notes": None,
             "supervision_notes": [],
         }

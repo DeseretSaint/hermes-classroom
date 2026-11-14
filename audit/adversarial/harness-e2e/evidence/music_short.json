@@ -1650,7 +1650,8 @@
             "unknown_cost": false
           },
           "validation_id": "000000000000001d",
-          "validation_verdict": "pass"
+          "validation_verdict": "pass",
+          "warnings": []
         },
         "unit_ordinal": 1
       },
@@ -1710,7 +1711,8 @@
             "unknown_cost": false
           },
           "validation_id": "0000000000000024",
-          "validation_verdict": "pass"
+          "validation_verdict": "pass",
+          "warnings": []
         },
         "unit_ordinal": 2
       }
