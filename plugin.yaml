@@ -40,6 +40,12 @@ python_dependencies:
   # The range must overlap the host's core `documents` pin (pypdf==6.x) or plugin admission refuses
   # the whole plugin; this was the live enable blocker on 2026-11-07.
   - "pypdf>=4.0,<7"
+  # Upgrade 47: ``coursebook/image_normalise.py`` decodes every provider picture before it is
+  # stored — strips metadata, crops to the role's ratio, downscales to the figure floor and
+  # re-encodes PNG (HPND licence text read in the installed wheel; see docs/THIRD-PARTY.md). The
+  # import is guarded: a host without it refuses the picture as a text fallback rather than
+  # shipping raw bytes. The range overlaps the host's own resolution.
+  - "Pillow>=12.2,<14"
 
 # No requires_env in the skeleton: Coursebook stores no secrets. Every key below has a reader
 # wired in this build (`coursebook/tools.py::configure` <- `ctx.get_config`); a settings field

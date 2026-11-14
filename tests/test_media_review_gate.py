@@ -26,6 +26,26 @@ PNG = b"\x89PNG\r\n\x1a\n" + b"\x00\x00\x00\rIHDR" + b"x" * 32
 PNG_RETRY = b"\x89PNG\r\n\x1a\n" + b"\x00\x00\x00\rIHDR" + b"y" * 32
 JPEG = b"\xff\xd8\xff" + b"x" * 32
 MP3 = b"\xff\xfb\x90\x00" + b"x" * 32
+
+
+def _decodable_png() -> bytes:
+    """A real 4:3 PNG, for the tests that drive the real ``HostMedia``.
+
+    The stubs above are enough for a duck-typed host double, which hands its bytes straight to the
+    artifact layer. ``HostMedia.image`` now *decodes* what the provider returned before the bytes
+    ship (upgrade 47), so a magic-byte stub would be refused as an unusable picture and the item
+    would degrade to text — the seam test would then be measuring the fixture, not the seam.
+    """
+    import io
+
+    from PIL import Image
+
+    buffer = io.BytesIO()
+    Image.new("RGB", (64, 48), (247, 241, 228)).save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+DECODABLE_PNG = _decodable_png()
 NOW = "2026-11-06T12:00:00Z"
 HASH = "sha256:" + "a" * 64
 
@@ -558,7 +578,7 @@ class HostVisionSeamTest(ReviewGateCase):
 
     def host(self, answers: dict, *, calls: list) -> media.HostMedia:
         image_path = Path(self.home) / "generated.png"
-        image_path.write_bytes(PNG)
+        image_path.write_bytes(DECODABLE_PNG)
 
         def dispatch(name: str, args: dict):
             calls.append((name, args))

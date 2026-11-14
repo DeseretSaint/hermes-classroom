@@ -58,8 +58,27 @@ system CJK stack (`CB Serif JP`, `Hiragino Mincho ProN`, `Yu Mincho`), not a bun
 
 Font masters are committed under `assets/masters/fonts/` (sha256 pinned above) so a rebuild is
 offline and reproducible; they are inputs, not shipped assets, and are excluded from the 300 KB
-per-asset budget. `Pillow` and `rsvg-convert` are development tools: neither is imported by the
-plugin.
+per-asset budget. `rsvg-convert` is a development tool: it is not imported by the plugin.
+
+### Pillow — runtime dependency (HPND)
+
+`Pillow` used to be a development-only tool. It is now imported by `coursebook/image_normalise.py`:
+every provider picture is decoded, stripped of metadata, cropped to the role's ratio, downscaled to
+the 1024 px width floor and re-encoded as PNG before it is stored (upgrade 47 of
+`docs/UPGRADES-50-2026-11-14.md`). A raw provider byte stream must never reach an artifact.
+
+- **Licence.** GitHub's licence API reports `NOASSERTION`, so the text was read rather than trusted:
+  the installed wheel's `pillow-13.0.0.dist-info/licenses/LICENSE` states "Like PIL, Pillow is
+  licensed under the open source MIT-CMU License" and reproduces the HPND permission notice
+  (© 1997-2011 Secret Labs AB; © 1995-2011 Fredrik Lundh and contributors; © 2010 Jeffrey 'Alex'
+  Clark and contributors). That is the permissive HPND/PIL-CMU grant — no copyleft, no
+  advertising-clause obligation beyond the copyright notice, no fee.
+- **Declared.** `plugin.yaml` lists it as a Python dependency, because a missing import would make
+  every illustration degrade to its text equivalent instead of shipping unnormalised bytes. The
+  range overlaps the host's own resolution; a host that resolves outside it is refused loudly.
+- **Not a decoder for untrusted archives.** `image_normalise.MAX_IMAGE_PIXELS` is set explicitly
+  (40 MP) and a header check refuses anything above it before `load()` allocates, so a crafted
+  picture raises a typed refusal rather than a decompression bomb.
 
 The release gate carries **no file-admission rule**: `bash scripts/validate-plugin.sh` exports the
 commit and runs `hermes plugins validate`, `node --check desktop/plugin.js`, the desktop contract
