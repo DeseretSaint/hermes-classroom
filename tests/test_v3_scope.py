@@ -4,8 +4,8 @@ The card's contract, in executable form:
 
 * ``[data-cb-v3]`` is the route root, exactly once, and it is the same element as
   ``[data-cb-route]`` — a second nested container would make ``cqi`` resolve against the wrong box;
-* ``CB_TOKENS_V3_JSON`` carries ``contracts/cb.tokens.v3.json`` (a six-section projection of the
-  25-key contract: modes, elevation, radii, type, motion, materials)
+* ``CB_TOKENS_V3_JSON`` carries ``contracts/cb.tokens.v3.json`` (a seven-section projection of the
+  25-key contract: modes, elevation, radii, type, motion, materials, print)
   in canonical bytes, so no surface can paint a value the contract did not define;
 * the one ``<style>`` element inside the route carries ``CB_V3_CSS`` plus the ``@font-face`` rules
   composed from ``CB_ASSETS.fonts`` data URLs, with ``font-display: swap``;
@@ -41,7 +41,7 @@ from tests.cb_source_scope import (
 from tests.test_desktop_lesson_views import _desktop_node_modules, SDK_STUB
 
 CONTRACT = ROOT / "contracts" / "cb.tokens.v3.json"
-V3_SECTIONS = ("modes", "elevation", "radii", "type", "motion", "materials")
+V3_SECTIONS = ("modes", "elevation", "radii", "type", "motion", "materials", "print")
 
 HARNESS = r"""
 import React, { act } from 'react'
@@ -235,7 +235,7 @@ class V3ScopeSourceTest(unittest.TestCase):
             self.assertIn(key, tokens, f"{V3_TOKEN_CONST} does not carry {key!r}")
             self.assertEqual(tokens[key], self.contract[key], f"{key} drifted from the contract")
         self.assertEqual(set(tokens), set(V3_SECTIONS),
-                         "the literal carries only the six build-critical sections")
+                         "the literal carries only the build-critical sections")
         self.assertEqual(raw, canonical({key: self.contract[key] for key in tokens}),
                          "the literal is not the contract's canonical bytes")
 

@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 CONTRACT = ROOT / "contracts" / "cb.tokens.v3.json"
 SEGMENT = ROOT / "desktop" / "src" / "76-v3-scope.js"
-SECTIONS = ("modes", "elevation", "radii", "type", "motion", "materials")
+SECTIONS = ("modes", "elevation", "radii", "type", "motion", "materials", "print")
 
 LITERAL_RE = re.compile(r"const CB_TOKENS_V3_JSON =\n  [^\n]*\n")
 ROLES_RE = re.compile(r"const CB3_V3_ROLES = Object\.freeze\([^\n]*\)\n")
