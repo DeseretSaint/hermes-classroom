@@ -1,0 +1,4 @@
+[
+  {"name": "board-pass", "object": "#board-pass", "centre": true, "runs": [""]},
+  {"name": "board-fail", "object": "#board-fail", "centre": true, "runs": [""]}
+]
