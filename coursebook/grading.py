@@ -259,9 +259,18 @@ CHAT_CHECK_UNCOLLECTABLE = (
     "it. Open the check in the course pane and answer there."
 )
 
+#: A parent-recipe checklist is recorded by the parent's observation, never by a child's chat.
+CHAT_CHECK_PARENT_REPORTED = (
+    "This check is recorded by a parent observing it, not in this chat. A parent can record it "
+    "in Parent Studio."
+)
+
 
 def chat_collection_refusal(
-    reference: dict[str, Any] | None, stimulus: dict[str, Any] | None
+    reference: dict[str, Any] | None,
+    stimulus: dict[str, Any] | None,
+    *,
+    allow_confirmation: bool = True,
 ) -> str | None:
     """Why the chat lane cannot collect this check, or ``None`` when it can.
 
@@ -269,9 +278,11 @@ def chat_collection_refusal(
     numbered steps, and a conversation check from the stored transcript. A ``rubric_only`` check
     that is not a checklist needs the aux grader, and this build has no aux grader: collecting it
     in chat can only produce ``needs_retry`` forever, so the gate refuses before it submits.
+    ``allow_confirmation=False`` (a parent-recipe enrollment) refuses the checklist too, because
+    its only recording path is ``observation.record``.
     """
     if confirmation_items(reference, stimulus) is not None:
-        return None
+        return None if allow_confirmation else CHAT_CHECK_PARENT_REPORTED
     try:
         kind = validators.reference_kind(reference)
     except validators.ReferenceSpecError:

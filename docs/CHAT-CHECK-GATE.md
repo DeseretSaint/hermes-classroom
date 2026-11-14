@@ -30,6 +30,7 @@ Before `attempt.submit`, `turn.chat_answer_for` reads the open check's `referenc
 | `rubric_only` + `stimulus.format == "verification"` + declared `{id, label}` items | `{"kind": "selection", "selection": [item ids]}` | confirmation, provider-free, `self_reported` |
 | `conversation` | `{"kind": "text", ...}` (the transcript lane reads the stored turns) | transcript |
 | any other `rubric_only` with no configured aux grader | **refused before submit** | none in this build |
+| a checklist on a parent-recipe enrollment | **refused before submit** (`CHAT_CHECK_PARENT_REPORTED`) | `observation.record`, from Parent Studio |
 
 ### 2.2 A checklist is answered by numbers, never by prose
 
@@ -62,8 +63,9 @@ consequences and is deliberately not part of this change.
 
 * `attempt.submit` still fails closed on a text answer to a checklist (`needs_retry`): the command
   layer is not made lenient, only the chat adapter stops sending the wrong kind.
-* A parent-recipe enrollment still never takes the confirmation lane; its only recording path is
-  `observation.record`.
+* A parent-recipe enrollment still never takes the confirmation lane; the chat gate refuses a
+  checklist for it before submit and points at Parent Studio, where `observation.record` is the
+  only recording path.
 * The stored reference is still `rubric_only`; nothing is upgraded to a closed kind.
 * No learner surface shows a job id, stage name or reason code: the refusal and the numbering
   prompt are whole sentences.

@@ -212,6 +212,30 @@ class UncollectableCheckIsRefusedTest(ChatChecklistCase):
             grading.CHAT_CHECK_UNCOLLECTABLE,
         )
 
+    def test_a_parent_recipe_checklist_is_refused_in_chat(self) -> None:
+        """A parent enrollment records observations, never a child's numbered ticks."""
+        lesson = self.prepare_lesson(verification_spec(), recipe="parent")
+        run_id = "run_chat_checklist_parent"
+        self.execute(
+            "INSERT INTO lesson_runs (id, enrollment_id, objective_id, state, revision, created_at,"
+            " updated_at, last_opened_at) VALUES (?, ?, ?, 'active', 0, '2026-01-01T00:00:00+00:00',"
+            " '2026-01-01T00:00:00+00:00', NULL)",
+            (run_id, lesson["enrollment_id"], lesson["objective_id"]),
+        )
+        self.execute(
+            "INSERT INTO bindings (id, enrollment_id, profile, connection_id, runtime_session_id,"
+            " stored_session_id, cwd_fingerprint, compression_tip, status, revision, updated_at,"
+            " lesson_run_id, objective_id) VALUES ('bnd_parent_checklist', ?, 'cinder', 'conn-1',"
+            " 'rt-1', ?, 'cwd-fp', NULL, 'active', 0, '2026-01-01T00:00:00+00:00', ?, ?)",
+            (lesson["enrollment_id"], _STORED, run_id, lesson["objective_id"]),
+        )
+
+        outcome = turn.pre_turn(_STORED, "1, 2, 3")
+
+        self.assertEqual(outcome.hook.get("action"), "block")
+        self.assertEqual(outcome.hook["message"], grading.CHAT_CHECK_PARENT_REPORTED)
+        self.assertEqual(self.attempts(lesson["check_id"]), [])
+
 
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()

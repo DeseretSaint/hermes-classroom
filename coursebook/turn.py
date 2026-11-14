@@ -456,7 +456,7 @@ def record_practice_tutor_turn(*, session_id: str | None, assistant_response: st
     return True
 
 
-def chat_answer_for(check: Any, user_message: str) -> tuple[dict[str, Any] | None, str | None]:
+def chat_answer_for(check: Any, user_message: str, *, allow_confirmation: bool = True) -> tuple[dict[str, Any] | None, str | None]:
     """Shape one typed chat message into the answer kind this check can actually collect.
 
     Returns ``(answer, None)`` when the chat lane can collect it, or ``(None, readable reason)``
@@ -467,6 +467,9 @@ def chat_answer_for(check: Any, user_message: str) -> tuple[dict[str, Any] | Non
     * a ``rubric_only`` check that is not a checklist, because this build configures no open-lane
       grader and submitting it can only produce ``needs_retry`` forever.
 
+    ``allow_confirmation=False`` (a parent-recipe enrollment) also refuses a checklist: its only
+    recording path is ``observation.record``.
+
     Everything else keeps the existing behaviour: a closed-form check is still answered with the
     learner's text, graded deterministically.
     """
@@ -474,11 +477,15 @@ def chat_answer_for(check: Any, user_message: str) -> tuple[dict[str, Any] | Non
     stimulus = _json_load(check["stimulus_json"], {})
     items = grading.confirmation_items(reference, stimulus)
     if items is not None:
+        if not allow_confirmation:
+            return None, grading.CHAT_CHECK_PARENT_REPORTED
         selection = grading.parse_confirmation_numbers(user_message, items)
         if not selection:
             return None, _checklist_numbering_message(items)
         return {"kind": "selection", "selection": selection}, None
-    refusal = grading.chat_collection_refusal(reference, stimulus)
+    refusal = grading.chat_collection_refusal(
+        reference, stimulus, allow_confirmation=allow_confirmation
+    )
     if refusal is not None:
         return None, refusal
     return {"kind": "text", "text": user_message}, None
@@ -525,6 +532,13 @@ def pre_turn(
     with db.read() as connection:
         check = _open_check(connection, objective_id)
         revision = _enrollment_revision(connection, enrollment_id)
+        # The course recipe decides which lanes may record an answer. A parent-recipe enrollment
+        # records observations, never a child-operated checklist (CHECKLIST-CONFIRMATION.md §6).
+        recipe_row = connection.execute(
+            "SELECT c.recipe FROM enrollments e JOIN courses c ON c.id = e.course_id WHERE e.id = ?",
+            (enrollment_id,),
+        ).fetchone()
+        allow_confirmation = str((recipe_row["recipe"] if recipe_row is not None else "") or "") != "parent"
         live_practice = (
             practice.active_session(
                 connection,
@@ -610,7 +624,7 @@ def pre_turn(
     # collect, or the gate refuses it before anything is submitted. A checklist is collected as
     # numbered steps; a check no lane in this build can grade is refused here instead of being
     # submitted into ``needs_retry`` forever (docs/CHAT-CHECK-GATE.md).
-    answer, refusal = chat_answer_for(check, user_message)
+    answer, refusal = chat_answer_for(check, user_message, allow_confirmation=allow_confirmation)
     if answer is None:
         return GateOutcome(
             hook={"action": "block", "message": refusal or grading.CHAT_CHECK_UNCOLLECTABLE},
