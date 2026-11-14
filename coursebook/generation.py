@@ -14850,6 +14850,13 @@ def run_lesson_job(
         "needs_review": [
             item["section_id"] for item in lesson_summaries if item["state"] in ("needs_review", "model_assessed")
         ],
+        # Item 37: near-duplicate items across the unit's sections. A warning, never a refusal —
+        # the refusals for an exact duplicate already failed the job above.
+        "warnings": [
+            warning
+            for item in lesson_summaries
+            for warning in item.get("duplicate_warnings") or []
+        ],
         "usage": usage.summary(),
         "preflight": preflight.to_dict(),
         "budget": resolved_budget.as_dict(),
@@ -15137,6 +15144,181 @@ def _stimulus_fingerprint(stimulus: Mapping[str, Any]) -> str:
     )
 
 
+#: How much of two sections' normalised item-label sets must overlap before the pair is reported as
+#: a near-duplicate. A near-duplicate is a **warning**, never a refusal: a spiral curriculum re-asks
+#: a target on purpose and a review exists to repeat one, so only an exactly equal stimulus between
+#: two sections that do not declare a repeat can refuse (see
+#: :func:`unit_duplicate_stimulus_problems`).
+NEAR_DUPLICATE_LABEL_OVERLAP = 0.8
+
+#: The machine-readable name a duplicate refusal carries, so a caller can group duplicates without
+#: parsing the prose around them.
+DUPLICATE_SECTION_CODE = "duplicate_of_section"
+
+
+def _stimulus_item_labels(stimulus: Mapping[str, Any]) -> set[str]:
+    """The item labels a learner answers, folded by the module's one comparison rule."""
+    return {
+        key
+        for key in (
+            _procedure_key(item.get("label"))
+            for item in stimulus.get("items") or []
+            if isinstance(item, Mapping)
+        )
+        if key
+    }
+
+
+def _label_overlap(left: set[str], right: set[str]) -> float:
+    """Jaccard overlap of two folded item-label sets; 0.0 when either question has no items."""
+    if not left or not right:
+        return 0.0
+    return len(left & right) / len(left | right)
+
+
+def _worked_example_key(worked: Mapping[str, Any] | None) -> str:
+    return _procedure_key((worked or {}).get("prompt"))
+
+
+def unit_duplicate_stimulus_problems(
+    *,
+    section: Mapping[str, Any],
+    check: Mapping[str, Any] | None,
+    worked_example: Mapping[str, Any] | None,
+    prior: Sequence[Mapping[str, Any]],
+    own_target_section_id: str | None = None,
+) -> tuple[list[str], list[str]]:
+    """Item 37 — one unit never asks the same question of two different objectives by accident.
+
+    The plan-level duplicate gate (:func:`_duplicate_performance_reasons`) only reads the plan's
+    ``sourced`` objectives, and the review gate (:func:`review_variant_problems`) only compares a
+    review against *its own* owner. Between them two owner sections could ask one question for two
+    objectives, and a review could repeat a section that is not its owner. This gate fingerprints
+    every authored check stimulus (:func:`_stimulus_fingerprint`) and worked-example prompt in the
+    unit and compares each new section against the ones already authored beside it.
+
+    Two refusals, both deterministic and both scoped to **two owner sections of one unit**:
+
+    * the same check stimulus — the learner would answer one question twice for two objectives,
+      and no check can score those answers differently;
+    * the same worked-example prompt — two sections modelling the same target over one identical
+      example is one demonstration printed twice.
+
+    A **review** section is exempt from refusal (repetition of an earlier target is its job) and
+    so is any pair that involves one; the pair is still reported as a near-duplicate. A repeat the
+    plan means deliberately is declared as a review section rather than inferred: this gate never
+    adds a fuzzy score that could refuse a legitimate re-ask, and the near-duplicate warning is the
+    only signal for "same items, reworded question".
+
+    ``own_target_section_id`` is the owner section a review presents. That pair is already judged
+    by :func:`review_variant_problems`, which refuses an exact copy, so it is skipped here rather
+    than reported twice.
+    """
+    role = str(section.get("section_role") or section.get("role") or "owner")
+    label = f"section {section.get('ordinal')}"
+    stimulus = dict((check or {}).get("stimulus") or {}) if isinstance(check, Mapping) else {}
+    fingerprint = _stimulus_fingerprint(stimulus) if stimulus else ""
+    prompt_key = _worked_example_key(worked_example)
+    labels = _stimulus_item_labels(stimulus)
+    problems: list[str] = []
+    warnings: list[str] = []
+    for other in prior:
+        other_id = str(other.get("section_id") or "")
+        if own_target_section_id and other_id == str(own_target_section_id):
+            continue
+        other_label = f"section {other.get('ordinal')}"
+        other_role = str(other.get("section_role") or "owner")
+        other_stimulus = dict(other.get("stimulus") or {})
+        other_fingerprint = _stimulus_fingerprint(other_stimulus) if other_stimulus else ""
+        same_question = bool(fingerprint) and fingerprint == other_fingerprint
+        same_example = bool(prompt_key) and prompt_key == _worked_example_key(
+            other.get("worked_example")
+        )
+        if same_question or same_example:
+            what = "check" if same_question else "worked-example prompt"
+            duplicate = (
+                f"{label} repeats {other_label}'s {what} "
+                f"({DUPLICATE_SECTION_CODE}={other.get('ordinal')})"
+            )
+            if role == "owner" and other_role == "owner":
+                problems.append(
+                    duplicate
+                    + ": two owner sections of one unit cannot ask one question for two separate "
+                    "objectives, because one check cannot score the same answer against two "
+                    "targets. Author this objective its own stimulus, or declare the repetition "
+                    "as a review section, which repeats an earlier target by design"
+                )
+            else:
+                warnings.append(
+                    duplicate
+                    + ": repetition is a review's job and this pair is not refused, but this is "
+                    "the earlier section's material rather than a new form of the target"
+                )
+            continue
+        overlap = _label_overlap(labels, _stimulus_item_labels(other_stimulus))
+        if overlap >= NEAR_DUPLICATE_LABEL_OVERLAP:
+            warnings.append(
+                f"{label} and {other_label} ask over nearly the same item labels "
+                f"({overlap:.0%} of the folded labels are shared, "
+                f"near_duplicate_of_section={other.get('ordinal')}); the questions differ, but a "
+                "reworded item list is close to the repetition this gate refuses outright"
+            )
+    return problems, warnings
+
+
+def _unit_prior_stimuli(
+    connection: sqlite3.Connection,
+    *,
+    plan_id: str,
+    unit_id: str | None,
+    digest: str,
+    section_id: str,
+) -> list[dict[str, Any]]:
+    """The other sections of this unit, with the question each one already asks.
+
+    The latest lesson revision of each section at this plan hash is the authored content; older
+    revisions are history. A section with no lesson yet contributes its role but no stimulus, so a
+    later section cannot silently claim it was never compared. A plan without units (a legacy v1
+    outline) is outside the rule's scope and returns nothing: the comparison is two sections of one
+    unit, never two plans.
+    """
+    if not unit_id:
+        return []
+    rows = connection.execute(
+        "SELECT s.id AS section_id, s.ordinal AS ordinal, s.section_role AS section_role,"
+        " l.page_json AS page_json, c.stimulus_json AS stimulus_json"
+        " FROM gen_plan_sections s"
+        " LEFT JOIN gen_lessons l ON l.id = ("
+        "   SELECT id FROM gen_lessons WHERE section_id = s.id AND plan_hash = ?"
+        "   ORDER BY version DESC, rowid DESC LIMIT 1)"
+        " LEFT JOIN gen_lesson_checks g ON g.lesson_id = l.id"
+        " LEFT JOIN checks c ON c.id = g.check_id"
+        " WHERE s.plan_id = ? AND s.unit_id = ? AND s.id <> ?"
+        " ORDER BY s.ordinal",
+        (str(digest), str(plan_id), str(unit_id), str(section_id)),
+    ).fetchall()
+    prior: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for row in rows:
+        section_key = str(row["section_id"])
+        if section_key in seen:
+            continue
+        seen.add(section_key)
+        page = _load_json(row["page_json"], {})
+        prior.append(
+            {
+                "section_id": section_key,
+                "ordinal": int(row["ordinal"]),
+                "section_role": str(row["section_role"] or "owner"),
+                "stimulus": _load_json(row["stimulus_json"], {}) or {},
+                "worked_example": (page.get("worked_example") or {})
+                if isinstance(page, Mapping)
+                else {},
+            }
+        )
+    return prior
+
+
 def _author_section(
     connection: sqlite3.Connection,
     *,
@@ -15210,6 +15392,26 @@ def _author_section(
     verdict: dict[str, Any] | None = None
     feedback: str | None = None
     rejection_reasons: list[str] = []
+    # Item 37: the other sections of this unit are the authority on what has already been asked.
+    # Read once per section (not per attempt) — a retry re-authors the section, never its siblings.
+    unit_prior = _unit_prior_stimuli(
+        connection,
+        plan_id=str(plan_id),
+        unit_id=section.get("unit_id"),
+        digest=digest,
+        section_id=str(section.get("section_id") or ""),
+    )
+    # A review is compared against its own owner by ``review_variant_problems``; here the pair is
+    # skipped so one defect is not reported twice.
+    own_target_section_id: str | None = None
+    if review_target is not None and review_target.get("owner_lesson_id"):
+        target_row = connection.execute(
+            "SELECT section_id FROM gen_lessons WHERE id = ?",
+            (str(review_target["owner_lesson_id"]),),
+        ).fetchone()
+        own_target_section_id = str(target_row[0]) if target_row is not None else None
+    duplicate_problems: list[str] = []
+    duplicate_warnings: list[str] = []
     # W2-2: the draft attempt 2 repairs. It is the document the rules or the validator refused,
     # carried into the next request so the parts that already passed are not authored twice.
     previous_draft: dict[str, Any] | None = None
@@ -15287,6 +15489,17 @@ def _author_section(
             problems.extend(
                 review_variant_problems(section, candidate.get("check"), review_target)
             )
+        # Item 37: what this unit's other sections already ask. A duplicate between two owner
+        # sections is refused; a review, or any pair involving one, is reported as a warning —
+        # repetition is a review's job, and a spiral re-ask is a declared review, not a copy.
+        duplicate_problems, duplicate_warnings = unit_duplicate_stimulus_problems(
+            section=section,
+            check=candidate.get("check"),
+            worked_example=candidate.get("worked_example"),
+            prior=unit_prior,
+            own_target_section_id=own_target_section_id,
+        )
+        problems.extend(duplicate_problems)
         try:
             enforce_lesson_rules(
                 candidate,
@@ -15322,6 +15535,15 @@ def _author_section(
         if problems:
             rejection_reasons = problems
             if attempt == LESSON_ATTEMPTS:
+                if duplicate_problems:
+                    # A duplicate question is a fact about the unit's content, not a complaint
+                    # about prose: parking it ``needs_review`` would let two identical questions be
+                    # approved later. The refusal names the section it duplicates, and the section
+                    # can be regenerated with these reasons (H-194 / E2E L5).
+                    raise GenerationRejected(
+                        f"section {section_ordinal} of this unit cannot be authored: "
+                        + "; ".join(duplicate_problems)
+                    )
                 lesson = candidate
                 break
             # W2-2: attempt 2 repairs this draft against every reason, rather than starting over.
@@ -15559,6 +15781,10 @@ def _author_section(
     if park_reason is not None:
         summary["parked"] = True
         summary["park_reason"] = park_reason
+    if duplicate_warnings:
+        # Item 37: a near-duplicate (or a review repeating a non-owner section's items) is
+        # reported, never refused. The job result carries the list so a caller can surface it.
+        summary["duplicate_warnings"] = list(duplicate_warnings)
     warning = summary["validation"].get("warning")
     if warning:
         summary["warning"] = warning

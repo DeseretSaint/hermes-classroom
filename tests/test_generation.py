@@ -376,6 +376,17 @@ def lesson_from_request(name: str = "lesson_ja"):
         lesson = lesson_fixture(name, source_ids_from(request))
         lesson["section_title"] = section.get("title") or lesson["section_title"]
         check_for_objective(lesson, objective)
+        # Item 37: two owner sections of one unit may not ask the same question or model the same
+        # worked example, and the fixture ships one body for every section. A real author writes
+        # the question this section's objective asks; the fake author names the objective it is
+        # asking about, so its sections are distinguishable the way authored ones are.
+        anchor = str(objective.get("title") or "").strip().rstrip(".")
+        if anchor:
+            stimulus = lesson["check"].get("stimulus") or {}
+            stimulus["prompt"] = f"{anchor}: {stimulus.get('prompt') or ''}"
+            example = lesson.get("worked_example") or {}
+            if example.get("prompt"):
+                example["prompt"] = f"{anchor}: {example['prompt']}"
         if str(section.get("section_role") or section.get("role") or "owner") == "review":
             # S3: a review re-presents the same target with new items. The fake authors a variant
             # the same way a real author must: same evidence target, a different stimulus.
