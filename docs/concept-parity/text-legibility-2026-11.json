@@ -1,15 +1,15 @@
 {
   "schema": "coursebook.text-legibility/1",
-  "generated_at": "2026-11-14T05:09:03+00:00",
+  "generated_at": "2026-11-14T05:09:42+00:00",
   "subject": {
     "scene": "wide Home scene (design/home-scene.html, generated from desktop/plugin.js)",
     "measured_against": "origin/master b7ed6cf0 (2026-11-13)",
     "measured_files_identical_to_base": false,
-    "worktree_head": "7c6dd243c97cb67d3af89f0ba7e9a017f958bc41",
-    "worktree_head_subject": "7c6dd243 LEG-01: keep the tag's words on its kraft face, lift the CTA labels to the cap floor",
-    "plugin_sha256": "db99696147dc2c786709042e1211561e823fc9dbcce786a5d5b8c1db2aa3a142",
-    "page_1344_sha256": "957ed43a1095ed73fe6e4b13257f055cffde68efd7a975b7c6bdd4e33866665e",
-    "page_1200_sha256": "64366ad7cb3e8f63777787fef8c427741a2ccbcae7e974fb757d59c49b9928f2"
+    "worktree_head": "ade5ca3556b37a96da0bf072b4cb3a1531d109df",
+    "worktree_head_subject": "ade5ca35 Regenerate the legibility audit on the merged tree (module db996961)",
+    "plugin_sha256": "f750d8d4bf6da33a7c7abcb30ac1902a973dca11d5af99270ff603610a893710",
+    "page_1344_sha256": "24f2fe1f8ba5bad738ab76775a54a40e1a5c1a31b545fd20dd552c29011a60a6",
+    "page_1200_sha256": "582af46fb20b6a54dd37ee45a37272d97a8a82269ba3b6edc89f7bd030d079cc"
   },
   "floors": {
     "cap_px": 11.0,
@@ -1465,7 +1465,7 @@
                 "dx": 0,
                 "dy": 0
               },
-              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/leg-commit/run-1344/raised-4.png"
+              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/leg-v3/run-1344/raised-4.png"
             },
             "1200": {
               "applied": true,
@@ -1514,7 +1514,7 @@
                 "dx": 0,
                 "dy": 0
               },
-              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/leg-commit/run-1200/raised-4.png"
+              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/leg-v3/run-1200/raised-4.png"
             }
           },
           "decision": "object can grow",
@@ -1761,7 +1761,7 @@
                 "dx": 1,
                 "dy": 0
               },
-              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/leg-commit/run-1344/raised-5.png"
+              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/leg-v3/run-1344/raised-5.png"
             },
             "1200": {
               "applied": true,
@@ -1823,7 +1823,7 @@
                 "dx": 1,
                 "dy": 0
               },
-              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/leg-commit/run-1200/raised-5.png"
+              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/leg-v3/run-1200/raised-5.png"
             }
           },
           "decision": "run must shorten",
@@ -2258,7 +2258,7 @@
                 "dx": 0,
                 "dy": 0
               },
-              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/leg-commit/run-1344/raised-7.png"
+              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/leg-v3/run-1344/raised-7.png"
             },
             "1200": {
               "applied": true,
@@ -2320,7 +2320,7 @@
                 "dx": 0,
                 "dy": 0
               },
-              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/leg-commit/run-1200/raised-7.png"
+              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/leg-v3/run-1200/raised-7.png"
             }
           },
           "decision": "run must shorten",
@@ -2552,7 +2552,7 @@
                 "dx": 0,
                 "dy": 0
               },
-              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/leg-commit/run-1344/raised-8.png"
+              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/leg-v3/run-1344/raised-8.png"
             },
             "1200": {
               "applied": true,
@@ -2601,7 +2601,7 @@
                 "dx": 0,
                 "dy": 0
               },
-              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/leg-commit/run-1200/raised-8.png"
+              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/leg-v3/run-1200/raised-8.png"
             }
           },
           "decision": "object can grow",
@@ -3021,7 +3021,7 @@
                 "dx": 0,
                 "dy": 0
               },
-              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/leg-commit/run-1344/raised-10.png"
+              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/leg-v3/run-1344/raised-10.png"
             },
             "1200": {
               "applied": true,
@@ -3070,7 +3070,7 @@
                 "dx": 0,
                 "dy": 0
               },
-              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/leg-commit/run-1200/raised-10.png"
+              "file": "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/leg-v3/run-1200/raised-10.png"
             }
           },
           "decision": "object can grow",

@@ -20882,7 +20882,7 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
    sentence.
    LEG-01 — the label is the lead step, not body. At body (16 px) the cap is 10.56 px at 1344 and
    9.43 px at 1200 (the scene plate is transform-scaled by 1200/1344), both under the 11 px
-   floor; lead (20 px) gives 13.10 / 11.70 and still fits the 174 px pill: "Start a new course"
+   floor; lead (20 px) measures 13.20 / 11.79 and still fits the 174 px pill: "Start a new course"
    is 157.7 px at 20 px against the pill's 162 px content edge. */
 [data-cb-v3] [data-cb-home-scene-cta] button {
   border: 0;
@@ -21112,12 +21112,12 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
  * label: inside the 74 px square box its light kraft face is a ~58x29 px strip lying on a
  * -35.5 deg axis (principal axis of the master's light panel, shaded fold excluded). A horizontal
  * two-line run of the pinned copy cannot lie on a band that narrow: it needs
- * W*sin(35.5) + H*cos(35.5) <= 29, which for "New course" would push the type to ~8 px.
+ * which for "New course" would push the type to ~8 px.
  * Turning the run onto the face keeps the deck's own word at meta size. The angle is the measured
  * one that keeps every glyph core on the light kraft at both widths: at -35.5 deg one glyph pixel
  * still lands on the fold's edge (min 2.10:1 at 1344); at -30 deg the worst glyph-core pixel is
- * 5.06:1 at 1344 and 6.02:1 at 1200 with no pixel under 3.0:1. The box, its square aspect and the
- * single-keyword background-size are untouched.
+ * 5.27:1 at 1344 and 5.92:1 at 1200 (67 and 41 glyph-core pixels) with no pixel under 3.0:1. The
+ * box, its square aspect and the single-keyword background-size are untouched.
  * The two lines are unequal ("New" 30.4 px, "course" 44.8 px at 14 px), so turning a centred block
  * swings its ink 2.7 px right of the box centre; the translate puts the ink back on the box centre
  * (CP-TEXT-GATE's tag rule: |left-right| <= 4% of 74 px = 2.96 px). */
