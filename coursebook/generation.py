@@ -180,6 +180,7 @@ __all__ = [
     "run_lesson_job",
     "unit_authoring_state",
     "learner_page",
+    "lesson_attempts",
     "ensure_schema",
     "plan_document",
 ]
@@ -11709,6 +11710,28 @@ _GENERATION_DDL: tuple[str, ...] = (
         beats INTEGER NOT NULL DEFAULT 0
     )
     """,
+    # Upgrade 36: one row per *failed* section attempt, written at the attempt boundary — after
+    # the refusal is known and before the next authoring call. Until this row existed the first
+    # durable sign of a repair was the parked page minutes later, so a run that would end in a
+    # repair screen looked exactly like a run going well. The row is bookkeeping, not an artifact:
+    # it carries no answer key (the reason is bounded and the key is withheld) and it never
+    # replaces the lesson row, which is still written once the section finishes.
+    """
+    CREATE TABLE IF NOT EXISTS gen_lesson_attempts (
+        id TEXT PRIMARY KEY,
+        job_id TEXT,
+        plan_id TEXT NOT NULL,
+        section_id TEXT NOT NULL,
+        section_ordinal INTEGER NOT NULL,
+        attempt_index INTEGER NOT NULL,
+        attempts_total INTEGER NOT NULL,
+        reason TEXT NOT NULL,
+        prompt_version TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    )
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_gen_lesson_attempts_job"
+    " ON gen_lesson_attempts (job_id, created_at)",
 )
 
 
@@ -12484,6 +12507,123 @@ def _record_call_wait(
                 call_id,
             ),
         )
+
+
+def _answer_key_texts(candidate: Mapping[str, Any] | None) -> list[str]:
+    """Every answer string the draft carries, longest first, so redaction is not word-order luck."""
+    if not isinstance(candidate, Mapping):
+        return []
+    check = candidate.get("check")
+    if not isinstance(check, Mapping):
+        return []
+    texts: list[str] = []
+    reference = check.get("reference_answer")
+    if isinstance(reference, str) and reference.strip():
+        texts.append(reference.strip())
+    for value in check.get("accepted_answers") or []:
+        if isinstance(value, str) and value.strip():
+            texts.append(value.strip())
+    for group in check.get("accepted_alternatives") or []:
+        if isinstance(group, str):
+            if group.strip():
+                texts.append(group.strip())
+            continue
+        if isinstance(group, (list, tuple)):
+            for value in group:
+                if isinstance(value, str) and value.strip():
+                    texts.append(value.strip())
+    return sorted(dict.fromkeys(texts), key=len, reverse=True)
+
+
+def _bounded_attempt_reason(
+    problems: Sequence[str], candidate: Mapping[str, Any] | None = None
+) -> str:
+    """The first refusal reason as a bounded, key-free string for a durable attempt row.
+
+    A reason is model prose and can quote the page it refused, so it is collapsed, truncated to
+    :data:`VALIDATION_REASON_MAX_CHARS` and every answer the draft carried is replaced. The stored
+    reason is read by a waiting pane; it must never be the answer key's carrier.
+    """
+    first = ""
+    for problem in problems:
+        text = " ".join(str(problem or "").split())
+        if text:
+            first = text
+            break
+    if not first:
+        return "the section was refused; no reason was recorded"
+    for secret in _answer_key_texts(candidate):
+        if len(secret) < 3:
+            continue
+        first = re.sub(re.escape(secret), "[answer withheld]", first, flags=re.IGNORECASE)
+    return " ".join(first.split())[:VALIDATION_REASON_MAX_CHARS]
+
+
+def _record_lesson_attempt(
+    connection: sqlite3.Connection,
+    *,
+    job_id: str | None,
+    plan_id: str,
+    section: Mapping[str, Any],
+    attempt: int,
+    attempts_total: int,
+    reason: str,
+    prompt_version: str,
+    now: datetime | None,
+) -> None:
+    """Write one durable row for a *failed* section attempt, at the attempt boundary.
+
+    The row is written once per refusal — never per provider call — so the extra write rides the
+    same connection as the call-wait heartbeat at the point where no provider call is in flight.
+    It is bookkeeping like ``gen_call_waits``: no lesson, check or validation row is touched and
+    the section's own record is still written only when the section finishes.
+    """
+    stamp = _now_iso(now)
+    row_id = f"lat_{sha256_of_text(canonical_json([
+        str(job_id or ''), str(plan_id), str(section.get('section_id') or ''),
+        int(attempt), stamp,
+    ]))[:24]}"
+    with _transaction(connection):
+        connection.execute(
+            "INSERT OR REPLACE INTO gen_lesson_attempts (id, job_id, plan_id, section_id,"
+            " section_ordinal, attempt_index, attempts_total, reason, prompt_version, created_at)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (
+                row_id,
+                job_id,
+                str(plan_id),
+                str(section.get("section_id") or ""),
+                int(section.get("ordinal") or 0),
+                int(attempt),
+                int(attempts_total),
+                reason,
+                str(prompt_version),
+                stamp,
+            ),
+        )
+
+
+def lesson_attempts(
+    connection: sqlite3.Connection, job_id: str | None = None, *, limit: int = 20
+) -> list[dict[str, Any]]:
+    """The recorded failed section attempts for one job, newest first.
+
+    A reader uses this to say where a repair cycle actually stands — which section, which attempt
+    of how many, and why the last one was refused — instead of showing nothing until the section
+    parks. A job with no row yet returns ``[]``; a build that predates the table raises
+    ``sqlite3.OperationalError``, which the activity read treats as "no retry recorded".
+    """
+    sql = (
+        "SELECT job_id, plan_id, section_id, section_ordinal, attempt_index, attempts_total,"
+        " reason, prompt_version, created_at FROM gen_lesson_attempts"
+    )
+    params: tuple[Any, ...] = ()
+    if job_id is not None:
+        sql += " WHERE job_id = ?"
+        params = (str(job_id),)
+    sql += " ORDER BY created_at DESC, rowid DESC LIMIT ?"
+    rows = connection.execute(sql, params + (max(1, int(limit)),)).fetchall()
+    return [dict(row) for row in rows]
 
 
 def call_waits(connection: sqlite3.Connection, job_id: str | None = None, *, limit: int = 50) -> list[dict[str, Any]]:
@@ -16993,6 +17133,20 @@ def _author_section(
             if attempt == LESSON_ATTEMPTS:
                 lesson = candidate
                 break
+            # Upgrade 36: the refusal is durable *before* the next authoring call, so the waiting
+            # pane can name the section, the attempt of how many, and the bounded reason instead
+            # of showing a silent job until the page parks.
+            _record_lesson_attempt(
+                connection,
+                job_id=job_id,
+                plan_id=str(plan_id),
+                section=section,
+                attempt=attempt,
+                attempts_total=LESSON_ATTEMPTS,
+                reason=_bounded_attempt_reason(problems, candidate),
+                prompt_version=LESSON_PROMPT_VERSION,
+                now=now,
+            )
             # W2-2: attempt 2 repairs this draft against every reason, rather than starting over.
             previous_draft = candidate
             feedback = "The lesson broke required rules:\n- " + "\n- ".join(problems)
@@ -17072,6 +17226,19 @@ def _author_section(
         if attempt == LESSON_ATTEMPTS:
             lesson = candidate
             break
+        # Upgrade 36: a validator refusal is durable too. It is bounded to the first reason, and
+        # the draft's answer key is withheld, so the row can be read while the retry runs.
+        _record_lesson_attempt(
+            connection,
+            job_id=job_id,
+            plan_id=str(plan_id),
+            section=section,
+            attempt=attempt,
+            attempts_total=LESSON_ATTEMPTS,
+            reason=_bounded_attempt_reason(rejection_reasons, candidate),
+            prompt_version=LESSON_PROMPT_VERSION,
+            now=now,
+        )
         # W2-2: attempt 2 repairs the refused draft against the validator's full reason list.
         previous_draft = candidate
         feedback = _feedback(verdict)

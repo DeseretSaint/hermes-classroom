@@ -58,11 +58,16 @@ CONTRACT_FILES: dict[str, str] = {
     # no help, a hint, two or more tries, a miss, a shown answer). Optional; an item with no
     # attempt record behind it omits it. `probes/derive_rpc_v29_review_interval.py` composes over
     # an existing v29 rather than forking the version.
+    # UP-36 (t_a9beda61): v29 also refreshes the job reference — cb.jobs v6 adds one nullable
+    # `retry` object to `job.activity` (the last failed lesson-section authoring attempt), and
+    # every job item's `$ref` moves from jobs/v5#/job to jobs/v6#/job. No method, request or
+    # response field is retyped; `probes/derive_rpc_v29_up36_activity.py` composes over the same
+    # v29 rather than deriving a second one.
     "cb.rpc": "rpc.v29.json",
     # E2E L1: v15 is additive over v14 — one column, `checks.revisit INTEGER NOT NULL DEFAULT 0`.
     # No row is rewritten; every check written before v15 reads as an ordinary (non-revisit) check.
     "cb.db": "db.v15.json",
-    "cb.jobs": "jobs.v5.json",
+    "cb.jobs": "jobs.v6.json",
     # H-137 (H-73 §4): ``cb.pack`` is the one contract that accepts more than one document
     # version. v2 adds the optional root ``media[]`` link; v1 stays byte-identical and is still
     # the inventory current, because every frozen ``cb.rpc`` file (v4…v16) and ``cb.projection``
@@ -128,8 +133,11 @@ CONTRACT_VERSION_FILES: dict[str, dict[int, str]] = {
     # v28 stays readable so a client that pinned the composed revisit/completion wire can still
     # validate.
     "cb.rpc": {22: "rpc.v22.json", 23: "rpc.v23.json", 24: "rpc.v24.json", 25: "rpc.v25.json",
-               26: "rpc.v26.json", 27: "rpc.v27.json", 28: "rpc.v28.json",
-               29: "rpc.v29.json"},
+               26: "rpc.v26.json", 27: "rpc.v27.json", 28: "rpc.v28.json", 29: "rpc.v29.json"},
+    # UP-36: ``cb.jobs`` now has more than one readable version. v6 is current (activity gains the
+    # nullable `retry` object); v5 stays readable because every frozen rpc document from v20 to
+    # v28 references ``jobs/v5#/job`` and that pointer must keep resolving.
+    "cb.jobs": {4: "jobs.v4.json", 5: "jobs.v5.json", 6: "jobs.v6.json"},
     # t_d33984eb: the v1 projection stays readable by explicit version as immutable history; v2
     # is the inventory current (one trust-label sentence corrected, no rule or output moved).
     "cb.projection": {1: "projection.v1.json", 2: "projection.v2.json"},
