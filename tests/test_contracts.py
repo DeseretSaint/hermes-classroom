@@ -5402,12 +5402,23 @@ class V29AmendmentTest(unittest.TestCase):
         self.assertEqual(current["x-contract-version"], 29)
         before = v28["$defs"]
         after = current["$defs"]
-        self.assertEqual(set(after) - set(before), {"outline_time_estimate"})
-        # The four wire echoes move 28 -> 29; every other record is carried byte for byte.
+        # One contract version carries every additive change shipped together, so the merged v29
+        # is the composition of this card (UP-6) and UP-14's authored hint ladder. Subtract the
+        # sibling's three $defs so this assertion still names only this card's delta.
+        sibling_defs = {"hint_rung", "check_assistance", "assist_rung"}
+        self.assertEqual(set(after) - set(before), {"outline_time_estimate"} | sibling_defs)
+        # The four wire echoes move 28 -> 29; every other record is carried byte for byte, except
+        # the three records the sibling delta names (its methods, its check_stimulus, this plan).
         echoed = {"envelope_request", "envelope_response_ok", "envelope_response_error", "methods"}
         for name in before:
-            if name not in echoed and name != "outline_plan":
-                self.assertEqual(after[name], before[name], name)
+            if name in echoed or name in ("outline_plan", "check_stimulus"):
+                continue
+            self.assertEqual(after[name], before[name], name)
+        # UP-14 owns the only other property added to check_stimulus in this version.
+        self.assertEqual(
+            set(after["check_stimulus"]["properties"]) - set(before["check_stimulus"]["properties"]),
+            {"assistance_policy"},
+        )
         v28_plan = before["outline_plan"]
         self.assertEqual(
             set(after["outline_plan"]["properties"]) - set(v28_plan["properties"]),
