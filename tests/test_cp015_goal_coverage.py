@@ -81,8 +81,12 @@ class ClauseDerivedQueryTest(unittest.TestCase):
                     last_clause,
                     f"generic query {generic!r} would be fetched before a capability",
                 )
-        # The generic tail is still present at a deep budget: the reach was added, not traded.
-        self.assertTrue(any("reference documentation" in query for query in queries))
+        # The depth reach is still present at a deep budget: the reach was added, not traded.
+        # Six clauses spend ten of the twelve slots on base + clauses + sequencing + qualifier,
+        # so the two that remain buy the breadth core (common mistakes, examples) — the optional
+        # reference documentation tail is what waits (Upgrade 33). Ask for the question the
+        # depth dial actually promises, not for the reference page that may legitimately defer.
+        self.assertTrue(any(query.endswith(" common mistakes") for query in queries))
 
     def test_a_small_cap_drops_the_generic_tail_not_a_capability(self) -> None:
         queries = self._queries(max_queries=4)

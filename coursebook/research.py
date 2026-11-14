@@ -448,6 +448,12 @@ class ResearchRun:
     separately, so the per-query error and the run's failure report can never disagree: a search
     that raised left its error on the query entry, and every entry with an error is a question
     the pass never got an answer for.
+
+    ``queries_breadth_dropped`` is the honesty half of the depth dial: when the bounded cell
+    could not hold every breadth question the depth promises (misconceptions, worked examples,
+    step-by-step, the reference/glossary tail), the count says so instead of leaving the plan to
+    invent the practice the ledger never covered. It is ``0`` for survey/working passes, which
+    never asked the breadth questions at all.
     """
 
     status: str  # "ok" | "degraded" | "unavailable"
@@ -455,6 +461,7 @@ class ResearchRun:
     sources: list[SourceRecord]
     reason: str | None = None
     failures: list[dict[str, str]] = field(default_factory=list)
+    queries_breadth_dropped: int = 0
 
     @property
     def query_failures(self) -> list[dict[str, Any]]:
@@ -469,6 +476,7 @@ class ResearchRun:
             "sources": [s.to_dict() for s in self.sources],
             "reason": self.reason,
             "failures": [dict(item) for item in self.failures],
+            "queries_breadth_dropped": self.queries_breadth_dropped,
         }
 
 
@@ -743,6 +751,31 @@ def revalidate_key(source_id: str, text: Any) -> str:
 #: from ``short``/``working`` (six queries) upward.
 _CAPABILITY_SLOTS_BEFORE_SEQUENCING = 3
 
+#: The depth dial's breadth questions, in the order a *course* pass should ask them
+#: (Upgrade 33). The first three are the depth promise — misconceptions, worked examples and
+#: procedure — and the last three are the optional reference/glossary tail. The list is ordered
+#: so that a binding cell can only truncate the tail.
+_DEEP_BREADTH_QUESTIONS: tuple[str, ...] = (
+    "common mistakes",
+    "examples and practice",
+    "step by step",
+    "reference documentation",
+    "official guidance",
+    "glossary",
+)
+
+#: The historical reference-first order, kept verbatim for a ``one_off`` brief. That path has no
+#: clause or sequencing block, so it never suffered the truncation; its query set is byte-identical
+#: to before the breadth allocation and must stay that way.
+_ONEOFF_BREADTH_QUESTIONS: tuple[str, ...] = (
+    "reference documentation",
+    "official guidance",
+    "common mistakes",
+    "examples and practice",
+    "step by step",
+    "glossary",
+)
+
 
 def derive_queries(
     goal: str,
@@ -754,6 +787,34 @@ def derive_queries(
     subject_domain: str | None = None,
     level: str | None = None,
 ) -> list[str]:
+    """The deterministic query set for one bounded research pass.
+
+    The allocation that builds it — capability share, sequencing share, then the breadth share
+    in usefulness order — lives in :func:`_derive_query_plan`, which also reports how many
+    breadth questions the cell had to drop. Callers that only run the pass use this function;
+    the research run uses the plan so the dropped count reaches the ledger.
+    """
+    return _derive_query_plan(
+        goal,
+        recipe=recipe,
+        dials=dials,
+        locale=locale,
+        max_queries=max_queries,
+        subject_domain=subject_domain,
+        level=level,
+    )[0]
+
+
+def _derive_query_plan(
+    goal: str,
+    *,
+    recipe: str = "casual",
+    dials: dict[str, Any] | None = None,
+    locale: str | None = None,
+    max_queries: int = 4,
+    subject_domain: str | None = None,
+    level: str | None = None,
+) -> tuple[list[str], int]:
     """Derive a small, deterministic query set. Never random, never unbounded.
 
     The first query is always the goal itself; later variants add the one qualifier that the
@@ -789,6 +850,18 @@ def derive_queries(
     admitted before the generic qualifier and the capability block may only use what remains. The
     prerequisite-progression question follows the qualifier and competes with the depth tail. The
     budget cell itself is unchanged; the reservation only decides who spends it.
+
+    The depth dial's *breadth* share is allocated too, and in usefulness order (Upgrade 33). The
+    six deep-tail questions are not interchangeable: ``common mistakes``, ``examples and
+    practice`` and ``step by step`` are the depth questions the plan needs, while
+    ``reference documentation``, ``official guidance`` and ``glossary`` are the optional tail.
+    Appending them in the old reference-first order let a clause-rich goal spend its last slots
+    on the tail and truncate the breadth away, so the plan invented practice the ledger never
+    covered. A course pass now asks breadth in that order ahead of the tail; a ``one_off`` brief
+    keeps its historical order (its query set is unchanged), and ``survey`` stays one query.
+
+    Returns the bounded list and the number of breadth questions the cell could not hold, so the
+    run can record ``queries_breadth_dropped`` instead of silently losing them.
 
     ``overview``/``thorough`` are documented aliases for ``survey``/``deep``; any other value
     raises. The caller's ``max_queries`` (the budget cell) is the hard ceiling.
@@ -874,6 +947,7 @@ def derive_queries(
             queries.append(sequencing_queries[0])
         queries.append(f"{base} {base_qualifier}")
         queries.extend(sequencing_queries[1:])
+    breadth_questions: tuple[str, ...] = ()
     if depth == "deep":
         # A declared non-language domain is never researched as a language question, even
         # when the delivery locale is set. The language query is kept early so a bounded
@@ -881,12 +955,15 @@ def derive_queries(
         # subject keeps it too: there the locale is the only routing signal the caller gave.
         if locale and (domain == "language" or domain_source == "default"):
             queries.append(f"{base} {_language_name(locale)} reference")
-        queries.append(f"{base} reference documentation")
-        queries.append(f"{base} official guidance")
-        queries.append(f"{base} common mistakes")
-        queries.append(f"{base} examples and practice")
-        queries.append(f"{base} step by step")
-        queries.append(f"{base} glossary")
+        # Upgrade 33: the breadth share is ordered *before* it is spent. The old code appended
+        # reference documentation and official guidance first, so the cell's last slots bought
+        # the optional tail and truncated common mistakes / examples / step by step away. A
+        # course pass now asks the useful questions first; a one_off brief keeps its historical
+        # order because that path was never the truncated one.
+        breadth_questions = (
+            _ONEOFF_BREADTH_QUESTIONS if recipe == "one_off" else _DEEP_BREADTH_QUESTIONS
+        )
+        queries.extend(f"{base} {question}" for question in breadth_questions)
     unique: list[str] = []
     seen: set[str] = set()
     for query in queries:
@@ -897,7 +974,13 @@ def derive_queries(
         unique.append(_bound(query, _MAX_QUERY))
         if len(unique) >= limit:
             break
-    return unique
+    kept = {query.casefold() for query in unique}
+    breadth_dropped = sum(
+        1
+        for question in breadth_questions
+        if _bound(f"{base} {question}", _MAX_QUERY).casefold() not in kept
+    )
+    return unique, breadth_dropped
 
 
 #: One qualifier per canonical subject domain. These are research questions about the subject,
@@ -1065,7 +1148,7 @@ def run_research(
         )
 
     try:
-        queries = derive_queries(
+        queries, queries_breadth_dropped = _derive_query_plan(
             goal,
             recipe=recipe,
             dials=effective_dials,
@@ -1210,6 +1293,7 @@ def run_research(
             sources=[],
             reason=_bound(reason, _MAX_REASON),
             failures=failures,
+            queries_breadth_dropped=queries_breadth_dropped,
         )
     # A search failure is not a fetch failure, but it is not silence either: the queries that
     # raised never contributed a candidate, so a pass where most of the bounded questions went
@@ -1236,6 +1320,7 @@ def run_research(
         sources=sources,
         reason=reason,
         failures=failures,
+        queries_breadth_dropped=queries_breadth_dropped,
     )
 
 
