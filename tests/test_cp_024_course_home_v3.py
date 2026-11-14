@@ -111,6 +111,7 @@ for (const [name, fixture] of Object.entries(payload.cases)) {
       plate: fixture.plate,
       anchors: fixture.anchors,
       others: fixture.others,
+      othersPending: fixture.othersPending,
       sectionsDone: fixture.row.sections_done,
       sectionsTotal: fixture.row.sections_total,
       parentLabel: 'Home',
@@ -132,7 +133,7 @@ for (const [name, fixture] of Object.entries(payload.cases)) {
   out.order = out.order || {}
   out.order[name] = {
     plate: at('data-cb-course-plate="'),
-    route: at('data-cb-course-route="list"'),
+    route: at('data-cb-course-route='),
     aside: at('data-cb-course-aside')
   }
 }
@@ -493,6 +494,30 @@ class CourseHomeV3RenderTest(unittest.TestCase):
                 "others": [],
                 "readState": "loading",
             },
+            # The library read has answered *and* has no siblings: no reserved row block, so the
+            # aside does not later collapse a box that never had content.
+            "loading-noothers": {
+                "row": _row(),
+                "objectives": [],
+                "page": None,
+                "plate": _plate(anchors=[]),
+                "anchors": [],
+                "others": [],
+                "readState": "loading",
+                "othersPending": False,
+            },
+            # A `full`-scope course legally carries 9-48 sections. The spine must draw one shell
+            # per section at every width; a 12-shell clamp left the loading page hundreds of px
+            # short the moment the outline landed (round-2 review).
+            "loading-13": {
+                "row": _row(sections_total=13, sections_done=2),
+                "objectives": [],
+                "page": None,
+                "plate": _plate(anchors=[]),
+                "anchors": [],
+                "others": [],
+                "readState": "loading",
+            },
             "readerror": {
                 "row": _row(),
                 "objectives": _objectives(),
@@ -726,17 +751,106 @@ class CourseHomeV3RenderTest(unittest.TestCase):
         self.assertIn("Open World Studio", strip_tags(rejected))
         self.assertEqual(len(re.findall(r'data-cb3-pill="primary"', rejected)), 1)
 
-        # Loading and a failed read each say their deck line and name one next action; neither
-        # renders an empty course or a fabricated route.
+        # Loading (SPEC-V3 §5.4: "head and plate boxes as skeletons; the route spine already
+        # draws | none; the head says it is opening"): the head says it is opening, the plate is a
+        # skeleton that keeps M4's measured box, the spine already draws as node shells, and the
+        # aside carries **no** filled control — the next action arrives only with the course read.
         loading = self.report["cases"]["loading"]
         self.assertIn("Opening this course.", strip_tags(loading))
-        self.assertNotIn("data-cb-course-node=", loading)
+        self.assertIn('data-cb-course-read-state="loading"', loading)
+        # The plate: a skeleton in the ready plate's own box — the M4 3:1 ratio at map widths
+        # (204 px floor) and 2:1 below 900 (214 px floor) — carrying neither the plate title nor the
+        # `no-world` sentence, neither is true yet.
+        self.assertIn('data-cb-course-plate="skeleton"', loading)
+        self.assertIn("data-cb-course-plate-skeleton", loading)
+        self.assertIn('data-cb-course-plate-box="204px"', loading)
+        self.assertIn("min-height:204px", loading)
+        self.assertIn("min-height:188px", loading)
+        self.assertIn("aspect-ratio:3 / 1", loading)
+        self.assertIn('data-cb-course-plate-box="214px"', self.reports[460]["cases"]["loading"])
+        self.assertNotIn("data-cb-course-plate-title", loading, "the loading plate renders a title")
+        self.assertNotIn("data-cb-course-plate-note", loading)
+        self.assertNotIn("No scene yet", strip_tags(loading))
+        # The route: the spine draws, as shells only. A shell is not a node and not a stamp.
+        self.assertIn('data-cb-course-route="skeleton"', loading)
+        self.assertIn('data-cb-course-route-shells="5"', loading)
+        self.assertEqual(loading.count("data-cb-course-node-shell"), 5)
+        self.assertNotIn("data-cb-course-node=", loading, "the loading route renders a real node")
+        self.assertNotIn("data-cb3-stamp=", loading)
+        # …and each shell reserves the ready label's own block, not one line. The two ready labels
+        # are different boxes: `StampNode` (list) is 12 ch with no padding, `CourseRouteMapNode`
+        # (map) is 14 ch plus inline/block padding and a 1 px rule. Both wrap a title to one or two
+        # caption lines, so the spine reserves two — five over-reserved every shell by ~2.5x and
+        # made the page taller than the ready screen (round-2 review).
+        self.assertIn('data-cb-course-route-label-lines="2"', loading)
+        self.assertEqual(loading.count("data-cb-course-route-label-shell"), 5)
+        self.assertEqual(loading.count('data-cb-course-route-label-line=""'), 10)
+        # At 1049 the ready route is inside M4, so the spine is inside the plate at the map label's
+        # own measure: 14 ch plus the chip's padding and rule; it adds no page height.
+        self.assertIn('data-cb-course-route-mode="map"', loading)
+        self.assertIn("width:14ch", loading)
+        self.assertIn("padding-inline:0.35rem", loading)
+        self.assertIn("height:calc(var(--cb3-leading-caption) * 1em)", loading)
+        # At 460 the ready route is the vertical list, so the spine is that list at StampNode's own
+        # 12 ch measure — still two caption lines, and still no extra padding the label lacks.
+        compact_loading = self.reports[460]["cases"]["loading"]
+        self.assertIn('data-cb-course-route-mode="list"', compact_loading)
+        self.assertIn("width:12ch", compact_loading)
+        self.assertNotIn("width:14ch", compact_loading)
+        self.assertEqual(
+            loading.count("data-cb-course-route-word-shell"), 1, "the spine does not reserve one word line"
+        )
+        # The fixture's shelf row has two finished sections, so the word belongs on the third shell:
+        # three node shells open before it.
+        self.assertEqual(
+            loading[: loading.index("data-cb-course-route-word-shell")].count("data-cb-course-node-shell"),
+            3,
+            "the reserved word line is not on the current shell",
+        )
+        # The aside: the Continue plate is a box with no action until the read resolves.
+        self.assertEqual(len(re.findall(r'data-cb3-pill="primary"', loading)), 0)
+        self.assertIn('data-cb-continue="loading"', loading)
+        self.assertIn("data-cb-course-continue-skeleton", loading)
+        self.assertNotIn("data-cb-continue-action", loading)
+        self.assertNotIn("Continue Say what you want", strip_tags(loading))
+        # The shelf facts in the aside are already resolved, so they stay and the box keeps its size.
+        self.assertIn("2 of 5 sections have evidence", strip_tags(loading))
+        # The other-courses block is reserved while that shelf read is pending, and *not* reserved
+        # once it has answered empty: a reserved box that never gets content would collapse.
+        self.assertIn('data-cb-course-others="skeleton"', loading)
+        self.assertEqual(loading.count("data-cb-course-other-row-shell"), 3)
+        resolved_empty = self.report["cases"]["loading-noothers"]
+        self.assertIn('data-cb-course-read-state="loading"', resolved_empty)
+        self.assertNotIn("data-cb-course-others", resolved_empty)
+        self.assertNotIn("data-cb-course-other-row", resolved_empty)
         error = self.report["cases"]["readerror"]
         self.assertIn("This course could not be read", strip_tags(error))
         self.assertIn("The route shows what was saved last. Try again.", strip_tags(error))
         self.assertEqual(len(re.findall(r'data-cb3-pill="primary"', error)), 1)
         # The error head does not eat the last recorded route: the sections are still listable.
         self.assertIn('data-cb-course-route="list"', error)
+        # The skeleton is a state, not permanent decoration: the resolved screen carries none.
+        self.assertNotIn("data-cb-course-plate-skeleton", self.report["cases"]["default"])
+        self.assertNotIn('data-cb-course-route="skeleton"', self.report["cases"]["default"])
+
+    def test_course_home_v3_spine_is_one_shell_per_section(self) -> None:
+        """The spine is one shell per section, not a 12-shell cap a long course outgrows.
+
+        `full`-scope courses carry 9-48 sections. A capped spine is a page that lands short by
+        (total - cap) x node height when the outline arrives, so the count here is exact at every
+        width and the word line still belongs to exactly one shell.
+        """
+        for width in (1049, 900, 460):
+            loading = self.reports[width]["cases"]["loading-13"]
+            self.assertIn('data-cb-course-route-shells="13"', loading, f"{width}: spine is capped")
+            self.assertEqual(loading.count("data-cb-course-node-shell"), 13, f"{width}: shell count")
+            self.assertEqual(
+                loading.count("data-cb-course-route-label-shell"), 13, f"{width}: label count"
+            )
+            self.assertEqual(
+                loading.count("data-cb-course-route-word-shell"), 1, f"{width}: word lines"
+            )
+            self.assertNotIn('data-cb-course-route-shells="12"', loading)
 
     def test_course_home_v3_copy_and_facts_only(self) -> None:
         html = self.report["cases"]["default"]

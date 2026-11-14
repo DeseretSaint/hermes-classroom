@@ -2843,6 +2843,245 @@ function CourseRouteMapNode({ node, x, y, big, onOpen }) {
   })
 }
 
+/**
+ * A skeleton rule: a quiet, non-text bar in the plate's own palette. Structure only — it carries
+ * no word, no state and no number, so a loading screen cannot be read as progress it has not got,
+ * and no learner-facing copy is invented to fill it (SPEC-V3 §3.12, §5.4 `loading`).
+ */
+function Cb3SkeletonBar({ width, height, radius, step, style, ...rest }) {
+  const bar = {
+    display: 'block',
+    width: width || '100%',
+    height: height || '0.7em',
+    borderRadius: radius || cb3Radius('soft'),
+    backgroundColor: cb3Role('rule'),
+    opacity: 0.6
+  }
+  if (!step) {
+    return jsx('span', {
+      ...rest,
+      'data-cb-skeleton': '',
+      'aria-hidden': 'true',
+      style: { ...bar, ...(style || {}) }
+    })
+  }
+  // `step`: occupy the exact line box the text it stands in for would occupy — same type step,
+  // same leading, same font family — so the box below it does not move when the words arrive.
+  // The leading token is a unitless multiplier, and `height: <number>` is not a length, so it is
+  // multiplied by `1em` here; without that the bar collapsed to its inner 0.7em rule and every
+  // skeleton line under-reserved the text line it stood in for.
+  return jsx('span', {
+    ...rest,
+    'data-cb-skeleton': '',
+    'data-cb-skeleton-line': step,
+    'aria-hidden': 'true',
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      width: '100%',
+      height: `calc(${cb3Lead(step)} * 1em)`,
+      fontFamily: 'var(--cb3-font-ui)',
+      fontSize: cb3Type(step),
+      lineHeight: cb3Lead(step),
+      ...(style || {})
+    },
+    children: jsx('span', { style: bar })
+  })
+}
+
+/**
+ * The ready route label's block while the read is still opening.
+ *
+ * The block is **mode-specific**, because the two ready labels are not the same box:
+ *
+ *   * the list route paints `StampNode`'s label — `maxWidth: 12ch`, no padding, no border — so a
+ *     title of ordinary length occupies one to two caption lines at that measure;
+ *   * the map route paints `CourseRouteMapNode`'s label — `maxWidth: 14ch` plus
+ *     `paddingInline: 0.35rem`, `paddingBlock: 0.1rem` and a 1 px rule — so the chip's border box
+ *     is the 14ch measure and a title occupies one to two caption lines inside it.
+ *
+ * Two caption lines is the **upper bound** both labels really wrap to on this course's titles.
+ * The round-1 budget of five lines at 12ch was an assumption about the copy; measured against the
+ * shipped labels it over-reserved every shell by ~2.5x, and that is what made the loading page
+ * taller than the ready page and collapse when the outline landed. The line count cannot be read
+ * from titles the outline has not returned, so the spine reserves the top of the observed range
+ * and settles by at most one caption line per label that wraps short of it.
+ */
+const CB3_ROUTE_LABEL_LINES = 2
+// Deterministic bar widths per line: structure only, no words and no numbers. The last line is
+// short because a wrapped paragraph usually ends short; the lengths carry no state.
+const CB3_ROUTE_LABEL_BAR_WIDTHS = ['100%', '62%']
+
+/**
+ * Where the map-mode shells sit before the outline's anchors are known: a gentle rising trail,
+ * evenly spaced, in the same shape the plate's own anchors describe. The group is absolutely
+ * positioned inside the plate field, so it cannot change the plate's height. When anchors have
+ * already arrived (a world read that finished before the outline) the shells use them, and the
+ * real nodes land where the shells stood.
+ */
+function cb3CourseSkeletonPoints(shells, anchors) {
+  const usable = Array.isArray(anchors)
+    ? anchors.filter((point) => point && Number.isFinite(point.x) && Number.isFinite(point.y))
+    : []
+  if (usable.length >= shells) return usable.slice(0, shells)
+  return Array.from({ length: shells }, (_, index) => {
+    const step = shells > 1 ? index / (shells - 1) : 0.5
+    // 0.16–0.84 across, 0.68–0.32 up: the trailing chip and the word line stay inside the field.
+    return { x: 0.16 + step * 0.68, y: 0.68 - step * 0.36 }
+  })
+}
+
+/** One spine shell: the ready node's 48 px blank, its own label block and (once) its word line. */
+function CourseRouteSkeletonShell({ index, currentShell, mode, big }) {
+  const map = mode === 'map'
+  const dot = map && big ? '56px' : '48px'
+  const labelStyle = map
+    ? {
+        display: 'flex',
+        flexDirection: 'column',
+        width: '14ch',
+        maxWidth: '14ch',
+        minWidth: 0,
+        paddingInline: '0.35rem',
+        paddingBlock: '0.1rem',
+        boxSizing: 'border-box',
+        borderRadius: cb3Radius('soft'),
+        border: `1px solid ${cb3Role('rule')}`,
+        backgroundColor: cb3Role('card-stock')
+      }
+    : {
+        display: 'flex',
+        flexDirection: 'column',
+        width: '12ch',
+        maxWidth: '12ch',
+        minWidth: 0
+      }
+  return jsxs('div', {
+    'data-cb-course-node-shell': '',
+    style: {
+      display: 'inline-flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '0.35rem',
+      minWidth: map ? dot : '56px',
+      fontFamily: 'var(--cb3-font-ui)',
+      fontSize: cb3Type('caption'),
+      lineHeight: cb3Lead('caption')
+    },
+    children: [
+      jsx('span', {
+        style: {
+          width: dot,
+          height: dot,
+          boxSizing: 'border-box',
+          borderRadius: cb3Radius('square'),
+          border: `1px dashed ${cb3Role('rule')}`,
+          backgroundColor: cb3Role('card-stock')
+        }
+      }, 'blank'),
+      jsx('span', {
+        'data-cb-course-route-label-shell': '',
+        style: labelStyle,
+        children: CB3_ROUTE_LABEL_BAR_WIDTHS.slice(0, CB3_ROUTE_LABEL_LINES).map((width, line) =>
+          jsx(
+            Cb3SkeletonBar,
+            {
+              'data-cb-course-route-label-line': '',
+              width,
+              step: 'caption'
+            },
+            `label-line-${line}`
+          )
+        )
+      }, 'label'),
+      index === currentShell
+        ? jsx(
+            Cb3SkeletonBar,
+            {
+              'data-cb-course-route-word-shell': '',
+              width: '4rem',
+              step: 'caption'
+            },
+            'word'
+          )
+        : null
+    ]
+  })
+}
+
+/**
+ * The route spine while the course read is still opening: the same blank and label measure as the
+ * route that replaces it, in the same order and rhythm, with no id, no state word and no
+ * `aria-current`. A shell is not a node — nothing here is focusable, clickable, or readable as a
+ * section the outline has not returned yet.
+ *
+ * `mode` is where the route will live, not a style choice (SPEC-V3 §5.4 M5): at 900 px and wider
+ * the ready route is drawn **inside M4**, so the spine is an absolutely positioned group in the
+ * plate field and adds no page height; below 900 the ready route is the vertical list under the
+ * plate, so the spine is that column at the same rhythm.
+ *
+ * `count` comes from the shelf row's own `sections_total`. `currentShell` is the 0-based shell that
+ * will carry the current step's word — the shelf read already counted the finished sections — so
+ * exactly one word line is reserved too. `-1` means the course is complete and no node carries a
+ * word.
+ */
+function CourseRouteSkeleton({ count, currentShell, mode = 'list', points, big }) {
+  // One shell per section the shelf row counted, with no ceiling: a `full`-scope course legally
+  // carries 9–48 sections (`coursebook/generation.py`), and the ready list paints every one of
+  // them, so a capped spine is a page that lands short by (total − cap) × node height the moment
+  // the outline arrives. The list ready route scrolls at any length; a shell column of the same
+  // length is the same page, not a different one.
+  const shells = Math.max(1, Number(count) || 3)
+  const map = mode === 'map'
+  const trail = map ? cb3CourseSkeletonPoints(shells, points) : null
+  return jsx('ol', {
+    'data-cb-course-route': 'skeleton',
+    'data-cb-course-route-mode': map ? 'map' : 'list',
+    'data-cb-course-route-shells': String(shells),
+    'data-cb-course-route-label-lines': String(CB3_ROUTE_LABEL_LINES),
+    'aria-hidden': 'true',
+    style: map
+      ? {
+          position: 'absolute',
+          inset: 0,
+          margin: 0,
+          padding: 0,
+          listStyle: 'none',
+          pointerEvents: 'none'
+        }
+      : {
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.75rem',
+          margin: 0,
+          padding: 0,
+          listStyle: 'none',
+          minWidth: 0
+        },
+    children: Array.from({ length: shells }, (_, index) => {
+      const point = map ? trail[index] : null
+      return jsx(
+        'li',
+        {
+          'data-cb-course-route-item-shell': '',
+          style: map
+            ? {
+                position: 'absolute',
+                left: `${(point.x * 100).toFixed(3)}%`,
+                top: `${(point.y * 100).toFixed(3)}%`,
+                transform: 'translate(-50%, -50%)',
+                display: 'block',
+                minWidth: 0
+              }
+            : { display: 'flex', minWidth: 0 },
+          children: jsx(CourseRouteSkeletonShell, { index, currentShell, mode, big }, 'shell')
+        },
+        `route-shell-${index}`
+      )
+    })
+  })
+}
+
 /** The vertical route: the same nodes as `StampNode` buttons, in section order. */
 function CourseRouteList({ nodes, onOpen }) {
   return jsx('ol', {
@@ -2909,8 +3148,76 @@ function cb3CourseWorldPosture(state) {
  * keeps its last approved plate underneath; a rejected world says so and offers the one quiet
  * way into the studio, never a dead control.
  */
-function CourseHeroPlate({ plate, title, big, worldState, onOpenStudio, children }) {
+function CourseHeroPlate({ plate, title, big, worldState, onOpenStudio, skeleton, children }) {
   const preview = useArtifactPreview(plate && plate.artifactId ? plate.artifactId : null)
+  // `loading`: the plate box is a skeleton that keeps M4's measured size — the same 3:1/2:1 box
+  // and the same 204/214 px floor — so the frame that replaces it lands without a jump. It carries
+  // no title, no `no-world` sentence and no caption line: the ready plate in the product lane is
+  // the approved kit field, which has no credit under it, so reserving one would *create* the jump
+  // (measured +22 px at every width). A course whose own artifact carries a credit settles by one
+  // caption line when it lands, inside the probe's tolerance. Neither the title nor the sentence is
+  // known to be true of a course whose outline has not answered (SPEC-V3 §5.4 `loading`). The hook
+  // above is called unconditionally; this branch is a state of the same component, not a second
+  // one, so the hook order never changes between the two beats.
+  if (skeleton) {
+    return jsxs('div', {
+      'data-cb-course-plate': 'skeleton',
+      'data-cb-course-plate-skeleton': '',
+      'data-cb-course-plate-box': big ? '204px' : '214px',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0 },
+      children: [
+        jsx('div', {
+          className: 'cb3-shelf',
+          style: {
+            position: 'relative',
+            width: '100%',
+            // The art plate is the fixed M4 ratio (3:1 wide, 2:1 compact). The skeleton keeps that
+            // ratio *and* the 204/214 px floor, so at 1049 (733 px column) it is 244 px, at 900 it
+            // is 289 px and at 460 it is 214 px — the same box the painted plate will occupy, not
+            // a 204 px stub that grows when the art lands.
+            aspectRatio: big ? '3 / 1' : '2 / 1',
+            minHeight: big ? '204px' : '214px',
+            padding: '8px',
+            boxSizing: 'border-box',
+            backgroundColor: cb3Role('canvas-edge'),
+            border: `1px solid ${cb3Role('ink')}`,
+            borderRadius: cb3Radius('round'),
+            overflow: 'hidden',
+            minWidth: 0
+          },
+          children: jsxs('div', {
+            'data-cb-course-plate-field': '',
+            style: {
+              position: 'relative',
+              width: '100%',
+              height: '100%',
+              minHeight: big ? '188px' : '198px',
+              padding: '0.75rem',
+              boxSizing: 'border-box',
+              overflow: 'hidden',
+              borderRadius: cb3Radius('soft'),
+              backgroundColor: cb3Role('card-stock'),
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'flex-end',
+              gap: '0.5rem'
+            },
+            children: [
+              // With a spine inside the field (map mode) the two placeholder bars would sit under
+              // the trailing shells: the spine *is* the structure, so the field carries it alone.
+              children
+                ? null
+                : jsx(Cb3SkeletonBar, { width: '62%', height: '1.15rem' }, 'title'),
+              children ? null : jsx(Cb3SkeletonBar, { width: '38%', height: '0.85rem' }, 'line'),
+              // The wide route draws inside this field (M5), so its spine is a child of the plate
+              // and cannot add a second column below it.
+              children
+            ]
+          }, 'field')
+        }, 'box')
+      ]
+    })
+  }
   const direct = plate && typeof plate.src === 'string' && plate.src ? plate.src : null
   const posture = cb3CourseWorldPosture(worldState)
   const painted =
@@ -3095,6 +3402,9 @@ function CourseHeroPlate({ plate, title, big, worldState, onOpenStudio, children
   })
 }
 
+/** Three row shells: the ready other-courses block never renders more than three rows. */
+const OTHERS_SHELL_COUNT = [0, 1, 2]
+
 /**
  * The aside (M6–M9): Continue, the evidence count, the other courses, the fox. Continue is the
  * screen's only filled control, and its label is the backend's own `next_step.label` — including
@@ -3109,6 +3419,8 @@ function CourseHomeAside({
   step,
   big,
   busy,
+  loading,
+  othersPending,
   onContinue,
   onOpenPlan,
   onOpenReview,
@@ -3147,6 +3459,11 @@ function CourseHomeAside({
       : null
     : primary.run
   const others_ = Array.isArray(others) ? others.slice(0, 3) : []
+  // The other-courses block is a shelf fact: while the library read is still pending the box is
+  // reserved as row shells; once it has answered, an empty list renders no block at all, so a
+  // learner with no sibling courses does not see a reserved block collapse. `othersPending` is
+  // undefined in the pure-render fixtures, which are the "still pending" case by construction.
+  const reserveOthers = Boolean(loading) && others_.length === 0 && othersPending !== false
   return jsxs('aside', {
     'data-cb-course-aside': '',
     style: {
@@ -3158,7 +3475,7 @@ function CourseHomeAside({
     },
     children: [
       jsxs('section', {
-        'data-cb-continue': step.kind || 'none',
+        'data-cb-continue': loading ? 'loading' : step.kind || 'none',
         className: 'cb3-card',
         style: {
           display: 'flex',
@@ -3170,18 +3487,24 @@ function CourseHomeAside({
           minWidth: 0
         },
         children: [
-          jsx('h3', {
-            style: {
-              margin: 0,
-              fontFamily: 'var(--cb3-font-ui)',
-              fontSize: cb3Type('meta'),
-              lineHeight: cb3Lead('meta'),
-              fontWeight: 700,
-              color: cb3Role('ink-soft')
-            },
-            children: heading
-          }, 'heading'),
-          body
+          // `loading`: the plate is still a skeleton and the route is still shells, so there is no
+          // next action yet — SPEC-V3 §5.4's loading row names **none**. The card keeps its box
+          // (heading line + 48 px action measure) with structure, never a filled control and never
+          // a label that promises a step the outline has not returned.
+          loading
+            ? jsx(Cb3SkeletonBar, { width: '45%', step: 'meta' }, 'heading')
+            : jsx('h3', {
+                style: {
+                  margin: 0,
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('meta'),
+                  lineHeight: cb3Lead('meta'),
+                  fontWeight: 700,
+                  color: cb3Role('ink-soft')
+                },
+                children: heading
+              }, 'heading'),
+          !loading && body
             ? jsx('p', {
                 style: {
                   margin: 0,
@@ -3193,15 +3516,29 @@ function CourseHomeAside({
                 children: body
               }, 'body')
             : null,
-          jsx(PillAction, {
-            variant: 'primary',
-            'data-cb-continue-action': '',
-            label: nextLabel,
-            busy: Boolean(busy),
-            disabled: Boolean(busy) || !run,
-            onClick: run || (() => {}),
-            style: { width: '100%' }
-          }, 'primary')
+          loading
+            ? jsx('span', {
+                'data-cb-course-continue-skeleton': '',
+                'aria-hidden': 'true',
+                style: {
+                  display: 'block',
+                  width: '100%',
+                  minHeight: '48px',
+                  boxSizing: 'border-box',
+                  borderRadius: cb3Radius('pill'),
+                  border: `1px dashed ${cb3Role('rule')}`,
+                  backgroundColor: cb3Role('card-stock')
+                }
+              }, 'primary')
+            : jsx(PillAction, {
+                variant: 'primary',
+                'data-cb-continue-action': '',
+                label: nextLabel,
+                busy: Boolean(busy),
+                disabled: Boolean(busy) || !run,
+                onClick: run || (() => {}),
+                style: { width: '100%' }
+              }, 'primary')
         ]
       }, 'continue'),
       // SPEC-V3 M7 prints an evidence count. A course with no evidence-bearing sections has no
@@ -3236,9 +3573,12 @@ function CourseHomeAside({
             ]
           }, 'evidence')
         : null,
-      others_.length
+      // A loading aside must keep the box the ready aside occupies, or the page shortens and then
+      // grows again when the shelf rows arrive. The other-courses block is three rows at most; with
+      // no rows returned yet it draws three row shells at the ready row's 40 px measure.
+      others_.length || reserveOthers
         ? jsxs('section', {
-            'data-cb-course-others': '',
+            'data-cb-course-others': reserveOthers ? 'skeleton' : '',
             style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', width: '100%', minWidth: 0 },
             children: [
               jsx('h3', {
@@ -3262,7 +3602,8 @@ function CourseHomeAside({
                   listStyle: 'none',
                   minWidth: 0
                 },
-                children: others_.map((item) => {
+                children: others_.length
+                  ? others_.map((item) => {
                   const rowStyle = {
                     display: 'flex',
                     alignItems: 'center',
@@ -3304,6 +3645,28 @@ function CourseHomeAside({
                     item.course_id || item.title
                   )
                 })
+                  : OTHERS_SHELL_COUNT.map((_, index) =>
+                      jsx(
+                        'li',
+                        {
+                          'data-cb-course-other-row-shell': '',
+                          'aria-hidden': 'true',
+                          style: { minWidth: 0 },
+                          children: jsx('span', {
+                            style: {
+                              display: 'block',
+                              width: '100%',
+                              minHeight: '40px',
+                              boxSizing: 'border-box',
+                              border: `1px dashed ${cb3Role('rule')}`,
+                              borderRadius: cb3Radius('soft'),
+                              backgroundColor: cb3Role('card-stock')
+                            }
+                          })
+                        },
+                        `other-shell-${index}`
+                      )
+                    )
               }, 'rows')
             ]
           }, 'others')
@@ -3329,6 +3692,7 @@ function CourseHomeV3({
   plate,
   anchors,
   others,
+  othersPending,
   sectionsDone,
   sectionsTotal,
   parentLabel,
@@ -3378,15 +3742,16 @@ function CourseHomeV3({
   // route when a section would be left unplaced.
   const explicitAnchors = Array.isArray(anchors) && anchors.length ? anchors : null
   const manifestAnchors = cb3CoursePlateAnchors(plate, null)
+  const routeAnchors =
+    explicitAnchors ||
+    (manifestAnchors.length
+      ? manifestAnchors
+      : plate && Array.isArray(plate.anchors)
+        ? plate.anchors
+        : [])
   const plan = cb3CourseRoutePlan({
     nodes,
-    anchors:
-      explicitAnchors ||
-      (manifestAnchors.length
-        ? manifestAnchors
-        : plate && Array.isArray(plate.anchors)
-          ? plate.anchors
-          : []),
+    anchors: routeAnchors,
     width: routeWidth
   })
   const evidenceLine = cb3CourseEvidenceLine(done, total)
@@ -3412,10 +3777,25 @@ function CourseHomeV3({
     label: (row && row.next_step && row.next_step.label) || CB3_COURSE_COPY.continueTitle,
     done: courseComplete
   }
+  // SPEC-V3 §5.4 `loading`: the head and plate are skeletons and the route spine already draws.
+  // The spine's length is the shelf row's own section total — a count the shelf read already
+  // returned — so the route that replaces the shells lands at the same height. A course with no
+  // recorded total still draws a short spine rather than an empty column. There is no ceiling:
+  // `full`-scope courses run to 48 sections and the ready route paints every one, so a cap makes
+  // the loading page shorter than the page it becomes.
+  const loading = readState === 'loading'
+  const routeShells = Math.max(1, total > 0 ? Math.round(total) : 3)
+  // The ready route puts its state word on exactly one node: the current step. The shelf read has
+  // already counted the finished sections, so that node is the one after them — and a course with
+  // nothing left to open has no current step and no word. The spine reserves the same one line.
+  const doneShells = Math.min(Math.round(done) || 0, routeShells - 1)
+  const currentShell = courseComplete ? -1 : doneShells
   const backLabel = CB3_COURSE_COPY.backPrefix + (parentLabel || 'Home')
   return jsxs('div', {
     'data-cb-course-home-v3': plan.mode,
     'data-cb-course-home-width': routeWidth ? String(routeWidth) : 'unknown',
+    'data-cb-course-read-state':
+      readState === 'loading' ? 'loading' : readState === 'error' ? 'error' : 'ready',
     style: {
       display: 'flex',
       flexDirection: 'column',
@@ -3573,8 +3953,26 @@ function CourseHomeV3({
                 big: mapWide,
                 worldState,
                 onOpenStudio,
-                children:
-                  plan.mode === 'map'
+                skeleton: loading,
+                children: loading
+                  ? // M5 at 900 px and wider: the ready route is drawn inside this plate, so the
+                    // spine is drawn inside it too. Without this the loading beat reserved a
+                    // 742 px list column the wide ready screen never renders, and the page
+                    // collapsed by 460–552 px when the outline landed (round-2 review).
+                    mapWide
+                    ? jsx(
+                        CourseRouteSkeleton,
+                        {
+                          count: routeShells,
+                          currentShell,
+                          mode: 'map',
+                          points: routeAnchors,
+                          big: wide
+                        },
+                        'route-skeleton'
+                      )
+                    : null
+                  : plan.mode === 'map'
                     ? jsx('div', {
                         'data-cb-course-nodes': '',
                         role: 'group',
@@ -3593,9 +3991,16 @@ function CourseHomeV3({
               // SPEC-V3 §5.4: M6 sits **below** M5, and the aside moves under the route. In list
               // mode the route therefore lives in the main column directly under the plate, so the
               // DOM order is plate → route → aside at every width (the map carries its route
-              // inside the plate instead).
-              plan.mode === 'list' && nodes.length
-                ? jsx(CourseRouteList, { nodes, onOpen: onOpenSection }, 'route-list')
+              // inside the plate instead). While the course read is still opening, a list-width
+              // spine draws as shells in the same column and at the same rhythm; at map widths the
+              // spine is inside the plate above, and this slot stays empty exactly as it will when
+              // the outline lands.
+              plan.mode === 'list' && (loading || nodes.length)
+                ? loading
+                  ? mapWide
+                    ? null
+                    : jsx(CourseRouteSkeleton, { count: routeShells, currentShell, mode: 'list' }, 'route-skeleton')
+                  : jsx(CourseRouteList, { nodes, onOpen: onOpenSection }, 'route-list')
                 : null
             ]
           }, 'hero'),
@@ -3608,6 +4013,8 @@ function CourseHomeV3({
             step,
             big: wide,
             busy,
+            loading,
+            othersPending,
             onContinue,
             onOpenPlan,
             onOpenReview: openReviewAction,
@@ -4436,6 +4843,7 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
           page: page.data,
           plate: courseHomePlate,
           others: otherCourses,
+          othersPending: !(library.data && Array.isArray(library.data.items)),
           sectionsDone: row.sections_done,
           sectionsTotal: row.sections_total,
           parentLabel: 'Home',
