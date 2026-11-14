@@ -580,6 +580,28 @@ CHECK_KIND_BY_TARGET: dict[str, tuple[str, ...]] = {
     "transfer": ("verification", "observation"),
 }
 
+
+def check_kind_refusal(target: str, kind: str, expected: Sequence[str]) -> str:
+    """The one sentence both gates use when a check's kind contradicts its evidence target.
+
+    It names the family, the permitted kinds and the kind that was declared, because the refusal
+    is what a regeneration reads. For transfer it also says why a quiz is the weaker form: the
+    learner eliminates options the lesson already supplied instead of applying the capability to
+    a case the lesson did not work (UP-11; see docs/COURSE-BLUEPRINT.md §5 rule 5).
+    """
+    reason = (
+        f"a {target!r} check is measured by {' or '.join(expected)}, "
+        f"not {kind or 'no kind'!r}"
+    )
+    if target == "transfer":
+        reason += (
+            ": a transfer objective asks the learner to apply the capability to a case the "
+            "lesson did not work, and choosing among supplied options is recognition, not "
+            "application"
+        )
+    return reason
+
+
 #: Evidence targets whose authored check reports on the learner instead of measuring them.
 #:
 #: ``procedure``: a performance is authored as a checklist (kind ``verification``) or, in a parent
@@ -8143,14 +8165,22 @@ def _enforce_plan_rules_v2(
             )
         expected_kinds = CHECK_KIND_BY_TARGET.get(family)
         declared_kind = str(item.get("kind") or "")
-        # A procedure is the one family a quiz cannot measure: a checklist of the actual acts is the
-        # performance, and a question about them is a claim about a performance nobody watched. The
-        # other families keep their authored kind, because a scenario quiz is a real transfer check
-        # and a recorded attempt is a stricter one, not a different capability.
-        if family == "procedure" and declared_kind and declared_kind not in expected_kinds:
+        # The recipe branches own the kind where they say so: a one-off is a verification
+        # checklist and a parent course is an observation, exactly as the lesson rule reads them.
+        # The map governs every other recipe, and it governs every family in it — an exemption
+        # for a family is an exemption from being measured. It lived here until UP-11: a scenario
+        # quiz was called "a real transfer check", but the learner answered it by eliminating
+        # options the lesson already supplied, so the claim that the capability was applied to an
+        # untaught case was never exercised (docs/UPGRADES-50-2026-11-14.md §11).
+        if (
+            recipe not in ("one_off", "parent")
+            and expected_kinds is not None
+            and declared_kind
+            and declared_kind not in expected_kinds
+        ):
             reasons.append(
-                f"check for objective {item.get('objective_ref')} is {declared_kind!r} but a "
-                f"procedure objective is measured by {' or '.join(expected_kinds)}"
+                f"check for objective {item.get('objective_ref')}: "
+                + check_kind_refusal(family, declared_kind, expected_kinds)
             )
 
     # Rule 6 — prerequisite edges point backwards, are unique, no self ref. The schema bounds
@@ -8786,16 +8816,25 @@ def enforce_lesson_rules(
                 "check kind; a lesson check must measure one of "
                 f"{', '.join(sorted(CHECK_KIND_BY_TARGET))}"
             )
-        elif declared_kind not in expected_kinds and not (
-            declared_target == "transfer" and declared_kind == "quiz"
-        ):
-            # A transfer check applies a capability to a case the lesson did not teach, and a
-            # scenario question is a real way to do that. A procedure is different: the act is the
-            # performance, so a question about it measures nothing. The map still guides authoring;
-            # only the procedure family is enforced strictly.
+        elif declared_kind not in expected_kinds:
+            # UP-11 deleted the transfer-quiz exemption that used to sit here. It was authored on
+            # 2026-11-11 as "a scenario quiz is a real transfer check"; measured, the learner
+            # eliminates options the lesson already supplied and the check is graded by exact
+            # string match, so the application was never performed. The product keeps the map.
+            reasons.append(check_kind_refusal(declared_target, declared_kind, expected_kinds))
+
+    # A transfer check applies the capability to a case the lesson did not work. Handing back the
+    # options hands back the answer space, so the choice is recognition of the lesson's own
+    # phrases. This holds whatever kind the author labels it: a "verification" whose stimulus is
+    # a selection is still an option pick, and its reference would take the exact lane.
+    if declared_target == "transfer":
+        stimulus_format = str((check.get("stimulus") or {}).get("format") or "")
+        if stimulus_format == "selection":
             reasons.append(
-                f"a {declared_target!r} check is measured by {' or '.join(expected_kinds)}, "
-                f"not {declared_kind or 'no kind'!r}"
+                "a 'transfer' check may not present supplied options: choosing among them is "
+                "recognition of phrases the lesson already supplied, not applying the capability "
+                "to a case the lesson did not work. Record the learner's own attempt as a "
+                "verification checklist, or ask for a typed response"
             )
 
     policy = _scaffold_policy(recipe, dials, locale)

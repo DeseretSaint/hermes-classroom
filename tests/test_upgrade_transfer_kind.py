@@ -8,6 +8,11 @@ a recorded verification of the learner's own attempt or a written response over 
 never worked — never a choice among supplied options. Plan rule 5b reads the same map, so a
 contradictory plan is refused before authoring.
 
+Adjudication: INT-red 1 (2026-11-14) resolved this collision in UP-11's favour against master's
+2026-11-11 exemption (`e0930a31`, docs/CREATE-EXPERIENCE-SPEC.md), because the exemption made the
+weaker transfer form the only one that could complete a section. The reasoning and the surviving
+authoring lane are in docs/UPGRADES-50-2026-11-14.md §11 and docs/ACCEPTANCE.md §E.
+
 Run: ``python3 -m unittest tests.test_upgrade_transfer_kind``
 """
 
@@ -152,6 +157,26 @@ class PlanRuleFiveBTest(unittest.TestCase):
 
     def test_a_plan_may_declare_a_verification_for_a_transfer_objective(self) -> None:
         self.plan_rules(self.plan_with(target="transfer", kind="verification"))
+
+    def test_plan_rule_5b_reads_the_map_for_every_family(self) -> None:
+        """The exemption was one family's escape from the map, so pin the map, not the family.
+
+        INT-red 1: the merged tree kept master's ``family == "procedure"`` guard while these
+        tests demanded transfer be enforced. A guard narrowed to one family is the same bug with
+        a different name, so a production quiz is refused at the plan seam too (its lesson seam
+        always did refuse it).
+        """
+        with self.assertRaises(gen._RuleViolation) as caught:
+            self.plan_rules(self.plan_with(target="production", kind="quiz"))
+        reasons = " ".join(caught.exception.reasons)
+        self.assertIn("a 'production' check is measured by verification or observation", reasons)
+
+    def test_the_recipe_owned_kinds_are_still_honoured(self) -> None:
+        """A one-off is a verification checklist by rule; the map does not override the recipe."""
+        plan = blueprint_plan(scope="single", units=1, objectives_per_unit=1, recipe="one_off")
+        gen.enforce_plan_rules(
+            plan, recipe="one_off", dials={}, locale=None, ledger=[], scope="single"
+        )
 
 
 if __name__ == "__main__":
