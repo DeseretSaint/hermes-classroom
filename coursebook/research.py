@@ -31,10 +31,9 @@ import os
 import re
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Iterable, Protocol, Sequence
 from urllib.parse import urlparse
-
-import tldextract
 
 from . import curriculum, policy
 from .deadline import (
@@ -144,10 +143,15 @@ SOURCE_TYPE_RANK: dict[str, int] = {
     "web_page": 5,
 }
 
-#: Public Suffix List lookups for source classification. ``suffix_list_urls=()`` is not an
-#: optimisation: it is what keeps the plugin offline-hermetic. ``tldextract`` ships a PSL snapshot
-#: inside the wheel, so classification uses that snapshot and never dials out for a fresher list.
-_TLDEXTRACT = tldextract.TLDExtract(suffix_list_urls=(), cache_dir=None)
+#: Public Suffix List used for source classification. The rules are vendored with the plugin
+#: (``coursebook/data/public_suffix_list.dat``, ICANN section, PSL VERSION 2025-04-07) rather than
+#: imported from a package: the lookup then needs no install and never dials out. It is the same
+#: snapshot ``tldextract`` shipped and the removed call was built with ``include_private=False``, so
+#: suffix resolution is unchanged while the plugin keeps importing on a bare interpreter.
+_PUBLIC_SUFFIX_FILE = Path(__file__).with_name("data") / "public_suffix_list.dat"
+
+#: Normal, wildcard (``*.``) and exception (``!``) rules, parsed once on first lookup.
+_PUBLIC_SUFFIX_RULES: tuple[frozenset[str], frozenset[str], frozenset[str]] | None = None
 
 #: First label of a public suffix that marks a government publisher (``gov``, ``gov.uk``,
 #: ``mil``, ``int``). Matched against the suffix, never against the whole host.
@@ -1698,22 +1702,93 @@ def _publisher_of(url: str) -> str:
     return host[4:] if host.startswith("www.") else host
 
 
+def _load_public_suffix_rules() -> tuple[frozenset[str], frozenset[str], frozenset[str]]:
+    """Parse the vendored Public Suffix List once; return ``(normal, wildcard, exception)``.
+
+    The file is data shipped with the plugin, not a package: reading it is the whole dependency.
+    A missing or unreadable file is a broken install, so it raises rather than silently
+    classifying every host as unknown.
+    """
+    global _PUBLIC_SUFFIX_RULES
+    if _PUBLIC_SUFFIX_RULES is None:
+        normal: set[str] = set()
+        wildcard: set[str] = set()
+        exception: set[str] = set()
+
+        def add(target: set[str], rule: str) -> None:
+            target.add(rule)
+            if not rule.isascii():
+                # The list spells internationalised suffixes in Unicode (``рф``); a URL reaches
+                # us punycoded (``xn--p1ai``). Match both spellings, using only the stdlib.
+                try:
+                    target.add(rule.encode("idna").decode("ascii"))
+                except UnicodeError:
+                    pass
+
+        for line in _PUBLIC_SUFFIX_FILE.read_text(encoding="utf-8").splitlines():
+            rule = line.strip()
+            if not rule or rule.startswith("//"):
+                continue
+            if rule.startswith("!"):
+                add(exception, rule[1:])
+            elif rule.startswith("*."):
+                add(wildcard, rule[2:])
+            else:
+                add(normal, rule)
+        _PUBLIC_SUFFIX_RULES = (frozenset(normal), frozenset(wildcard), frozenset(exception))
+    return _PUBLIC_SUFFIX_RULES
+
+
+def _public_suffix_of(host: str) -> str:
+    """Return the public suffix of *host*, or ``""`` when no rule matches.
+
+    This is the publicsuffix.org algorithm over the vendored list: the longest matching rule
+    wins, an exception rule (``!www.ck``) removes its leftmost label, and a wildcard rule
+    (``*.ck``) matches exactly one extra label. A host whose TLD is not in the list has no
+    public suffix at all — that is what stops an invented TLD such as
+    ``attacker.example`` from borrowing a trusted suffix from a label above it.
+    """
+    host = host.strip().rstrip(".").lower()
+    if not host:
+        return ""
+    normal, wildcard, exception = _load_public_suffix_rules()
+    labels = host.split(".")
+    # Exceptions win over any longer normal/wildcard match; the prevailing rule is the
+    # exception rule with its leftmost label removed.
+    for index in range(len(labels)):
+        candidate = ".".join(labels[index:])
+        if candidate in exception:
+            return ".".join(labels[index + 1:])
+    # Longest match wins: the first index whose rule matches is the longest suffix.
+    for index in range(len(labels)):
+        candidate = ".".join(labels[index:])
+        if candidate in normal:
+            return candidate
+        if index + 1 < len(labels) and ".".join(labels[index + 1:]) in wildcard:
+            return candidate
+    return ""
+
+
 def _host_parts(url: str) -> tuple[str, str, str]:
     """Return ``(host, suffix, registrable_domain)`` for the URL's host.
 
-    ``host`` is the host name alone (port, userinfo and a leading ``www.`` removed) for the
-    path/brand checks. ``suffix`` and ``registrable_domain`` come from the Public Suffix List, so
-    the label after a dot is not mistaken for a publisher's suffix: in
-    ``foo.gov.attacker.example`` the ``gov`` is a subdomain label of ``example``, whose suffix the
-    list does not know. Lookups are offline by construction (``suffix_list_urls=()``): the snapshot
-    shipped inside ``tldextract`` is the authority and nothing is fetched at runtime.
+    ``host`` is the host name alone (port, userinfo, a trailing dot and a leading ``www.``)
+    removed for the path/brand checks. ``suffix`` and ``registrable_domain`` come from the
+    vendored Public Suffix List, so the label after a dot is not mistaken for a publisher's
+    suffix: in ``foo.gov.attacker.example`` the ``gov`` is a subdomain label of ``example``,
+    whose suffix the list does not know. Lookups are offline by construction — the list is a
+    data file read from disk and nothing is fetched at runtime.
     """
-    host = (urlparse(url).hostname or "").lower()
+    host = (urlparse(url).hostname or "").lower().rstrip(".")
     if host.startswith("www."):
         host = host[4:]
-    parts = _TLDEXTRACT(host)
-    suffix = parts.suffix.lower()
-    registrable = f"{parts.domain}.{suffix}" if suffix else ""
+    suffix = _public_suffix_of(host)
+    registrable = ""
+    if suffix:
+        labels = host.split(".")
+        suffix_labels = suffix.count(".") + 1
+        if len(labels) > suffix_labels:
+            registrable = f"{labels[-suffix_labels - 1]}.{suffix}"
     return host, suffix, registrable
 
 

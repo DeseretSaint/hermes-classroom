@@ -45,10 +45,10 @@ python_dependencies:
   # there; the plan gate still refuses a cycle without it (the dependency-free fallback), but a
   # host that installs the pin runs the declared builder.
   - "networkx>=3.7,<4"
-  # Source classification: the Public Suffix List decides whether a host is a government publisher.
-  # Imported by `coursebook/research.py` and always constructed with `suffix_list_urls=()`, so the
-  # PSL snapshot inside the wheel is used and no list is fetched — the plugin stays offline-hermetic.
-  - "tldextract>=5,<6"
+  # Source classification reads the Public Suffix List from the ICANN section vendored at
+  # `coursebook/data/public_suffix_list.dat` (PSL VERSION 2025-04-07). That is a data file read from
+  # disk, not a package: no suffix-list dependency is declared and nothing is fetched, so the
+  # plugin stays offline-hermetic and imports on an interpreter with no extra install.
   # UP-45: reads a complete-but-malformed JSON answer (a trailing comma, a stray fence, single
   # quotes) locally instead of failing the unit job after the earlier sections were paid for. MIT,
   # pure Python, no network and no config: it is handed text this module has already bounded and
