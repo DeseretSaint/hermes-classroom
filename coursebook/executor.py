@@ -84,6 +84,34 @@ def _resolve_search(explicit: Any) -> Any:
         return None
 
 
+def _lesson_stage_budget(
+    brief: dict[str, Any], *, resolve_unit: bool
+) -> Callable[[], float]:
+    """A callable that derives the lessons stage's own attempt budget at stage start (UP-41).
+
+    The number of sections the stage has left to author is a stored fact, not a brief field, so
+    the budget is resolved lazily: at stage start (and again on every resumed attempt) it reads
+    the plan's unit and the lessons already stored, and sizes the legal path from the sections
+    that remain. A stage that authors nothing still gets one section's worth of budget.
+    """
+
+    plan_id = brief.get("plan_id")
+
+    def resolve() -> float:
+        connection = db.connect()
+        try:
+            unit_ordinal = None if resolve_unit else brief.get("unit_ordinal")
+            return generation.lesson_stage_budget_seconds(
+                generation.lesson_stage_section_count(
+                    connection, plan_id, unit_ordinal=unit_ordinal
+                )
+            )
+        finally:
+            connection.close()
+
+    return resolve
+
+
 def _rejecting_stage(stage: str) -> Callable[[job_service.Lease], job_service.StageResult]:
     """A stage that fails the job visibly instead of leaving a typo'd brief queued forever."""
 
@@ -131,11 +159,19 @@ class _Resolvers:
     def __call__(self, brief: dict[str, Any]) -> Sequence[job_service.Stage]:
         stage = str((brief or {}).get("stage") or PLAN_STAGE)
         if stage == PLAN_STAGE:
-            return [job_service.Stage(PLAN_STAGE, self._plan_stage(dict(brief or {})))]
+            return [
+                job_service.Stage(
+                    PLAN_STAGE,
+                    self._plan_stage(dict(brief or {})),
+                    budget_seconds=generation.plan_stage_budget_seconds,
+                )
+            ]
         if stage == UNIT_SECTIONS_STAGE:
             return [
                 job_service.Stage(
-                    UNIT_SECTIONS_STAGE, self._unit_sections_stage(dict(brief or {}))
+                    UNIT_SECTIONS_STAGE,
+                    self._unit_sections_stage(dict(brief or {})),
+                    budget_seconds=generation.unit_sections_stage_budget_seconds,
                 )
             ]
         if stage == LESSONS_STAGE:
@@ -143,7 +179,13 @@ class _Resolvers:
             if typed.get("unit_ordinal") is not None:
                 # A brief that names its unit keeps the one-stage shape (the harness and the
                 # unit-stage tests drive it that way); nothing is resolved for it.
-                return [job_service.Stage(LESSONS_STAGE, self._lessons_stage(typed))]
+                return [
+                    job_service.Stage(
+                        LESSONS_STAGE,
+                        self._lessons_stage(typed),
+                        budget_seconds=_lesson_stage_budget(typed, resolve_unit=False),
+                    )
+                ]
             return self._lessons_path(typed)
         return [job_service.Stage(stage or "invalid", _rejecting_stage(stage))]
 
@@ -162,9 +204,15 @@ class _Resolvers:
         """
         return [
             job_service.Stage(
-                UNIT_SECTIONS_STAGE, self._unit_sections_stage(brief, resolve_unit=True)
+                UNIT_SECTIONS_STAGE,
+                self._unit_sections_stage(brief, resolve_unit=True),
+                budget_seconds=generation.unit_sections_stage_budget_seconds,
             ),
-            job_service.Stage(LESSONS_STAGE, self._lessons_stage(brief, resolve_unit=True)),
+            job_service.Stage(
+                LESSONS_STAGE,
+                self._lessons_stage(brief, resolve_unit=True),
+                budget_seconds=_lesson_stage_budget(brief, resolve_unit=True),
+            ),
         ]
 
     # ── stage bodies ────────────────────────────────────────────────────────

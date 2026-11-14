@@ -25,6 +25,19 @@ contract versions move independently and are named wherever they changed.
   the stage recovery text, and keeps the elapsed wait in the message — so a slow route is not
   reported as an unavailable host. No wire or schema change. Evidence:
   `tests/test_cp015g_provider_deadlines.py`, `docs/GENERATION.md` §9.
+- **The attempt budget fits the stage chain's legal path** (UP-41). One 1800 s constant bounded a
+  chain whose own declared bounds are longer: a plan stage may legally author twice at 900 s
+  `generate` + 600 s `validate`, i.e. 3000 s, so a slow but legal run died `HOST_UNAVAILABLE` on its
+  second attempt and every retry re-researched into the same wall. Each stage now declares its own
+  budget from its purposes and legal attempts (plan `2 x (900 + 600)`; unit sections two batch
+  attempts; lessons its remaining sections `x LESSON_ATTEMPTS x (generate + validate)`), and the
+  chain's outer cap is the sum of those declared budgets, never below
+  `COURSEBOOK_JOB_DEADLINE_SECONDS` (default 1800 s). An explicit override of that variable still
+  binds exactly, narrower included, and the per-call purpose deadlines are untouched — they are what
+  cancels a stuck provider. The applied per-stage budget is written to the checkpoint
+  (`stage_budgets`, plus `budget_source`/`stage_declared_s` in a deadline failure's `details`), and a
+  resumed attempt re-derives its own instead of inheriting a spent one. No contract or schema change.
+  Evidence: `tests/test_up_job_deadline_chain.py`, `docs/ARCHITECTURE.md` §8.1.
 
 ## 0.2.0 — the aiming and trust pass (unreleased)
 

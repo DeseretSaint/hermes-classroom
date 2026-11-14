@@ -55,11 +55,13 @@ WORKER_LOST_ENV = "COURSEBOOK_WORKER_LOST_SECONDS"
 #: contract's own retryable ``failed``; this value is what tells an operator *why* it rested.
 WORKER_LOST_REASON = "WORKER_LOST"
 
-#: Seconds one job **attempt** may run before the in-flight provider call is cancelled and the
-#: job is failed (CP-044). Per-call deadlines are not a job deadline: a plan attempt runs two
-#: author/validate rounds, so bounded calls that each finish "in time" can still keep the row
-#: ``running`` for well over half an hour. Resolved from ``COURSEBOOK_JOB_DEADLINE_SECONDS`` when
-#: a deployment sets it; the value travels into every bounded call as the *remaining* budget.
+#: Default floor of one attempt's outer cap (CP-044, UP-41). Per-call deadlines are not a job
+#: deadline: bounded calls that each finish "in time" can still keep the row ``running`` for a
+#: long time. This constant is no longer *the* attempt budget — :func:`chain_deadline_seconds`
+#: derives the cap from the stage chain's own declared bounds and never returns less than this,
+#: so a slow but legal plan run (2 x (900 s + 600 s)) is not cut at 1800 s. An explicit
+#: ``COURSEBOOK_JOB_DEADLINE_SECONDS`` still binds exactly (UP-41); the value travels into every
+#: bounded call as the *remaining* budget.
 JOB_DEADLINE_SECONDS = deadline_mod.JOB_DEADLINE_SECONDS
 JOB_DEADLINE_ENV = deadline_mod.JOB_DEADLINE_ENV
 
@@ -99,6 +101,53 @@ def job_deadline_seconds() -> float:
         logger.warning("coursebook: ignoring %s=%r (not positive); using %.0fs", JOB_DEADLINE_ENV, raw, default)
         return default
     return value
+
+
+def chain_deadline_seconds(stage_budgets: Iterable[float | None]) -> float:
+    """The outer cap for one attempt of a whole stage chain (UP-41).
+
+    A single constant for a multi-stage chain is the defect this replaces: ``plan`` may legally
+    author twice (2 x (900 s generate + 600 s validate) = 3000 s) against a 1800 s cap, so a slow
+    but legal run died ``HOST_UNAVAILABLE`` on its second attempt. The default cap is now the
+    chain's own declared worst path and never shorter than :data:`JOB_DEADLINE_SECONDS`; stages
+    that declare nothing contribute nothing.
+
+    An **explicit** ``COURSEBOOK_JOB_DEADLINE_SECONDS`` still binds exactly, including narrower:
+    that value is an operator decision (CP-044 uses it to assert a tighter backstop against a
+    hanging provider), not a default to be outgrown. The per-call purpose deadlines are untouched
+    either way — they, not this cap, are what cancels a genuinely stuck provider mid-call.
+    """
+    declared = sum(
+        float(value) for value in stage_budgets if value is not None and float(value) > 0
+    )
+    override = os.environ.get(JOB_DEADLINE_ENV)
+    if override is not None and str(override).strip():
+        return job_deadline_seconds()
+    return max(float(JOB_DEADLINE_SECONDS), declared)
+
+
+def _declared_stage_budget(stage: Stage) -> float | None:
+    """Resolve one stage's declared budget, or ``None`` when it declares none (UP-41).
+
+    A callable is resolved here, once per attempt, so a resumed job derives the budget from the
+    environment and the stored rows *now* rather than inheriting the instant a previous attempt
+    spent. A resolver that fails is logged and treated as "no declared budget": the stage's own
+    typed failure is the honest one, not a secondary error from the budget arithmetic.
+    """
+    declared = stage.budget_seconds
+    if declared is None:
+        return None
+    try:
+        value = float(declared() if callable(declared) else declared)
+    except Exception as exc:  # noqa: BLE001 - a budget resolver never decides the stage
+        logger.warning(
+            "coursebook: could not derive %s's declared budget (%s: %s); using the chain bound",
+            stage.name,
+            type(exc).__name__,
+            exc,
+        )
+        return None
+    return value if value > 0 else None
 
 
 def _iso(moment: datetime) -> str:
@@ -277,10 +326,17 @@ class StageResult:
 
 @dataclass(frozen=True)
 class Stage:
-    """A named unit of work. ``run`` executes with no transaction open."""
+    """A named unit of work. ``run`` executes with no transaction open.
+
+    ``budget_seconds`` is the stage's own declared attempt budget (UP-41): a float, or a
+    zero-argument callable resolved at stage start so a deployment override in the environment is
+    honoured per attempt. ``None`` means the stage declares nothing and may use whatever remains
+    of the chain's outer cap.
+    """
 
     name: str
     run: Callable[[Lease], StageResult]
+    budget_seconds: float | Callable[[], float] | None = None
 
 
 def _job(connection, job_id: str) -> Any:
@@ -555,9 +611,15 @@ def checkpoint(
     message: str | None = None,
     checkpoint: dict[str, Any] | None = None,
     artifact_ids: Sequence[str] = (),
+    budget_seconds: float | None = None,
     now: datetime | None = None,
 ) -> None:
-    """Persist a safe resume point plus real progress. Provider calls are already done."""
+    """Persist a safe resume point plus real progress. Provider calls are already done.
+
+    ``budget_seconds`` records the per-stage attempt budget this attempt actually ran under
+    (UP-41). It is a record of the derivation, not a balance: a resumed attempt re-derives the
+    budget from the stage's own declared bounds instead of inheriting a spent one.
+    """
     moment = _now(now)
     with db.transaction() as connection:
         row = _fenced_row(connection, lease)
@@ -569,6 +631,7 @@ def checkpoint(
                 "steps_done": int(steps_done),
                 "steps_total": steps_total,
                 "artifact_ids": list(artifact_ids),
+                "budget_seconds": float(budget_seconds) if budget_seconds is not None else None,
                 "at": _iso(moment),
             }
         )
@@ -584,6 +647,12 @@ def checkpoint(
         stored = _load(row["checkpoint_json"], {})
         stored.update(checkpoint or {})
         stored["last_stage"] = stage
+        if budget_seconds is not None:
+            budgets = stored.get("stage_budgets")
+            if not isinstance(budgets, dict):
+                budgets = {}
+            budgets[str(stage)] = float(budget_seconds)
+            stored["stage_budgets"] = budgets
         connection.execute(
             "UPDATE jobs SET progress_json = ?, checkpoint_json = ?, updated_at = ?"
             " WHERE id = ? AND attempt_id = ?",
@@ -782,10 +851,18 @@ def execute(
         raise
     steps_total = len(stages)
     skip = set(skip_stages)
-    #: CP-044: one wall-clock budget for the whole attempt. Every bounded foreign call inside a
-    #: stage is clamped to what is left of it, so an in-flight provider request is cancelled at
-    #: the job's deadline instead of running to its own (larger) purpose bound.
-    attempt_deadline = time.monotonic() + job_deadline_seconds()
+    #: UP-41: the attempt budget is a function of this chain's own declared bounds. Each stage
+    #: declares the wall-clock its purposes and legal attempts permit; the outer cap is the
+    #: chain's declared worst path (never below the deployment default, and an explicit operator
+    #: override still binds). Every bounded foreign call inside a stage is clamped to what is
+    #: left of *that stage's* budget, so a stage cannot be cut by a bound meant for another one.
+    stage_declared = {
+        id(stage): _declared_stage_budget(stage)
+        for stage in stages
+        if stage.name not in skip
+    }
+    chain_budget = chain_deadline_seconds(stage_declared.values())
+    attempt_deadline = time.monotonic() + chain_budget
     try:
         for index, stage in enumerate(stages, start=1):
             if stage.name in skip:
@@ -801,16 +878,48 @@ def execute(
                 return _view(job_id)
             remaining = attempt_deadline - time.monotonic()
             if remaining <= 0:
-                # The budget is spent before another call starts: no socket is opened that the
+                # The chain cap is spent before another call starts: no socket is opened that the
                 # job will not wait for. Recorded with the same HOST_UNAVAILABLE shape a provider
                 # deadline uses, so nothing new appears in the contract.
                 return _stop_on_job_deadline(
-                    lease, stage.name, job_deadline_seconds(), now=now
+                    lease,
+                    stage.name,
+                    chain_budget,
+                    budget_source="chain",
+                    declared_s=None,
+                    now=now,
+                )
+            declared = stage_declared.get(id(stage))
+            stage_budget = remaining if declared is None else min(declared, remaining)
+            #: What the checkpoint records is the stage's own derived budget (or, for a stage that
+            #: declares none, what was left of the chain). The clamp above is about *this* attempt
+            #: not outliving the chain; a resumed attempt re-derives both from the same inputs.
+            recorded_budget = declared if declared is not None else stage_budget
+            if stage_budget <= 0:
+                return _stop_on_job_deadline(
+                    lease,
+                    stage.name,
+                    chain_budget,
+                    budget_source="chain",
+                    declared_s=declared,
+                    now=now,
                 )
             renew(lease)
             try:
-                with deadline_mod.job_budget(remaining):
+                with deadline_mod.job_budget(stage_budget):
                     result = _run_with_heartbeat(lease, stage, heartbeat_seconds)
+            except deadline_mod.JobDeadlineExceeded as exc:
+                # A bounded call inside the stage found the stage's own budget spent. The stage
+                # banked nothing further; name the budget that was actually applied rather than
+                # the deployment constant (UP-41).
+                return _stop_on_job_deadline(
+                    lease,
+                    stage.name,
+                    float(getattr(exc, "deadline_s", stage_budget) or stage_budget),
+                    budget_source="stage" if declared is not None else "chain",
+                    declared_s=declared,
+                    now=now,
+                )
             except CancelStateUnreadable as exc:
                 # The stage hit a provider/research boundary whose cancel read failed. Stop here,
                 # with the typed reason on the row, instead of answering "continue" (H-129).
@@ -849,7 +958,14 @@ def execute(
                         now=now,
                     )
                     return _view(job_id)
-                fail(lease, _stage_error(exc), checkpoint=recovery)
+                # UP-41: the failed attempt records the per-stage budget it was given, so a
+                # reader (and the resumed attempt's checkpoint) can tell a chain cut from a slow
+                # provider; the resume re-derives its own rather than inheriting this instant.
+                fail(
+                    lease,
+                    _stage_error(exc),
+                    checkpoint=_budget_checkpoint(recovery, stage.name, recorded_budget),
+                )
                 return _view(job_id)
             with db.transaction() as connection:
                 _record_usage(connection, job_id, result.usage, now, "job")
@@ -861,6 +977,7 @@ def execute(
                 message=result.message,
                 checkpoint=result.checkpoint,
                 artifact_ids=result.artifacts,
+                budget_seconds=recorded_budget,
                 now=now,
             )
             try:
@@ -889,11 +1006,32 @@ def execute(
         return _view(job_id)
 
 
+def _budget_checkpoint(
+    recovery: dict[str, Any] | None, stage: str, budget_seconds: float | None
+) -> dict[str, Any] | None:
+    """Merge a stage's applied budget into a failed attempt's recovery checkpoint (UP-41).
+
+    The budget is recorded, not carried: a resumed attempt re-derives its own from the stage's
+    declared bounds and the rows as they stand then.
+    """
+    merged = dict(recovery or {})
+    if budget_seconds is not None:
+        budgets = merged.get("stage_budgets")
+        if not isinstance(budgets, dict):
+            budgets = {}
+        budgets = dict(budgets)
+        budgets[str(stage)] = float(budget_seconds)
+        merged["stage_budgets"] = budgets
+    return merged or None
+
+
 def _stop_on_job_deadline(
     lease: Lease,
     stage_name: str,
     deadline_s: float,
     *,
+    budget_source: str | None = None,
+    declared_s: float | None = None,
     now: datetime | None = None,
 ) -> dict[str, Any]:
     """Fail the attempt because its own deadline is spent, without opening another call (CP-044).
@@ -902,17 +1040,35 @@ def _stop_on_job_deadline(
     capability failure, the same code a provider timeout uses) and the lease is released by
     :func:`fail`. ``details`` name the stage and the budget, so a reader can tell a spent job
     budget from a slow provider.
+
+    ``budget_source`` says which bound was spent — ``stage`` (this stage's own derived budget,
+    UP-41) or ``chain`` (the outer cap of the whole stage chain) — and ``declared_s`` carries the
+    stage's declared value when there is one, so the row is not attributed to a constant the
+    attempt never used.
     """
     exc = deadline_mod.JobDeadlineExceeded(stage_name, deadline_s=deadline_s, elapsed_s=0.0)
+    error = _stage_error(exc)
+    if budget_source is not None:
+        details = dict(error.get("details") or {})
+        details["budget_source"] = budget_source
+        if declared_s is not None:
+            details["stage_declared_s"] = float(declared_s)
+        error["details"] = details
     try:
-        fail(lease, _stage_error(exc), now=now)
+        fail(
+            lease,
+            error,
+            checkpoint=_budget_checkpoint(None, stage_name, deadline_s),
+            now=now,
+        )
     except JobLeaseLost:
         return _view(lease.job_id)
     logger.warning(
-        "coursebook: job %s stopped before %s: the %.0fs job deadline is spent",
+        "coursebook: job %s stopped before %s: the %.0fs %s budget is spent",
         lease.job_id,
         stage_name,
         deadline_s,
+        budget_source or "job",
     )
     return _view(lease.job_id)
 

@@ -66,9 +66,14 @@ MAX_ASYNC_CALLS = 8
 #: ``COURSEBOOK_JOB_DEADLINE_SECONDS``. It is policy, not a measurement: the measured per-call
 #: bounds in ``generation.PROVIDER_TIMEOUT_SECONDS`` stay untouched.
 #:
-#: The value is ~2.1x the slowest *completed* job measured across the disposable homes (852 s;
+#: Value is ~2.1x the slowest *completed* job measured across the disposable homes (852 s;
 #: 45 completed jobs, none above this budget — ``probes/cp044-job-duration-census.py``). It is a
 #: backstop for a stuck attempt, not a target: raise it per deployment rather than removing it.
+#:
+#: UP-41: this is now the **floor** of the outer cap, not the whole attempt budget.
+#: ``job_service.chain_deadline_seconds`` derives the cap from the stage chain's own declared
+#: bounds (a plan stage is legally 2 x (900 s + 600 s) = 3000 s) and never returns less than this
+#: value. An explicit override of :data:`JOB_DEADLINE_ENV` still binds exactly, narrower included.
 JOB_DEADLINE_SECONDS = 1800.0
 
 #: Environment variable that overrides :data:`JOB_DEADLINE_SECONDS` for one deployment.
@@ -81,6 +86,37 @@ JOB_DEADLINE_ENV = "COURSEBOOK_JOB_DEADLINE_SECONDS"
 _JOB_BUDGET: "contextvars.ContextVar[float | None]" = contextvars.ContextVar(
     "coursebook_job_budget", default=None
 )
+
+#: The *declared* number of seconds the current budget was opened with, or ``None`` outside a
+#: job. ``_JOB_BUDGET`` is a monotonic instant, so a refusal can otherwise only report the
+#: deployment default; a stage that was given its own derived budget must name that budget, not
+#: a constant it never used (UP-41).
+_JOB_BUDGET_SECONDS: "contextvars.ContextVar[float | None]" = contextvars.ContextVar(
+    "coursebook_job_budget_seconds", default=None
+)
+
+
+def declared_stage_budget(bounds: "list[float] | tuple[float, ...]", *, attempts: int = 1) -> float:
+    """Wall-clock seconds a stage's *own declared* calls may legally take (UP-41).
+
+    ``bounds`` is one deadline per **sequential** call group in a single attempt: a generation
+    plus the slowest validation pass (the passes of one artifact run in parallel, so their wall
+    time is the slowest pass, not the sum). ``attempts`` is the stage's own legal retry count —
+    a stage that may legally author twice needs room for both.
+
+    This is not a measurement and not a target: it is the arithmetic worst path the stage's
+    declared per-call bounds already permit, so an outer job budget built from it can never cut
+    a run that behaved exactly as designed.
+    """
+    total = 0.0
+    for bound in bounds:
+        value = float(bound)
+        if value <= 0:
+            continue
+        total += value
+    if total <= 0:
+        return 0.0
+    return total * max(1, int(attempts))
 
 
 class DeadlineExceeded(TimeoutError):
@@ -128,12 +164,20 @@ class JobDeadlineExceeded(DeadlineExceeded):
 @contextlib.contextmanager
 def job_budget(seconds: float) -> Any:
     """Declare the running job attempt's wall-clock budget for the duration of the block."""
-    deadline = time.monotonic() + float(seconds)
-    token = _JOB_BUDGET.set(deadline)
+    budget = float(seconds)
+    deadline = time.monotonic() + budget
+    deadline_token = _JOB_BUDGET.set(deadline)
+    seconds_token = _JOB_BUDGET_SECONDS.set(budget)
     try:
         yield None
     finally:
-        _JOB_BUDGET.reset(token)
+        _JOB_BUDGET_SECONDS.reset(seconds_token)
+        _JOB_BUDGET.reset(deadline_token)
+
+
+def job_budget_seconds() -> float | None:
+    """The declared seconds of the current budget, or ``None`` when unbudgeted."""
+    return _JOB_BUDGET_SECONDS.get()
 
 
 def job_deadline_remaining() -> float | None:
@@ -157,9 +201,12 @@ def deadline_for(timeout_s: float, *, label: str) -> float:
     if remaining is None:
         return timeout
     if remaining <= 0:
+        declared = job_budget_seconds()
+        if declared is None:
+            declared = float(os.environ.get(JOB_DEADLINE_ENV) or JOB_DEADLINE_SECONDS)
         raise JobDeadlineExceeded(
             label,
-            deadline_s=float(os.environ.get(JOB_DEADLINE_ENV) or JOB_DEADLINE_SECONDS),
+            deadline_s=float(declared),
             elapsed_s=0.0,
         )
     return min(timeout, remaining)
