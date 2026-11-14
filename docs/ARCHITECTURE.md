@@ -233,7 +233,7 @@ plugin now enforces its own wall clock in `coursebook/deadline.py`:
 | Seam | Bound | Typed failure |
 | --- | --- | --- |
 | `ctx.llm` provider call | `PROVIDER_TIMEOUT_SECONDS[purpose]` (env-overridable) | `ProviderTimeout` |
-| any of the above, inside a job attempt | `min(purpose bound, remaining attempt budget)` (`COURSEBOOK_JOB_DEADLINE_SECONDS`, default 1800 s) | `ProviderTimeout` with `details.job_deadline: true` |
+| any of the above, inside a job attempt | `min(purpose bound, remaining stage budget)` — the stage budget is derived from the chain's declared bounds (UP-41) | `ProviderTimeout` with `details.job_deadline: true` |
 | `ctx.dispatch_tool("web_search"/"web_extract")` | 45 s / 60 s (`COURSEBOOK_WEB_*_TIMEOUT_SECONDS`) | `ResearchTimeout` (a `ResearchUnavailable`) |
 | `ctx.dispatch_tool("image_generate"/"text_to_speech")` | 180 s (`COURSEBOOK_MEDIA_TOOL_TIMEOUT_SECONDS`) | `MediaTimeout`, degraded to text |
 | `ctx.dispatch_tool("vision_analyze")` (illustration review) | 180 s (`COURSEBOOK_MEDIA_TOOL_TIMEOUT_SECONDS`) | `MediaTimeout`, recorded as `unreviewed` (the picture still ships, labelled context only) |
@@ -254,14 +254,26 @@ Two mechanisms, chosen so the normal path leaks nothing:
 
 The **job attempt** has a bound of its own (CP-044). Per-call deadlines are not a job deadline: a
 plan attempt runs two author/validate rounds, so calls that each finished "in time" could still keep
-the row `running` for over half an hour (CP-015 checkpoint 4 measured a 648 s attempt). The job
-runner now declares one wall-clock budget per attempt (`COURSEBOOK_JOB_DEADLINE_SECONDS`) and every
-bounded call inside a stage is clamped to what is left of it, so the in-flight request is cancelled
-at whichever bound arrives first. On expiry the row is failed with the contract's existing
-`HOST_UNAVAILABLE` shape — `details` carry the stage, the elapsed time, `deadline_s` (the remaining
-budget) and `job_deadline: true` — and the lease is released by the same `fail` path a stage failure
-uses. Plan jobs now also record the per-call liveness rows (`gen_call_waits`) the lesson stage
-already had, so a job waiting on a slow provider is visible as *waiting* rather than as a dead row.
+the row `running` for over half an hour (CP-015 checkpoint 4 measured a 648 s attempt). Since UP-41
+that bound is **derived from the stage chain's own declared bounds**, not one constant: each stage
+declares a budget from the purposes it calls and the attempts it may legally spend (a plan stage is
+`2 x (900 s generate + 600 s validate)` = 3000 s; a unit-sections stage is two batch attempts; a
+lessons stage is its remaining sections `x LESSON_ATTEMPTS x (generate + validate)`), and the chain's
+outer cap is the sum of those declared budgets, never below `COURSEBOOK_JOB_DEADLINE_SECONDS`
+(default 1800 s). Every bounded call inside a stage is clamped to what is left of *that stage's*
+budget, so the in-flight request is cancelled at whichever bound arrives first. On expiry the row is
+failed with the contract's existing `HOST_UNAVAILABLE` shape — `details` carry the stage, the elapsed
+time, `deadline_s` (the budget that fired), `budget_source` (`stage` or `chain`), the stage's
+`stage_declared_s` when it declared one, and `job_deadline: true` — and the lease is released by the
+same `fail` path a stage failure uses. The per-stage budget is written to the checkpoint
+(`stage_budgets`), so a resumed attempt re-derives its own from the declared bounds and the rows as
+they then stand instead of inheriting an instant a previous attempt already spent. Plan jobs now also
+record the per-call liveness rows (`gen_call_waits`) the lesson stage already had, so a job waiting
+on a slow provider is visible as *waiting* rather than as a dead row.
+
+The outer cap is not simply raised: the per-call purpose deadlines are untouched, and they are what
+cancels a genuinely stuck provider mid-call. `COURSEBOOK_JOB_DEADLINE_SECONDS`, when set explicitly,
+still binds exactly — narrower included — because that is an operator decision, not a default.
 
 The 1800 s default is policy, not a measurement, and it is stated as such: across the disposable
 test homes the slowest **completed** job is 852 s (`job_ee3f99b00c904664a8a1d9db8635ee94`,

@@ -1726,6 +1726,131 @@ def _timeout_for(purpose: str, timeout_s: float | None) -> float:
     return value
 
 
+#: The sequential call chain one attempt of each stage walks (UP-41). A generation plus the
+#: validation passes: the passes of one artifact run in parallel, so the attempt's wall bound is
+#: the slowest pass, not their sum.
+PLAN_STAGE_PURPOSES: tuple[str, ...] = ("coursebook.plan.generate", "coursebook.plan.validate")
+UNIT_SECTIONS_STAGE_PURPOSES: tuple[str, ...] = (
+    "coursebook.unit_sections.generate",
+    "coursebook.unit_sections.validate",
+)
+LESSON_STAGE_PURPOSES: tuple[str, ...] = (
+    "coursebook.lesson.generate",
+    "coursebook.lesson.validate",
+)
+
+
+def _stage_declared_budget(purposes: Sequence[str], *, attempts: int) -> float:
+    """One stage's declared attempt budget from its own purposes and legal attempts (UP-41)."""
+    return deadline_mod.declared_stage_budget(
+        [provider_timeout_s(purpose) for purpose in purposes], attempts=attempts
+    )
+
+
+def plan_stage_budget_seconds() -> float:
+    """Wall-clock one plan stage may legally spend: ``PLAN_ATTEMPTS x (generate + validate)``.
+
+    Resolved per attempt from the live environment, so a deployment that shrinks or raises a
+    purpose deadline gets a matching stage budget instead of a figure frozen at import time.
+    """
+    return _stage_declared_budget(PLAN_STAGE_PURPOSES, attempts=PLAN_ATTEMPTS)
+
+
+def unit_sections_stage_budget_seconds() -> float:
+    """Wall-clock one unit-sections stage may legally spend: every legal attempt of the batch."""
+    return _stage_declared_budget(UNIT_SECTIONS_STAGE_PURPOSES, attempts=len(UNIT_SECTIONS_ATTEMPTS))
+
+
+def lesson_stage_budget_seconds(section_count: int) -> float:
+    """Wall-clock a lessons stage may legally spend for the sections it still has to author.
+
+    Each section gets :data:`LESSON_ATTEMPTS` attempts of one generation plus one validation, and
+    the stage authors its sections serially, so the legal path is
+    ``sections x LESSON_ATTEMPTS x (generate + validate)``. ``section_count`` is the sections
+    *remaining* on a resumed stage (see :func:`lesson_stage_section_count`), never a count already
+    spent.
+    """
+    sections = max(1, int(section_count))
+    return _stage_declared_budget(
+        LESSON_STAGE_PURPOSES, attempts=LESSON_ATTEMPTS * sections
+    )
+
+
+def lesson_stage_section_count(
+    connection: sqlite3.Connection, plan_id: str | None, *, unit_ordinal: Any = None
+) -> int:
+    """Sections a lessons stage still has to author, read from the stored rows (UP-41).
+
+    A resumed stage reuses every stored lesson, so the budget it is given covers the work that
+    remains rather than the unit it already partly authored. ``1`` is the floor: a no-op stage
+    (nothing left) must still be allowed to start and report that it authored nothing.
+
+    ``unit_ordinal`` names the unit for a brief that carries one; ``None`` means the Desktop
+    payload, whose unit the lessons stage resolves itself from the stored plan.
+    """
+    plan_id = str(plan_id or "")
+    document = _load_plan_document(connection, plan_id)
+    if document is None:
+        return 1
+    digest = str(document.get("plan_hash") or "")
+    if unit_ordinal is None:
+        state = unit_authoring_state(connection, plan_id)
+        if state is not None:
+            if state.get("next_unit_ordinal") is None:
+                return 1
+            unit = state.get("next_unit") or {}
+            remaining = int(unit.get("target_lessons") or 0) - int(unit.get("lessons") or 0)
+            return max(1, remaining)
+    if unit_ordinal is not None:
+        unit = next(
+            (
+                item
+                for item in _plan_units(connection, plan_id)
+                if int(item["ordinal"]) == int(unit_ordinal)
+            ),
+            None,
+        )
+        if unit is None:
+            return 1
+        section_ids = [
+            str(row["id"])
+            for row in connection.execute(
+                "SELECT id FROM gen_plan_sections WHERE plan_id = ? AND plan_hash = ?"
+                " AND unit_id = ?",
+                (plan_id, digest, str(unit["id"])),
+            ).fetchall()
+        ]
+        if not section_ids:
+            return max(1, int(unit["target_lessons"] or 0))
+        return max(1, len(section_ids) - _authored_lesson_count(connection, digest, section_ids))
+    # A v1 plan has no unit dimension: its lessons stage authors every bundled section.
+    section_ids = [
+        str(row["id"])
+        for row in connection.execute(
+            "SELECT id FROM gen_plan_sections WHERE plan_id = ? AND plan_hash = ?",
+            (plan_id, digest),
+        ).fetchall()
+    ]
+    if not section_ids:
+        return 1
+    return max(1, len(section_ids) - _authored_lesson_count(connection, digest, section_ids))
+
+
+def _authored_lesson_count(
+    connection: sqlite3.Connection, digest: str, section_ids: Sequence[str]
+) -> int:
+    """How many of these sections already have a stored version-1 lesson at this digest."""
+    placeholders = ",".join("?" for _ in section_ids)
+    row = connection.execute(
+        f"SELECT COUNT(*) AS n FROM gen_lessons WHERE plan_hash = ? AND version = 1"
+        f" AND section_id IN ({placeholders})",
+        (digest, *section_ids),
+    ).fetchone()
+    value = row["n"] if isinstance(row, sqlite3.Row) else row[0]
+    return int(value or 0)
+
+
+
 def _operator_cost_override(*, brief_budget_usd: Any = None) -> tuple[float | None, str | None]:
     """Resolve an explicit operator ceiling. Returns ``(value, source)``; ``None`` means unset.
 
