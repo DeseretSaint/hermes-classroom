@@ -1158,6 +1158,38 @@ or drop the part the repair exists to keep. Because the lesson stage can now spe
 per attempt and `LESSON_ATTEMPTS` is three (CP-015g), `lesson_calls` is `2n` minimum and `12n`
 worst legal (§9).
 
+### 7.4 A complete but malformed answer is repaired locally; a cut one is not (UP-45)
+
+`_parse_structured` used to end a job on any answer `json.loads` refused. A trailing comma, a
+markdown fence the provider added anyway, or single quotes therefore killed a plan/unit/lesson job
+after the earlier sections of that unit were already authored and paid for, even though the provider
+had written a whole document. The answer is now read through `json_repair` (MIT, declared in
+`plugin.yaml` as an optional dependency) — but only after the gates that make that safe:
+
+* **the byte bound runs first**, unchanged (`max_bytes`; `MAX_PLAN_BYTES` / `MAX_LESSON_BYTES` /
+  `validation_answer_bound`), so an over-bound answer is refused unread;
+* **the completeness gate runs second** (`_answer_is_a_complete_document`): the text, with one
+  enclosing fence removed, must start at `{`/`[`, close every string, balance every bracket, and
+  reach depth zero only at its end (a trailing comma may follow). Anything else is a *cut* answer;
+* **only then** is the complete document repaired (`_repair_complete_answer`), and the repaired
+  value is judged by the same `validate_artifact` schema and every rule gate that follows, exactly
+  like the provider's own answer.
+
+The ordering is the whole safety argument. `json_repair` advertises repairing *truncated* values and
+does it: `{"a": [1, 2,` becomes `{"a": [1, 2]}` and `{"a":` becomes `{"a": ""}`. Both are documents
+the provider never wrote. Repairing before the completeness gate would therefore convert a cut
+answer into a legal-looking one and defeat the truncation lane (§7.3), so a cut answer is still
+`GenerationRejected` → one `.cut` re-ask → `ModelOutputInvalid` with `parse_outcome: "truncated"`.
+
+A repair is a *read*, not a call: no provider request is made and `shape_repair_attempts` does not
+move. It is recorded instead — `LLMResponse.json_repaired`, the `gen_validation_records.json_repaired`
+column (1 when either answer in the review needed one), and the `json_repaired: {generator,
+validator}` split inside that row's `rejections_json`, which `validation_record()` reads back. A
+repaired document is never presented as the provider's own valid JSON, and when `json_repair` is not
+installed the pipeline behaves exactly as it did before this seam: a malformed answer is refused.
+`tests/test_up_json_repair.py` pins both halves: a trailing comma parses and records the repair, and
+a fixture cut mid-string is still `truncated`, not repaired.
+
 ## 8. The lesson document: one validated document, many views
 
 `docs/VISUAL_MEDIA_PLAN.md` §5 replaces the linear segment contract with a block document. The

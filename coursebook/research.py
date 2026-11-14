@@ -34,6 +34,8 @@ from datetime import datetime, timezone
 from typing import Any, Iterable, Protocol, Sequence
 from urllib.parse import urlparse
 
+import tldextract
+
 from . import curriculum, policy
 from .deadline import (
     CallCapacityExhausted,
@@ -141,6 +143,25 @@ SOURCE_TYPE_RANK: dict[str, int] = {
     "organization": 4,
     "web_page": 5,
 }
+
+#: Public Suffix List lookups for source classification. ``suffix_list_urls=()`` is not an
+#: optimisation: it is what keeps the plugin offline-hermetic. ``tldextract`` ships a PSL snapshot
+#: inside the wheel, so classification uses that snapshot and never dials out for a fresher list.
+_TLDEXTRACT = tldextract.TLDExtract(suffix_list_urls=(), cache_dir=None)
+
+#: First label of a public suffix that marks a government publisher (``gov``, ``gov.uk``,
+#: ``mil``, ``int``). Matched against the suffix, never against the whole host.
+_GOVERNMENT_SUFFIX_LABELS = frozenset({"gov", "mil", "int"})
+
+#: First label of a public suffix that marks a degree-granting/academic publisher (``edu``,
+#: ``ac.uk``, ``ac.jp``).
+_ACADEMIC_SUFFIX_LABELS = frozenset({"edu", "ac"})
+
+#: Registrable domains of the well-known reference works. Matched whole, so
+#: ``wikipedia.org.attacker.example`` is not a reference.
+_REFERENCE_SITES = frozenset(
+    {"wikipedia.org", "britannica.com", "dictionary.com", "merriam-webster.com"}
+)
 
 #: Generation-layer support statuses (this card's vocabulary for the source ledger).
 SUPPORT_STATUSES: tuple[str, ...] = ("supported", "partial", "contradictory", "unverified")
@@ -422,6 +443,11 @@ class ResearchRun:
     ``failures`` is the per-URL half of the ledger: a fetch that failed is recorded with its URL,
     the query that found it and the error, so a partial pass is auditable instead of reduced to
     one reason string. No failure entry is ever promoted into a source.
+
+    ``query_failures`` is the other half and is derived from ``queries`` rather than stored
+    separately, so the per-query error and the run's failure report can never disagree: a search
+    that raised left its error on the query entry, and every entry with an error is a question
+    the pass never got an answer for.
     """
 
     status: str  # "ok" | "degraded" | "unavailable"
@@ -430,10 +456,16 @@ class ResearchRun:
     reason: str | None = None
     failures: list[dict[str, str]] = field(default_factory=list)
 
+    @property
+    def query_failures(self) -> list[dict[str, Any]]:
+        """The search calls that raised, with their query text, result_count and error."""
+        return [dict(entry) for entry in self.queries if entry.get("error")]
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "status": self.status,
             "queries": [dict(q) for q in self.queries],
+            "query_failures": self.query_failures,
             "sources": [s.to_dict() for s in self.sources],
             "reason": self.reason,
             "failures": [dict(item) for item in self.failures],
@@ -1006,7 +1038,9 @@ def run_research(
     * no seam at all -> ``status="unavailable"`` with zero sources (the plan may still be
       proposed from model knowledge, every claim marked ``unverified``);
     * a seam that errors on every query -> ``status="unavailable"`` with the recorded errors;
-    * a seam that yields some sources -> ``status="ok"`` or ``"degraded"`` when fetches failed.
+    * a seam that yields some sources -> ``status="ok"`` or ``"degraded"`` when fetches failed or
+      when a majority of the bounded queries raised (the count is carried in ``reason``, and the
+      per-query errors stay on the query entries as ``query_failures``).
 
     No branch invents a URL, a title or a fetch date. ``subject_domain`` and ``level`` are the
     declared cb.rpc v10 inputs; they shape the query set, never the provenance rules.
@@ -1177,14 +1211,27 @@ def run_research(
             reason=_bound(reason, _MAX_REASON),
             failures=failures,
         )
-    reason = None
+    # A search failure is not a fetch failure, but it is not silence either: the queries that
+    # raised never contributed a candidate, so a pass where most of the bounded questions went
+    # unanswered rests on a fraction of the brief. The count is the finding, so the status names
+    # it rather than flipping a boolean. A lone flaky query in an otherwise answered pass stays
+    # ``ok`` (its error is still on its query entry and in ``query_failures``) — otherwise every
+    # plan would carry the degraded warning and reviewers would learn to ignore it.
+    query_failed = sum(1 for entry in records if entry.get("error"))
+    query_total = len(records)
+    query_failures_material = bool(query_failed) and query_failed * 2 > query_total
+    degraded = bool(failures) or query_failures_material
+    reasons: list[str] = []
     if failures:
-        reason = _bound(
-            f"{len(failures)} fetch failure(s); first: {failures[0]['url']}: {failures[0]['error']}",
-            _MAX_REASON,
+        reasons.append(f"{len(failures)} fetch failure(s); first: {failures[0]['url']}: {failures[0]['error']}")
+    if query_failures_material:
+        first_error = next(entry["error"] for entry in records if entry.get("error"))
+        reasons.append(
+            f"{query_failed} of {query_total} search queries failed; first: {first_error}"
         )
+    reason = _bound("; ".join(reasons), _MAX_REASON) if reasons else None
     return ResearchRun(
-        status="degraded" if failures else "ok",
+        status="degraded" if degraded else "ok",
         queries=records,
         sources=sources,
         reason=reason,
@@ -1566,31 +1613,52 @@ def _publisher_of(url: str) -> str:
     return host[4:] if host.startswith("www.") else host
 
 
+def _host_parts(url: str) -> tuple[str, str, str]:
+    """Return ``(host, suffix, registrable_domain)`` for the URL's host.
+
+    ``host`` is the host name alone (port, userinfo and a leading ``www.`` removed) for the
+    path/brand checks. ``suffix`` and ``registrable_domain`` come from the Public Suffix List, so
+    the label after a dot is not mistaken for a publisher's suffix: in
+    ``foo.gov.attacker.example`` the ``gov`` is a subdomain label of ``example``, whose suffix the
+    list does not know. Lookups are offline by construction (``suffix_list_urls=()``): the snapshot
+    shipped inside ``tldextract`` is the authority and nothing is fetched at runtime.
+    """
+    host = (urlparse(url).hostname or "").lower()
+    if host.startswith("www."):
+        host = host[4:]
+    parts = _TLDEXTRACT(host)
+    suffix = parts.suffix.lower()
+    registrable = f"{parts.domain}.{suffix}" if suffix else ""
+    return host, suffix, registrable
+
+
 def _classify_source(url: str) -> str:
     """Classify *who publishes this URL* from the host/path alone.
 
     The type is a fallible URL fact recorded in the ledger, not a judgement of authority or
     correctness. It drives which candidates are fetched first when the page budget binds.
+
+    Government and academic are decided by the *public suffix* of the host, never by a substring:
+    a lookalike such as ``foo.gov.attacker.example`` is a ``web_page``, while ``nasa.gov`` and
+    ``gov.uk`` are ``government``. An unknown suffix is never promoted to a trusted type.
     """
     parsed = urlparse(url)
-    host = parsed.netloc.lower()
+    host, suffix, registrable = _host_parts(url)
     path = parsed.path.lower()
-    if host.endswith(".gov") or ".gov." in host or host.endswith(".mil") or host.endswith(".int"):
+    suffix_label = suffix.split(".", 1)[0]
+    if suffix_label in _GOVERNMENT_SUFFIX_LABELS:
         return "government"
-    if host.endswith(".edu") or ".edu." in host or ".ac." in host:
+    if suffix_label in _ACADEMIC_SUFFIX_LABELS:
         return "academic"
-    if any(
-        name in host
-        for name in ("wikipedia.org", "britannica.com", "dictionary.com", "merriam-webster.com")
-    ):
+    if registrable in _REFERENCE_SITES:
         return "reference"
     if (
         host.startswith(("docs.", "developer.", "support."))
-        or host in ("w3.org", "www.w3.org", "rfc-editor.org", "www.rfc-editor.org", "ietf.org", "www.ietf.org")
+        or host in ("w3.org", "rfc-editor.org", "ietf.org")
         or path.startswith(("/docs/", "/documentation/", "/reference/"))
     ):
         return "documentation"
-    if host.endswith(".org") or ".org." in host:
+    if suffix_label == "org":
         return "organization"
     return "web_page"
 

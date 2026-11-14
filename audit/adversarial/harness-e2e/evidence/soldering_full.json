@@ -3510,6 +3510,7 @@
         "plan_schema": "coursebook.plan.v2",
         "plan_version": 1,
         "research": {
+          "fetch_failures": 0,
           "queries": [
             "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering.",
             "Prepare for a first soldering repair on a through-hole PCB official procedure steps safety limits",
@@ -3523,6 +3524,69 @@
             "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. prerequisite knowledge learning progression",
             "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. reference documentation",
             "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. official guidance"
+          ],
+          "query_failures": [],
+          "query_results": [
+            {
+              "error": null,
+              "query": "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering.",
+              "result_count": 6
+            },
+            {
+              "error": null,
+              "query": "Prepare for a first soldering repair on a through-hole PCB official procedure steps safety limits",
+              "result_count": 6
+            },
+            {
+              "error": null,
+              "query": "safety official procedure steps safety limits",
+              "result_count": 6
+            },
+            {
+              "error": null,
+              "query": "component placement official procedure steps safety limits",
+              "result_count": 6
+            },
+            {
+              "error": null,
+              "query": "joints official procedure steps safety limits",
+              "result_count": 6
+            },
+            {
+              "error": null,
+              "query": "inspection official procedure steps safety limits",
+              "result_count": 6
+            },
+            {
+              "error": null,
+              "query": "desoldering official procedure steps safety limits",
+              "result_count": 6
+            },
+            {
+              "error": null,
+              "query": "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. how to teach curriculum sequence",
+              "result_count": 6
+            },
+            {
+              "error": null,
+              "query": "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. official procedure steps safety limits",
+              "result_count": 6
+            },
+            {
+              "error": null,
+              "query": "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. prerequisite knowledge learning progression",
+              "result_count": 6
+            },
+            {
+              "error": null,
+              "query": "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. reference documentation",
+              "result_count": 6
+            },
+            {
+              "error": null,
+              "query": "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. official guidance",
+              "result_count": 6
+            }
           ],
           "reason": null,
           "status": "ok"
@@ -3560,7 +3624,7 @@
           "calls": 7,
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
-          "input_tokens": 33552,
+          "input_tokens": 34076,
           "output_tokens": 2254,
           "unknown_calls": 0,
           "unknown_cost": false

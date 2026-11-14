@@ -713,9 +713,23 @@
         "plan_schema": "coursebook.plan.v2",
         "plan_version": 1,
         "research": {
+          "fetch_failures": 0,
           "queries": [
             "Walk me through replacing the inner tube on my road bike and checking the brakes before I ride it today.",
             "Walk me through replacing the inner tube on my road bike and checking the brakes before I ride it today. official procedure steps safety limits"
+          ],
+          "query_failures": [],
+          "query_results": [
+            {
+              "error": null,
+              "query": "Walk me through replacing the inner tube on my road bike and checking the brakes before I ride it today.",
+              "result_count": 1
+            },
+            {
+              "error": null,
+              "query": "Walk me through replacing the inner tube on my road bike and checking the brakes before I ride it today. official procedure steps safety limits",
+              "result_count": 1
+            }
           ],
           "reason": null,
           "status": "ok"
@@ -753,7 +767,7 @@
           "calls": 3,
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
-          "input_tokens": 4173,
+          "input_tokens": 4276,
           "output_tokens": 920,
           "unknown_calls": 0,
           "unknown_cost": false
