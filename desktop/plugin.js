@@ -23303,9 +23303,11 @@ function useArtifactPreview(artifactId) {
  *   - the take is deleted from memory after comparison. Coursebook retains no audio at all.
  */
 const PRONUNCIATION_VERDICT_COPY = {
-  meets_target: 'Meets the target phrase',
-  close: 'Close — another pass would help',
-  needs_practice: 'Needs practice',
+  // UP-19: a verdict is what the *recogniser* made of the take. It is never a pronunciation
+  // judgement — the backend measured no phoneme — so no copy here may read as one.
+  meets_target: 'Recogniser understood the whole phrase',
+  close: 'Recogniser caught most of it',
+  needs_practice: 'Recogniser did not catch the phrase',
   unavailable: 'Not assessed'
 }
 
@@ -23362,13 +23364,16 @@ function PronunciationWords({ words, unit }) {
                   style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
                   children: word.heard ? `heard “${word.heard}”` : 'not heard'
                 }),
-            word.match && pronPercent(word.confidence)
+            pronPercent(word.confidence)
               ? jsx('span', {
+                  // The recogniser's own probability for the token it heard. On a miss this is
+                  // the confidence in the word it substituted, which is how a learner tells a
+                  // misheard accent from a word they did not say (UP-19).
                   'data-cb-word-confidence': pronPercent(word.confidence),
                   style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
                   children: pronPercent(word.confidence)
                 })
-              : null
+              : null,
           ]
         },
         `${word.expected || 'unit'}-${index}`
@@ -23912,6 +23917,8 @@ function PronunciationStudio({ enrollmentId, objectiveId, revision, locale, bloc
       result && result.status === 'assessed' && assessment
         ? jsxs('div', {
             'data-cb-pronunciation-result': 'assessed',
+            'data-cb-pronunciation-measure': assessment.measure || 'unstated',
+            'data-cb-pronunciation-gated': assessment.gated === true ? 'true' : 'false',
             style: { display: 'flex', flexDirection: 'column', gap: '0.4rem' },
             children: [
               jsxs('div', {
@@ -23943,6 +23950,20 @@ function PronunciationStudio({ enrollmentId, objectiveId, revision, locale, bloc
                     : null
                 ]
               }),
+              assessment.caveat
+                ? jsx('p', {
+                    // The backend's own sentence, printed verbatim: what it compared and what it
+                    // did not. This pane composes no claim of its own (UP-19).
+                    'data-cb-pronunciation-caveat': assessment.measure || 'unstated',
+                    style: {
+                      margin: 0,
+                      fontSize: CB_TYPE.meta,
+                      lineHeight: 1.5,
+                      color: 'var(--cb-ink-soft)'
+                    },
+                    children: assessment.caveat
+                  })
+                : null,
               jsx('p', {
                 style: { margin: 0, fontSize: CB_TYPE.meta, lineHeight: 1.5 },
                 children: `Heard: ${assessment.transcript || 'nothing'}`

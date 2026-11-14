@@ -2560,8 +2560,18 @@ class V9AmendmentTest(unittest.TestCase):
             set(assessment["properties"]["verdict"]["enum"]),
             {"meets_target", "close", "needs_practice", "unavailable"},
         )
-        for nullable in ("word_accuracy", "phoneme_accuracy", "confidence"):
+        for nullable in ("word_accuracy", "phoneme_accuracy", "confidence", "min_word_confidence",
+                         "caveat"):
             self.assertIn({"type": "null"}, assessment["properties"][nullable]["oneOf"])
+        # UP-19: the record names what it measured instead of implying pronunciation, and the
+        # strongest verdict is gated on the recogniser's own per-word confidence.
+        self.assertEqual(assessment["properties"]["measure"]["enum"],
+                         ["word_recognition", "none"])
+        self.assertEqual(assessment["properties"]["caveat"]["oneOf"][0]["maxLength"], 400)
+        self.assertEqual(assessment["properties"]["gated"]["type"], "boolean")
+        for required in ("measure", "caveat", "gated", "min_word_confidence"):
+            self.assertIn(required, assessment["required"])
+        self.assertNotIn("pronunciation", assessment["properties"]["measure"]["enum"])
         self.assertLessEqual(assessment["properties"]["words"]["maxItems"], 200)
         for side in (request, response, assessment):
             self.assertEqual(_schema_problems(side), [])
@@ -5537,9 +5547,15 @@ class V29AmendmentTest(unittest.TestCase):
         # library_item.next_step kind. Skip those records below and assert each delta explicitly.
         for name in before:
             if name in echoed or name in ("outline_plan", "check_stimulus", "library_item",
-                                          "review_item"):
+                                          "review_item", "pronunciation_assessment"):
                 continue
             self.assertEqual(after[name], before[name], name)
+        # UP-19 owns the only properties added to pronunciation_assessment in this version.
+        self.assertEqual(
+            set(after["pronunciation_assessment"]["properties"])
+            - set(before["pronunciation_assessment"]["properties"]),
+            {"measure", "min_word_confidence", "gated", "caveat"},
+        )
         # UP-18 owns the only property added to review_item in this version.
         self.assertEqual(
             set(after["review_item"]["properties"]) - set(before["review_item"]["properties"]),
