@@ -1652,13 +1652,53 @@ function WorkshopDiscoverNotice({ state, title, body, actionLabel, onAction }) {
   })
 }
 
-/** Loading keeps the real region boxes; 40% card stock, no shimmer, no spinner. */
+/**
+ * The status line's box: real DOM text clipped to 1 px, not `display: none` and not
+ * `visibility: hidden`, so a screen reader reads it while the skeleton stays visually silent.
+ * Same recipe as the wide Home scene's unpainted meta line; no colour, no token, no motion.
+ */
+const CB3_DISCOVER_STATUS = Object.freeze({
+  position: 'absolute',
+  width: '1px',
+  height: '1px',
+  margin: 0,
+  padding: 0,
+  overflow: 'hidden',
+  clipPath: 'inset(50%)',
+  whiteSpace: 'nowrap',
+  border: 0
+})
+
+/**
+ * Loading keeps the real region boxes; 40% card stock, no shimmer, no spinner.
+ *
+ * Both placeholder blocks are `aria-hidden` card stock by design, so without a live line a slow
+ * read is entirely silent: no words, no busy state, nothing for a screen reader to hear. The
+ * region is therefore `aria-busy` while pending and carries exactly one `role="status"` line with
+ * the surface's own loading words. Both leave with the skeleton when the read settles, which
+ * keeps this the only announcement of the transition — no second line to double-speak a host
+ * route announcement, and no visual change to the plate.
+ */
 function WorkshopDiscoverSkeleton({ layout }) {
   const boxes = layout.columns * 2
   return jsxs('div', {
     'data-cb3-discover-skeleton': '',
-    style: { display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', minWidth: 0 },
+    'aria-busy': 'true',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '1.5rem',
+      width: '100%',
+      minWidth: 0,
+      position: 'relative'
+    },
     children: [
+      jsx('p', {
+        role: 'status',
+        'data-cb3-discover-status': '',
+        style: CB3_DISCOVER_STATUS,
+        children: CB3_DISCOVER_COPY.loading
+      }, 'status'),
       jsx('div', {
         'aria-hidden': 'true',
         style: {
