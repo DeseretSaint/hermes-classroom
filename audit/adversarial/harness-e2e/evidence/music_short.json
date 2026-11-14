@@ -988,7 +988,8 @@
             "output_tokens": 1881,
             "unknown_calls": 0,
             "unknown_cost": false
-          }
+          },
+          "warnings": []
         },
         "unit_ordinal": 1
       },
@@ -1192,7 +1193,8 @@
             "output_tokens": 3058,
             "unknown_calls": 0,
             "unknown_cost": false
-          }
+          },
+          "warnings": []
         },
         "unit_ordinal": 2
       }

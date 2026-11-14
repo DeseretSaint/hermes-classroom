@@ -2107,7 +2107,8 @@
             "output_tokens": 2029,
             "unknown_calls": 0,
             "unknown_cost": false
-          }
+          },
+          "warnings": []
         },
         "unit_ordinal": 1
       },
@@ -2263,7 +2264,8 @@
             "output_tokens": 1888,
             "unknown_calls": 0,
             "unknown_cost": false
-          }
+          },
+          "warnings": []
         },
         "unit_ordinal": 2
       },
@@ -2467,7 +2469,8 @@
             "output_tokens": 2983,
             "unknown_calls": 0,
             "unknown_cost": false
-          }
+          },
+          "warnings": []
         },
         "unit_ordinal": 3
       },
@@ -2671,7 +2674,8 @@
             "output_tokens": 2927,
             "unknown_calls": 0,
             "unknown_cost": false
-          }
+          },
+          "warnings": []
         },
         "unit_ordinal": 4
       },
@@ -2875,7 +2879,8 @@
             "output_tokens": 3134,
             "unknown_calls": 0,
             "unknown_cost": false
-          }
+          },
+          "warnings": []
         },
         "unit_ordinal": 5
       },
@@ -3031,7 +3036,8 @@
             "output_tokens": 2114,
             "unknown_calls": 0,
             "unknown_cost": false
-          }
+          },
+          "warnings": []
         },
         "unit_ordinal": 6
       }

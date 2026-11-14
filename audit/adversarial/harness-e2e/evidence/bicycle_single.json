@@ -580,7 +580,8 @@
             "output_tokens": 1051,
             "unknown_calls": 0,
             "unknown_cost": false
-          }
+          },
+          "warnings": []
         },
         "unit_ordinal": 1
       }
