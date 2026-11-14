@@ -1960,23 +1960,29 @@ class LessonCheckKindFollowsEvidenceTargetTest(unittest.TestCase):
         self.assertIn("'procedure' check is measured by verification", reasons)
         self.assertIn("'quiz'", reasons)
 
-    def test_a_transfer_objective_may_be_measured_by_a_quiz(self) -> None:
+    def test_a_transfer_objective_is_not_measured_by_a_quiz(self) -> None:
         """A transfer check applies a capability to a case the lesson did not teach.
 
-        That can be a scenario question, so the quiz kind is legitimate here even though it is not
-        for a procedure. The rule that refuses a quiz for a procedure must not swallow transfer.
+        That application is not an option pick: a scenario question hands back the lesson's own
+        phrases and the learner eliminates two of them. UP-11 dropped the exemption that let a
+        quiz stand in for transfer; the honest forms are a recorded verification or an
+        observation, and the same map is enforced in plan rule 5b.
         """
         plan = fixture("plan_ja")
         lesson = lesson_fixture("lesson_ja")
         lesson["check"]["evidence_target"] = "transfer"
-        gen.enforce_lesson_rules(
-            lesson,
-            section=plan["sections"][0],
-            objective={**plan["objectives"][0], "evidence_target": "transfer"},
-            recipe="committed",
-            locale=None,
-            dials={},
-        )
+        with self.assertRaises(gen._RuleViolation) as caught:
+            gen.enforce_lesson_rules(
+                lesson,
+                section=plan["sections"][0],
+                objective={**plan["objectives"][0], "evidence_target": "transfer"},
+                recipe="committed",
+                locale=None,
+                dials={},
+            )
+        reasons = " ".join(caught.exception.reasons)
+        self.assertIn("a 'transfer' check is measured by verification or observation", reasons)
+        self.assertIn("'quiz'", reasons)
 
     def test_a_real_verification_checklist_evidences_a_procedure_objective(self) -> None:
         plan = fixture("plan_one_off")
