@@ -10786,7 +10786,14 @@ _GENERATION_DDL: tuple[str, ...] = (
         validation_id TEXT,
         result_json TEXT NOT NULL,
         created_at TEXT NOT NULL,
-        UNIQUE(course_id, request_fingerprint)
+        -- UP-42: the document belongs to the plan *version*, not to the brief. It used to be
+        -- UNIQUE(course_id, request_fingerprint), so a retried job for the same brief (which
+        -- authors a new plan version under a new plan id with the same fingerprint) replaced the
+        -- row the approved version still read by plan id — and every lesson action on that
+        -- approved plan then failed with "has no authored document". One document per version is
+        -- the same retention the per-version `objectives`, `plan_units` and `gen_plan_sections`
+        -- rows already have; the reuse lookup moves to a non-unique index read newest-first.
+        UNIQUE(plan_id)
     )
     """,
     """
@@ -11042,6 +11049,62 @@ def ensure_schema(connection: sqlite3.Connection) -> None:
             connection.execute(
                 "ALTER TABLE gen_validation_records_v2 RENAME TO gen_validation_records"
             )
+        # UP-42: the plan document used to be keyed on the brief
+        # (``UNIQUE(course_id, request_fingerprint)``), while every read goes by ``plan_id``. A
+        # retried job for the same brief authors a new plan version with the same fingerprint and
+        # replaced the earlier row, deleting the document of a plan the learner had already
+        # approved. SQLite cannot alter a UNIQUE constraint in place, so a database built before
+        # this change is rebuilt with every recorded row carried across. The rebuild is a copy,
+        # never a drop: a plan document is the authored artifact, not a cache entry. The old table
+        # held at most one row per (course, fingerprint), so ``plan_id`` is already unique.
+        if not _plan_documents_keyed_on_plan(connection):
+            connection.execute(
+                "CREATE TABLE gen_plan_documents_v2 ("
+                " id TEXT PRIMARY KEY,"
+                " plan_id TEXT NOT NULL,"
+                " course_id TEXT NOT NULL,"
+                " request_fingerprint TEXT NOT NULL,"
+                " plan_hash TEXT NOT NULL,"
+                " document_json TEXT NOT NULL,"
+                " research_json TEXT NOT NULL,"
+                " generation_state TEXT NOT NULL,"
+                " validation_id TEXT,"
+                " result_json TEXT NOT NULL,"
+                " created_at TEXT NOT NULL,"
+                " UNIQUE(plan_id))"
+            )
+            connection.execute(
+                "INSERT INTO gen_plan_documents_v2 (id, plan_id, course_id, request_fingerprint,"
+                " plan_hash, document_json, research_json, generation_state, validation_id,"
+                " result_json, created_at)"
+                " SELECT id, plan_id, course_id, request_fingerprint, plan_hash, document_json,"
+                " research_json, generation_state, validation_id, result_json, created_at"
+                " FROM gen_plan_documents"
+            )
+            connection.execute("DROP TABLE gen_plan_documents")
+            connection.execute("ALTER TABLE gen_plan_documents_v2 RENAME TO gen_plan_documents")
+        # The reuse lookup is still by (course, fingerprint), newest first; it is an index now,
+        # not a uniqueness rule, because one brief legitimately owns one document per version.
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_gen_plan_documents_fingerprint"
+            " ON gen_plan_documents (course_id, request_fingerprint, created_at)"
+        )
+
+
+def _plan_documents_keyed_on_plan(connection: sqlite3.Connection) -> bool:
+    """Whether ``gen_plan_documents`` already carries the UP-42 ``UNIQUE(plan_id)`` key."""
+    for index in connection.execute("PRAGMA index_list(gen_plan_documents)").fetchall():
+        # index_list: (seq, name, unique, origin, partial)
+        if int(index[2]) != 1:
+            continue
+        columns = [
+            # index_info: (seqno, cid, name)
+            str(column[2])
+            for column in connection.execute(f"PRAGMA index_info({str(index[1])})").fetchall()
+        ]
+        if columns == ["plan_id"]:
+            return True
+    return False
 
 
 # ── Persistence helpers ─────────────────────────────────────────────────────
@@ -12137,9 +12200,16 @@ def run_plan_job(
     # first course's plan document, wrote nothing for the new course, and left it with no plan at
     # all while the job reported success. Reuse is still what makes a retried job idempotent and
     # free; it just cannot cross course boundaries. Cinder owns this file.
+    #
+    # UP-42: one course+brief legitimately owns **one document per plan version**, so this lookup
+    # answers the newest attempt rather than a row that used to be the only one. ``rowid`` is the
+    # tiebreak for two attempts recorded in the same second: the last row written is the attempt
+    # this job would be replaying, and the newest-by-creation rule is what every other plan
+    # document read in the package already uses.
     existing = _row_dict(
         connection.execute(
-            "SELECT result_json FROM gen_plan_documents WHERE course_id = ? AND request_fingerprint = ?",
+            "SELECT result_json FROM gen_plan_documents WHERE course_id = ? AND request_fingerprint = ?"
+            " ORDER BY created_at DESC, rowid DESC LIMIT 1",
             (course_id, fingerprint),
         ).fetchone()
     )
@@ -12724,7 +12794,10 @@ def run_plan_job(
                 result["rejection_reasons"] = rejection_reasons
 
             connection.execute(
-                "INSERT OR REPLACE INTO gen_plan_documents (id, plan_id, course_id, request_fingerprint, plan_hash, "
+                # UP-42: a plain INSERT, keyed by UNIQUE(plan_id). Each plan version writes its own
+                # document and no version can overwrite another's; a duplicate plan id here would
+                # be a real bug, so it fails loudly instead of silently replacing an authored row.
+                "INSERT INTO gen_plan_documents (id, plan_id, course_id, request_fingerprint, plan_hash, "
                 "document_json, research_json, generation_state, validation_id, result_json, created_at) "
                 "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                 (

@@ -996,9 +996,12 @@ exist in the page. `test_learner_page_never_contains_reference_answers_or_rubric
 that, including that `こんにちは` may appear as a choice while the reference stays out of the prose.
 
 **Idempotency.** `gen_lessons` is unique on `(section_id, plan_hash, version)`; a retry reuses the
-existing lesson and spends nothing. `gen_plan_documents` is unique on
-`(course_id, request_fingerprint)` and is also looked up by fingerprint alone, so re-running the
-same job returns the stored result with `reused: true`.
+existing lesson and spends nothing. `gen_plan_documents` is unique on `plan_id` — one document per
+plan *version*, not per brief — and the reuse lookup reads the newest row for
+`(course_id, request_fingerprint)` (a non-unique index, `created_at DESC, rowid DESC`), so
+re-running the same job returns the stored result with `reused: true`. A retried job for the same
+brief authors a new version and therefore writes a new document row; it can never replace the
+document of a version a learner already holds. (`tests/test_up_plan_document_versions.py`.)
 
 ## 7. Validation record and regeneration
 
