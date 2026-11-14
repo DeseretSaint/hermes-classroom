@@ -277,6 +277,12 @@ def derive(source: dict) -> dict:
         ),
     }
 
+    # UP-3 (t_5eaa2afe): a section with no authored page is not a lesson to start.
+    next_kind = document["$defs"]["library_item"]["properties"]["next_step"]["properties"]["kind"]
+    if "write_lesson" in next_kind["enum"]:
+        raise SystemExit("next_step.kind already carries write_lesson")
+    next_kind["enum"].insert(next_kind["enum"].index("start_lesson") + 1, "write_lesson")
+
     # The four places the wire version is echoed: the request envelope and the two response
     # envelopes of the transport, plus health.get's own result.
     echoes = [

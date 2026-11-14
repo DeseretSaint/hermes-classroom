@@ -29,7 +29,7 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v4.json` | 4 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v28.json` | 28 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune + engagement + tutor + the `library.list` shelf facts + the plate's `route_anchors` + the terminal `complete` and `repair_lesson` next steps), Sable (transport + `world.*` policy/prompts/media), Lattice (`pack.*` + `lesson_document` + `takehome.*` + `homework.*` + `takehome.html`), easel (the media child's own `labels`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.rpc` | `contracts/rpc.v29.json` | 29 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune + engagement + tutor + the `library.list` shelf facts + the plate's `route_anchors` + the terminal `complete` and `repair_lesson` next steps + the `write_lesson` next step), Sable (transport + `world.*` policy/prompts/media), Lattice (`pack.*` + `lesson_document` + `takehome.*` + `homework.*` + `takehome.html`), easel (the media child's own `labels`) | Desktop half, Coursebook tools, `pre_llm_call` |
 | `cb.db` | `contracts/db.v14.json` | 14 | Cinder (GM-001 storage), Lattice (GM-005 migration 0014) | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v5.json` | 5 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v3.json` (v1, v2 and v4 also accepted) | 3 (v1/v2/v4 accepted) | Cinder (v2 media link, H-137; v4 `coloring_page` + `text/html`, PRINT-2, 2026-11-12); CP-015g (v3 presentation, 2026-11-11) | import/export, bundled demo packs, take-home print packs |
@@ -2955,3 +2955,34 @@ mounts the shipped Desktop module: a `none` policy paints no hint control and wr
 laddered check reveals exactly one named rung per press. The same module proves the backend ordering
 and refusals against a real migrated profile, and pins v29 to its derivation.
 
+## v29 delta (UP-3) — a section with no authored page is not a lesson to start
+
+`cb.rpc` v29 is v28 with **one additive amendment**: `library_item.next_step.kind` gains one enum
+value, `write_lesson`.
+
+| Record | Key | What it is, exactly |
+|---|---|---|
+| `library_item.next_step` | `kind` gains `write_lesson` | An approved plan's current section has no authored page in `gen_lessons` yet (the plan document exists and the section has not been generated), so the learner has no classroom to open. `start_lesson` promised a lesson that does not exist. |
+| `library_item.next_step` | `objective_id` | The objective the missing page belongs to, carried so the surface never guesses by title. The label is learner copy — `Write the lesson for <title>` — and carries no job id, stage name or reason code. |
+
+Only `start_lesson` means a page exists. A pack-backed course is not affected: `pack.import` writes
+its page into `lesson_segments`, never into `gen_lessons`, so its sections are servable without a
+generated row and keep their existing next step. The Desktop maps `write_lesson` to the Coursebook
+Plan tab (`onOpen(..., view = 'plan')`), where **Generate lessons** lives; Home's primary and the
+course page's primary both name the same work.
+
+No method is added or removed; `$defs/method.enum` is byte-for-byte the v28 list. No request shape,
+required key, error code, job kind, answer kind, verdict, evidence class or vocabulary value moves.
+Every v28 record that omits the new kind keeps its exact v28 shape and bytes. `rpc.v28.json` stays
+byte-identical on disk (sha256
+`6d09c8d8f5d246e4f6b684ec0ee0bd3f42068f6fe27fee673744b1b61335d35a`) and `x-supersedes` names
+`.../rpc/v28`. The wire echoes (`contract_version` on both response envelopes and `health.get`) move
+together to 29. `rpc.v29.json` is derived from the frozen v28 document by
+`probes/derive_rpc_v29.py`, not hand-copied.
+
+Regression guard: `tests/test_contracts.py::V29NextStepKindTest` pins the one-value enum delta, the
+unchanged method list, the frozen v28 document and that the shipped v29 is byte-identical to its
+derivation; `tests/test_learner_plan_flow.py::LearnerPlanFlowTest::test_home_step_is_write_lesson_before_any_page_exists`
+approves a one-section plan before any page exists and proves `library.list` returns `write_lesson`
+with that objective's id, and `tests/test_desktop_field_desk.py::FieldDeskRenderTest::test_write_lesson_opens_the_plan_tab`
+proves the control routes to the Plan tab.

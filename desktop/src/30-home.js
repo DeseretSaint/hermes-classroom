@@ -39,7 +39,10 @@ const DESK_PRIMARY_LABEL = {
   review_pack: 'Review the pack',
   // E2E L4/L5: a finished course and a page that could not be written each get their own word.
   complete: 'Course complete',
-  repair_lesson: 'Repair this lesson'
+  repair_lesson: 'Repair this lesson',
+  // UP-3: an approved plan whose section has no authored page yet is not a lesson to start. The
+  // backend says `write_lesson`; the desk's action opens the Plan tab where Generate lessons lives.
+  write_lesson: 'Write the lesson'
 }
 
 function deskToneColor(tone) {
@@ -2898,6 +2901,7 @@ function cbNextStopSentence(kind) {
   if (kind === 'resolve_review_due') return ' is due for another check. Answer it once to bring the evidence up to date.'
   if (kind === 'resume_lesson') return '. Pick up where you stopped and finish this section.'
   if (kind === 'start_lesson') return '. Work through this section, then finish its check.'
+  if (kind === 'write_lesson') return '. Generate its lesson from the Plan tab, then start it.'
   if (kind === 'review_plan') return '. Read the recorded plan before the first lesson starts.'
   if (kind === 'review_pack') return '. Check the imported pack before it becomes a course.'
   if (kind === 'repair_lesson') return '. The page could not be written; repair it from the reasons it names.'

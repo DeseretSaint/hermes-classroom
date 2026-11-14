@@ -9378,6 +9378,7 @@
               "enum": [
                 "resume_lesson",
                 "start_lesson",
+                "write_lesson",
                 "review_lesson",
                 "review_plan",
                 "review_pack",

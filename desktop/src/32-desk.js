@@ -622,6 +622,12 @@ function FieldDesk({
       if (!outcome.ok && outcome.reason === 'no-binding') onOpen(desk.row, desk.current.objective_id)
       return
     }
+    if (kind === 'write_lesson') {
+      // UP-3: there is no authored page to open. The Plan tab is where Generate lessons lives, so
+      // the primary goes there (`focusView`) instead of arming a lesson run on a blank classroom.
+      if (typeof onOpen === 'function') onOpen(desk.row, null, null, 'plan')
+      return
+    }
     if (kind === 'repair_lesson') {
       // The section owns the reasons and the one Repair control; open it instead of a second path.
       if (desk.current) onOpen(desk.row, desk.current.objective_id)

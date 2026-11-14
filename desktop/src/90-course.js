@@ -17,7 +17,10 @@ const COURSE_PRIMARY = Object.freeze({
   review_plan: Object.freeze({ label: DESK_PRIMARY_LABEL.review_plan, verb: 'plan' }),
   review_pack: Object.freeze({ label: DESK_PRIMARY_LABEL.review_pack, verb: 'plan' }),
   complete: Object.freeze({ label: DESK_PRIMARY_LABEL.complete, verb: 'back' }),
-  repair_lesson: Object.freeze({ label: DESK_PRIMARY_LABEL.repair_lesson, verb: 'repair' })
+  repair_lesson: Object.freeze({ label: DESK_PRIMARY_LABEL.repair_lesson, verb: 'repair' }),
+  // UP-3: no authored page exists yet, so the course's primary names the work and opens the Plan
+  // tab where Generate lessons lives; it never starts a run on a blank classroom.
+  write_lesson: Object.freeze({ label: DESK_PRIMARY_LABEL.write_lesson, verb: 'plan' })
 })
 
 /**

@@ -1503,6 +1503,8 @@ FROZEN_RPC_SHA256 = {
     "rpc.v27.json": "sha256:94618b0e72ab6a4e2cfcbe2ee3380a0f3b470454a2dc029b702acc83fe52d67f",
     # UP-14: v28 (the composed revisit/completion wire) is immutable history now; the authored
     # hint ladder is a new document, not an edit to a wire a client already pinned.
+    # UP-3: v28 (the revisit + terminal/repair next-step wire) is immutable history too; the
+    # `write_lesson` kind is a new document, not an edit to the one the v28 client pinned.
     "rpc.v28.json": "sha256:6d09c8d8f5d246e4f6b684ec0ee0bd3f42068f6fe27fee673744b1b61335d35a",
 }
 
@@ -5176,12 +5178,20 @@ class V28AmendmentTest(unittest.TestCase):
         self.assertEqual(current["$defs"]["method"]["enum"], v28["$defs"]["method"]["enum"])
         self.assertEqual(current["x-supersedes"], v28["$id"])
         self.assertEqual(current["x-contract-version"], 29)
+    def test_v28_is_v27_with_no_method_added(self) -> None:
+        v27 = _document("rpc.v27.json")
+        # The v28 delta is pinned on the frozen v28 file: a later amendment (v29's `write_lesson`)
+        # must not change what this class proves about v28.
+        v28 = _document("rpc.v28.json")
+        self.assertEqual(v28["$defs"]["method"]["enum"], v27["$defs"]["method"]["enum"])
+        self.assertEqual(v28["x-supersedes"], v27["$id"])
+        self.assertEqual(v28["x-contract-version"], 28)
 
     def test_every_v27_method_payload_survives_with_the_new_optional_keys(self) -> None:
         v27 = _document("rpc.v27.json")
-        current = contracts.contract("cb.rpc")
+        v28 = _document("rpc.v28.json")
         before = v27["$defs"]["methods"]["properties"]
-        after = current["$defs"]["methods"]["properties"]
+        after = v28["$defs"]["methods"]["properties"]
         self.assertEqual(set(after), set(before), "v28 added or removed a method payload")
         for method, schema in before.items():
             with self.subTest(method=method):
@@ -5192,7 +5202,7 @@ class V28AmendmentTest(unittest.TestCase):
 
     def test_the_next_step_gains_two_kinds_and_only_optional_fields(self) -> None:
         v27 = _document("rpc.v27.json")["$defs"]["library_item"]["properties"]["next_step"]
-        after = contracts.contract("cb.rpc")["$defs"]["library_item"]["properties"]["next_step"]
+        after = _document("rpc.v28.json")["$defs"]["library_item"]["properties"]["next_step"]
         # On the merged tree the E2E L1 amendment contributes `review_lesson` to the same enum;
         # subtract what its own derivation adds so this assertion still names only this delta.
         sibling = _sibling_v28_document()
@@ -5231,10 +5241,10 @@ class V28AmendmentTest(unittest.TestCase):
 
     def test_the_outline_and_page_section_add_identity_and_reasons(self) -> None:
         v27 = _document("rpc.v27.json")
-        current = contracts.contract("cb.rpc")
+        v28 = _document("rpc.v28.json")
         for holder in ("outline_objective",):
             before = v27["$defs"][holder]["properties"]
-            after = current["$defs"][holder]["properties"]
+            after = v28["$defs"][holder]["properties"]
             with self.subTest(record=holder):
                 self.assertEqual(
                     set(after) - set(before),
@@ -5244,7 +5254,7 @@ class V28AmendmentTest(unittest.TestCase):
         before_section = v27["$defs"]["methods"]["properties"]["lesson.page"]["response"][
             "properties"
         ]["section"]["properties"]
-        after_section = current["$defs"]["methods"]["properties"]["lesson.page"]["response"][
+        after_section = v28["$defs"]["methods"]["properties"]["lesson.page"]["response"][
             "properties"
         ]["section"]["properties"]
         # The sibling E2E L1 derivation adds `sections_total` to this record; subtract it when
@@ -5336,6 +5346,16 @@ class V28AmendmentTest(unittest.TestCase):
         self.assertEqual(
             current["x-supersedes"], "https://contracts.coursebook.hermes/rpc/v28"
         )
+    def test_the_wire_echo_moved_to_v28(self) -> None:
+        # v28 is now frozen history: its own document carries the v28 echo, and the live wire has
+        # moved on to v29 (UP-3). Both are asserted so a bump cannot leave one behind.
+        v28 = _document("rpc.v28.json")
+        for path, value in _wire_echoes(v28):
+            self.assertEqual(value, 28, path)
+        self.assertEqual(v28["$id"], "https://contracts.coursebook.hermes/rpc/v28")
+        self.assertEqual(v28["title"], "Coursebook backend RPC v28")
+        self.assertEqual(v28["x-supersedes"], "https://contracts.coursebook.hermes/rpc/v27")
+        self.assertEqual(contracts.contract_version("cb.rpc"), 29)
 
     def test_docs_publish_the_v28_delta(self) -> None:
         text = (contracts.CONTRACT_DIR.parent / "docs" / "CONTRACTS.md").read_text(encoding="utf-8")
@@ -5350,6 +5370,101 @@ class V28AmendmentTest(unittest.TestCase):
             "lesson_rejection_reasons",
             "repair_reasons_changed",
             FROZEN_RPC_SHA256["rpc.v27.json"].split(":", 1)[1],
+        ):
+            self.assertIn(needle, text, f"CONTRACTS.md is missing {needle!r}")
+
+
+class V29AmendmentTest(unittest.TestCase):
+    """UP-3: cb.rpc v29 is v28 plus one next-step kind, ``write_lesson``.
+
+    An approved plan whose section has no authored page yet is not a lesson to start. The kind
+    carries no job id, stage name or reason code; it names the learner's own work and the objective
+    it belongs to, so the surface can open the course's Plan tab where the page is generated.
+    """
+
+    def test_v29_is_v28_with_one_enum_value_and_no_method_added(self) -> None:
+        v28 = _document("rpc.v28.json")
+        current = contracts.contract("cb.rpc")
+        self.assertEqual(current["x-contract-version"], 29)
+        self.assertEqual(current["x-supersedes"], v28["$id"])
+        self.assertEqual(current["$id"], "https://contracts.coursebook.hermes/rpc/v29")
+        self.assertEqual(current["title"], "Coursebook backend RPC v29")
+        self.assertEqual(current["$defs"]["method"]["enum"], v28["$defs"]["method"]["enum"])
+        before = v28["$defs"]["methods"]["properties"]
+        after = current["$defs"]["methods"]["properties"]
+        self.assertEqual(set(after), set(before), "v29 added or removed a method payload")
+        for method, schema in before.items():
+            with self.subTest(method=method):
+                carried = json.loads(json.dumps(after[method]))
+                if method == "health.get":
+                    carried["response"]["properties"]["contract_version"]["const"] = 28
+                self.assertEqual(carried, schema, f"{method} moved")
+
+    def test_the_next_step_gains_only_write_lesson(self) -> None:
+        v28 = _document("rpc.v28.json")["$defs"]["library_item"]["properties"]["next_step"]
+        after = contracts.contract("cb.rpc")["$defs"]["library_item"]["properties"]["next_step"]
+        self.assertEqual(
+            set(after["properties"]["kind"]["enum"]) - set(v28["properties"]["kind"]["enum"]),
+            {"write_lesson"},
+        )
+        self.assertEqual(
+            set(v28["properties"]["kind"]["enum"]) - set(after["properties"]["kind"]["enum"]),
+            set(),
+        )
+        self.assertEqual(set(after["properties"]), set(v28["properties"]))
+        self.assertEqual(after["required"], v28["required"])
+
+    def test_a_write_lesson_next_step_validates_and_a_v28_step_still_does(self) -> None:
+        contracts.validate_definition(
+            "cb.rpc",
+            "library_item",
+            _library_item_with(
+                {
+                    "kind": "write_lesson",
+                    "label": "Write the lesson for Order coffee",
+                    "objective_id": "obj_00000000000000000000000000000001",
+                }
+            ),
+        )
+        contracts.validate_definition(
+            "cb.rpc", "library_item", _library_item_with({"kind": "start_lesson", "label": "Start"})
+        )
+
+    def test_v28_snapshot_stays_byte_identical_history(self) -> None:
+        digest = hashlib.sha256((contracts.CONTRACT_DIR / "rpc.v28.json").read_bytes()).hexdigest()
+        self.assertEqual(f"sha256:{digest}", FROZEN_RPC_SHA256["rpc.v28.json"])
+        self.assertNotIn("rpc.v28.json", contracts.CONTRACT_FILES.values())
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v29.json")
+        self.assertEqual(contracts.contract_version("cb.rpc"), 29)
+        self.assertIn(28, contracts.version_files("cb.rpc"))
+
+    def test_the_v29_file_is_the_derived_delta_not_a_hand_copy(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "derive_rpc_v29",
+            contracts.CONTRACT_DIR.parent / "probes" / "derive_rpc_v29.py",
+        )
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        derived = module.serialise(module.derive(_document("rpc.v28.json")))
+        shipped = (contracts.CONTRACT_DIR / "rpc.v29.json").read_text(encoding="utf-8")
+        self.assertEqual(shipped, derived, "rpc.v29.json drifted from its derivation")
+
+    def test_v29_moves_no_error_code_job_table_or_vocabulary(self) -> None:
+        self.assertEqual(contracts.contract_version("cb.errors"), 4)
+        self.assertEqual(contracts.contract_version("cb.jobs"), 5)
+        self.assertEqual(contracts.contract_version("cb.db"), 15)
+        self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
+        self.assertEqual(contracts.audit_contracts(), [])
+
+    def test_docs_publish_the_v29_delta(self) -> None:
+        text = (contracts.CONTRACT_DIR.parent / "docs" / "CONTRACTS.md").read_text(encoding="utf-8")
+        for needle in (
+            "v29 delta (UP-3)",
+            "rpc.v29.json",
+            "write_lesson",
+            "Write the lesson for",
+            FROZEN_RPC_SHA256["rpc.v28.json"].split(":", 1)[1],
         ):
             self.assertIn(needle, text, f"CONTRACTS.md is missing {needle!r}")
 
@@ -5387,7 +5502,7 @@ def _library_item_with(next_step: dict) -> dict:
     }
 
 
-class V29AmendmentTest(unittest.TestCase):
+class V29NextStepKindTest(unittest.TestCase):
     """UP-6: ``cb.rpc`` v29 is v28 plus one optional ``outline_plan.time_estimate``.
 
     The estimate is a stored planning fact the plan gate reads; the amendment adds no method, moves

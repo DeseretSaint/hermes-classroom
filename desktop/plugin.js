@@ -3232,7 +3232,10 @@ const DESK_PRIMARY_LABEL = {
   review_pack: 'Review the pack',
   // E2E L4/L5: a finished course and a page that could not be written each get their own word.
   complete: 'Course complete',
-  repair_lesson: 'Repair this lesson'
+  repair_lesson: 'Repair this lesson',
+  // UP-3: an approved plan whose section has no authored page yet is not a lesson to start. The
+  // backend says `write_lesson`; the desk's action opens the Plan tab where Generate lessons lives.
+  write_lesson: 'Write the lesson'
 }
 
 function deskToneColor(tone) {
@@ -6091,6 +6094,7 @@ function cbNextStopSentence(kind) {
   if (kind === 'resolve_review_due') return ' is due for another check. Answer it once to bring the evidence up to date.'
   if (kind === 'resume_lesson') return '. Pick up where you stopped and finish this section.'
   if (kind === 'start_lesson') return '. Work through this section, then finish its check.'
+  if (kind === 'write_lesson') return '. Generate its lesson from the Plan tab, then start it.'
   if (kind === 'review_plan') return '. Read the recorded plan before the first lesson starts.'
   if (kind === 'review_pack') return '. Check the imported pack before it becomes a course.'
   if (kind === 'repair_lesson') return '. The page could not be written; repair it from the reasons it names.'
@@ -10006,6 +10010,12 @@ function FieldDesk({
         return
       }
       if (!outcome.ok && outcome.reason === 'no-binding') onOpen(desk.row, desk.current.objective_id)
+      return
+    }
+    if (kind === 'write_lesson') {
+      // UP-3: there is no authored page to open. The Plan tab is where Generate lessons lives, so
+      // the primary goes there (`focusView`) instead of arming a lesson run on a blank classroom.
+      if (typeof onOpen === 'function') onOpen(desk.row, null, null, 'plan')
       return
     }
     if (kind === 'repair_lesson') {
@@ -29140,7 +29150,10 @@ const COURSE_PRIMARY = Object.freeze({
   review_plan: Object.freeze({ label: DESK_PRIMARY_LABEL.review_plan, verb: 'plan' }),
   review_pack: Object.freeze({ label: DESK_PRIMARY_LABEL.review_pack, verb: 'plan' }),
   complete: Object.freeze({ label: DESK_PRIMARY_LABEL.complete, verb: 'back' }),
-  repair_lesson: Object.freeze({ label: DESK_PRIMARY_LABEL.repair_lesson, verb: 'repair' })
+  repair_lesson: Object.freeze({ label: DESK_PRIMARY_LABEL.repair_lesson, verb: 'repair' }),
+  // UP-3: no authored page exists yet, so the course's primary names the work and opens the Plan
+  // tab where Generate lessons lives; it never starts a run on a blank classroom.
+  write_lesson: Object.freeze({ label: DESK_PRIMARY_LABEL.write_lesson, verb: 'plan' })
 })
 
 /**
