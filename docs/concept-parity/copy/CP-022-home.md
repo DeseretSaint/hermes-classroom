@@ -17,7 +17,8 @@ Deck rows used: 25 screen-specific + the 4 shared `nav.*` rows.
 | H3 | Start a course | `home.primary` | 65 | deck | **conflict — GAP-06** |
 | H3 | Browse library | `home.secondary` | 66 | deck | ok |
 | H4 | Your courses | `home.shelf.label` | 68 | deck | ok |
-| H5 | {course title} (card title) | **GAP-03** | — | `field:library_item.title` | **gap** |
+| H5 ({course title} line 1) | {course title} (card title) | **GAP-03** | — | `field:library_item.title` | **gap** |
+| H5 ({course title} line 1) | Untitled course (a course row with no title yet) | `home.card.untitled` | 74 | deck | ok |
 | H5 | {subject label} (line 2) | `home.card.subject` | 69 | CP-005 `library_item.subject_label` + `world_brief.subject_domain` + `library_item.recipe` | ok |
 | H5 | {done} of {total} sections done (line 3) | `home.card.meta` | 70 | CP-005 `sections_done`/`sections_total`, else `evidence_summary.independent`/`total_objectives` | ok |
 | H5 | New (chip) | `home.card.new` | 71 | CP-005 `library_item.is_new`, else `evidence_summary.independent` | ok |

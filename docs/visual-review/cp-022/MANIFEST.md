@@ -159,7 +159,7 @@ What *is* machine-checked on this tree:
    - `This backend does not report course mode yet.` → the whole notice is **removed**; with no
      `world.read` the card simply omits the mode chip, which is the honest omission.
 
-   **Still no `COPY.md` §2 id — frozen by `test_home_v3_copy_has_an_id`, routed to CP-031 (nine):**
+   **Still no `COPY.md` §2 id — frozen by `test_home_v3_copy_has_an_id`, routed to CP-031 (eight):**
 
    | String | Where | Why it is not a deck row yet |
    |---|---|---|
@@ -171,7 +171,12 @@ What *is* machine-checked on this tree:
    | `No courses yet.` | first-use plate title (`emptyShippedTitle`) | deck's `home.firstuse.title` repeats the invitation heading already on screen; the shipped line is the plate's own |
    | `Every course here is archived. Unarchive one in Courses to continue it.` | archived plate body (`emptyArchivedBody`) | deck has `home.empty.*` for "no matches", not for the all-archived reason |
    | `This is a failed read, not an empty library.` | error body (`failedReadWord`) | deck's `home.error.body` says "Nothing you saved is lost"; the invariant sentence is additionally pinned by the existing behavioural `tests.test_desktop_home_hub`, which this card does not own |
-   | `Untitled course` | card title fallback | defensive fallback for a contract-violating row (CP-005 `title` is required); normally never visible |
+
+   Adopted since this review: `Untitled course` is now deck row **`home.card.untitled`**
+   (`docs/concept-parity/COPY.md` §2, card `t_92cd5311`). The rendered string did not change — only
+   its source moved from a bare literal in `hubSlotName` (`desktop/src/30-home.js`) to the deck — so
+   this was not a design change. Its entry in the frozen pending set above is now vestigial and is
+   retired with the next edit to that gate.
 
    Deck-vs-card-body conflicts, disclosed rather than silently resolved (SPEC §4: the deck wins when
    it has an id; the card-body sentence has none, so it is not rendered):

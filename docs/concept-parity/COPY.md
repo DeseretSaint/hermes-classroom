@@ -71,6 +71,7 @@ omits the row when none is.
 | `home.card.practice` | {n} checks recorded | field:`library_item.checks_recorded` (CP-005), used only when field:`library_item.sections_total` is 0 — an all-practice course has no section denominator; renders `1 check recorded` for one | 32 | H5 card, line 3 when the course has no evidence-bearing section |
 | `home.card.new` | New | field:`library_item.is_new` (CP-005), else field:`library_item.evidence_summary.independent` | 4 | H5 card chip |
 | `home.card.next` | {next step} | field:`library_item.next_step.label` | 40 | H5 card, quiet action |
+| `home.card.untitled` | Untitled course | deck | 16 | H5 card, title line when the course row carries no title yet |
 | `home.tag.firstuse` | New course | deck | 14 | H6 paper tag, first use only |
 | `home.firstuse.title` | Your field library | deck | 24 | H2, first use |
 | `home.firstuse.sub` | Nothing here yet. Start a course and its first lesson will appear on this shelf. | deck | 84 | H2, first use |
