@@ -384,13 +384,17 @@ function useCbPageVisible() {
 }
 
 
-/** Live width from `host.state.viewport`, with a static read for hosts that predate the atom. */
-function useCbViewportWidth() {
-  // The host atom reports the whole application window. Coursebook can sit in a much narrower
-  // route pane (for example beside the chat rail), and choosing the wide shell from the window
-  // width squeezes the Continue card into a word-per-line column. Measure the route itself when a
-  // DOM exists; keep the host read as the SSR/older-host fallback.
-  const [containerWidth, setContainerWidth] = useState(0)
+/**
+ * The route's measured box, in CSS pixels — `{ left, top, width, height }`.
+ *
+ * The Desktop window is not the box this product draws in. With the chat rail open a 1344 px
+ * window can carry a ~640 px route, so anything sized in `vw`/`vh` asks for the window and
+ * overflows the pane it is actually in. This hook measures `[data-cb-route]` with the same
+ * `ResizeObserver` the width read uses and re-reads on window resize, so a docked or split pane
+ * reports its own box. `null` means "not measured yet": callers must not guess a size from it.
+ */
+function useCbRouteBox() {
+  const [box, setBox] = useState(null)
   useEffect(() => {
     if (typeof document === 'undefined' || typeof window === 'undefined') return undefined
     let node = null
@@ -398,7 +402,17 @@ function useCbViewportWidth() {
     const read = () => {
       if (!node || !node.isConnected) return
       const rect = node.getBoundingClientRect()
-      if (rect.width > 0) setContainerWidth(Math.round(rect.width))
+      if (!(rect.width > 0)) return
+      const next = { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
+      setBox((previous) =>
+        previous &&
+        previous.left === next.left &&
+        previous.top === next.top &&
+        previous.width === next.width &&
+        previous.height === next.height
+          ? previous
+          : next
+      )
     }
     const attach = () => {
       node = document.querySelector('[data-cb-route]')
@@ -420,6 +434,17 @@ function useCbViewportWidth() {
       window.removeEventListener('resize', read)
     }
   }, [])
+  return box
+}
+
+/** Live width from `host.state.viewport`, with a static read for hosts that predate the atom. */
+function useCbViewportWidth() {
+  // The host atom reports the whole application window. Coursebook can sit in a much narrower
+  // route pane (for example beside the chat rail), and choosing the wide shell from the window
+  // width squeezes the Continue card into a word-per-line column. Measure the route itself when a
+  // DOM exists; keep the host read as the SSR/older-host fallback.
+  const routeBox = useCbRouteBox()
+  const containerWidth = routeBox && routeBox.width > 0 ? Math.round(routeBox.width) : 0
 
   const atom = sdk.host && sdk.host.state ? sdk.host.state.viewport : null
   const read = () => {

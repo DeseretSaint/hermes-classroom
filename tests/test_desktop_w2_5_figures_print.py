@@ -294,7 +294,13 @@ class FiguresAndPrintTest(unittest.TestCase):
         style = self.facts["thumbnailStyle"]
         self.assertIsNotNone(style)
         self.assertNotIn("380px", style, style)
-        self.assertIn("70vh", style, style)
+        # UP-30 replaced item 37's `70vh` cap: a viewport-height unit counts the Desktop window,
+        # so beside the chat rail the figure asked for more height than the route it is read in.
+        # The cap is now a share of the route's measured box, which this harness does not mount —
+        # test_desktop_up30_figure_viewer_route_bounds holds that geometry at a 640 px route.
+        compact = style.replace(" ", "")
+        self.assertNotIn("vh", compact, style)
+        self.assertIn("max-height:none", compact, style)
 
     def test_the_figure_is_a_click_target_that_opens_at_natural_size(self) -> None:
         self.assertTrue(self.facts["hasTrigger"])

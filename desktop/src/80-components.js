@@ -1219,13 +1219,23 @@ function MediaVerdictChip({ media, review }) {
 /**
  * One figure at its own size.
  *
- * Item 37: the reading column draws a legible preview (`maxHeight: 70vh`), and the preview is a
- * click target. Activating it opens the same artifact unscaled — `maxWidth/maxHeight: none`, the
- * raster's intrinsic pixels — inside a dialog that closes on Escape, on its Close control or on
- * the backdrop, and returns focus to the figure that opened it. Nothing is re-fetched or
- * re-derived: the dialog shows the bytes the preview route already served.
+ * Item 37: the reading column draws a legible preview, and the preview is a click target.
+ * Activating it opens the same artifact unscaled — `maxWidth/maxHeight: none`, the raster's
+ * intrinsic pixels — inside a dialog that closes on Escape, on its Close control or on the
+ * backdrop, and returns focus to the figure that opened it. Nothing is re-fetched or re-derived:
+ * the dialog shows the bytes the preview route already served.
+ *
+ * UP-30: the dialog and its scroll frame are bounded by the *route's* measured box, never by a
+ * window-relative unit. Such a unit counts the Desktop window; beside the chat rail a 1344 px
+ * window carries a ~640 px route, so a frame asking for 92% of the window came out ~1236 px and
+ * pushed both the frame and the dialog out of the pane the learner is reading. `box` is
+ * `useCbRouteBox()`'s measurement; while it is null the dialog keeps the full-window inset of its
+ * first frame and the frame is capped at 100% of it.
  */
-function MediaViewer({ src, alt, caption, label, onClose }) {
+function MediaViewer({ src, alt, caption, label, onClose, box }) {
+  // A zero-height measurement is a route that is not on screen (a hidden tab, a collapsed pane):
+  // it cannot bound a dialog, so it is treated as "not measured" rather than as a 0 px box.
+  const frameBox = box && box.width > 0 && box.height > 0 ? box : null
   useEffect(() => {
     if (typeof document === 'undefined' || typeof document.addEventListener !== 'function') return undefined
     const onKey = (event) => {
@@ -1246,7 +1256,10 @@ function MediaViewer({ src, alt, caption, label, onClose }) {
     },
     style: {
       position: 'fixed',
-      inset: 0,
+      // The measured route box wins; the window inset is only the frame before the first measure.
+      ...(frameBox
+        ? { left: frameBox.left, top: frameBox.top, width: frameBox.width, height: frameBox.height }
+        : { inset: 0 }),
       zIndex: 90,
       display: 'flex',
       flexDirection: 'column',
@@ -1255,7 +1268,10 @@ function MediaViewer({ src, alt, caption, label, onClose }) {
       gap: '0.5rem',
       padding: '1rem',
       background: 'var(--cb-paper)',
-      boxSizing: 'border-box'
+      boxSizing: 'border-box',
+      // The scroll frame is a flex child of a definite height: hiding the box's overflow is what
+      // keeps the header, the frame and the caption inside the route instead of spilling past it.
+      overflow: 'hidden'
     },
     children: [
       jsxs('div', {
@@ -1285,7 +1301,19 @@ function MediaViewer({ src, alt, caption, label, onClose }) {
       }),
       jsx('div', {
         'data-cb-media-scroll': '',
-        style: { overflow: 'auto', maxWidth: '92vw', maxHeight: '82vh', background: 'var(--cb-paper)', lineHeight: 0 },
+        style: {
+          overflow: 'auto',
+          // 100% of the dialog, not a share of the window: the dialog is the route's box.
+          maxWidth: '100%',
+          maxHeight: '100%',
+          minWidth: 0,
+          minHeight: 0,
+          // Shrink to the space the dialog leaves for it, never grow: a small figure stays centred
+          // in the column the way it always was, and a large one scrolls inside this frame.
+          flex: '0 1 auto',
+          background: 'var(--cb-paper)',
+          lineHeight: 0
+        },
         children: jsx('img', {
           src,
           alt: alt || caption || '',
@@ -1312,6 +1340,13 @@ function MediaViewer({ src, alt, caption, label, onClose }) {
 
 function MediaSegment({ segment }) {
   const preview = useArtifactPreview(segment.artifact_id)
+  // UP-30: the figure's cap is a share of the *route's* measured box, not of the window. A
+  // window-height unit counts the Desktop window, so beside the chat rail it asked for far more
+  // height than the pane the lesson is read in. `null` until the route is measured: the figure is
+  // then bounded by its column's width alone rather than by a guessed height.
+  const routeBox = useCbRouteBox()
+  const figureMaxHeight =
+    routeBox && routeBox.height > 0 ? `${Math.round(routeBox.height * 0.7)}px` : null
   // The figure's measured box, in CSS pixels. The overlay's geometry is expressed against it, so
   // a label at `x=1` is clamped inside the frame at any width the lesson is read at. Measuring is
   // observation, not a claim: before the first measurement the overlay renders nothing rather
@@ -1379,16 +1414,21 @@ function MediaSegment({ segment }) {
     preview.state === 'ready' && preview.mime === 'image/svg+xml'
       ? jsx('img', {
           alt: caption,
-          // Item 37: no fixed pixel cap. The figure may use 70 vh of the reader's viewport; its
-          // natural size is one activation away (MediaViewer).
-          style: { maxHeight: '70vh', width: '100%', objectFit: 'contain' },
+          // Item 37: no fixed pixel cap. UP-30: the cap is a share of the route's measured box;
+          // its natural size is one activation away (MediaViewer).
+          style: { maxHeight: figureMaxHeight || 'none', width: '100%', objectFit: 'contain' },
           loading: 'lazy',
           src: preview.data_url
         })
       : preview.state === 'ready' && preview.mime && preview.mime.startsWith('image/')
         ? jsx('img', {
             alt: caption,
-            style: { maxHeight: '70vh', width: '100%', objectFit: 'contain', borderRadius: '0.125rem' },
+            style: {
+              maxHeight: figureMaxHeight || 'none',
+              width: '100%',
+              objectFit: 'contain',
+              borderRadius: '0.125rem'
+            },
             loading: 'lazy',
             src: preview.data_url
           })
@@ -1445,8 +1485,8 @@ function MediaSegment({ segment }) {
         kind === 'visual'
           ? jsxs('div', {
               // The figure and its drawn labels share one positioned box, so the overlay is
-              // measured against the picture the learner actually sees — up to 70vh tall in any
-              // column — and never against an assumed size.
+              // measured against the picture the learner actually sees — capped by the route's
+              // own height — and never against an assumed size.
               ref: frameRef,
               'data-cb-media-frame': '',
               style: { position: 'relative', display: 'block', lineHeight: 0, maxWidth: '100%' },
@@ -1478,6 +1518,7 @@ function MediaSegment({ segment }) {
               alt: caption,
               caption,
               label,
+              box: routeBox,
               onClose: () => {
                 setViewerOpen(false)
                 const trigger = triggerRef.current
