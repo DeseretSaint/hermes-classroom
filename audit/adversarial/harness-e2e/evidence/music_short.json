@@ -30,7 +30,7 @@
   },
   "lesson_rows": [
     {
-      "lesson_id": "000000000000002c",
+      "lesson_id": "0000000000000028",
       "page": {
         "check": {
           "assistance_policy": {
@@ -83,11 +83,11 @@
           ]
         }
       },
-      "section_id": "000000000000001d",
+      "section_id": "000000000000001b",
       "state": "validated"
     },
     {
-      "lesson_id": "000000000000002f",
+      "lesson_id": "000000000000002b",
       "page": {
         "check": {
           "assistance_policy": {
@@ -140,11 +140,11 @@
           ]
         }
       },
-      "section_id": "000000000000001e",
+      "section_id": "000000000000001c",
       "state": "validated"
     },
     {
-      "lesson_id": "0000000000000038",
+      "lesson_id": "0000000000000031",
       "page": {
         "check": {
           "assistance_policy": {
@@ -197,11 +197,11 @@
           ]
         }
       },
-      "section_id": "0000000000000024",
+      "section_id": "0000000000000021",
       "state": "validated"
     },
     {
-      "lesson_id": "000000000000003b",
+      "lesson_id": "0000000000000034",
       "page": {
         "check": {
           "assistance_policy": {
@@ -254,11 +254,11 @@
           ]
         }
       },
-      "section_id": "0000000000000025",
+      "section_id": "0000000000000022",
       "state": "validated"
     },
     {
-      "lesson_id": "000000000000003e",
+      "lesson_id": "0000000000000037",
       "page": {
         "check": {
           "assistance_policy": {
@@ -311,7 +311,7 @@
           ]
         }
       },
-      "section_id": "0000000000000026",
+      "section_id": "0000000000000023",
       "state": "validated"
     }
   ],
@@ -331,34 +331,27 @@
     },
     "attempt_rows": [
       {
-        "check_id": "000000000000002d",
+        "check_id": "0000000000000029",
         "evidence_class": "cold",
         "grading_provenance_json": "{\"grader\":\"deterministic:exact\",\"reference_sha256\":\"sha256:0dc22ab9b0b5b6a81c38f48f085431aa3781495261260fcf81e4267e6ee6c95e\"}",
-        "id": "att_0000000000000000000000000000004b",
+        "id": "att_0000000000000000000000000000003e",
         "state": "committed",
         "verdict": "pass"
       },
       {
-        "check_id": "0000000000000030",
+        "check_id": "000000000000002c",
         "evidence_class": "cold",
         "grading_provenance_json": "{\"grader\":\"deterministic:exact\",\"reference_sha256\":\"sha256:2538e74a9294c63a9d98bb35ae53263ee91d48a4af8013b6284fae9f5d33513e\"}",
-        "id": "att_00000000000000000000000000000051",
+        "id": "att_00000000000000000000000000000044",
         "state": "committed",
         "verdict": "not_yet"
       }
     ],
     "check_lanes": [
       {
-        "objective_id": "000000000000000b",
-        "reference_kind": "exact",
-        "state": "closed",
-        "stimulus_format": "text",
-        "version": 1
-      },
-      {
         "objective_id": "000000000000000c",
         "reference_kind": "exact",
-        "state": "open",
+        "state": "closed",
         "stimulus_format": "text",
         "version": 1
       },
@@ -377,7 +370,14 @@
         "version": 1
       },
       {
-        "objective_id": "000000000000000e",
+        "objective_id": "000000000000000f",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text",
+        "version": 1
+      },
+      {
+        "objective_id": "000000000000000f",
         "reference_kind": "exact",
         "state": "closed",
         "stimulus_format": "text",
@@ -459,7 +459,7 @@
         "evidence_target": "recall",
         "ordinal": 1,
         "source_ids": [
-          "0000000000000008"
+          "0000000000000009"
         ],
         "source_quote": "It names the semitone counts of the common intervals and the major/minor triad recipes.",
         "support": "sourced",
@@ -619,13 +619,13 @@
     ],
     "approve": {
       "approval_provenance": null,
-      "plan_hash": "sha256:988263f19033fe9c58da852acd32330b72aa025da50c9e807ba2be7175dd5226",
+      "plan_hash": "sha256:15759c08ee71fa2c7134a2822406b43183f387b93f7376afc77bc77070fb0845",
       "revision": 1,
       "state_after": "approved"
     },
     "grading": [
       {
-        "check_id": "000000000000002d",
+        "check_id": "0000000000000029",
         "label": "correct",
         "objective_ordinal": 1,
         "open": {
@@ -636,9 +636,9 @@
         "submit": {
           "contract_version": 29,
           "ok": true,
-          "operation_id": "op-h40-attempt-submit-00004a",
+          "operation_id": "op-h40-attempt-submit-00003d",
           "result": {
-            "attempt_id": "att_0000000000000000000000000000004b",
+            "attempt_id": "att_0000000000000000000000000000003e",
             "criteria": [
               {
                 "id": "c1",
@@ -655,7 +655,7 @@
         }
       },
       {
-        "check_id": "0000000000000030",
+        "check_id": "000000000000002c",
         "label": "wrong",
         "objective_ordinal": 2,
         "open": {
@@ -666,9 +666,9 @@
         "submit": {
           "contract_version": 29,
           "ok": true,
-          "operation_id": "op-h40-attempt-submit-000050",
+          "operation_id": "op-h40-attempt-submit-000043",
           "result": {
-            "attempt_id": "att_00000000000000000000000000000051",
+            "attempt_id": "att_00000000000000000000000000000044",
             "criteria": [
               {
                 "id": "c1",
@@ -692,7 +692,7 @@
         {
           "attempt_count": 0,
           "audit_state": "passed",
-          "check_id": "000000000000002d",
+          "check_id": "0000000000000029",
           "evidence_target": "recall",
           "revisit": false,
           "state": "open",
@@ -716,7 +716,7 @@
             "source_ids": []
           },
           {
-            "check_id": "000000000000002d",
+            "check_id": "0000000000000029",
             "deep": "From C, the fifth note arrives after the same four-semitone step plus three more. If you count from the wrong start note the number still adds up, which is why you say the start note and the interval together.",
             "headline": "Check the count at the keyboard",
             "id": "blk_3a4ba5f3ceb53d6609b4",
@@ -746,10 +746,10 @@
             "source_ids": []
           }
         ],
-        "check_id": "000000000000002d",
-        "content_hash": "sha256:25475bef2bf531410aa628f1ef8bda7c07eae42b6c4ee1813d627273c504ea39",
+        "check_id": "0000000000000029",
+        "content_hash": "sha256:31fa8a4d98f7c608b02535a21345c64a8ac414d7f5c8f7a81175d762a78eaaf9",
         "direction": "ltr",
-        "document_id": "doc_25475bef2bf531410aa6",
+        "document_id": "doc_31fa8a4d98f7c608b025",
         "lang": "en-US",
         "objective_id": null,
         "schema_version": 1,
@@ -779,10 +779,10 @@
         "evidence_target": "recall",
         "last_opened_at": null,
         "lesson_state": "validated",
-        "objective_id": "000000000000000b",
+        "objective_id": "000000000000000c",
         "ordinal": 1,
         "rejection_reasons": [],
-        "section_id": "000000000000001d",
+        "section_id": "000000000000001b",
         "sections_total": 4,
         "state": "not_started",
         "title": "Count the semitones in a major third and a perfect fifth"
@@ -798,7 +798,7 @@
           "modality": null,
           "published_at": null,
           "publisher": "example.invalid",
-          "source_id": "0000000000000008",
+          "source_id": "0000000000000009",
           "source_type": "web_page",
           "support_assessment": "unverified",
           "support_status": "unassessed",
@@ -819,13 +819,13 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_0000000000000000000000000000002b",
+          "job_id": "job_00000000000000000000000000000026",
           "job_kind": "lesson",
           "lessons": [
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "000000000000002d",
+              "check_id": "0000000000000029",
               "generation": {
                 "known": true,
                 "model": "recorded-transcript-h40",
@@ -833,9 +833,9 @@
                 "prompt_version": "lesson-prompt.v19",
                 "provider": "recorded"
               },
-              "lesson_id": "000000000000002c",
+              "lesson_id": "0000000000000028",
               "reused": false,
-              "section_id": "000000000000001d",
+              "section_id": "000000000000001b",
               "state": "validated",
               "validation": {
                 "canonical": {
@@ -864,14 +864,14 @@
                 "waived_unknown_reasons": {},
                 "warning": null
               },
-              "validation_id": "000000000000002e",
+              "validation_id": "000000000000002a",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             },
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "0000000000000030",
+              "check_id": "000000000000002c",
               "generation": {
                 "known": true,
                 "model": "recorded-transcript-h40",
@@ -879,9 +879,9 @@
                 "prompt_version": "lesson-prompt.v19",
                 "provider": "recorded"
               },
-              "lesson_id": "000000000000002f",
+              "lesson_id": "000000000000002b",
               "reused": false,
-              "section_id": "000000000000001e",
+              "section_id": "000000000000001c",
               "state": "validated",
               "validation": {
                 "canonical": {
@@ -910,14 +910,14 @@
                 "waived_unknown_reasons": {},
                 "warning": null
               },
-              "validation_id": "0000000000000031",
+              "validation_id": "000000000000002d",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             }
           ],
           "needs_review": [],
           "next_unit_ordinal": 2,
-          "plan_hash": "sha256:e71d5565080253e991fc4940dc85ce9dc374532aab5d1b7cd0d102a2d796f569",
+          "plan_hash": "sha256:5229252842c67ec9262e8a0ca9233c522f683c35d1ce44b4744243a270525975",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -975,13 +975,13 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_00000000000000000000000000000037",
+          "job_id": "job_0000000000000000000000000000002f",
           "job_kind": "lesson",
           "lessons": [
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "0000000000000039",
+              "check_id": "0000000000000032",
               "generation": {
                 "known": true,
                 "model": "recorded-transcript-h40",
@@ -989,9 +989,9 @@
                 "prompt_version": "lesson-prompt.v19",
                 "provider": "recorded"
               },
-              "lesson_id": "0000000000000038",
+              "lesson_id": "0000000000000031",
               "reused": false,
-              "section_id": "0000000000000024",
+              "section_id": "0000000000000021",
               "state": "validated",
               "validation": {
                 "canonical": {
@@ -1020,14 +1020,14 @@
                 "waived_unknown_reasons": {},
                 "warning": null
               },
-              "validation_id": "000000000000003a",
+              "validation_id": "0000000000000033",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             },
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "000000000000003c",
+              "check_id": "0000000000000035",
               "generation": {
                 "known": true,
                 "model": "recorded-transcript-h40",
@@ -1035,9 +1035,9 @@
                 "prompt_version": "lesson-prompt.v19",
                 "provider": "recorded"
               },
-              "lesson_id": "000000000000003b",
+              "lesson_id": "0000000000000034",
               "reused": false,
-              "section_id": "0000000000000025",
+              "section_id": "0000000000000022",
               "state": "validated",
               "validation": {
                 "canonical": {
@@ -1066,14 +1066,14 @@
                 "waived_unknown_reasons": {},
                 "warning": null
               },
-              "validation_id": "000000000000003d",
+              "validation_id": "0000000000000036",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             },
             {
               "audit_state": "passed",
               "check_enabled": false,
-              "check_id": "000000000000003f",
+              "check_id": "0000000000000038",
               "generation": {
                 "known": true,
                 "model": "recorded-transcript-h40",
@@ -1081,11 +1081,11 @@
                 "prompt_version": "lesson-prompt.v19",
                 "provider": "recorded"
               },
-              "lesson_id": "000000000000003e",
+              "lesson_id": "0000000000000037",
               "reused": false,
               "review_check_open": true,
               "review_check_state": "open",
-              "section_id": "0000000000000026",
+              "section_id": "0000000000000023",
               "state": "validated",
               "validation": {
                 "canonical": {
@@ -1114,14 +1114,14 @@
                 "waived_unknown_reasons": {},
                 "warning": null
               },
-              "validation_id": "0000000000000040",
+              "validation_id": "0000000000000039",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             }
           ],
           "needs_review": [],
           "next_unit_ordinal": null,
-          "plan_hash": "sha256:e71d5565080253e991fc4940dc85ce9dc374532aab5d1b7cd0d102a2d796f569",
+          "plan_hash": "sha256:5229252842c67ec9262e8a0ca9233c522f683c35d1ce44b4744243a270525975",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -1181,9 +1181,9 @@
           "last_opened_at": null,
           "lesson_rejection_reasons": [],
           "lesson_state": "validated",
-          "objective_id": "000000000000000b",
+          "objective_id": "000000000000000c",
           "ordinal": 1,
-          "section_id": "000000000000001d",
+          "section_id": "000000000000001b",
           "state": "not_started",
           "title": "Count the semitones in a major third and a perfect fifth"
         },
@@ -1195,9 +1195,9 @@
           "last_opened_at": null,
           "lesson_rejection_reasons": [],
           "lesson_state": "validated",
-          "objective_id": "000000000000000c",
+          "objective_id": "000000000000000d",
           "ordinal": 2,
-          "section_id": "000000000000001e",
+          "section_id": "000000000000001c",
           "state": "not_started",
           "title": "Distinguish the two common thirds by sound"
         },
@@ -1209,9 +1209,9 @@
           "last_opened_at": null,
           "lesson_rejection_reasons": [],
           "lesson_state": "validated",
-          "objective_id": "000000000000000d",
+          "objective_id": "000000000000000e",
           "ordinal": 3,
-          "section_id": "0000000000000024",
+          "section_id": "0000000000000021",
           "state": "not_started",
           "title": "Build a major and a minor triad from a root note"
         },
@@ -1223,15 +1223,15 @@
           "last_opened_at": null,
           "lesson_rejection_reasons": [],
           "lesson_state": "validated",
-          "objective_id": "000000000000000e",
+          "objective_id": "000000000000000f",
           "ordinal": 4,
-          "section_id": "0000000000000025",
+          "section_id": "0000000000000022",
           "state": "not_started",
           "title": "Use the circle of fifths to name the chords in a pop song"
         }
       ],
       "plan": {
-        "plan_hash": "sha256:988263f19033fe9c58da852acd32330b72aa025da50c9e807ba2be7175dd5226",
+        "plan_hash": "sha256:15759c08ee71fa2c7134a2822406b43183f387b93f7376afc77bc77070fb0845",
         "plan_id": "pln_00000000000000000000000000000003",
         "state": "approved",
         "time_estimate": {
@@ -1253,9 +1253,9 @@
                 "last_opened_at": null,
                 "lesson_rejection_reasons": [],
                 "lesson_state": "validated",
-                "objective_id": "000000000000000b",
+                "objective_id": "000000000000000c",
                 "ordinal": 1,
-                "section_id": "000000000000001d",
+                "section_id": "000000000000001b",
                 "state": "not_started",
                 "title": "Count the semitones in a major third and a perfect fifth"
               },
@@ -1267,9 +1267,9 @@
                 "last_opened_at": null,
                 "lesson_rejection_reasons": [],
                 "lesson_state": "validated",
-                "objective_id": "000000000000000c",
+                "objective_id": "000000000000000d",
                 "ordinal": 2,
-                "section_id": "000000000000001e",
+                "section_id": "000000000000001c",
                 "state": "not_started",
                 "title": "Distinguish the two common thirds by sound"
               }
@@ -1291,9 +1291,9 @@
                 "last_opened_at": null,
                 "lesson_rejection_reasons": [],
                 "lesson_state": "validated",
-                "objective_id": "000000000000000d",
+                "objective_id": "000000000000000e",
                 "ordinal": 3,
-                "section_id": "0000000000000024",
+                "section_id": "0000000000000021",
                 "state": "not_started",
                 "title": "Build a major and a minor triad from a root note"
               },
@@ -1305,9 +1305,9 @@
                 "last_opened_at": null,
                 "lesson_rejection_reasons": [],
                 "lesson_state": "validated",
-                "objective_id": "000000000000000e",
+                "objective_id": "000000000000000f",
                 "ordinal": 4,
-                "section_id": "0000000000000025",
+                "section_id": "0000000000000022",
                 "state": "not_started",
                 "title": "Use the circle of fifths to name the chords in a pop song"
               }
@@ -1320,13 +1320,13 @@
             "title": "Triads and the circle of fifths",
             "unmet": [
               {
-                "objective_id": "000000000000000b",
+                "objective_id": "000000000000000c",
                 "ordinal": 1,
                 "state": "not_started",
                 "title": "Count the semitones in a major third and a perfect fifth"
               },
               {
-                "objective_id": "000000000000000c",
+                "objective_id": "000000000000000d",
                 "ordinal": 2,
                 "state": "not_started",
                 "title": "Distinguish the two common thirds by sound"
@@ -1408,8 +1408,8 @@
         "locale": "en-US",
         "next_unit_ordinal": 1,
         "objectives": 4,
-        "plan_content_hash": "sha256:988263f19033fe9c58da852acd32330b72aa025da50c9e807ba2be7175dd5226",
-        "plan_hash": "sha256:e71d5565080253e991fc4940dc85ce9dc374532aab5d1b7cd0d102a2d796f569",
+        "plan_content_hash": "sha256:15759c08ee71fa2c7134a2822406b43183f387b93f7376afc77bc77070fb0845",
+        "plan_hash": "sha256:5229252842c67ec9262e8a0ca9233c522f683c35d1ce44b4744243a270525975",
         "plan_id": "pln_00000000000000000000000000000003",
         "plan_schema": "coursebook.plan.v2",
         "plan_version": 1,
@@ -1459,7 +1459,7 @@
           "reason": null,
           "status": "ok"
         },
-        "research_id": "000000000000000f",
+        "research_id": "0000000000000010",
         "reuse_declined": null,
         "reused": false,
         "scope": "short",
@@ -1529,7 +1529,7 @@
           "waived_unknown_reasons": {},
           "warning": null
         },
-        "validation_id": "0000000000000010",
+        "validation_id": "0000000000000011",
         "validation_verdict": "pass",
         "vocabulary": {
           "band": null,
@@ -1579,18 +1579,18 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_0000000000000000000000000000001c",
+          "job_id": "job_00000000000000000000000000000019",
           "job_kind": "unit_sections",
           "next_unit_ordinal": 2,
           "owners": 2,
-          "plan_hash": "sha256:e71d5565080253e991fc4940dc85ce9dc374532aab5d1b7cd0d102a2d796f569",
+          "plan_hash": "sha256:5229252842c67ec9262e8a0ca9233c522f683c35d1ce44b4744243a270525975",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
           "reviews": 0,
           "section_ids": [
-            "000000000000001d",
-            "000000000000001e"
+            "000000000000001b",
+            "000000000000001c"
           ],
           "sections": 2,
           "stage": "unit_sections",
@@ -1622,7 +1622,7 @@
             "unknown_calls": 0,
             "unknown_cost": false
           },
-          "validation_id": "000000000000001f",
+          "validation_id": "000000000000001d",
           "validation_verdict": "pass"
         },
         "unit_ordinal": 1
@@ -1638,19 +1638,19 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_00000000000000000000000000000023",
+          "job_id": "job_0000000000000000000000000000001f",
           "job_kind": "unit_sections",
           "next_unit_ordinal": null,
           "owners": 2,
-          "plan_hash": "sha256:e71d5565080253e991fc4940dc85ce9dc374532aab5d1b7cd0d102a2d796f569",
+          "plan_hash": "sha256:5229252842c67ec9262e8a0ca9233c522f683c35d1ce44b4744243a270525975",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
           "reviews": 1,
           "section_ids": [
-            "0000000000000024",
-            "0000000000000025",
-            "0000000000000026"
+            "0000000000000021",
+            "0000000000000022",
+            "0000000000000023"
           ],
           "sections": 3,
           "stage": "unit_sections",
@@ -1682,7 +1682,7 @@
             "unknown_calls": 0,
             "unknown_cost": false
           },
-          "validation_id": "0000000000000027",
+          "validation_id": "0000000000000024",
           "validation_verdict": "pass"
         },
         "unit_ordinal": 2

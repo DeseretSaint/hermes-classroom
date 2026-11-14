@@ -2154,6 +2154,18 @@ class _Usage:
     #: is consumed by the ``before_call`` that starts the pass, so the ceiling counts calls in
     #: flight, not just calls that already returned.
     _reserved: int = 0
+    #: UP-40: prefix for the durable id of each call's ``usage_events`` row. Deterministic per job
+    #: attempt, so an incremental flush and the end-of-stage flush name the same row and the second
+    #: write is refused by the primary key instead of doubling the reported spend. ``None`` keeps
+    #: the historic end-of-stage write with a fresh row id per call.
+    usage_id_prefix: str | None = None
+    #: UP-40: incremental flush target, ``(calls) -> None``. ``None`` means the stage batches every
+    #: call and persists them once at the end. It is called with the calls whose row is not durable
+    #: yet, and only on the job's own thread: this job's sqlite connection belongs to that thread,
+    #: while a validator pass runs on a pool thread.
+    flush_reporter: Any = None
+    flush_thread: int | None = None
+    _usage_seq: int = 0
 
     def reserve(self, count: int, *, purpose: str | None = None) -> None:
         """Hold *count* call slots before a group of parallel passes is submitted."""
@@ -2240,28 +2252,36 @@ class _Usage:
                 self.known_cost += float(cost)
             self.input_tokens += int(response.input_tokens or 0)
             self.output_tokens += int(response.output_tokens or 0)
-            self.calls.append(
-                {
-                    "purpose": request.purpose,
-                    "prompt_version": request.prompt_version,
-                    "provider": response.provider,
-                    "model": response.model,
-                    "input_tokens": response.input_tokens,
-                    "output_tokens": response.output_tokens,
-                    "cost_usd": cost,
-                    "duration_ms": duration_ms,
-                    # ``returned`` for a call the pipeline used; ``schema_rejected`` for a call whose
-                    # answer the host's schema gate threw away before it could be read. The second
-                    # shape is real spend with unknown tokens, so it is recorded, never dropped.
-                    "outcome": outcome,
-                }
-            )
+            call = {
+                "purpose": request.purpose,
+                "prompt_version": request.prompt_version,
+                "provider": response.provider,
+                "model": response.model,
+                "input_tokens": response.input_tokens,
+                "output_tokens": response.output_tokens,
+                "cost_usd": cost,
+                "duration_ms": duration_ms,
+                # ``returned`` for a call the pipeline used; ``schema_rejected`` for a call whose
+                # answer the host's schema gate threw away before it could be read. The second
+                # shape is real spend with unknown tokens, so it is recorded, never dropped.
+                "outcome": outcome,
+            }
+            if self.usage_id_prefix is not None:
+                # Deterministic per call index, so flushing this call now and again at the end of
+                # the stage writes one row, not two.
+                self._usage_seq += 1
+                call["usage_id"] = f"usage:{self.usage_id_prefix}:{self._usage_seq}"
+            self.calls.append(call)
             over_ceiling = (
                 self.budget.max_cost_usd is not None
                 and self.estimated_spend_usd > self.budget.max_cost_usd
             )
             spend = self.estimated_spend_usd
             unknown = self.unknown_calls
+        # UP-40: the call's row is made durable before the ceiling verdict, so a job that stops on
+        # its budget still shows the spend it actually made. The flush is bookkeeping: a failed
+        # write is logged and retried, and never changes the in-memory totals the ceiling reads.
+        self._flush_pending()
         if over_ceiling:
             raise CostCeilingExceeded(
                 f"provider-call budget exhausted after {request.purpose}: spend {spend:.4f} USD "
@@ -2271,6 +2291,53 @@ class _Usage:
                 purpose=request.purpose,
                 budget_source=self.budget.source,
             )
+
+    def pending_calls(self) -> list[dict[str, Any]]:
+        """The calls whose ``usage_events`` row is not durable yet (UP-40)."""
+        with self._lock:
+            return [call for call in self.calls if not call.get("usage_persisted")]
+
+    def mark_persisted(self, calls: Sequence[dict[str, Any]]) -> None:
+        """Mark one flush's calls durable, so the end-of-stage flush writes only what is left."""
+        with self._lock:
+            for call in calls:
+                call["usage_persisted"] = True
+
+    def _flush_pending(self) -> None:
+        """Persist the calls recorded since the last flush (UP-40).
+
+        A learner watching a long lesson job used to see zero calls and zero cost until the whole
+        stage ended, because the only write happened after the section loop. Flushing per call
+        makes the running figure real while it can still inform a cancel decision.
+
+        Two invariants hold the failure modes shut:
+
+        * **the flush is never the spend decision.** The in-memory totals stay authoritative for
+          the call/dollar ceilings; a write that raises is logged and the rows stay pending for
+          the next call and for the end-of-stage flush;
+        * **it runs only on the job's own thread.** This job's sqlite connection belongs to the
+          thread that opened it, and a validator pass calls ``record`` from a pool thread; those
+          rows are left pending rather than written cross-thread.
+
+        The per-call id is deterministic, so a retried write of the same call is refused by the
+        primary key instead of doubling the reported spend.
+        """
+        reporter = self.flush_reporter
+        if reporter is None:
+            return
+        if self.flush_thread is not None and self.flush_thread != threading.get_ident():
+            return
+        pending = self.pending_calls()
+        if not pending:
+            return
+        try:
+            reporter(pending)
+        except Exception as exc:  # noqa: BLE001 - bookkeeping never decides a call or a ceiling
+            logger.debug(
+                "coursebook: incremental usage flush failed: %s: %s", type(exc).__name__, exc
+            )
+            return
+        self.mark_persisted(pending)
 
     def summary(self) -> dict[str, Any]:
         by_purpose: dict[str, dict[str, Any]] = {}
@@ -12073,17 +12140,29 @@ def carry_plan_outline(
     }
 
 
-def _record_usage(connection: sqlite3.Connection, job_id: str | None, usage: _Usage, now: datetime | None) -> None:
-    if not usage.calls:
+def _persist_usage_calls(
+    connection: sqlite3.Connection,
+    job_id: str | None,
+    calls: Sequence[Mapping[str, Any]],
+    now: datetime | None,
+) -> None:
+    """Write the ``usage_events`` row for each of these provider calls.
+
+    ``OR IGNORE`` is deliberate: a call's id is deterministic per job attempt (UP-40), so a row
+    that is already durable — because an incremental flush wrote it, or because a retried write
+    committed and then raised — is not written a second time and the reported spend is not
+    doubled.
+    """
+    if not calls:
         return
     recorded_at = _now_iso(now)
     with _transaction(connection):
-        for call in usage.calls:
+        for call in calls:
             connection.execute(
-                "INSERT INTO usage_events (id, operation_id, enrollment_id, provider, model, tokens_json, "
-                "duration_ms, artifact_count, recorded_at) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT OR IGNORE INTO usage_events (id, operation_id, enrollment_id, provider, model,"
+                " tokens_json, duration_ms, artifact_count, recorded_at) VALUES (?,?,?,?,?,?,?,?,?)",
                 (
-                    _new_id(),
+                    call.get("usage_id") or _new_id(),
                     job_id,
                     None,
                     call.get("provider"),
@@ -12103,6 +12182,43 @@ def _record_usage(connection: sqlite3.Connection, job_id: str | None, usage: _Us
                     recorded_at,
                 ),
             )
+
+
+def _record_usage(connection: sqlite3.Connection, job_id: str | None, usage: _Usage, now: datetime | None) -> None:
+    """Persist the calls this stage has not already flushed (UP-40).
+
+    The historic behaviour was one write after the whole stage; the stage now flushes each call as
+    it returns, so this is the *remainder* — typically empty on a clean run, and the durability
+    backstop when an incremental write failed or a validator pass recorded on a pool thread.
+    """
+    pending = usage.pending_calls()
+    _persist_usage_calls(connection, job_id, pending, now)
+    usage.mark_persisted(pending)
+
+
+def _attach_usage_flush(
+    connection: sqlite3.Connection,
+    job_id: str | None,
+    job: Mapping[str, Any],
+    usage: _Usage,
+    now: datetime | None,
+) -> None:
+    """Make a stage's spend visible while it is still spending (UP-40).
+
+    Bound to the job's own connection and thread, and to a deterministic per-attempt id prefix so
+    the end-of-stage write cannot double the figure. The *attempt* is part of the prefix because a
+    retried job keeps its ``job_id``: reusing the id would make the retry's real calls collide with
+    the first attempt's rows and be silently ignored.
+    """
+    if job_id is None:
+        return
+    # ``secrets`` rather than ``_new_id``: the fallback token is bookkeeping, and drawing it from
+    # the artifact id sequence would shift every id a recorded packet pins (the same reason the
+    # H-199 wait rows use their own prefix).
+    attempt = str(job.get("attempt_id") or "").strip()[:64] or secrets.token_hex(8)
+    usage.usage_id_prefix = f"{job_id}:{attempt}"
+    usage.flush_thread = threading.get_ident()
+    usage.flush_reporter = lambda calls: _persist_usage_calls(connection, job_id, calls, now)
 
 
 def _record_call_wait(
@@ -12727,6 +12843,8 @@ def run_plan_job(
         usage.wait_reporter = lambda call_id, purpose, prompt_version, elapsed_s, state: _record_call_wait(
             connection, call_id, job_id, purpose, prompt_version, elapsed_s, state
         )
+        # UP-40: a plan job can run for minutes; its spend is durable per call, not per stage.
+        _attach_usage_flush(connection, job_id, job, usage, now)
     # The validator is the configured second-model route when one exists. When it does not, the
     # call still happens with the author model, but the recorded identity makes that a
     # model-assessed pass, never an independent one.
@@ -14341,6 +14459,9 @@ def run_unit_sections_job(
 
     resolved_budget = budget or unit_sections_cost_budget(brief_budget_usd=brief.get("budget_usd"))
     usage = _Usage(resolved_budget, cancel_probe=_job_cancel_probe(job_id))
+    # UP-40: the unit stage spends its calls over several attempts; each one is durable when it
+    # returns so the running cost is real while the operator can still act on it.
+    _attach_usage_flush(connection, job_id, job, usage, now)
     # The validator is the configured second-model route when one exists. When it does not, the
     # call still happens with the author model, but the recorded identity makes that a
     # model-assessed pass, never an independent one.
@@ -15382,6 +15503,9 @@ def run_lesson_job(
     usage.wait_reporter = lambda call_id, purpose, prompt_version, elapsed_s, state: _record_call_wait(
         connection, call_id, job_id, purpose, prompt_version, elapsed_s, state
     )
+    # UP-40: this is the loop a learner watches. Each section's generate and validate calls become
+    # durable spend as they return, so the cost a pending cancel decision reads is the real one.
+    _attach_usage_flush(connection, job_id, job, usage, now)
 
     lesson_summaries: list[dict[str, Any]] = []
     try:
