@@ -262,6 +262,11 @@ const gridPrimaries = grid ? [...grid.querySelectorAll('[data-cb3-pill="primary"
 const fox = document.querySelector('[data-cb3-discover-fox] [data-cb3-fox]')
 const state = document.querySelector('[data-cb3-discover-state]')
 const skeleton = document.querySelector('[data-cb3-discover-skeleton]')
+const skeletonStatus = skeleton ? skeleton.querySelector('[role="status"]') : null
+const skeletonStatusStyle = skeletonStatus ? dom.window.getComputedStyle(skeletonStatus) : null
+const skeletonStatuses = skeleton ? [...skeleton.querySelectorAll('[role="status"]')] : []
+const routeBusy = [...document.querySelectorAll('[data-cb-route] [aria-busy]')]
+const routeStatuses = [...document.querySelectorAll('[data-cb-route] [role="status"]')]
 const tabs = [...document.querySelectorAll('[data-cb-workshop-tab]')].map((node) => ({
   id: node.getAttribute('data-cb-workshop-tab'),
   label: text(node),
@@ -342,6 +347,16 @@ process.stdout.write(JSON.stringify({
   stateAction: state ? text(state.querySelector('[data-cb3-pill]')) : null,
   statePrimaries: state ? state.querySelectorAll('[data-cb3-pill="primary"]').length : 0,
   skeleton: Boolean(skeleton),
+  skeletonBusy: skeleton ? skeleton.getAttribute('aria-busy') : null,
+  skeletonStatusCount: skeletonStatuses.length,
+  skeletonStatusText: skeletonStatus ? text(skeletonStatus) : null,
+  skeletonStatusHidden: skeletonStatus ? skeletonStatus.getAttribute('aria-hidden') : null,
+  skeletonStatusDisplay: skeletonStatusStyle ? skeletonStatusStyle.display : null,
+  skeletonStatusVisibility: skeletonStatusStyle ? skeletonStatusStyle.visibility : null,
+  skeletonStatusClip: skeletonStatusStyle ? (skeletonStatusStyle.clipPath || skeletonStatusStyle.webkitClipPath || '') : null,
+  routeBusyCount: routeBusy.length,
+  routeStatusCount: routeStatuses.length,
+  routeStatusTexts: routeStatuses.map((node) => text(node)),
   foxPose: fox ? fox.getAttribute('data-cb3-fox') : null,
   foxAriaHidden: fox ? fox.getAttribute('aria-hidden') : null,
   foxSafe: fox ? fox.getAttribute('data-cb3-fox-safe') : null,
@@ -538,6 +553,40 @@ class WorkshopV3RenderTest(unittest.TestCase):
         self.assertTrue(loading["skeleton"], "loading paints no skeleton of the real regions")
         self.assertEqual(loading["cardCount"], 0, "the skeleton painted real cards")
         self.assertEqual(self.render("held")["cardCount"], 3, "the skeleton never resolves to content")
+
+    def test_the_loading_region_announces_itself(self) -> None:
+        """A slow catalogue read is never silent: one busy region, one status line, both cleared."""
+        loading = self.render("loading")
+        self.assertTrue(loading["skeleton"], "loading paints no skeleton to carry the status")
+        self.assertEqual(
+            loading["skeletonBusy"], "true",
+            "the Discover region is not aria-busy while the catalogue read is in flight",
+        )
+        self.assertEqual(
+            loading["skeletonStatusCount"], 1,
+            "the loading region does not carry exactly one role=status line",
+        )
+        self.assertEqual(loading["skeletonStatusText"], "Reading your workshop.")
+        # Real text, not `display:none`/`visibility:hidden` and not hidden from assistive tech:
+        # the line is clipped to a 1 px box so the plate stays visually silent and the read speaks.
+        self.assertIsNone(loading["skeletonStatusHidden"], "the status line is aria-hidden")
+        self.assertNotEqual(loading["skeletonStatusDisplay"], "none")
+        self.assertNotEqual(loading["skeletonStatusVisibility"], "hidden")
+        self.assertIn("inset(50%)", loading["skeletonStatusClip"])
+        # One announcement on the whole route while pending, not a second beside the head's line.
+        self.assertEqual(loading["routeBusyCount"], 1, "more than one region claims to be busy")
+        self.assertEqual(loading["routeStatusCount"], 1, "the route speaks the read twice")
+
+        settled = self.render("held")
+        self.assertFalse(settled["skeleton"], "the skeleton survived the completed read")
+        self.assertEqual(settled["routeBusyCount"], 0, "aria-busy survives the completed read")
+        self.assertEqual(settled["skeletonStatusCount"], 0, "the loading status line survives the read")
+        # The route may keep another live region (the refused-pack strip); the *loading* one is gone.
+        self.assertNotIn(
+            "Reading your workshop.", settled["routeStatusTexts"],
+            "the loading words are still announced after the read settled",
+        )
+        self.assertNotIn("Reading your workshop.", settled["headBody"] or "")
 
     def test_workshop_v3_heading_order(self) -> None:
         report = self.render()
