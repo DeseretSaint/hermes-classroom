@@ -68,6 +68,7 @@ omits the row when none is.
 | `home.shelf.label` | Your courses | deck | 24 | H4 |
 | `home.card.subject` | {subject label} | field:`library_item.subject_label` (CP-005) + field:`world_brief.subject_domain` + field:`library_item.recipe` | 24 | H5 card, line 2 |
 | `home.card.meta` | {done} of {total} sections done | field:`library_item.sections_done` + field:`library_item.sections_total` (CP-005), else field:`library_item.evidence_summary.independent` + field:`library_item.evidence_summary.total_objectives` | 32 | H5 card, line 3 |
+| `home.card.practice` | {n} checks recorded | field:`library_item.checks_recorded` (CP-005), used only when field:`library_item.sections_total` is 0 — an all-practice course has no section denominator; renders `1 check recorded` for one | 32 | H5 card, line 3 when the course has no evidence-bearing section |
 | `home.card.new` | New | field:`library_item.is_new` (CP-005), else field:`library_item.evidence_summary.independent` | 4 | H5 card chip |
 | `home.card.next` | {next step} | field:`library_item.next_step.label` | 40 | H5 card, quiet action |
 | `home.tag.firstuse` | New course | deck | 14 | H6 paper tag, first use only |
@@ -225,6 +226,7 @@ lesson's authored line; this example is the fixture that proves the three scaffo
 | `course.world.rejected.action` | Open World Studio | deck | 20 | M4 quiet |
 | `course.end.title` | Course complete | deck | 20 | M6 |
 | `course.end.body` | Every section has evidence. | deck | 28 | M6 |
+| `course.end.practice` | {n} checks recorded | field:`library_item.checks_recorded` (CP-005), used only when field:`library_item.sections_total` is 0; renders `1 check recorded` for one | 28 | M6, the close of a course whose objectives are all practice |
 | `course.end.action` | Review the plan | deck | 20 | M6 filled |
 | `course.loading` | Opening this course. | deck | 24 | M3 |
 | `course.error.title` | This course could not be read | deck | 32 | M3 |

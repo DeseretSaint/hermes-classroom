@@ -2693,7 +2693,9 @@ function cb3CourseNodes({ objectives, row, page, complete = false }) {
     // At the course's close every node is done, including whichever section was opened last:
     // SPEC-V3 §5.4's `course-end` says "every node marked done", and leaving the last section as
     // the current step would mark one node not-done on a screen whose own beat is completion.
-    else if (complete && independent) state = 'done'
+    // Completion is the backend's call (`next_step.kind === 'complete'`), so a course whose
+    // objectives are all practice — which never reach `independent` — still reads done.
+    else if (complete) state = 'done'
     else if (entry.objective_id === currentId) state = 'current'
     else if (independent) state = 'done'
     const word =
@@ -3097,6 +3099,7 @@ function CourseHomeAside({
   row,
   nodes,
   evidenceLine,
+  endBody,
   others,
   step,
   big,
@@ -3117,11 +3120,8 @@ function CourseHomeAside({
     : planReview
       ? CB3_COURSE_COPY.planReviewTitle
       : CB3_COURSE_COPY.continueTitle
-  const body = complete
-    ? CB3_COURSE_COPY.endBody
-    : planReview
-      ? CB3_COURSE_COPY.planReviewBody
-      : null
+  const completeBody = typeof endBody === 'string' && endBody ? endBody : CB3_COURSE_COPY.endBody
+  const body = complete ? completeBody : planReview ? CB3_COURSE_COPY.planReviewBody : null
   // U4: the label is the backend's own words for this objective, but the verb comes from the same
   // course-page map the rest of the surface reads, so a due review opens the due section's review,
   // an unapproved plan opens the plan, and a passed section reopens as the revisit trunk's
@@ -3199,34 +3199,38 @@ function CourseHomeAside({
           }, 'primary')
         ]
       }, 'continue'),
-      jsxs('section', {
-        'data-cb-course-evidence': '',
-        style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', width: '100%', minWidth: 0 },
-        children: [
-          jsx('h3', {
-            style: {
-              margin: 0,
-              fontFamily: 'var(--cb3-font-ui)',
-              fontSize: cb3Type('caption'),
-              lineHeight: cb3Lead('caption'),
-              fontWeight: 700,
-              color: cb3Role('ink-soft')
-            },
-            children: CB3_COURSE_COPY.evidenceTitle
-          }, 'heading'),
-          jsx('p', {
-            'data-cb-course-evidence-count': '',
-            style: {
-              margin: 0,
-              fontFamily: 'var(--cb3-font-ui)',
-              fontSize: cb3Type('meta'),
-              lineHeight: cb3Lead('meta'),
-              color: cb3Role('ink')
-            },
-            children: evidenceLine
-          }, 'count')
-        ]
-      }, 'evidence'),
+      // SPEC-V3 M7 prints an evidence count. A course with no evidence-bearing sections has no
+      // count to print, so the row is absent rather than an empty paragraph under a heading.
+      evidenceLine
+        ? jsxs('section', {
+            'data-cb-course-evidence': '',
+            style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', width: '100%', minWidth: 0 },
+            children: [
+              jsx('h3', {
+                style: {
+                  margin: 0,
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('caption'),
+                  lineHeight: cb3Lead('caption'),
+                  fontWeight: 700,
+                  color: cb3Role('ink-soft')
+                },
+                children: CB3_COURSE_COPY.evidenceTitle
+              }, 'heading'),
+              jsx('p', {
+                'data-cb-course-evidence-count': '',
+                style: {
+                  margin: 0,
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('meta'),
+                  lineHeight: cb3Lead('meta'),
+                  color: cb3Role('ink')
+                },
+                children: evidenceLine
+              }, 'count')
+            ]
+          }, 'evidence')
+        : null,
       others_.length
         ? jsxs('section', {
             'data-cb-course-others': '',
@@ -3350,7 +3354,17 @@ function CourseHomeV3({
     ? Math.max(0, declaredDone)
     : Math.max(0, Number(summary.independent) || 0)
   const total = Math.max(0, Number(sectionsTotal) || Number(summary.total_objectives) || 0)
-  const courseComplete = total > 0 && done >= total
+  const nextKind = (row && row.next_step && row.next_step.kind) || 'start_lesson'
+  // Two completion authorities, and the backend's word wins. `next_step.kind === 'complete'` is the
+  // terminal state the kernel reached through the same practice-aware arithmetic the shelf uses, so
+  // an all-practice course — `sections_total: 0`, nothing that can ever reach evidence — closes on
+  // it. The section arithmetic stays for courses that do carry evidence-bearing sections. No
+  // percentage and no second progress authority is introduced: both reads are the backend's.
+  const courseComplete = nextKind === 'complete' || (total > 0 && done >= total)
+  // A completed course with no evidence-bearing sections has no evidence beat to report; its
+  // honest close is the committed attempts the learner worked (`checks_recorded`).
+  const endBody =
+    total > 0 ? CB3_COURSE_COPY.endBody : cbChecksRecordedLine(row && row.checks_recorded)
   // `complete` is passed before the anchors: at the course's close every node reads done, so the
   // last opened section cannot keep a "You are here" word on a completed route.
   const nodes = cb3CourseNodes({ objectives, row, page, complete: courseComplete })
@@ -3376,7 +3390,6 @@ function CourseHomeV3({
   // caller could not resolve still lands on the product lane (D-007), and the chosen source is
   // carried in the markup as `data-cb3-scene` / `data-cb3-scene-artifact`.
   const heroPlate = cb3CourseHeroResolution({ plate })
-  const nextKind = (row && row.next_step && row.next_step.kind) || 'start_lesson'
   // U4: the review verb belongs to the section the scheduler says is due. A caller that brings its
   // own review action wins; otherwise the route's own section opener carries it, so the Continue
   // plate never becomes a dead control on a surface that can still open the due section.
@@ -3585,6 +3598,7 @@ function CourseHomeV3({
             row,
             nodes,
             evidenceLine,
+            endBody,
             others,
             step,
             big: wide,

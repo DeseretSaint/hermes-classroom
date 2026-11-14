@@ -372,7 +372,7 @@ filled plus one outline (D1); stars and progress bars become an evidence tally.
 | H2 | threshold band | content 905, top 32, 216 tall | 852, top 24, 200 tall | 428, top 16, 184 tall | `home.title`, `home.sub` |
 | H3 | action row | 2 × 48 tall, gap 16, starts 24 under the sub | same | stacked, 48 each, gap 12, full width | `home.primary`, `home.secondary` |
 | H4 | shelf heading | 24 tall, 32 under the action row | 24, 24 under | 24, 24 under | `home.shelf.label` |
-| H5 | shelf frame | 905 × 227 (art 143 + text 68 + ledge 16), 4 × 214, gap 16 | 852 × 266, 3 × 273, gap 16 | rows 428 × 88, gap 12 | `home.card.meta`, `home.card.new`, `home.card.next` |
+| H5 | shelf frame | 905 × 227 (art 143 + text 68 + ledge 16), 4 × 214, gap 16 | 852 × 266, 3 × 273, gap 16 | rows 428 × 88, gap 12 | `home.card.meta`, `home.card.practice`, `home.card.new`, `home.card.next` |
 | H6 | lower ledge + fox box | ledge 16 tall, fox box 176 × 160 at the right end | 160 × 144 | hidden | `home.tag.firstuse` (first use only) |
 | H7 | settings entry | 44 × 44, top-right of H2 | same | same | `home.settings` |
 
@@ -383,7 +383,7 @@ the ground line the fox stands on. The shelf never renders as a bordered box: no
 
 | State | Shows | One next action | Copy ids |
 |---|---|---|---|
-| default | 1–4 real courses on the shelf, each with title, subject line, evidence line; newest or most urgent first | the top card's own next step — activating the card opens the course; the filled primary stays `Start a course` | `home.card.meta`, `home.card.new`, `home.card.next` |
+| default | 1–4 real courses on the shelf, each with title, subject line, evidence line; newest or most urgent first; a course whose objectives are all practice prints its recorded checks, never `0 of 0 sections done` | the top card's own next step — activating the card opens the course; the filled primary stays `Start a course` | `home.card.meta`, `home.card.practice`, `home.card.new`, `home.card.next` |
 | first-use | empty shelf geometry preserved; fox `wave` holding the tag; one short line says what starting does | `Start your first course` (same filled control, longer label) | `home.firstuse.title`, `home.firstuse.sub`, `home.firstuse.primary`, `home.tag.firstuse` |
 | overflow | 5+ courses at wide / 4+ at mid; shelf scrolls inside its frame with a 32 px right mask, keyboard order intact | scroll or `Browse library` | `home.overflow.hint` |
 | empty | no courses match this filter, or everything is archived | `See archived courses` (quiet) | `home.empty.title`, `home.empty.body`, `home.empty.action` |
@@ -576,7 +576,7 @@ route px; below that it moves under the route and keeps its order (Continue, evi
 | no-world | plate region becomes a quiet paper field with the course title; everything else unchanged | `Continue <section>` — the lesson does not need the art | `course.noworld.title`, `course.noworld.body` |
 | world-running | plate shows the in-flight state with the last approved plate kept underneath | `Continue <section>` | `course.world.running` |
 | world-rejected | plate falls back to the typographic field and says so | `Open World Studio` (quiet) | `course.world.rejected.title`, `course.world.rejected.action` |
-| course-end | every node marked done; one authored complete beat; evidence total is the close | `Review the plan` | `course.end.title`, `course.end.body`, `course.end.action` |
+| course-end | every node marked done; one authored complete beat; evidence total is the close when the course has evidence-bearing sections, and the recorded checks are the close when it has none (the backend's `next_step.kind = complete` is the authority either way) | `Review the plan` | `course.end.title`, `course.end.body`, `course.end.practice`, `course.end.action` |
 | loading | head and plate boxes as skeletons; the route spine already draws | none; the head says it is opening | `course.loading` |
 | error | plate keeps size; the route shows the last recorded state, not an empty path | `Try again` | `course.error.title`, `course.error.body`, `course.error.action` |
 
@@ -654,7 +654,7 @@ renders an element not listed here is not covered by this spec and must not ship
 | Star row on each card | HOME, DISC, MAP | nothing; the evidence line replaces it | `library_item.evidence_summary` / CP-005 `sections_done`,`sections_total` | `home.card.meta` |
 | `NEW` circle on cards | DISC, MAP | `New` only when the course has no attempts yet | `evidence_summary.independent == 0` and `next_step.kind == "start_lesson"`; CP-005 `is_new` | `home.card.new` |
 | `Life` / `Hands-on` / `Creative` circles | DISC | one subject line, from the course's subject label | `world_brief.subject_domain` or `recipe`; CP-005 `subject_label` | `home.card.subject` |
-| Progress bar on every card | HOME, MAP | evidence tally `2 of 5 sections done` | `sections_done`/`sections_total`; today `evidence_summary.independent`/`total_objectives` | `home.card.meta` |
+| Progress bar on every card | HOME, MAP | evidence tally `2 of 5 sections done` | `sections_done`/`sections_total`; today `evidence_summary.independent`/`total_objectives`; CP-005 `checks_recorded` when `sections_total` is 0 | `home.card.meta`, `home.card.practice` |
 | `240 XP` and flame row outside Game | CLASS | XP chip and Game bar only on the Game layer | `engagement.read.xp_total`, `level`, `xp_into_level` | `classroom.game.xp` |
 | Streak flames beside the header | MAP | nothing in this slice | none | — |
 | `215 proofs collected` / `2 of 5 proofs` | CLASS | `2 of 5 checks recorded` | counted from recorded checks (`evidence.inspect`) | `classroom.evidence.count` |

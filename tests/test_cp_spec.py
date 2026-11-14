@@ -66,6 +66,7 @@ CP005_FORWARD = frozenset(
         "library_item.subject_label",
         "library_item.sections_done",
         "library_item.sections_total",
+        "library_item.checks_recorded",
         "library_item.is_new",
     }
 )
