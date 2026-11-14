@@ -155,6 +155,7 @@ const fakeRest = async (path, options = {}) => {
         evidence_class: 'cold',
         criteria: payload.criteria || [],
         ...(payload.expected !== undefined ? { expected: payload.expected } : {}),
+        ...(payload.feedback !== undefined ? { feedback: payload.feedback } : {}),
         next_action: verdict === 'pass' ? 'advance' : 'retry',
         revision: 9
       }
@@ -326,6 +327,14 @@ const after = {
     return node ? node.getAttribute('data-cb3-verdict') : null
   })(),
   verdictText: verdictText(),
+  missRule: (() => {
+    const node = document.querySelector('[data-cb3-miss-rule]')
+    return node ? (node.textContent || '').replace(/\s+/g, ' ').trim() : null
+  })(),
+  missRuleNextAction: (() => {
+    const node = document.querySelector('[data-cb3-miss-rule]')
+    return node ? node.getAttribute('data-cb3-miss-rule') : null
+  })(),
   proseStep: proseStep(),
   prose: prose(),
   check: checkPresent()
@@ -761,6 +770,48 @@ class ClassroomItem34VerdictTest(unittest.TestCase):
             ],
         )
         self.assertEqual(data["after"]["verdictText"], "Not quite.")
+
+
+class ClassroomMissRuleTest(unittest.TestCase):
+    """Upgrade 13: a miss renders the authored rule above the retry control."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.rig = _Rig()
+
+    RULE = "Read the scale to one decimal place before you compare the two readings."
+
+    def test_a_miss_renders_the_authored_rule_above_the_check_action(self) -> None:
+        data = self.rig.run(
+            "wrong-text",
+            verdict="not_yet",
+            answer="41.2",
+            stimulus={"prompt": "Read the gauge.", "format": "text", "choices": [], "items": []},
+            criteria=[{"id": "c1", "observed": "outside tolerance by 1.5", "met": False}],
+            feedback={
+                "rule": self.RULE,
+                "observed": "outside tolerance by 1.5",
+                "answer": "41.2",
+                "next_action": "retry_attempt",
+            },
+        )
+        after = data["after"]
+        self.assertEqual(after["missRule"], f"The rule this needs: {self.RULE}")
+        self.assertEqual(after["missRuleNextAction"], "retry_attempt")
+        # The rule names what had to hold; the grader's own sentence never becomes the rule.
+        self.assertNotIn("outside tolerance", after["missRule"])
+
+    def test_a_miss_without_an_authored_rule_renders_no_rule(self) -> None:
+        data = self.rig.run(
+            "wrong-text",
+            verdict="not_yet",
+            answer="suki desu",
+            stimulus={"prompt": "Write the polite form.", "format": "text", "choices": [], "items": []},
+            criteria=[
+                {"id": "c1", "observed": "does not match an accepted answer", "met": False}
+            ],
+        )
+        self.assertIsNone(data["after"]["missRule"])
 
 
 class ClassroomItem36NextSectionTest(unittest.TestCase):

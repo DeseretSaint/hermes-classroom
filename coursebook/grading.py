@@ -64,6 +64,10 @@ class GradingResult:
     criteria: list[dict[str, Any]] = field(default_factory=list)
     provenance: dict[str, Any] = field(default_factory=dict)
     evidence_class: str | None = None
+    #: The authored miss block (upgrade 13): the rule the check tests, the learner's own answer and
+    #: the one permitted next action. ``None`` on a pass and on a check that authored no rule — it
+    #: is never inferred, and the aux lane never writes one (a model diagnosis can teach the error).
+    feedback: dict[str, Any] | None = None
 
 
 #: ``grader(answer, rubric, construct, context, attempt_id) -> dict``.
@@ -92,10 +96,49 @@ def reference_hash(reference: dict[str, Any]) -> str:
 
 
 def _criteria_from(outcomes: list[validators.Outcome]) -> list[dict[str, Any]]:
-    return [
-        {"id": outcome.criterion_id[:80], "observed": outcome.observed[:500], "met": bool(outcome.met)}
-        for outcome in outcomes[:40]
-    ]
+    rows: list[dict[str, Any]] = []
+    for outcome in outcomes[:40]:
+        row: dict[str, Any] = {
+            "id": outcome.criterion_id[:80],
+            "observed": outcome.observed[:500],
+            "met": bool(outcome.met),
+        }
+        # The authored miss travels with the criterion it explains, so a replayed attempt rebuilds
+        # the same block from the stored row and no second column is needed.
+        if getattr(outcome, "rule", ""):
+            row["rule"] = outcome.rule[:validators.MISS_RULE_MAX_CHARS]
+        if getattr(outcome, "next_action", ""):
+            row["next_action"] = outcome.next_action
+        if getattr(outcome, "answer", ""):
+            row["answer"] = outcome.answer[:300]
+        rows.append(row)
+    return rows
+
+
+def feedback_from_criteria(criteria: Any, verdict: str) -> dict[str, Any] | None:
+    """Rebuild the authored miss block from stored criteria. Never invents a rule.
+
+    Used by the replay paths (``attempt.submit`` with a seen nonce, ``attempt.lookup``) so a result
+    read back from the attempt row says exactly what the live result said.
+    """
+    if verdict == "pass" or not isinstance(criteria, list):
+        return None
+    for row in criteria:
+        if not isinstance(row, dict) or row.get("met"):
+            continue
+        rule = str(row.get("rule") or "").strip()
+        if not rule:
+            continue
+        block: dict[str, Any] = {
+            "rule": rule[:validators.MISS_RULE_MAX_CHARS],
+            "observed": str(row.get("observed") or "")[:300],
+            "next_action": str(row.get("next_action") or validators.MISS_NEXT_ACTIONS[0]),
+        }
+        if row.get("answer"):
+            block["answer"] = str(row["answer"])[:300]
+        return block
+    return None
+
 
 
 def grade_closed(
@@ -109,9 +152,11 @@ def grade_closed(
     outcome = validators.grade_reference(reference, answer, criterion_id=criterion_id)
     pass_rule = str((rubric or {}).get("pass_rule") or "all")
     verdict = validators.verdict_for([outcome], pass_rule=pass_rule)
+    criteria = _criteria_from([outcome])
     return GradingResult(
         verdict=verdict,
-        criteria=_criteria_from([outcome]),
+        criteria=criteria,
+        feedback=feedback_from_criteria(criteria, verdict),
         provenance={
             "grader": f"deterministic:{reference.get('kind')}",
             "reference_sha256": reference_hash(reference),

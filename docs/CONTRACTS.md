@@ -2912,3 +2912,43 @@ optionality, the frozen v27 document and that the shipped v28 is byte-identical 
 `tests/test_e2e_l1_revisit.py` passes a generated check, reopens it as a revisit, proves the
 objective state and `engagement.read.xp_total` do not move, and proves `progression.challenge_out`
 reaches the same clone.
+
+
+## v29 delta (upgrade 13) — a miss names the rule, and the teaching turn is told it
+
+`cb.rpc` v29 is v28 with **one additive amendment**, in one method.
+
+Before v29, `attempt.submit` returned one deterministic grader sentence per criterion
+("does not match an accepted answer", "outside tolerance by 0.5") and the continuation prompt the
+teaching chat receives carried the verdict, the next action, the evidence class and an objective id
+— never the criteria. Neither the pane nor the tutor could say which rule was missed.
+
+| Record | Optional key | What it is, exactly |
+|---|---|---|
+| `attempt.submit` response | `feedback` | `{rule, next_action, observed?, answer?}` — the authored rule the check tests, the one action the miss permits, the grader's own sentence as detail, and the learner's own answer. |
+| `attempt.submit` response → `criteria[]` | `rule`, `next_action`, `answer` | The same facts on the unmet criterion, so a replayed or re-read attempt rebuilds the block from the row it was stored on rather than re-grading. |
+
+The block is **authored with the check**, never generated at grading time: it lives on the check's
+stored `reference_json.feedback` (sealed by `validators.seal_reference`), and a selection check may
+carry one rule per accepted-answer group under `feedback.groups`. Two authoring mistakes are refused
+at seal time rather than printed to a learner:
+
+- a rule that **restates an accepted answer** turns a retry into a copying task, which is exactly why
+  the pre-v29 design withheld the criteria;
+- a rule whose `next_action` is not one of `retry_attempt`, `explain` or `select_alternative`. A miss
+  never names a pass action, because a wrong answer does not grant access.
+
+A response from a check that authored no rule **omits** `feedback` and keeps its exact v28 shape and
+bytes, and a `needs_retry` names no rule at all — the grader that could not finish does not know
+which rule was missed, so it says nothing. No method, required key, error code, job kind, answer
+kind, verdict, evidence class or vocabulary value moves. `rpc.v28.json` stays byte-identical on disk
+(sha256 `6d09c8d8f5d246e4f6b684ec0ee0bd3f42068f6fe27fee673744b1b61335d35a`) and `x-supersedes` names
+`.../rpc/v28`. The wire echoes (`contract_version` on both response envelopes and `health.get`) move
+together to 29. `rpc.v29.json` is derived from the frozen v28 document by
+`probes/derive_rpc_v29.py`, not hand-copied.
+
+Regression guard: `tests/test_contracts.py::V29AmendmentTest` pins the additive property set, the
+optionality, the frozen v28 document and that the shipped v29 is byte-identical to its derivation;
+`tests/test_upgrade_miss_feedback.py` proves a `not_yet` result carries the authored rule and the
+learner's answer, that `pre_turn`'s context names the rule, that a leaky rule is refused at seal time
+and dropped by the authoring path, and that a check with no authored rule is unchanged.

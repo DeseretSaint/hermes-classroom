@@ -316,6 +316,51 @@ function verdictTakeaway(result, criteria) {
 }
 
 /**
+ * The authored miss block a non-pass carries, or `null`.
+ *
+ * Upgrade 13: `attempt.submit` returns `feedback` — the rule the check tests, the learner's own
+ * answer and one permitted next action — when the check authored one. It is the only rule the pane
+ * may print: the deterministic grader's own sentence is audit text (`does not match an accepted
+ * answer`) and a model-written diagnosis is never requested. Nothing is derived here; a response
+ * without the block renders no rule rather than a guess.
+ */
+function verdictMissFeedback(result) {
+  if (!result || result.verdict === 'pass') return null
+  const feedback = result.feedback
+  if (!feedback || typeof feedback !== 'object') return null
+  const rule = String(feedback.rule == null ? '' : feedback.rule).trim()
+  if (!rule) return null
+  return {
+    rule,
+    nextAction: feedback.next_action || 'retry_attempt',
+    answer: feedback.answer == null ? null : String(feedback.answer).trim() || null
+  }
+}
+
+/**
+ * The rule a miss named, above the retry control.
+ *
+ * It is authored with the check (never generated at grading time), so it says what had to hold
+ * without stating the answer. The learner's own answer is quoted back as evidence of what was read;
+ * the school's words and the pipeline's words stay apart.
+ */
+function MissRuleNote({ feedback }) {
+  const miss = feedback && feedback.rule ? feedback : null
+  if (!miss) return null
+  return jsxs('div', {
+    className: 'flex max-w-prose flex-col gap-1',
+    'data-cb-miss-rule': miss.nextAction,
+    children: [
+      jsx(CbLabel, { children: 'The rule this needs' }),
+      jsx('p', { className: 'text-sm leading-relaxed', 'data-cb-miss-rule-text': '', children: miss.rule }),
+      miss.answer
+        ? jsx(QuietNote, { children: `You wrote: ${miss.answer}` })
+        : null
+    ]
+  }, 'miss')
+}
+
+/**
  * The checklist answer object sent to `attempt.submit`.
  *
  * Frozen by docs/CHECKLIST-CONFIRMATION.md §9.2: `kind: "selection"` over the check's own item ids.
@@ -756,6 +801,7 @@ function AttemptVerdict({ result, criteria, checklist, onResumeChecklist, onNewE
   const confirmedCount = confirmed.filter((item) => item.met).length
   const selfReportedPass = selfReported && result.verdict === 'pass'
   const takeaway = verdictTakeaway(result, criteria)
+  const miss = verdictMissFeedback(result)
   return jsxs('div', {
     className: 'flex flex-col gap-2',
     'data-cb-verdict': result.verdict,
@@ -835,6 +881,10 @@ function AttemptVerdict({ result, criteria, checklist, onResumeChecklist, onNewE
               )
             })
           : jsx(QuietNote, { children: 'No criterion detail was returned for this verdict.' }),
+
+      // Upgrade 13: the authored rule sits above the retry control, so a learner reads why before
+      // deciding what to try. Nothing renders when the check authored no rule.
+      miss ? jsx(MissRuleNote, { feedback: miss }, 'miss-rule') : null,
 
       confirmed.length > 0 && !selfReportedPass
         ? jsx(QuietNote, {
@@ -4457,6 +4507,16 @@ function ClassroomCheckCard({
             },
             children: classroomVerdictSentence(result, stimulus, selected)
           }, 'verdict')
+        : null,
+
+      // Upgrade 13: the rule the check authored, above the check's own primary action (which is the
+      // retry after a miss). Absent when the check authored no rule; never invented here.
+      result && verdictMissFeedback(result)
+        ? jsx(ClassroomQuietLine, {
+            role: 'note',
+            'data-cb3-miss-rule': verdictMissFeedback(result).nextAction,
+            children: `The rule this needs: ${verdictMissFeedback(result).rule}`
+          }, 'miss-rule')
         : null,
 
       jsxs('div', {

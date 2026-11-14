@@ -1851,15 +1851,22 @@ def _next_action_for(verdict: str) -> str:
 
 
 def _attempt_result(row, revision: int) -> dict[str, Any]:
-    verdict = row["verdict"]
-    return {
+    verdict = str(row["verdict"])
+    criteria = _json_load(row["criteria_json"], [])
+    result = {
         "attempt_id": row["id"],
         "verdict": verdict,
         "evidence_class": row["evidence_class"],
-        "criteria": _json_load(row["criteria_json"], []),
-        "next_action": _next_action_for(str(verdict)),
+        "criteria": criteria,
+        "next_action": _next_action_for(verdict),
         "revision": int(revision),
     }
+    # Upgrade 13: a replayed or re-read attempt says exactly what the live result said, rebuilt from
+    # the criterion it was stored on rather than re-graded. Absent when the check authored no rule.
+    feedback = grading.feedback_from_criteria(criteria, verdict)
+    if feedback:
+        result["feedback"] = feedback
+    return result
 
 
 def _commit_attempt(
@@ -1926,6 +1933,7 @@ def _commit_attempt(
             "verdict": "needs_retry",
             "evidence_class": evidence_class,
             "criteria": [],
+            # A grader that could not finish names no rule: it does not know which one was missed.
             "next_action": "retry_grading",
             "revision": int(enrollment["revision"]),
         }
@@ -1999,6 +2007,11 @@ def _commit_attempt(
         "next_action": next_action,
         "revision": to_revision,
     }
+    if graded.feedback:
+        # The authored miss block, present only when the check authored one: a response for an
+        # unauthored check keeps its exact pre-upgrade shape, and the reference answer is never
+        # in the block.
+        result["feedback"] = graded.feedback
     _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), to_revision, result)
     return to_revision, result
 

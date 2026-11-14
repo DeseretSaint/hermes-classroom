@@ -3646,7 +3646,13 @@ function PlayerVerdict({ result, criteria, checklist, answer }) {
   const override = Boolean(result) && result.verdict === 'overridden'
   const selfReported = Boolean(result) && result.evidence_class === 'self_reported'
   const why = passed ? verdictTakeaway(result, criteria) : nextActionCopy(result)
-  const rule = unmet.length > 0 ? String(unmet[0].observed || unmet[0].id || '').trim() : null
+  // Upgrade 13: the authored rule the check named, when it named one. Otherwise the old behaviour:
+  // the first unmet criterion's own text. The deterministic grader's sentence is never preferred
+  // over an authored rule.
+  const authored = verdictMissFeedback(result)
+  const rule = authored
+    ? authored.rule
+    : unmet.length > 0 ? String(unmet[0].observed || unmet[0].id || '').trim() : null
   const answerText = Array.isArray(answer) ? answer.join('; ') : String(answer || '').trim()
   return jsxs('div', {
     'data-cb-player-feedback': passed ? 'correct' : 'not_quite',
