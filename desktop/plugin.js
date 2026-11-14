@@ -3820,39 +3820,53 @@ function cbShelfEdgeMask(scrollLeft, clientWidth, scrollWidth) {
  */
 
 /* ── Home scene (wide) ────────────────────────────────────────────────────────────────────────
- * The owner's approved Home is a room, not a dashboard: a centred invitation, one wooden shelf of
- * collectible cards, and a lower ledge with the mascot, the clock and the new-course tag. This
- * layer is used only on a route at least 1200 px wide; every narrower layout (and jsdom, which
- * reports width 0) keeps the existing compact Home, so the scene never degrades into a list.
- * Geometry is authored at 1344x768 — the reference canvas — and the block is centred on wider
+ * The owner's adopted Home is a painted street, not a dashboard: a hanging sign that asks the
+ * question and offers the two doors, four course boards hung on the wall, and the mascot on the
+ * paving below them. This layer is used only on a route at least 1200 px wide; every narrower
+ * layout (and jsdom, which reports width 0) keeps the existing compact Home, so the scene never
+ * degrades into a list.
+ * Geometry is authored at 1344x768 — the plate's canvas — and the block is centred on wider
  * routes. Art comes from the shipped object kit and each card's real cover artifact; no rating is
  * invented, the row under a title is the course's own section progress.
  */
-/* CP-053 — the scene's authored geometry, measured off the binding reference frame
- * (`docs/concept-parity/refs/home.png`, R-HOME in `docs/concept-parity/refs/REFS.md`, 1344x768).
- * Every number below is a pixel position on that canvas. `design/home-scene.html` is generated
- * from this module by `scripts/gen-home-proof.py` and `tests/test_desktop_home_scene_parity.py`
- * fails if the committed page differs from a fresh render, so the proof cannot drift from the
- * shipped scene. The room's own material tones (wall, plank, card stock, tag) are scene-local
- * because the reference is a lit room, not the desk's flat paper.
+/* CP-053 / G2 — the scene's authored geometry, re-pinned to the adopted painted plate.
+ *
+ * R-HOME is now `docs/concept-parity/refs/home-plate-1344.png` (1344x768, sha256 a27038ea…), the
+ * width-extended street plate E1 delivered. Every number below is a pixel position measured on that
+ * plate by E1 (`docs/concept-parity/refs/home-plate-geometry.md`) and the scene's controls are
+ * authored onto the painted objects it names, not onto empty canvas:
+ *
+ *   - four hanging boards, board1 (261, 319.1) → (379, 458.9), 118 x 139.8, pitch 134 → the four
+ *     course cards, so a card lands exactly on a painted board;
+ *   - the baked CTA pill (218, 126) → (392, 170), 174 x 44 → the primary pill lands exactly on it;
+ *   - the baked copy block x 210..354, y 54..124 → the hero panel covers it, so the plate's mockup
+ *     sentence is never painted beside the live one;
+ *   - the fox's painted silhouette (868, 506) → (967, 683) → the animated fox stands on the same
+ *     paving row (feet 683) and covers the painted one;
+ *   - the plaster patch right of board4 (790, 350) → (864, 486) → the "New course" tag;
+ *   - the plaster band under the board row (620, 462) → (862, 502) → the See-all door.
+ *
+ * `design/home-scene.html` is generated from this module by `scripts/gen-home-proof.py` and
+ * `tests/test_desktop_home_scene_parity.py` fails if the committed page differs from a fresh
+ * render, so the proof cannot drift from the shipped scene. The room's own material tones (wall,
+ * card stock, tag) are scene-local because the reference is a lit street, not the desk's flat paper.
  */
 const CB_HOME_SCENE = Object.freeze({
   canvas: Object.freeze({ width: 1344, height: 768 }),
-  hero: Object.freeze({ top: 128, title: 72, titleTracking: -1.2, subline: 32, sublineGap: 24, ctaGap: 26, ctaHeight: 48, ctaPadding: 22, ctaGapX: 24 }),
-  cards: Object.freeze({ top: 384, left: 273, width: 176, height: 175, gap: 24, cover: 106, radius: 7 }),
-  shelf: Object.freeze({ left: 219, width: 915, top: 559, height: 18, lip: 10 }),
-  ledge: Object.freeze({ left: 130, width: 1150, top: 684, height: 30, face: 24 }),
-  // VQ-011: the plate is the kit's square 256x256 tag object painted at its own aspect (148x148,
-  // rope loop included). The old 164x88 box with background-size: 100% 100% squashed the master
-  // 1.0x horizontally and 0.34x vertically, which bent the rope hole and the corners. The box top
-  // is the shelf's top edge (the rope hangs from behind it) and its bottom lands on the ledge.
-  tag: Object.freeze({ left: 888, top: 559, width: 148, height: 148, font: 23 }),
-  // D-007 seating: the animated group stands ON plank two, whose top edge is y=684. The clock's
-  // painted base sits 2.3 px above its 118 px box bottom and the fox's painted feet 4.9 px above its
-  // 208 px box bottom, so the boxes start at 568 and 481 to land base/feet on 683.7 / 684.1. The fox
-  // also clears the clock's opaque right edge by 11.4 px (1099.5 -> 1153.9): no overlap.
-  clock: Object.freeze({ left: 1042, top: 568, size: 118 }),
-  fox: Object.freeze({ left: 1110, top: 481, size: 208 })
+  // E1: baked copy block x 210..354, y 54..124; CTA pill x 218..392, y 126..170. The panel starts
+  // 22 px left of the pill so its content edge (196 + 22) is the pill's own left edge, and its top
+  // is high enough to swallow the mockup's two copy lines.
+  hero: Object.freeze({ left: 196, top: 30, width: 520, height: 160, padding: 22, question: 40, subline: 20, sublineGap: 2, ctaTop: 126, ctaHeight: 44, ctaGapX: 12 }),
+  // E1: board1 (261, 319.1)..(379, 458.9) = 118 x 139.8; boards repeat at 134 px pitch.
+  cards: Object.freeze({ top: 319, left: 261, width: 118, height: 140, gap: 16, cover: 75, radius: 7 }),
+  // E1: plaster patch right of board4, 74 x 136; the tag is square on the master's own aspect.
+  tag: Object.freeze({ left: 790, top: 356, width: 74, height: 74, font: 14 }),
+  // E1: the painted fox (868, 506)..(967, 683). The kit fox's painted feet sit 203.1 px above its
+  // 208 px box bottom, so top 480 lands the feet at 683.1 on the plate's own fox row, and the
+  // opaque art (43.9..208 wide) spans 834.9..999: it covers the painted silhouette it replaces.
+  fox: Object.freeze({ left: 791, top: 480, size: 208 }),
+  // E1: plaster band under the board row, 242 x 40 at (620, 462).
+  seeAll: Object.freeze({ left: 700, top: 462, height: 40 })
 })
 
 function HomeSceneCard({ slot, index, cover, onOpen }) {
@@ -3957,11 +3971,8 @@ function useHomeSceneFit() {
 }
 
 function HomeScene({ slots, canCreate, onStartCreate, onBrowseLibrary, onOpenCourse, onShowAll, overflow }) {
-  const wood = cb3ObjectSource('shelf-plank')
-  const clock = cb3ObjectSource('clock')
   const tagObject = cb3ObjectSource('tag')
   const heroPlate = cb3KitSource('home-hero')
-  const woodImage = wood ? { backgroundImage: `url(${wood})` } : undefined
   const coverPlan = homeCoverPlan(slots)
   // E2E U9: the authored frame is 1344x768 and the scene is chosen from 1200 px up, so a narrower
   // room scales the whole plate instead of cropping the fox and the ledge off its right edge.
@@ -4024,28 +4035,17 @@ function HomeScene({ slots, canCreate, onStartCreate, onBrowseLibrary, onOpenCou
           )
         }, 'cards'),
         jsx('div', {
-          'data-cb-home-scene-plank-one': '',
-          'aria-hidden': 'true',
-          style: woodImage,
-          children: jsx('i', {})
-        }, 'plank-one'),
-        jsx('div', {
           'data-cb-home-scene-tag': '',
           style: tagObject ? { backgroundImage: `url(${tagObject})` } : undefined,
           children: CB_HOME_V3_COPY.tagNew
         }, 'tag'),
-        clock
-          ? jsx('img', { 'data-cb-home-scene-clock': '', src: clock, alt: '', 'aria-hidden': 'true' }, 'clock')
-          : null,
         jsx('div', { 'data-cb-home-scene-fox': '', children: jsx(FoxPose, { pose: 'clock', size: CB_HOME_SCENE.fox.size }, 'fox') }, 'fox-wrap'),
-        jsx('div', {
-          'data-cb-home-scene-plank-two': '',
-          'aria-hidden': 'true',
-          style: woodImage,
-          children: jsx('i', {})
-        }, 'plank-two'),
-        // The shelf shows four cards; a fifth course is reached through this door, on the shelf's
-        // own right edge rather than through a cropped fifth card nobody can click.
+        // The plate paints four boards and a bench, not a shelf: the cards hang on the boards and
+        // the fox stands on the paving row the plate's own fox stands on. The kit's planks and clock
+        // are retired from this surface — a plank painted here would be a second shelf, and a clock
+        // has no painted object to land on.
+        // The shelf shows four cards; a fifth course is reached through this door, on the plaster
+        // band under the board row rather than through a cropped fifth card nobody can click.
         overflow && onShowAll
           ? jsx('button', {
               type: 'button',
@@ -20777,24 +20777,27 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 
 [data-cb-v3] [data-cb-home-scene-hero] {
   position: absolute;
-  top: 128px;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
+  left: 196px;
+  top: 30px;
+  width: 520px;
+  height: 162px;
+  display: block;
   z-index: 4;
 }
 
-/* The scrim is the token canvas behind the text block only: the art is not darkened, and the text
-   holds >= 4.5:1 on the plate's quiet sky. 0.60 is the measured floor for the plate's darkest
-   upper-third pixel under the ink hero; the vignette's 0.55 left forest at 4.45:1. */
+/* G2 — the panel is the sign the question is painted on, and it is opaque on purpose: the plate
+   carries a baked mockup sentence at x 210..354, y 54..124 (E1 §5), and a translucent scrim would
+   let that second heading show through the live one. Its content edge is at 218 px — the measured
+   left edge of the plate's own CTA pill — so every run starts where the plate's copy starts. */
 [data-cb-v3] [data-cb-home-scene-panel] {
   position: relative;
   isolation: isolate;
-  max-width: 760px;
-  padding: 18px 32px 24px;
+  width: 100%;
+  height: 100%;
+  padding: 22px;
+  box-sizing: border-box;
   border-radius: var(--cb3-radius-round);
-  text-align: center;
+  text-align: left;
 }
 
 [data-cb-v3] [data-cb-home-scene-panel]::before {
@@ -20804,7 +20807,7 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   z-index: -1;
   border-radius: inherit;
   background-color: var(--cb3-canvas);
-  opacity: 0.6;
+  opacity: 1;
 }
 
 [data-cb-v3] [data-cb-home-hero-band] {
@@ -20827,26 +20830,30 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 }
 
 [data-cb-v3] [data-cb-home-scene-subline] {
-  margin: 24px 0 0;
+  margin: 2px 0 0;
   font-family: var(--cb3-font-ui);
-  font-size: var(--cb3-text-heading);
-  line-height: var(--cb3-leading-heading);
+  font-size: var(--cb3-text-lead);
+  line-height: var(--cb3-leading-lead);
   font-weight: 500;
   color: var(--cb3-ink);
 }
 
 [data-cb-v3] [data-cb-home-scene-cta] {
-  margin-top: 26px;
+  margin-top: 4px;
   display: flex;
-  gap: 24px;
-  justify-content: center;
+  gap: 12px;
+  justify-content: flex-start;
 }
 
+/* G2 — the primary pill is 174 x 44 at (218, 126): the exact quad of the plate's baked CTA
+   (E1 §5, the cta_button quad), so the live control covers the painted one instead of sitting
+   beside it. The fixed width is the plate's, not the label's; the label is the deck's own
+   sentence. */
 [data-cb-v3] [data-cb-home-scene-cta] button {
   border: 0;
   border-radius: var(--cb3-radius-pill);
-  height: 48px;
-  padding: 0 22px;
+  height: 44px;
+  padding: 0 12px;
   font-family: var(--cb3-font-ui);
   font-size: var(--cb3-text-body);
   font-weight: 600;
@@ -20856,19 +20863,27 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   cursor: pointer;
 }
 
+[data-cb-v3] [data-cb-home-scene-cta] button[data-cb-home-scene-primary] {
+  width: 174px;
+  padding: 0 6px;
+}
+
 /* One filled primary per surface: the browse door is the quiet warm field that carries ink. */
 [data-cb-v3] [data-cb-home-scene-cta] button[data-cb-home-scene-secondary] {
   color: var(--cb3-ink);
   background-color: var(--cb3-terracotta-quiet);
 }
 
+/* G2 — the four boards hang on the plate's wall at x 261/395/529/663, y 319, each 118 x 139.8
+   (E1 §5). The card is authored to that quad, 16 px of pitch left over, so a card lands exactly on
+   its board and the painted board's own mini-art is covered, not doubled. */
 [data-cb-v3] [data-cb-home-scene-cards] {
   position: absolute;
-  top: 384px;
-  left: 273px;
-  height: 175px;
+  top: 319px;
+  left: 261px;
+  height: 140px;
   display: flex;
-  gap: 24px;
+  gap: 16px;
   align-items: flex-end;
   z-index: 3;
   margin: 0;
@@ -20878,9 +20893,9 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 
 [data-cb-v3] [data-cb-home-scene-card] {
   position: relative;
-  width: 176px;
-  height: 175px;
-  flex: 0 0 176px;
+  width: 118px;
+  height: 140px;
+  flex: 0 0 118px;
   background-color: var(--cb3-card-stock);
   border-radius: var(--cb3-radius-soft);
   box-shadow: var(--cb3-elev-1);
@@ -20914,16 +20929,14 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   outline-offset: -2px;
 }
 
-[data-cb-v3] [data-cb-home-scene-card]:nth-child(1) { transform: rotate(-1.6deg); }
-[data-cb-v3] [data-cb-home-scene-card]:nth-child(2) { transform: rotate(0.8deg); }
-[data-cb-v3] [data-cb-home-scene-card]:nth-child(3) { transform: rotate(-0.6deg); }
-[data-cb-v3] [data-cb-home-scene-card]:nth-child(4) { transform: rotate(1.4deg); }
+/* The plate's boards are hung straight, so the cards do not rotate: a 1.6 deg tilt would push a
+   corner ~4 px off the painted board it is authored onto. */
 
 [data-cb-v3] [data-cb-home-scene-card] img,
 [data-cb-v3] [data-cb-home-scene-cover] {
   display: block;
   width: 100%;
-  height: 106px;
+  height: 75px;
   object-fit: cover;
 }
 
@@ -20937,7 +20950,7 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 }
 
 /* UI-K9 — the printed plate for a course with no plate for its subject: kit card stock inside the
- * 176x106 window, carrying the course's own two-letter mark — never the lesson room's painted cafe,
+ * 118x75 window, carrying the course's own two-letter mark — never the lesson room's painted cafe,
  * which would claim a subject the course may not have, and never a second copy of the title the card
  * already sets below (GM-002). All paint lives here, so the scene carries no inline colour. */
 [data-cb-v3] [data-cb-home-scene-cover="type"] {
@@ -20946,7 +20959,7 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   align-items: center;
   justify-content: center;
   gap: 4px;
-  height: 106px;
+  height: 75px;
   overflow: hidden;
   background-color: var(--cb3-canvas-edge);
   font-family: var(--cb3-font-display);
@@ -20980,11 +20993,18 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 }
 
 [data-cb-v3] [data-cb-home-scene-body] {
-  padding: 8px 10px 10px;
+  padding: 6px 8px 8px;
 }
 
+/* G2 — a 118 px card holds ~11 characters per line at meta size, so the title is clamped to two
+   lines and the progress bar is the only thing under it. The clamp is what keeps a long course
+   title inside the board it is painted on (CP-TEXT-GATE measures spill, not intent). */
 [data-cb-v3] [data-cb-home-scene-title] {
   margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
   font-family: var(--cb3-font-ui);
   font-size: var(--cb3-text-meta);
   line-height: var(--cb3-leading-meta);
@@ -20993,8 +21013,8 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 }
 
 [data-cb-v3] [data-cb-home-scene-progress] {
-  margin-top: 9px;
-  height: 5px;
+  margin-top: 6px;
+  height: 4px;
   border-radius: var(--cb3-radius-pill);
   background-color: var(--cb3-rule);
   overflow: hidden;
@@ -21020,65 +21040,25 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   border: 0;
 }
 
-[data-cb-v3] [data-cb-home-scene-plank-one] {
-  position: absolute;
-  left: 219px;
-  top: 559px;
-  width: 915px;
-  height: 18px;
-  /* The cards sit in front of the plank, as in the reference; the wood passes behind them. */
-  z-index: 1;
-  background-color: var(--cb3-wood);
-  background-repeat: repeat-x;
-  background-size: auto 100%;
-  border-bottom: 1px solid var(--cb3-wood-edge);
-  box-shadow: var(--cb3-elev-2);
-}
-
-[data-cb-v3] [data-cb-home-scene-plank-one] > i {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 18px;
-  height: 10px;
-  background-color: var(--cb3-rule);
-  border-bottom: 1px solid var(--cb3-wood-edge);
-}
-
-[data-cb-v3] [data-cb-home-scene-plank-two] {
-  position: absolute;
-  left: 130px;
-  top: 684px;
-  width: 1150px;
-  height: 30px;
-  z-index: 1;
-  background-color: var(--cb3-wood);
-  background-repeat: repeat-x;
-  background-size: auto 100%;
-}
-
-[data-cb-v3] [data-cb-home-scene-plank-two] > i {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 30px;
-  height: 24px;
-  background-color: var(--cb3-wood);
-  border-bottom: 1px solid var(--cb3-wood-edge);
-  box-shadow: var(--cb3-elev-2);
-}
+/* G2 — the kit's two planks are retired from this surface. The plate paints its own wall coping
+   (y 309.6, E1 §4) and its own bench (seat top 488.8), so a DOM plank here would be a second shelf
+   in front of a painted one. The kit keeps both objects for the surfaces that still use them. */
 
 /* VQ-011 — the tag paints the kit's own square 256x256 kraft tag at its natural aspect: the box is
    square and contain is the one size that can never stretch the file (a box-derived two-value size
    such as 100% 100% squashed the master 1.0x by 0.34x and bent the rope hole and corners).
    No plate colour and no box shadow: the file's corners are transparent, so a box-derived fill or
-   shadow would paint a square around the object. The words stay DOM type on the kraft body. */
+   shadow would paint a square around the object. The words stay DOM type on the kraft body.
+   G2 — the box is the plaster patch right of board4 (E1 §5: 790..864 x 350..486), the one painted
+   surface on this wall with room for a tag; the type wraps to two lines so it stays on the kraft. */
 [data-cb-v3] [data-cb-home-scene-tag] {
   position: absolute;
-  left: 888px;
-  top: 559px;
-  width: 148px;
-  height: 148px;
+  left: 790px;
+  top: 356px;
+  width: 74px;
+  height: 74px;
+  box-sizing: border-box;
+  padding: 0 8px;
   z-index: 4;
   display: grid;
   place-items: center;
@@ -21086,35 +21066,28 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   background-repeat: no-repeat;
   background-size: contain;
   font-family: var(--cb3-font-display);
-  font-size: var(--cb3-text-lead);
+  font-size: var(--cb3-text-meta);
   color: var(--cb3-ink);
 }
 
-[data-cb-v3] [data-cb-home-scene-clock] {
-  position: absolute;
-  left: 1042px;
-  top: 568px;
-  width: 118px;
-  height: 118px;
-  z-index: 4;
-}
-
+/* G2 — the fox stands where the plate's own fox stands (E1 §5: 868,506..967,683): its painted feet
+   land on the paving row at 683 and its opaque art covers the painted silhouette it replaces. */
 [data-cb-v3] [data-cb-home-scene-fox] {
   position: absolute;
-  left: 1110px;
-  top: 481px;
+  left: 791px;
+  top: 480px;
   z-index: 5;
 }
 
-/* E2E U9 — the shelf shows four cards; with a fifth course the room needs its own door to the rest.
-   It sits on the shelf's own right edge (the plank ends at 219 + 915 = 1134, so 210 px from the
-   frame's right edge), in the 48 px band between the hero and the first card row. A bare button
-   rather than a hosted or pill primitive: those carry inline type, and the scene paints only from
-   this stylesheet and the token contract. */
+/* E2E U9 — the wall shows four cards; with a fifth course the room needs its own door to the rest.
+   G2 — it sits on the plaster band under the board row (E1 §5: 620..862 x 462..502), the painted
+   surface directly beneath the boards, rather than floating on empty sky. A bare button rather
+   than a hosted or pill primitive: those carry inline type, and the scene paints only from this
+   stylesheet and the token contract. */
 [data-cb-v3] [data-cb-home-scene-see-all] {
   position: absolute;
-  top: 336px;
-  right: 210px;
+  left: 700px;
+  top: 462px;
   z-index: 6;
   display: inline-flex;
   align-items: center;

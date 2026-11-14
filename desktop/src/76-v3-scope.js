@@ -262,24 +262,27 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 
 [data-cb-v3] [data-cb-home-scene-hero] {
   position: absolute;
-  top: 128px;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
+  left: 196px;
+  top: 30px;
+  width: 520px;
+  height: 162px;
+  display: block;
   z-index: 4;
 }
 
-/* The scrim is the token canvas behind the text block only: the art is not darkened, and the text
-   holds >= 4.5:1 on the plate's quiet sky. 0.60 is the measured floor for the plate's darkest
-   upper-third pixel under the ink hero; the vignette's 0.55 left forest at 4.45:1. */
+/* G2 — the panel is the sign the question is painted on, and it is opaque on purpose: the plate
+   carries a baked mockup sentence at x 210..354, y 54..124 (E1 §5), and a translucent scrim would
+   let that second heading show through the live one. Its content edge is at 218 px — the measured
+   left edge of the plate's own CTA pill — so every run starts where the plate's copy starts. */
 [data-cb-v3] [data-cb-home-scene-panel] {
   position: relative;
   isolation: isolate;
-  max-width: 760px;
-  padding: 18px 32px 24px;
+  width: 100%;
+  height: 100%;
+  padding: 22px;
+  box-sizing: border-box;
   border-radius: var(--cb3-radius-round);
-  text-align: center;
+  text-align: left;
 }
 
 [data-cb-v3] [data-cb-home-scene-panel]::before {
@@ -289,7 +292,7 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   z-index: -1;
   border-radius: inherit;
   background-color: var(--cb3-canvas);
-  opacity: 0.6;
+  opacity: 1;
 }
 
 [data-cb-v3] [data-cb-home-hero-band] {
@@ -312,26 +315,30 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 }
 
 [data-cb-v3] [data-cb-home-scene-subline] {
-  margin: 24px 0 0;
+  margin: 2px 0 0;
   font-family: var(--cb3-font-ui);
-  font-size: var(--cb3-text-heading);
-  line-height: var(--cb3-leading-heading);
+  font-size: var(--cb3-text-lead);
+  line-height: var(--cb3-leading-lead);
   font-weight: 500;
   color: var(--cb3-ink);
 }
 
 [data-cb-v3] [data-cb-home-scene-cta] {
-  margin-top: 26px;
+  margin-top: 4px;
   display: flex;
-  gap: 24px;
-  justify-content: center;
+  gap: 12px;
+  justify-content: flex-start;
 }
 
+/* G2 — the primary pill is 174 x 44 at (218, 126): the exact quad of the plate's baked CTA
+   (E1 §5, the cta_button quad), so the live control covers the painted one instead of sitting
+   beside it. The fixed width is the plate's, not the label's; the label is the deck's own
+   sentence. */
 [data-cb-v3] [data-cb-home-scene-cta] button {
   border: 0;
   border-radius: var(--cb3-radius-pill);
-  height: 48px;
-  padding: 0 22px;
+  height: 44px;
+  padding: 0 12px;
   font-family: var(--cb3-font-ui);
   font-size: var(--cb3-text-body);
   font-weight: 600;
@@ -341,19 +348,27 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   cursor: pointer;
 }
 
+[data-cb-v3] [data-cb-home-scene-cta] button[data-cb-home-scene-primary] {
+  width: 174px;
+  padding: 0 6px;
+}
+
 /* One filled primary per surface: the browse door is the quiet warm field that carries ink. */
 [data-cb-v3] [data-cb-home-scene-cta] button[data-cb-home-scene-secondary] {
   color: var(--cb3-ink);
   background-color: var(--cb3-terracotta-quiet);
 }
 
+/* G2 — the four boards hang on the plate's wall at x 261/395/529/663, y 319, each 118 x 139.8
+   (E1 §5). The card is authored to that quad, 16 px of pitch left over, so a card lands exactly on
+   its board and the painted board's own mini-art is covered, not doubled. */
 [data-cb-v3] [data-cb-home-scene-cards] {
   position: absolute;
-  top: 384px;
-  left: 273px;
-  height: 175px;
+  top: 319px;
+  left: 261px;
+  height: 140px;
   display: flex;
-  gap: 24px;
+  gap: 16px;
   align-items: flex-end;
   z-index: 3;
   margin: 0;
@@ -363,9 +378,9 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 
 [data-cb-v3] [data-cb-home-scene-card] {
   position: relative;
-  width: 176px;
-  height: 175px;
-  flex: 0 0 176px;
+  width: 118px;
+  height: 140px;
+  flex: 0 0 118px;
   background-color: var(--cb3-card-stock);
   border-radius: var(--cb3-radius-soft);
   box-shadow: var(--cb3-elev-1);
@@ -399,16 +414,14 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   outline-offset: -2px;
 }
 
-[data-cb-v3] [data-cb-home-scene-card]:nth-child(1) { transform: rotate(-1.6deg); }
-[data-cb-v3] [data-cb-home-scene-card]:nth-child(2) { transform: rotate(0.8deg); }
-[data-cb-v3] [data-cb-home-scene-card]:nth-child(3) { transform: rotate(-0.6deg); }
-[data-cb-v3] [data-cb-home-scene-card]:nth-child(4) { transform: rotate(1.4deg); }
+/* The plate's boards are hung straight, so the cards do not rotate: a 1.6 deg tilt would push a
+   corner ~4 px off the painted board it is authored onto. */
 
 [data-cb-v3] [data-cb-home-scene-card] img,
 [data-cb-v3] [data-cb-home-scene-cover] {
   display: block;
   width: 100%;
-  height: 106px;
+  height: 75px;
   object-fit: cover;
 }
 
@@ -422,7 +435,7 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 }
 
 /* UI-K9 — the printed plate for a course with no plate for its subject: kit card stock inside the
- * 176x106 window, carrying the course's own two-letter mark — never the lesson room's painted cafe,
+ * 118x75 window, carrying the course's own two-letter mark — never the lesson room's painted cafe,
  * which would claim a subject the course may not have, and never a second copy of the title the card
  * already sets below (GM-002). All paint lives here, so the scene carries no inline colour. */
 [data-cb-v3] [data-cb-home-scene-cover="type"] {
@@ -431,7 +444,7 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   align-items: center;
   justify-content: center;
   gap: 4px;
-  height: 106px;
+  height: 75px;
   overflow: hidden;
   background-color: var(--cb3-canvas-edge);
   font-family: var(--cb3-font-display);
@@ -465,11 +478,18 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 }
 
 [data-cb-v3] [data-cb-home-scene-body] {
-  padding: 8px 10px 10px;
+  padding: 6px 8px 8px;
 }
 
+/* G2 — a 118 px card holds ~11 characters per line at meta size, so the title is clamped to two
+   lines and the progress bar is the only thing under it. The clamp is what keeps a long course
+   title inside the board it is painted on (CP-TEXT-GATE measures spill, not intent). */
 [data-cb-v3] [data-cb-home-scene-title] {
   margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
   font-family: var(--cb3-font-ui);
   font-size: var(--cb3-text-meta);
   line-height: var(--cb3-leading-meta);
@@ -478,8 +498,8 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 }
 
 [data-cb-v3] [data-cb-home-scene-progress] {
-  margin-top: 9px;
-  height: 5px;
+  margin-top: 6px;
+  height: 4px;
   border-radius: var(--cb3-radius-pill);
   background-color: var(--cb3-rule);
   overflow: hidden;
@@ -505,65 +525,25 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   border: 0;
 }
 
-[data-cb-v3] [data-cb-home-scene-plank-one] {
-  position: absolute;
-  left: 219px;
-  top: 559px;
-  width: 915px;
-  height: 18px;
-  /* The cards sit in front of the plank, as in the reference; the wood passes behind them. */
-  z-index: 1;
-  background-color: var(--cb3-wood);
-  background-repeat: repeat-x;
-  background-size: auto 100%;
-  border-bottom: 1px solid var(--cb3-wood-edge);
-  box-shadow: var(--cb3-elev-2);
-}
-
-[data-cb-v3] [data-cb-home-scene-plank-one] > i {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 18px;
-  height: 10px;
-  background-color: var(--cb3-rule);
-  border-bottom: 1px solid var(--cb3-wood-edge);
-}
-
-[data-cb-v3] [data-cb-home-scene-plank-two] {
-  position: absolute;
-  left: 130px;
-  top: 684px;
-  width: 1150px;
-  height: 30px;
-  z-index: 1;
-  background-color: var(--cb3-wood);
-  background-repeat: repeat-x;
-  background-size: auto 100%;
-}
-
-[data-cb-v3] [data-cb-home-scene-plank-two] > i {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 30px;
-  height: 24px;
-  background-color: var(--cb3-wood);
-  border-bottom: 1px solid var(--cb3-wood-edge);
-  box-shadow: var(--cb3-elev-2);
-}
+/* G2 — the kit's two planks are retired from this surface. The plate paints its own wall coping
+   (y 309.6, E1 §4) and its own bench (seat top 488.8), so a DOM plank here would be a second shelf
+   in front of a painted one. The kit keeps both objects for the surfaces that still use them. */
 
 /* VQ-011 — the tag paints the kit's own square 256x256 kraft tag at its natural aspect: the box is
    square and contain is the one size that can never stretch the file (a box-derived two-value size
    such as 100% 100% squashed the master 1.0x by 0.34x and bent the rope hole and corners).
    No plate colour and no box shadow: the file's corners are transparent, so a box-derived fill or
-   shadow would paint a square around the object. The words stay DOM type on the kraft body. */
+   shadow would paint a square around the object. The words stay DOM type on the kraft body.
+   G2 — the box is the plaster patch right of board4 (E1 §5: 790..864 x 350..486), the one painted
+   surface on this wall with room for a tag; the type wraps to two lines so it stays on the kraft. */
 [data-cb-v3] [data-cb-home-scene-tag] {
   position: absolute;
-  left: 888px;
-  top: 559px;
-  width: 148px;
-  height: 148px;
+  left: 790px;
+  top: 356px;
+  width: 74px;
+  height: 74px;
+  box-sizing: border-box;
+  padding: 0 8px;
   z-index: 4;
   display: grid;
   place-items: center;
@@ -571,35 +551,28 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   background-repeat: no-repeat;
   background-size: contain;
   font-family: var(--cb3-font-display);
-  font-size: var(--cb3-text-lead);
+  font-size: var(--cb3-text-meta);
   color: var(--cb3-ink);
 }
 
-[data-cb-v3] [data-cb-home-scene-clock] {
-  position: absolute;
-  left: 1042px;
-  top: 568px;
-  width: 118px;
-  height: 118px;
-  z-index: 4;
-}
-
+/* G2 — the fox stands where the plate's own fox stands (E1 §5: 868,506..967,683): its painted feet
+   land on the paving row at 683 and its opaque art covers the painted silhouette it replaces. */
 [data-cb-v3] [data-cb-home-scene-fox] {
   position: absolute;
-  left: 1110px;
-  top: 481px;
+  left: 791px;
+  top: 480px;
   z-index: 5;
 }
 
-/* E2E U9 — the shelf shows four cards; with a fifth course the room needs its own door to the rest.
-   It sits on the shelf's own right edge (the plank ends at 219 + 915 = 1134, so 210 px from the
-   frame's right edge), in the 48 px band between the hero and the first card row. A bare button
-   rather than a hosted or pill primitive: those carry inline type, and the scene paints only from
-   this stylesheet and the token contract. */
+/* E2E U9 — the wall shows four cards; with a fifth course the room needs its own door to the rest.
+   G2 — it sits on the plaster band under the board row (E1 §5: 620..862 x 462..502), the painted
+   surface directly beneath the boards, rather than floating on empty sky. A bare button rather
+   than a hosted or pill primitive: those carry inline type, and the scene paints only from this
+   stylesheet and the token contract. */
 [data-cb-v3] [data-cb-home-scene-see-all] {
   position: absolute;
-  top: 336px;
-  right: 210px;
+  left: 700px;
+  top: 462px;
   z-index: 6;
   display: inline-flex;
   align-items: center;
