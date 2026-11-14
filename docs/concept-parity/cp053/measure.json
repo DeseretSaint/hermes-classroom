@@ -2,7 +2,7 @@
   "card": "CP-053 / G2 Home re-pin (t_8db56021)",
   "surface": "desktop/plugin.js CoursebookHome at route width 1344, rendered by design/home-scene.html (generated from the module by scripts/gen-home-proof.py)",
   "capture": "chromium --headless=new --window-size=1344,768 --force-device-scale-factor=1",
-  "module_sha256": "9408fcb1e232f25a3f80b6a73523e81b49ef84c87d0e70f25b63931ea4f468da",
+  "module_sha256": "52fb71f6ab488bf56b2f075956a1cd574f1ef387d322119922fccf4c42a394b8",
   "reference": "docs/concept-parity/refs/home-plate-1344-textless.png",
   "reference_sha256": "806080bbcdca5376e936fe02975ce605fe9af01415f6768ec8c12dd5d402b4b6",
   "reference_role": "the owner-adopted Home ground (G1 ruling 2, Home only); docs/concept-parity/refs/home.png stays in the tree as history and is no longer the Home reference",
@@ -12,10 +12,10 @@
     768
   ],
   "metric": "sim_grey = 1 - RMSE(grey)/255 over the full frame at native 1344x768",
-  "rmse_rgb": 29.271,
-  "rmse_grey": 28.013,
-  "sim_grey": 0.8901,
-  "sim_rgb": 0.8852,
+  "rmse_rgb": 29.215,
+  "rmse_grey": 27.947,
+  "sim_grey": 0.8904,
+  "sim_rgb": 0.8854,
   "bands_sim_grey": {
     "sky": 0.993,
     "hero": 0.826,
@@ -26,5 +26,5 @@
   },
   "not_a_desktop_capture": "no host, no backend; the scene canvas only. This row measures the shipped scene against the adopted Home ground it is pinned to. The remaining deltas are the scene's own live paint (opaque hero sign, four card faces, tag, fox) laid over the ground, not drift.",
   "measured_at": "2026-11-14",
-  "note": "Re-measured 2026-11-14 on module 9408fcb1 after the generated page was re-rendered from that module; fresh chromium capture at 1344x768 of design/home-scene.html, fresh RMSE against docs/concept-parity/refs/home-plate-1344-textless.png, nothing carried over. Clears the 0.85 approval floor."
+  "note": "Re-measured 2026-11-14 on module 52fb71f6 after the generated page was re-rendered from that module; fresh chromium capture at 1344x768 of design/home-scene.html, fresh RMSE against docs/concept-parity/refs/home-plate-1344-textless.png, nothing carried over. Clears the 0.85 approval floor."
 }
