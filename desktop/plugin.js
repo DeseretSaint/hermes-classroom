@@ -26834,6 +26834,183 @@ function SectionPage({
     ]
   })
 }
+
+/* ── Slot type ────────────────────────────────────────────────────────────────────────────────
+ * Type placed by eye onto a painted object is the defect that was rejected three times. A slot is
+ * therefore not a box someone dragged: it is a rectangle IN THE OBJECT'S OWN PLANE, and the ink is
+ * derived from that plane by rule. The author's declaration (`x`, `y`, `width`, `height`, `cap`)
+ * is advisory. Its position can be wrong by 8 px without moving the label, because no rule reads
+ * `x`/`y`; only the declared cap sizes the type, and the plane still clamps it.
+ *
+ * The contract, in order:
+ *   1. the plane is `origin + ex * x + ey * y`, so a rotated or skewed object carries its own axes;
+ *   2. inset is a rule: max(4 px, 6 % of the plane's short side);
+ *   3. cap height is a rule: min(declared cap, 42 % of the inner short side), never under 11 px;
+ *   4. the line is centred on its own advance width, not on a leftover box;
+ *   5. the baseline is the cap box's bottom: the cap is centred vertically, line-height is not used;
+ *   6. the ink box's four corners warp through the plane's basis (CSS `matrix()`), so a -3° tag
+ *      carries -3° type and an axis-aligned plane stays axis-aligned;
+ *   7. overflow shrinks uniformly — cap and advance scale by the same factor — and never below
+ *      the 11 px floor;
+ *   8. at the floor, if the line still does not fit, the slot REFUSES (`ink: null`). It never
+ *      clips, never ellipsizes a learner-facing label into a lie, and never silently drops letters.
+ */
+const CB_SLOT_TYPE = Object.freeze({
+  /** Inset as a share of the plane's short side; 6 % of 148 px is a 9 px gutter. */
+  INSET_RATIO: 0.06,
+  /** An inset smaller than this stops reading as an inset. */
+  INSET_MIN: 4,
+  /** The largest cap the rule allows in a plane: 42 % of the inner short side. */
+  CAP_RATIO: 0.42,
+  /** The floor. Below 11 px a cap stops being legible at arm's length. */
+  CAP_FLOOR: 11,
+  /** Estimated advance width per cap px for the display face (a humanist sans average). */
+  ADVANCE_PER_CAP: 0.62,
+  /** Cap height per em for the display face, so a cap rule becomes a font size. */
+  CAP_EM: 0.7
+})
+
+/** The four scene-space corners of a slot plane, in reading order. */
+function cbSlotPlaneCorners(plane) {
+  const origin = (plane && plane.origin) || { x: 0, y: 0 }
+  const ex = (plane && plane.ex) || { x: 1, y: 0 }
+  const ey = (plane && plane.ey) || { x: 0, y: 1 }
+  const width = Math.max(0, Number(plane && plane.width) || 0)
+  const height = Math.max(0, Number(plane && plane.height) || 0)
+  const map = (x, y) => ({
+    x: origin.x + ex.x * x + ey.x * y,
+    y: origin.y + ex.y * x + ey.y * y
+  })
+  return [map(0, 0), map(width, 0), map(width, height), map(0, height)]
+}
+
+/**
+ * Resolve one slot. Returns the measured line, or a floor refusal — never a clipped one.
+ *
+ * `spec.plane` is authoritative geometry; `spec.declared.cap` (or `.height`) only proposes a
+ * cap; `spec.label` is the exact text that must fit. A caller that has no plane has no slot.
+ */
+function cbSlotTypeLayout(spec) {
+  const input = spec || {}
+  const plane = input.plane || {}
+  const declared = input.declared || {}
+  const label = input.label == null ? '' : String(input.label)
+  const text = [...label]
+  const planeWidth = Math.max(0, Number(plane.width) || 0)
+  const planeHeight = Math.max(0, Number(plane.height) || 0)
+  const corners = cbSlotPlaneCorners(plane)
+  const short = Math.min(planeWidth, planeHeight)
+  const inset = Math.max(CB_SLOT_TYPE.INSET_MIN, Math.round(short * CB_SLOT_TYPE.INSET_RATIO))
+  const innerWidth = Math.max(0, planeWidth - 2 * inset)
+  const innerHeight = Math.max(0, planeHeight - 2 * inset)
+
+  const declaredCap = Number(declared.cap) > 0
+    ? Number(declared.cap)
+    : Number(declared.height) > 0
+      ? Number(declared.height) * CB_SLOT_TYPE.CAP_EM
+      : 0
+  const nominal = declaredCap > 0
+    ? Math.min(declaredCap, innerHeight * CB_SLOT_TYPE.CAP_RATIO)
+    : innerHeight * CB_SLOT_TYPE.CAP_RATIO
+  const capBefore = Math.max(CB_SLOT_TYPE.CAP_FLOOR, nominal)
+  const chars = Math.max(1, text.length)
+  const naturalAdvance = chars * capBefore * CB_SLOT_TYPE.ADVANCE_PER_CAP
+  const scale = naturalAdvance > innerWidth && naturalAdvance > 0 ? innerWidth / naturalAdvance : 1
+  const cap = Math.max(CB_SLOT_TYPE.CAP_FLOOR, capBefore * Math.min(1, scale))
+  const advance = chars * cap * CB_SLOT_TYPE.ADVANCE_PER_CAP
+  const fits = innerWidth > 0 && innerHeight + 1e-9 >= cap && advance <= innerWidth + 1e-9
+  const base = {
+    status: fits ? 'fits' : 'refused',
+    cap,
+    capBefore,
+    scale: cap / capBefore,
+    advance,
+    chars,
+    inset,
+    innerWidth,
+    innerHeight,
+    overflowPx: Math.max(0, advance - innerWidth),
+    plane: { width: planeWidth, height: planeHeight, corners },
+    fontSize: cap / CB_SLOT_TYPE.CAP_EM,
+    ink: null
+  }
+  if (!fits) return base
+
+  // Rule 4/5: centre the ink on its own advance width and centre the cap box, not a line box.
+  const left = inset + (innerWidth - advance) / 2
+  const top = inset + (innerHeight - cap) / 2
+  const origin = plane.origin || { x: 0, y: 0 }
+  const ex = plane.ex || { x: 1, y: 0 }
+  const ey = plane.ey || { x: 0, y: 1 }
+  const map = (x, y) => ({
+    x: origin.x + ex.x * x + ey.x * y,
+    y: origin.y + ex.y * x + ey.y * y
+  })
+  const inkCorners = [map(left, top), map(left + advance, top), map(left + advance, top + cap), map(left, top + cap)]
+  // CSS matrix() maps the label box's own (u,v) origin onto the plane; the translation is the
+  // plane position of (left, top), so the element needs no left/top of its own.
+  const anchor = map(left, top)
+  const transform = `matrix(${ex.x}, ${ex.y}, ${ey.x}, ${ey.y}, ${anchor.x}, ${anchor.y})`
+  return {
+    ...base,
+    ink: {
+      left,
+      top,
+      width: advance,
+      height: cap,
+      baseline: top + cap,
+      corners: inkCorners,
+      transform
+    },
+    transform,
+    baseline: top + cap
+  }
+}
+
+/**
+ * A label painted into a declared slot. The object's plane decides where the ink lands; the
+ * declaration cannot drag it out. A refusal renders nothing visible (the object keeps its plate)
+ * and says so in the markup, so no surface shows a cropped word.
+ */
+function CbSlotType({ plane, declared, label, className, style }) {
+  const layout = cbSlotTypeLayout({ plane, declared, label })
+  const fields = {
+    'data-cb-slot-type': layout.status,
+    'data-cb-slot-cap': String(Math.round(layout.cap * 100) / 100),
+    'data-cb-slot-cap-before': String(Math.round(layout.capBefore * 100) / 100),
+    'data-cb-slot-inset': String(layout.inset),
+    'data-cb-slot-scale': String(Math.round(layout.scale * 10000) / 10000)
+  }
+  if (!layout.ink) {
+    return jsx('span', {
+      ...fields,
+      'data-cb-slot-overflow': String(Math.round(layout.overflowPx * 100) / 100),
+      hidden: true,
+      children: label
+    })
+  }
+  return jsx('span', {
+    ...fields,
+    'data-cb-slot-baseline': String(Math.round(layout.baseline * 100) / 100),
+    className,
+    style: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      width: `${layout.ink.width}px`,
+      height: `${layout.ink.height}px`,
+      transform: layout.ink.transform,
+      transformOrigin: '0 0',
+      whiteSpace: 'nowrap',
+      lineHeight: `${layout.ink.height}px`,
+      fontSize: `${layout.fontSize}px`,
+      fontFamily: 'var(--cb3-font-display)',
+      color: 'var(--cb3-ink)',
+      ...(style || {})
+    },
+    children: label
+  })
+}
 // CB-V3-BEGIN — CP-020b: the Field Atlas v3 primitives and their component-lab sheet.
 /**
  * ── Field Atlas v3 primitives ─────────────────────────────────────────────────────────────────
@@ -47743,6 +47920,11 @@ export {
   CoursebookHome,
   HomeScene,
   CB_HOME_SCENE,
+  // Slot type: the pure rule is the test seam, the component is the render seam.
+  CB_SLOT_TYPE,
+  cbSlotPlaneCorners,
+  cbSlotTypeLayout,
+  CbSlotType,
   cbShelfEdgeMask,
   HomeLibraryPanel,
   HomeCourseCard,
