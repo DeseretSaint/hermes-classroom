@@ -1865,6 +1865,9 @@ function SourceProvenanceCard({ source, dense = false }) {
   const publisher = source && source.publisher ? source.publisher : null
   const modality = source && source.modality ? source.modality : null
   const licence = source && source.licence ? source.licence : null
+  // A source URL is pack data. It is printed as text unconditionally, but it only becomes an
+  // `href` when it is an absolute http(s) address with a host.
+  const sourceHref = safeHttpHref(source && source.url)
   const facts = []
   facts.push(publisher ? `Published by ${publisher}` : 'Publisher not recorded')
   facts.push(sourceTypeLabel(source && source.source_type))
@@ -1927,14 +1930,16 @@ function SourceProvenanceCard({ source, dense = false }) {
                 style: { minWidth: 0, overflowWrap: 'anywhere' },
                 children: source.url
               }),
-              jsx('a', {
-                href: source.url,
-                target: '_blank',
-                rel: 'noreferrer noopener',
-                'data-cb-source-open': '',
-                style: { color: 'var(--cb-ink)', textDecoration: 'underline' },
-                children: 'Open source'
-              })
+              sourceHref
+                ? jsx('a', {
+                    href: sourceHref,
+                    target: '_blank',
+                    rel: 'noreferrer noopener',
+                    'data-cb-source-open': '',
+                    style: { color: 'var(--cb-ink)', textDecoration: 'underline' },
+                    children: 'Open source'
+                  })
+                : null
             ]
           })
         : null,
