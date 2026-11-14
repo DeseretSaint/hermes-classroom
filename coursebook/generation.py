@@ -329,7 +329,13 @@ UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v4"
 #: form, never the owner's exact stimulus. The S1/S3 lane also wore ``v17`` for this text, off a
 #: base that predated the A2/A3/A4 merge; both instruction sets now sit in one prompt, so the
 #: label moves past the shipped v17 rather than reusing a number that already means other text.
-LESSON_PROMPT_VERSION = "lesson-prompt.v18"
+#: v19 (Upgrade 12, ``t_80d69a67``): the prompt states the new-case rule next to the answer-leak
+#: rule — the check must ask for the taught form in a different interlocutor, setting or object,
+#: and may not reuse the model segment's sentence beyond the form itself. The answer-leak rule
+#: protected the key and nothing protected the *question*, so an author could teach "your host
+#: asks X — answer Y" and then key the check on that same host question: the learner copied the
+#: line read minutes earlier and a recall check measured look-up. Instruction text changed, so v19.
+LESSON_PROMPT_VERSION = "lesson-prompt.v19"
 #: The validator instruction text. H-191 §5: a validator answer was discarded because one
 #: ``item`` label was 81 characters against a ``maxLength`` of 80 the prompt never stated. The
 #: text now states the locator rule and the bound (read from :data:`ITEM_REFERENCE_MAX_CHARS`),
@@ -5945,6 +5951,24 @@ def _lesson_instructions(
         "you answer when the host asks how many people are in your party.'; the explanation then "
         "reads 'Answer the party-size question with the phrase the model segment showed.' A draft "
         "whose explanation says 'The answer is 二人です' is refused.",
+        # Upgrade 12: the model segment presents the target, and the check then asked for it in
+        # the same sentence the page had already solved. The answer-leak rule protects the key;
+        # nothing protected the question, so a recall check measured look-up and copying.
+        "New-case rule (enforced deterministically; a draft that breaks it is refused before "
+        "validation as 'lesson.check.model_sentence_reuse'): the model segment shows the target "
+        "form, and the check must then ask for that form in a case this page has not already "
+        "solved — a different interlocutor, setting or object. Its stimulus prompt, its "
+        "learner_instructions and its accepted answers may not reuse the model segment's "
+        "sentence beyond the target form itself: four or more of that sentence's words in the "
+        "model's own order, or the sentence word for word, is the case already solved. Repeating "
+        "the model sentence as the prompt asks the learner to copy a line read minutes earlier, "
+        "so the check measures look-up, not recall. Passing example: the model segment reads "
+        "'Your host asks 何人ですか (nannin desu ka) — how many people — and you answer 二人です "
+        "(futari desu)'; the check prompt then reads 'Your sister's friend is coming to dinner "
+        "tonight and asks how many are coming. How do you answer?' — same form, new interlocutor "
+        "and setting. A check prompt that repeats the host's question from the model segment is "
+        "refused. The new case must use only vocabulary and grammar this lesson already taught: "
+        "an unfamiliar frame makes the check unfair, not harder.",
         "The stored answer key is not a learner surface: check.reference_answer, "
         "check.accepted_answers, check.accepted_alternatives and check.rubric are stored "
         "separately and must never appear in a segment, the worked example, the explanation or "
@@ -8656,6 +8680,135 @@ def assert_check_payload_does_not_announce_answer(lesson: Mapping[str, Any]) -> 
         ])
 
 
+#: How many content words of a model sentence, in the model's own order, a check may reproduce
+#: before the check is a copy of the presentation. Four words is a phrase a learner reads, not a
+#: topic they share: "standard daytime greeting" alone is a reference, "standard daytime greeting
+#: you give when you enter" is the sentence they just read.
+_NEW_CASE_MIN_RUN = 4
+
+#: The reason a check that re-presents the model's own case is refused under. Named so the repair
+#: pass and a stored rejection can be read as one rule (the authoring directive states it).
+_NEW_CASE_REASON = "lesson.check.model_sentence_reuse"
+
+
+def _longest_shared_run(frame: Sequence[str], surface: Sequence[str]) -> int:
+    """The longest run of ``frame`` that appears contiguously and in order inside ``surface``."""
+    if not frame or not surface:
+        return 0
+    best = 0
+    previous = [0] * (len(surface) + 1)
+    for token in frame:
+        current = [0] * (len(surface) + 1)
+        for index, candidate in enumerate(surface, start=1):
+            if token == candidate:
+                current[index] = previous[index - 1] + 1
+                if current[index] > best:
+                    best = current[index]
+        previous = current
+    return best
+
+
+def _model_clauses(page: Mapping[str, Any]) -> list[str]:
+    """The sentences of the presenting (``kind: model``) segments: the lesson's one presentation."""
+    sentences: list[str] = []
+    for segment in page.get("segments") or []:
+        if not isinstance(segment, Mapping) or _segment_kind(segment) != _PRESENTING_SEGMENT_KIND:
+            continue
+        sentences.extend(wording.clauses(segment.get("body") or ""))
+    return sentences
+
+
+def _check_answer_strings(check: Mapping[str, Any]) -> list[str]:
+    strings = [str(check.get("reference_answer") or "")]
+    strings.extend(str(item) for item in check.get("accepted_answers") or [])
+    for group in check.get("accepted_alternatives") or []:
+        strings.extend(str(item) for item in group or [])
+    return [item for item in strings if item.strip()]
+
+
+def assert_check_states_a_new_case(page: Mapping[str, Any], lesson: Mapping[str, Any]) -> None:
+    """The check must pose a case the page has not already solved.
+
+    ``assert_no_answer_leak`` protects the *key* and ``assert_check_payload_does_not_announce_answer``
+    stops the key riding along with the question. This rule protects the *question*: a model
+    segment presents the target form, its reading and its function, and the check then asks for
+    that form again. When the check's prompt, its learner instructions or an accepted answer is
+    the model segment's own sentence, the answer sits one surface above the question — the learner
+    copies a line read minutes earlier, and a recall-family check measures look-up plus short-term
+    copying instead of production. Measured defect: an author taught "your host asks X — answer Y"
+    in the model segment and then keyed the check on the same host question, which no existing
+    gate refused because the *key* never appeared in the prompt.
+
+    The scan compares each model sentence to each learner-facing check surface
+    (``stimulus.prompt``, ``learner_instructions`` and every stored answer string), with the
+    target form's own words removed from both sides — the form is what the check is *for*, so
+    repeating it is not reuse:
+
+    * the whole model sentence appears verbatim in the surface;
+    * a run of :data:`_NEW_CASE_MIN_RUN` or more of the model sentence's content words, in the
+      model's own reading order, appears in the surface (``wording``'s stems and CJK handling, so
+      "greeting" and "greeted" are one word).
+
+    A new case — a different interlocutor, setting or object whose answer is the taught form —
+    changes the frame words and keeps the form, so it passes: "an office, a colleague" against
+    "a shop, the staff" leaves at most a three-word run. A synonym paraphrase of the model
+    sentence can still slip through and a close paraphrase of the frame can be refused; the fold
+    is deterministic, not a judge, and one repair pass is cheaper than a check that keys a
+    sentence the learner just read. The lesson prompt states the obligation so the author is not
+    asked to guess the threshold, and the new case must use vocabulary the lesson already taught.
+    """
+    check = lesson.get("check") or {}
+    stimulus = check.get("stimulus") or {}
+    answer_strings = _check_answer_strings(check)
+    surfaces = [
+        ("check prompt", str(stimulus.get("prompt") or "") if isinstance(stimulus, Mapping) else ""),
+        ("learner instructions", str(check.get("learner_instructions") or "")),
+    ]
+    surfaces.extend(("accepted answer", item) for item in answer_strings)
+    model = _model_clauses(page)
+    if not model:
+        return
+    # Every word of the key is presentation: the check is *asking* for it, so its own words are
+    # dropped from the sentence before the frame is compared (and from the surface too).
+    key_tokens: set[str] = set()
+    for item in answer_strings:
+        key_tokens.update(wording.content_sequence(item))
+    reasons: list[str] = []
+    for label, surface in surfaces:
+        if not surface.strip():
+            continue
+        normalized = _normalize_answer(surface)
+        surface_sequence = [
+            token for token in wording.content_sequence(surface) if token not in key_tokens
+        ]
+        for sentence in model:
+            normalized_sentence = _normalize_answer(sentence)
+            if normalized_sentence and normalized_sentence in normalized:
+                reasons.append(
+                    f"{_NEW_CASE_REASON}: the {label} is the model segment's sentence word for "
+                    f"word ({sentence[:90]!r}); the learner copies a line they just read instead "
+                    "of producing the form in a new situation"
+                )
+                break
+            frame = [
+                token
+                for token in wording.content_sequence(sentence)
+                if token not in key_tokens
+            ]
+            if _longest_shared_run(frame, surface_sequence) >= _NEW_CASE_MIN_RUN:
+                reasons.append(
+                    f"{_NEW_CASE_REASON}: the {label} re-uses the model segment's sentence — "
+                    f"{_NEW_CASE_MIN_RUN} or more of its words in its own order ({sentence[:90]!r}) "
+                    "— so the check poses the case the page already solved; state a different "
+                    "interlocutor, setting or object whose answer is the taught form"
+                )
+                break
+        if reasons:
+            break
+    if reasons:
+        raise _RuleViolation(reasons[:1])
+
+
 #: Claim atoms: a quantity, a date/time, an acronym or a quoted phrase. A short may reuse one of
 #: these from its own deep text, but introducing one is introducing a claim about the material.
 #:
@@ -10513,6 +10666,9 @@ def build_lesson_request(
             "answer_leak": "only a 'model' segment (and narration media that reads it) may carry the "
             "check's reference answer or an accepted answer; every other learner surface is scanned, "
             "and the check's stimulus prompt and learner_instructions must not restate the key",
+            "new_case": "the check asks for the taught form in a case the page has not solved — a "
+            "different interlocutor, setting or object — and its prompt, learner_instructions and "
+            "accepted answers must not reuse the model segment's sentence beyond the form itself",
             "media": "declarative spec with a complete text equivalent; only the roles the "
             "capability policy permits; the harness generates it and never treats an "
             "illustration as technical authority",
@@ -15317,6 +15473,13 @@ def _author_section(
         # must not ship with the question (CP-015c follow-up).
         try:
             assert_check_payload_does_not_announce_answer(candidate)
+        except _RuleViolation as exc:
+            problems.extend(exc.reasons)
+        # Upgrade 12: the key is not the only thing that can be copied off the page. A check whose
+        # prompt re-poses the model segment's own sentence asks the learner to re-read, not to
+        # produce the form, so it is refused on the same authoring pass.
+        try:
+            assert_check_states_a_new_case(page, candidate)
         except _RuleViolation as exc:
             problems.extend(exc.reasons)
         if problems:

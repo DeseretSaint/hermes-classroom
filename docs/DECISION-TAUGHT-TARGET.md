@@ -192,3 +192,46 @@ Two changes, both verified by `tests/test_cp015c_answer_leak_surfaces.py`:
 The rule is unchanged; only its statement and the key's placement in the validation request moved.
 The exemption for `kind: model` segments and `role: narration` media is the one decided in §2.
 
+## 10. The other half: the check must pose a new case (Upgrade 12, `t_80d69a67`)
+
+§2 decided which surfaces may *print* the target. It said nothing about which *case* the check may
+ask about, and the gap was measured: an author taught "your host asks 何人ですか — answer 二人です"
+in the model segment and then keyed the check on the same host question. Neither existing gate saw
+it — `assert_no_answer_leak` scans narrative surfaces and the prompt is not one, and
+`assert_check_payload_does_not_announce_answer` refuses the *key* in the prompt, which the reused
+half of the sentence (the question) does not contain. The learner reproduced a line read minutes
+earlier; a recall-family check measured look-up plus short-term copying.
+
+**Decision.** Every check states a case the page has not already solved: a different interlocutor,
+setting or object whose answer is the taught form. `generation.assert_check_states_a_new_case`
+enforces it deterministically on the authoring path, before the independent validator, under the
+named reason `lesson.check.model_sentence_reuse`.
+
+| Test | Refuses |
+|---|---|
+| Verbatim | the model sentence appears word for word in `stimulus.prompt`, `learner_instructions` or a stored answer string |
+| Order | four or more of the model sentence's content words appear in the model's own reading order in that surface (`wording`'s stems and CJK handling) |
+
+The target form's own words are removed from both sides first: the check is *asking* for the form,
+so repeating it is not reuse — the answer-leak rule already owns the key. A new case changes the
+frame words (interlocutor, setting, object) and keeps the form, so it passes; the measured passing
+draft asks how many are coming to a dinner rather than how many are in the party.
+
+**The adversarial bound, stated rather than hidden.** A hard new-case rule can make a check unfair
+when its frame uses vocabulary the lesson never taught, and a token fold is easy to defeat with
+synonyms. `lesson-prompt.v19` therefore states the fairness half in the same directive — the new
+case must use only vocabulary and grammar this lesson already taught — and this decision accepts
+both residuals: a synonym paraphrase of the model sentence can pass, and a close paraphrase of the
+frame can be refused. One repair pass is cheaper than a check that keys a sentence the learner just
+read, and the gate never claims to be a judge.
+
+The read path (`learner_page`) does **not** run this gate. A stored page already passed the
+authoring gate it was written under; refusing on read would unserve packs authored before this
+rule without repairing anything. The authoring pass is where a draft is refused, and the prompt
+label (`lesson-prompt.v19`) is what an operator can audit for a page's vintage.
+
+Evidence: `tests/test_upgrade_new_case_check.py` (15 tests) — the acceptance case, the passing
+varied case, the older gates' measured gap, the accepted-answer and learner-instructions halves, the
+form-only exemption, the no-model-page scope, and both halves through the real lesson job.
+
+

@@ -60,6 +60,21 @@ def has_cjk(text: str) -> bool:
     return bool(_CJK.search(str(text or "")))
 
 
+def clauses(text: str) -> list[str]:
+    """The sentence-ish units of ``text``, stripped, in reading order.
+
+    The overlap rules compare *locally*: a phrase reused in one sentence of a check is a copy,
+    while the same two words scattered on either side of a page are not. Callers that need the
+    units themselves (the new-case gate compares each model sentence to the check) get the same
+    split the paraphrase scan windows over, rather than a second, drifting boundary rule.
+    """
+    return [
+        chunk.strip()
+        for chunk in _CLAUSE_SPLIT.split(str(text or ""))
+        if chunk and chunk.strip()
+    ]
+
+
 def _stem(word: str) -> str:
     """Fold the inflections a lesson actually writes; leave anything else alone."""
     if len(word) > 5 and word.endswith("ly"):
