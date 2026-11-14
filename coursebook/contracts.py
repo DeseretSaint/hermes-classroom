@@ -36,6 +36,14 @@ CONTRACT_FILES: dict[str, str] = {
     # optional `rung` index and answers with the one revealed rung. Rung text is withheld from the
     # read and returned only by the recorded press. Every v28 record that omits the new keys keeps
     # its exact shape; v28 stays on disk as byte-identical history.
+    # UP-19 (t_eca30b18): the same v29 carries one more additive amendment — the
+    # `pronunciation_assessment` record gains `measure`, `caveat`, `gated` and
+    # `min_word_confidence`, so a take reports what was compared (the words the recogniser heard)
+    # instead of claiming a pronunciation it never measured, and the strongest verdict is refused
+    # when the weakest matched word was under the confidence floor. One contract version must carry
+    # every additive change shipped together: two rpc.v29.json files cannot both exist, so UP-19
+    # composes onto UP-14's derivation (probes/derive_rpc_v29_pronunciation.py runs the sibling
+    # first) rather than forking the version.
     "cb.rpc": "rpc.v29.json",
     # E2E L1: v15 is additive over v14 — one column, `checks.revisit INTEGER NOT NULL DEFAULT 0`.
     # No row is rewritten; every check written before v15 reads as an ordinary (non-revisit) check.

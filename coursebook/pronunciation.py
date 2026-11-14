@@ -14,7 +14,12 @@ narrow on purpose:
   ``practice_only`` — ``recorded: false`` and no attempt row. There is never a fabricated score;
 * a real transcript produces a typed assessment and one row in ``pronunciation_attempts`` with
   ``evidence_class = 'model_assessed'``. That is a practice measurement, **not** verified
-  pronunciation, mastery, a graded pass or a reason to advance the objective. The attempt table is
+  pronunciation, mastery, a graded pass or a reason to advance the objective. The assessment says
+  which measure it made (``measure = word_recognition``), states in ``caveat`` what it did not
+  measure, carries the recogniser's own per-word confidence — a missed word included — and refuses
+  the strongest verdict when the weakest matched word was under :data:`MIN_WORD_CONFIDENCE` or
+  carried no confidence at all (``verdict`` falls to ``close`` and ``gated`` is true).
+  ``phoneme_accuracy`` is null because no phoneme is ever assessed here. The attempt table is
   separate from ``attempts`` (a text/selection answer) and no transition or revision is written;
 * a dispute is appended to the attempt's own record and never rewrites the verdict.
 
@@ -84,6 +89,39 @@ _CHARACTER_LANGUAGES = {"ja", "zh", "yue", "th"}
 
 MEETS_TARGET = 0.9
 CLOSE = 0.6
+
+#: What the comparison in :func:`assess_transcription` actually measures: which words the
+#: recogniser heard, in order, against the target phrase. It is not pronunciation. No phoneme is
+#: ever assessed in this build, so ``phoneme_accuracy`` stays null and no surface may read
+#: ``word_accuracy`` or the verdict as a pronunciation claim.
+MEASURE = "word_recognition"
+#: The measure an unusable take carries: nothing was compared, so nothing is claimed.
+MEASURE_NONE = "none"
+
+#: The lowest per-word recogniser probability a matched word may carry and still support the
+#: strongest verdict. Under it the recogniser, not the learner, is the weak link: the transcript
+#: matched weakly enough that this build cannot tell a correct word from a lucky guess.
+MIN_WORD_CONFIDENCE = 0.55
+
+#: The caveat every comparison carries. It names the measurement, and names what was not measured.
+RECOGNISER_CAVEAT = (
+    "Understood by the recogniser: this compares the words the recogniser heard in your take with "
+    "the target phrase. It does not measure pronunciation — no phoneme was assessed — so a word "
+    "the recogniser mishears because of an accent reads as a missed word."
+)
+#: The caveat a gated comparison carries: the words matched but the recogniser was unsure of them.
+LOW_CONFIDENCE_CAVEAT = (
+    "Understood by the recogniser, with low confidence: the words matched, but the recogniser was "
+    f"under {MIN_WORD_CONFIDENCE:.0%} confident of at least one of them, so this take is not "
+    "reported as meeting the target. No phoneme was assessed, so nothing about your pronunciation "
+    "was measured."
+)
+#: The caveat when the recogniser reported no per-word probability at all: a match is all we have.
+UNRATED_CONFIDENCE_CAVEAT = (
+    "Understood by the recogniser, unrated: the recogniser reported no per-word confidence, so "
+    "this take is not reported as meeting the target. No phoneme was assessed, so nothing about "
+    "your pronunciation was measured."
+)
 
 EVIDENCE_CLASS = "model_assessed"
 VERDICTS = ("meets_target", "close", "needs_practice", "unavailable")
@@ -478,7 +516,16 @@ def _verdict(accuracy: float) -> str:
 
 
 def assess_transcription(transcription: stt.Transcription, target: str, locale: str) -> dict[str, Any]:
-    """Deterministic word/character comparison. Never returns a pass/fail grade or mastery claim."""
+    """What the recogniser heard, compared with the target. Never a pronunciation claim.
+
+    The returned ``measure`` says exactly what was compared (``word_recognition``), every word row
+    carries the recogniser's own confidence for the token it heard — a miss included, which is how
+    a learner can tell a misheard accent from a word they did not say — and ``caveat`` states what
+    was not measured. ``phoneme_accuracy`` is null because no phoneme was assessed, and the
+    strongest verdict is refused when the weakest matched word fell below
+    :data:`MIN_WORD_CONFIDENCE` or carried no confidence at all: a match the recogniser was unsure
+    of cannot be reported as meeting the target.
+    """
     unit = comparison_unit(locale)
     expected = tokenize(target, unit)
     heard = tokenize(transcription.text, unit)
@@ -494,7 +541,9 @@ def assess_transcription(transcription: stt.Transcription, target: str, locale: 
             left = expected[i1 + offset] if i1 + offset < i2 else ""
             right = heard[j1 + offset] if j1 + offset < j2 else None
             matched = bool(left) and left == right
-            confidence = confidences[j1 + offset] if (j1 + offset < j2 and matched) else None
+            # The confidence belongs to the heard token, matched or missed: a missed word with a
+            # high confidence is a word the learner said differently, not a word it half-heard.
+            confidence = confidences[j1 + offset] if j1 + offset < j2 else None
             entries.append(
                 {
                     "expected": left,
@@ -506,7 +555,20 @@ def assess_transcription(transcription: stt.Transcription, target: str, locale: 
 
     denominator = max(len(expected), len(heard)) or 1
     accuracy = round(sum(1 for entry in entries if entry["match"]) / denominator, 4)
+    matched_confidences = [
+        entry["confidence"]
+        for entry in entries
+        if entry["match"] and entry["confidence"] is not None
+    ]
+    weakest = min(matched_confidences) if matched_confidences else None
+    gated = False
+    caveat = RECOGNISER_CAVEAT
     verdict = _verdict(accuracy)
+    if verdict == "meets_target":
+        if weakest is None:
+            gated, verdict, caveat = True, "close", UNRATED_CONFIDENCE_CAVEAT
+        elif weakest < MIN_WORD_CONFIDENCE:
+            gated, verdict, caveat = True, "close", LOW_CONFIDENCE_CAVEAT
     confidence = transcription.confidence
     return {
         "transcript": transcription.text,
@@ -516,13 +578,33 @@ def assess_transcription(transcription: stt.Transcription, target: str, locale: 
         "model": transcription.model,
         "language": transcription.language,
         "unit": unit,
+        "measure": MEASURE,
         "word_accuracy": accuracy,
         "phoneme_accuracy": None,
+        "min_word_confidence": weakest,
+        "gated": gated,
+        "caveat": caveat,
         "confidence": None if confidence is None else round(float(confidence), 4),
         "words": entries[:MAX_WORDS],
         "verdict": verdict,
         "evidence_class": EVIDENCE_CLASS,
     }
+
+
+def labelled_assessment(assessment: dict[str, Any]) -> dict[str, Any]:
+    """Add the recognition label to a stored assessment written before it existed.
+
+    An attempt row older than this build holds the same numbers and no label. It is replayed with
+    the label its own fields support — never with a pronunciation claim, and never with a
+    recomputed accuracy.
+    """
+    labelled = dict(assessment)
+    has_score = assessment.get("word_accuracy") is not None
+    labelled.setdefault("measure", MEASURE if has_score else MEASURE_NONE)
+    labelled.setdefault("gated", False)
+    labelled.setdefault("min_word_confidence", None)
+    labelled.setdefault("caveat", RECOGNISER_CAVEAT if has_score else None)
+    return labelled
 
 
 def unavailable_assessment(
@@ -537,8 +619,12 @@ def unavailable_assessment(
         "model": model,
         "language": None,
         "unit": comparison_unit(locale),
+        "measure": MEASURE_NONE,
         "word_accuracy": None,
         "phoneme_accuracy": None,
+        "min_word_confidence": None,
+        "gated": False,
+        "caveat": None,
         "confidence": None,
         "words": [],
         "verdict": "unavailable",
@@ -607,6 +693,10 @@ def _result_from_row(row, revision: int) -> dict[str, Any]:
             target=str(row["target"]), locale=str(row["locale"]), reason="stored_assessment_missing",
             model=row["model"],
         )
+    else:
+        # A row written before the recognition label existed keeps its numbers and gains the label
+        # its own fields support, so a replay can never be read as a pronunciation claim.
+        assessment = labelled_assessment(assessment)
     return {
         "status": "assessed",
         "recorded": True,

@@ -467,8 +467,12 @@ class HintLadderContractTest(unittest.TestCase):
     def test_v29_is_the_derived_delta_not_a_hand_copy(self) -> None:
         import importlib.util
 
+        # v29 is *composed*: UP-14's ladder delta, then UP-19's recognition-label delta on the
+        # union. One contract version cannot be forked into two files, so the shipped document
+        # must equal the composition — and still carry the ladder, not just the later delta.
         spec = importlib.util.spec_from_file_location(
-            "derive_rpc_v29", contracts.CONTRACT_DIR.parent / "probes" / "derive_rpc_v29.py"
+            "derive_rpc_v29_pronunciation",
+            contracts.CONTRACT_DIR.parent / "probes" / "derive_rpc_v29_pronunciation.py",
         )
         self.assertIsNotNone(spec)
         assert spec is not None and spec.loader is not None
@@ -477,6 +481,12 @@ class HintLadderContractTest(unittest.TestCase):
         shipped = (contracts.CONTRACT_DIR / "rpc.v29.json").read_text(encoding="utf-8")
         source = json.loads((contracts.CONTRACT_DIR / "rpc.v28.json").read_text(encoding="utf-8"))
         self.assertEqual(shipped, module.serialise(module.derive(source)))
+        document = json.loads(shipped)
+        self.assertIn("assistance_policy", document["$defs"]["check_stimulus"]["properties"])
+        self.assertEqual(
+            document["$defs"]["pronunciation_assessment"]["properties"]["measure"]["enum"],
+            ["word_recognition", "none"],
+        )
 
 
 if __name__ == "__main__":

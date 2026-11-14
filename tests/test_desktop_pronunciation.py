@@ -214,6 +214,21 @@ const read = () => {
     saveLabel: saveButton ? (saveButton.textContent || '').trim() : null,
     errorNode: errorNode ? { code: errorNode.getAttribute('data-cb-pronunciation-error') } : null,
     resultNode: resultNode ? { status: resultNode.getAttribute('data-cb-pronunciation-result') } : null,
+    measureNode: (() => {
+      const node = document.querySelector('[data-cb-pronunciation-result]')
+      return node ? node.getAttribute('data-cb-pronunciation-measure') : null
+    })(),
+    gatedNode: (() => {
+      const node = document.querySelector('[data-cb-pronunciation-result]')
+      return node ? node.getAttribute('data-cb-pronunciation-gated') : null
+    })(),
+    caveatNode: (document.querySelector('[data-cb-pronunciation-caveat]') || {}).textContent || null,
+    wordConfidences: Array.from(document.querySelectorAll('[data-cb-word-confidence]')).map(
+      (node) => ({
+        value: node.getAttribute('data-cb-word-confidence'),
+        text: (node.textContent || '').trim()
+      })
+    ),
     verdictNode: (() => {
       const node = document.querySelector('[data-cb-pronunciation-verdict]')
       return node ? node.getAttribute('data-cb-pronunciation-verdict') : null
@@ -435,15 +450,23 @@ class PronunciationStudioTest(unittest.TestCase):
         self.assertIn("could not be read", first["disclosure"])
 
     def test_the_full_loop_sends_one_explicit_take_and_prints_the_backend_assessment(self) -> None:
+        caveat = (
+            "Understood by the recogniser: this compares the words the recogniser heard in your "
+            "take with the target phrase. It does not measure pronunciation — no phoneme was "
+            "assessed — so a word the recogniser mishears because of an accent reads as a missed "
+            "word."
+        )
         assessment = {
             "transcript": "こんにちは。今日はいい天気ですね。",
             "target": NARRATION_MEDIA["text_equivalent"],
             "locale": "ja", "provider": "coursebook_local_whisper", "model": "small", "language": "ja",
-            "unit": "character", "word_accuracy": 0.6667, "phoneme_accuracy": None, "confidence": 0.7526,
+            "unit": "character", "measure": "word_recognition", "word_accuracy": 0.6667,
+            "phoneme_accuracy": None, "min_word_confidence": 0.7, "gated": False, "caveat": caveat,
+            "confidence": 0.7526,
             "words": [
                 {"expected": "こ", "heard": "こ", "match": True, "confidence": 0.91},
                 {"expected": "ん", "heard": "ん", "match": True, "confidence": 0.7},
-                {"expected": "に", "heard": "り", "match": False, "confidence": None},
+                {"expected": "に", "heard": "り", "match": False, "confidence": 0.66},
             ],
             "verdict": "close",
             "evidence_class": "model_assessed",
@@ -467,6 +490,14 @@ class PronunciationStudioTest(unittest.TestCase):
         self.assertEqual(steps["compared"]["matchedNode"], "2/3")
         self.assertIn("Practice measurement", steps["compared"]["html"])
         self.assertIn("not verified pronunciation and not a graded score", steps["compared"]["provenanceNode"])
+        # UP-19: the pane prints the backend's own caveat verbatim, marks what was measured, and
+        # prints the recogniser's confidence for the word it got wrong.
+        self.assertEqual(steps["compared"]["caveatNode"], caveat)
+        self.assertEqual(steps["compared"]["measureNode"], "word_recognition")
+        self.assertEqual(steps["compared"]["gatedNode"], "false")
+        self.assertIn({"value": "66%", "text": "66%"}, steps["compared"]["wordConfidences"])
+        for harmful in ("Meets the target phrase", "Needs practice", "another pass would help"):
+            self.assertNotIn(harmful, steps["compared"]["html"])
 
         calls = data["observed"]["calls"]
         posts = [call for call in calls if call["path"] == "/pronunciation/attempt"]
@@ -556,6 +587,44 @@ class PronunciationStudioTest(unittest.TestCase):
         self.assertFalse(any(call["path"] == "/pronunciation/attempt" for call in data["observed"]["calls"]))
 
     # -- honesty guards ---------------------------------------------------------------------
+    def test_a_gated_take_says_the_recogniser_was_not_sure_instead_of_passing_it(self) -> None:
+        caveat = (
+            "Understood by the recogniser, with low confidence: the words matched, but the "
+            "recogniser was under 55% confident of at least one of them, so this take is not "
+            "reported as meeting the target. No phoneme was assessed, so nothing about your "
+            "pronunciation was measured."
+        )
+        assessment = {
+            "transcript": "good morning", "target": "good morning", "locale": "en-US",
+            "provider": "coursebook_local_whisper", "model": "small", "language": "en",
+            "unit": "word", "measure": "word_recognition", "word_accuracy": 1.0,
+            "phoneme_accuracy": None, "min_word_confidence": 0.28, "gated": True, "caveat": caveat,
+            "confidence": 0.44,
+            "words": [
+                {"expected": "good", "heard": "good", "match": True, "confidence": 0.33},
+                {"expected": "morning", "heard": "morning", "match": True, "confidence": 0.28},
+            ],
+            "verdict": "close",
+            "evidence_class": "model_assessed",
+        }
+        attempt = {"ok": True, "result": {"status": "assessed", "recorded": True,
+                                          "attempt_id": "prn_0123456789abcdef", "revision": 7,
+                                          "assessment": assessment, "reason": None}}
+        data = self.run_dom(
+            responses=self.base_responses(
+                {"provider": "coursebook_local_whisper", "model": "small", "available": True,
+                 "reason": None, "model_cached": True, "local_only": True},
+                attempt,
+            )
+        )
+        compared = {row["step"]: row for row in data["observed"]["steps"]}["compared"]
+        self.assertEqual(compared["verdictNode"], "close")
+        self.assertEqual(compared["gatedNode"], "true")
+        self.assertEqual(compared["caveatNode"], caveat)
+        # The verdict reads as a recognition, never as a pass the learner earned.
+        self.assertIn("Recogniser caught most of it", compared["html"])
+        self.assertNotIn("Meets the target phrase", compared["html"])
+
     def test_the_desktop_never_recomputes_accuracy_and_never_autoplays(self) -> None:
         source = PLUGIN_JS.read_text(encoding="utf-8")
         self.assertNotIn("word_accuracy", source)

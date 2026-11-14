@@ -2544,8 +2544,18 @@ class V9AmendmentTest(unittest.TestCase):
             set(assessment["properties"]["verdict"]["enum"]),
             {"meets_target", "close", "needs_practice", "unavailable"},
         )
-        for nullable in ("word_accuracy", "phoneme_accuracy", "confidence"):
+        for nullable in ("word_accuracy", "phoneme_accuracy", "confidence", "min_word_confidence",
+                         "caveat"):
             self.assertIn({"type": "null"}, assessment["properties"][nullable]["oneOf"])
+        # UP-19: the record names what it measured instead of implying pronunciation, and the
+        # strongest verdict is gated on the recogniser's own per-word confidence.
+        self.assertEqual(assessment["properties"]["measure"]["enum"],
+                         ["word_recognition", "none"])
+        self.assertEqual(assessment["properties"]["caveat"]["oneOf"][0]["maxLength"], 400)
+        self.assertEqual(assessment["properties"]["gated"]["type"], "boolean")
+        for required in ("measure", "caveat", "gated", "min_word_confidence"):
+            self.assertIn(required, assessment["required"])
+        self.assertNotIn("pronunciation", assessment["properties"]["measure"]["enum"])
         self.assertLessEqual(assessment["properties"]["words"]["maxItems"], 200)
         for side in (request, response, assessment):
             self.assertEqual(_schema_problems(side), [])
