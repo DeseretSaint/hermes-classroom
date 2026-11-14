@@ -88,7 +88,28 @@ class HarnessEndToEndTest(unittest.TestCase):
         evidence = self.results["music_short"]
         lanes = evidence["observations"]["check_lanes"]
         self.assertTrue(lanes)
-        self.assertTrue(all(lane["reference_kind"] == "exact" for lane in lanes))
+        # UP-11: the knowledge objectives are exact-lane quizzes; the transfer objective is a
+        # recorded verification over a case the page never worked, and takes the confirmation
+        # lane (rubric_only) rather than an option pick.
+        targets = {
+            row["objective_id"]: row["evidence_target"]
+            for row in evidence["steps"]["outline"]["objectives"]
+        }
+        self.assertTrue(
+            all(
+                lane["reference_kind"] == "exact"
+                for lane in lanes
+                if targets.get(lane["objective_id"]) != "transfer"
+            )
+        )
+        self.assertTrue(
+            all(
+                lane["reference_kind"] == "rubric_only"
+                and lane["stimulus_format"] == "verification"
+                for lane in lanes
+                if targets.get(lane["objective_id"]) == "transfer"
+            )
+        )
         rows = {row["label"]: row["submit"]["result"] for row in evidence["steps"]["grading"]}
         self.assertEqual(rows["correct"]["verdict"], "pass")
         self.assertEqual(rows["wrong"]["verdict"], "not_yet")

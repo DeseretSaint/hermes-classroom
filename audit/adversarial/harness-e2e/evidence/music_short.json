@@ -3,9 +3,9 @@
     "approval_after_validation_succeeded": true,
     "approval_refused_before_and_on_stale_hash": true,
     "correct_answer_passes": true,
-    "every_check_is_an_exact_lane_quiz": true,
     "every_lesson_validated": true,
     "four_objectives": true,
+    "knowledge_checks_are_exact_lane_quizzes": true,
     "no_answer_key_in_served_lesson": true,
     "no_japanese_content_in_lessons": true,
     "no_japanese_content_in_plan": true,
@@ -17,6 +17,7 @@
     "prerequisite_edges_point_backwards": true,
     "scope_contract_is_coherent": true,
     "scope_matches_documented_bounds": true,
+    "transfer_check_is_a_recorded_verification": true,
     "two_units": true,
     "units_user_enqueued_not_chained": true,
     "wrong_answer_is_not_yet": true
@@ -209,21 +210,34 @@
             "hint": "available"
           },
           "evidence_target": "transfer",
-          "kind": "quiz",
-          "learner_instructions": "Answer in one short phrase, without notes.",
+          "kind": "verification",
+          "learner_instructions": "Tick only what you actually did.",
           "scaffolds": [],
           "stimulus": {
             "choices": [],
-            "format": "text",
-            "items": [],
-            "prompt": "A song uses C, G, A minor and F. Which key is it in?"
+            "format": "verification",
+            "items": [
+              {
+                "id": "step-1",
+                "label": "List the chords"
+              },
+              {
+                "id": "step-2",
+                "label": "Place the roots"
+              },
+              {
+                "id": "step-3",
+                "label": "Name the key"
+              }
+            ],
+            "prompt": "Take a song this page never analysed, work its chords on the circle, and tick each step only after you did it."
           }
         },
         "direction": "ltr",
         "lang": "en-US",
         "learner_explanation": "The circle shows which chords belong together, so a song's chord list becomes a key and a set of functions.",
         "learner_explanation_short": "The circle shows which chords belong together.",
-        "lesson_intent": "Teach the circle as a song-analysis tool and check one mapping.",
+        "lesson_intent": "Teach the circle as a song-analysis tool and record one real analysis.",
         "media": [],
         "parent_notes": null,
         "section_title": "Use the circle of fifths to name the chords in a pop song",
@@ -266,14 +280,27 @@
             "hint": "available"
           },
           "evidence_target": "transfer",
-          "kind": "quiz",
-          "learner_instructions": "Answer in one short phrase, without notes.",
+          "kind": "verification",
+          "learner_instructions": "Tick only what you actually did.",
           "scaffolds": [],
           "stimulus": {
             "choices": [],
-            "format": "text",
-            "items": [],
-            "prompt": "From memory — A song uses C, G, A minor and F. Which key is it in?"
+            "format": "verification",
+            "items": [
+              {
+                "id": "step-1",
+                "label": "From memory: List the chords"
+              },
+              {
+                "id": "step-2",
+                "label": "From memory: Place the roots"
+              },
+              {
+                "id": "step-3",
+                "label": "From memory: Name the key"
+              }
+            ],
+            "prompt": "From memory — Take a song this page never analysed, work its chords on the circle, and tick each step only after you did it."
           }
         },
         "direction": "ltr",
@@ -371,16 +398,16 @@
       },
       {
         "objective_id": "000000000000000e",
-        "reference_kind": "exact",
+        "reference_kind": "rubric_only",
         "state": "open",
-        "stimulus_format": "text",
+        "stimulus_format": "verification",
         "version": 1
       },
       {
         "objective_id": "000000000000000e",
-        "reference_kind": "exact",
+        "reference_kind": "rubric_only",
         "state": "closed",
-        "stimulus_format": "text",
+        "stimulus_format": "verification",
         "version": 2
       }
     ],
@@ -437,7 +464,7 @@
       },
       {
         "evidence_target": "transfer",
-        "kind": "quiz",
+        "kind": "verification",
         "objective_ref": 4
       }
     ],
@@ -619,7 +646,7 @@
     ],
     "approve": {
       "approval_provenance": null,
-      "plan_hash": "sha256:988263f19033fe9c58da852acd32330b72aa025da50c9e807ba2be7175dd5226",
+      "plan_hash": "sha256:09bd1f52930be77aaf3418d3daf80b652d67ba6030b138a5ef2e00e3c2f8b576",
       "revision": 1,
       "state_after": "approved"
     },
@@ -917,7 +944,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": 2,
-          "plan_hash": "sha256:e71d5565080253e991fc4940dc85ce9dc374532aab5d1b7cd0d102a2d796f569",
+          "plan_hash": "sha256:37ac7f7fb595ab44f98f6557a1f5575057b57323b0641cc2fe07f9642fc6cff3",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -1121,7 +1148,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": null,
-          "plan_hash": "sha256:e71d5565080253e991fc4940dc85ce9dc374532aab5d1b7cd0d102a2d796f569",
+          "plan_hash": "sha256:37ac7f7fb595ab44f98f6557a1f5575057b57323b0641cc2fe07f9642fc6cff3",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -1161,8 +1188,8 @@
             "calls": 6,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 7707,
-            "output_tokens": 2916,
+            "input_tokens": 7891,
+            "output_tokens": 3058,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -1231,7 +1258,7 @@
         }
       ],
       "plan": {
-        "plan_hash": "sha256:988263f19033fe9c58da852acd32330b72aa025da50c9e807ba2be7175dd5226",
+        "plan_hash": "sha256:09bd1f52930be77aaf3418d3daf80b652d67ba6030b138a5ef2e00e3c2f8b576",
         "plan_id": "pln_00000000000000000000000000000003",
         "state": "approved",
         "units": [
@@ -1401,8 +1428,8 @@
         "locale": "en-US",
         "next_unit_ordinal": 1,
         "objectives": 4,
-        "plan_content_hash": "sha256:988263f19033fe9c58da852acd32330b72aa025da50c9e807ba2be7175dd5226",
-        "plan_hash": "sha256:e71d5565080253e991fc4940dc85ce9dc374532aab5d1b7cd0d102a2d796f569",
+        "plan_content_hash": "sha256:09bd1f52930be77aaf3418d3daf80b652d67ba6030b138a5ef2e00e3c2f8b576",
+        "plan_hash": "sha256:37ac7f7fb595ab44f98f6557a1f5575057b57323b0641cc2fe07f9642fc6cff3",
         "plan_id": "pln_00000000000000000000000000000003",
         "plan_schema": "coursebook.plan.v2",
         "plan_version": 1,
@@ -1451,8 +1478,8 @@
           "calls": 4,
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
-          "input_tokens": 5212,
-          "output_tokens": 1257,
+          "input_tokens": 5218,
+          "output_tokens": 1259,
           "unknown_calls": 0,
           "unknown_cost": false
         },
@@ -1542,7 +1569,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": 2,
           "owners": 2,
-          "plan_hash": "sha256:e71d5565080253e991fc4940dc85ce9dc374532aab5d1b7cd0d102a2d796f569",
+          "plan_hash": "sha256:37ac7f7fb595ab44f98f6557a1f5575057b57323b0641cc2fe07f9642fc6cff3",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -1601,7 +1628,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": null,
           "owners": 2,
-          "plan_hash": "sha256:e71d5565080253e991fc4940dc85ce9dc374532aab5d1b7cd0d102a2d796f569",
+          "plan_hash": "sha256:37ac7f7fb595ab44f98f6557a1f5575057b57323b0641cc2fe07f9642fc6cff3",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -1636,8 +1663,8 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 1458,
-            "output_tokens": 683,
+            "input_tokens": 1462,
+            "output_tokens": 685,
             "unknown_calls": 0,
             "unknown_cost": false
           },

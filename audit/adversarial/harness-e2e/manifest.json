@@ -13,20 +13,20 @@
       "sha256": "7e703d84e55ec1b5a6b3f3d5ff261ea54f6c446970978debcb6c727f58bf390e"
     },
     "music_short.json": {
-      "bytes": 57441,
-      "sha256": "a5dd2fac3421f98082d2c3d076892ce545509ac07b7b9bd64a72017568399a52"
+      "bytes": 58378,
+      "sha256": "7064e734b8dc72e6924ae2d0e3e8fadecb8ec4094a406e95f9aff407ac71ae5e"
     },
     "partial_unit_batch.json": {
       "bytes": 996,
       "sha256": "773655c5452605b0369c08d7c4b94b0febfe2643b7ef2e2cd928122768db64e0"
     },
     "run-output.txt": {
-      "bytes": 8938,
-      "sha256": "96aa2ae67dc97956843c4c1213e8312d0433de04e2830d059092d6a82b8ad009"
+      "bytes": 9035,
+      "sha256": "cc9303a305f56dd682edd563f7bf10ae986caad4598397182bb41831db80af76"
     },
     "soldering_full.json": {
-      "bytes": 151816,
-      "sha256": "1ae9bab6df87253df5b25e3dcbbe87db88bd53987bc5ab348dfbe51edb096360"
+      "bytes": 152873,
+      "sha256": "6c9606bad252fece595b2d79edd20e91ff3b065f4b89e4801f251203d6a1363d"
     },
     "summary.json": {
       "bytes": 84,
@@ -35,7 +35,7 @@
   },
   "harness": {
     "path": "harness_e2e.py",
-    "sha256": "6a2343e60cf0b35d94e17b78702b1f55f4f3a3e44db17d05ce6b14bf73168cd5"
+    "sha256": "5cbf6db43fb0a75e66bbbfa6286932c06115124348a94ae2c33ed476cf38b7b6"
   },
   "inputs": {
     "bicycle_single": {
@@ -69,7 +69,7 @@
       "model_transcript_id": "recorded-transcript-h40",
       "scope": "short",
       "transcript": "transcripts/music_short.json",
-      "transcript_sha256": "375574820bfe7108c9d8a571197895000a004926777d4e850658baefade70653",
+      "transcript_sha256": "68f3b479500039827eb4a40aeff32d62daf3da11363ccfd1dc0afe3164c266f1",
       "validator_transcript_id": "recorded-validator-h40"
     },
     "soldering_full": {
@@ -86,7 +86,7 @@
       "model_transcript_id": "recorded-transcript-h40",
       "scope": "full",
       "transcript": "transcripts/soldering_full.json",
-      "transcript_sha256": "cac2acd82c1ef9fde022ce2b980e59aadfccbe1463882c1de5d5a162a99e2324",
+      "transcript_sha256": "a101e83abe9e581781e23141d85941080567010cb0f31c202a44aa37b1c0ed49",
       "validator_transcript_id": "recorded-validator-h40"
     }
   },

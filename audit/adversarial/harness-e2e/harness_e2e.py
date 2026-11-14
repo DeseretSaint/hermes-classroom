@@ -1090,21 +1090,35 @@ def _assert_scenario(name: str, scenario: dict, evidence: dict) -> dict[str, boo
             and correct.get("evidence_class") == "self_reported",
         })
     elif name == "music_short":
+        # CP-015g/D1-F1 and UP-11: the check family follows the objective's evidence target. The
+        # knowledge objectives keep the exact-lane quiz; the transfer objective is a recorded
+        # verification (rubric_only, confirmation lane), never an option pick.
+        targets = {
+            row["objective_id"]: row["evidence_target"]
+            for row in evidence["steps"]["outline"]["objectives"]
+        }
         assertions.update({
             "two_units": obs["units"] == 2,
             "four_objectives": obs["objectives"] == 4,
-            "every_check_is_an_exact_lane_quiz": all(
+            "knowledge_checks_are_exact_lane_quizzes": all(
                 lane["reference_kind"] == "exact" and lane["stimulus_format"] == "text"
                 for lane in lanes
+                if targets.get(lane["objective_id"]) != "transfer"
+            ),
+            "transfer_check_is_a_recorded_verification": all(
+                lane["reference_kind"] == "rubric_only"
+                and lane["stimulus_format"] == "verification"
+                for lane in lanes
+                if targets.get(lane["objective_id"]) == "transfer"
             ),
             "correct_answer_passes": correct.get("verdict") == "pass",
             "wrong_answer_is_not_yet": wrong is not None and wrong.get("verdict") == "not_yet",
         })
     elif name == "soldering_full":
-        # CP-015g/D1-F1: the check family follows the objective's evidence target. A procedure is
-        # measured by a confirmation checklist (rubric_only verification); the knowledge and
-        # transfer objectives keep the exact-lane quiz this recording authored. A committed
-        # course still needs at least one graded quiz (`coursebook` kernel rule).
+        # CP-015g/D1-F1 and UP-11: a procedure and a transfer are measured by a confirmation
+        # checklist (rubric_only verification); the knowledge objectives keep the exact-lane quiz
+        # this recording authored. A committed course still needs at least one graded quiz
+        # (`coursebook` kernel rule).
         targets = {
             row["objective_id"]: row["evidence_target"]
             for row in evidence["steps"]["outline"]["objectives"]
@@ -1112,7 +1126,7 @@ def _assert_scenario(name: str, scenario: dict, evidence: dict) -> dict[str, boo
         lanes_match_targets = all(
             (lane["reference_kind"] == "rubric_only"
              and lane["stimulus_format"] == "verification")
-            if targets.get(lane["objective_id"]) == "procedure"
+            if targets.get(lane["objective_id"]) in ("procedure", "transfer")
             else (lane["reference_kind"] == "exact" and lane["stimulus_format"] == "text")
             for lane in lanes
         )
@@ -1126,6 +1140,12 @@ def _assert_scenario(name: str, scenario: dict, evidence: dict) -> dict[str, boo
                 and lane["stimulus_format"] == "verification"
                 for lane in lanes
                 if targets.get(lane["objective_id"]) == "procedure"
+            ),
+            "transfer_checks_are_verification": all(
+                lane["reference_kind"] == "rubric_only"
+                and lane["stimulus_format"] == "verification"
+                for lane in lanes
+                if targets.get(lane["objective_id"]) == "transfer"
             ),
             "correct_answer_passes": correct.get("verdict") == "pass",
             "wrong_answer_is_not_yet": wrong is not None and wrong.get("verdict") == "not_yet",

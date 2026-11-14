@@ -22,6 +22,7 @@
     "procedure_checks_are_verification": true,
     "scope_contract_is_coherent": true,
     "scope_matches_documented_bounds": true,
+    "transfer_checks_are_verification": true,
     "units_user_enqueued_not_chained": true,
     "wrong_answer_is_not_yet": true
   },
@@ -708,21 +709,34 @@
             "hint": "available"
           },
           "evidence_target": "transfer",
-          "kind": "quiz",
-          "learner_instructions": "Answer in one short phrase, without notes.",
+          "kind": "verification",
+          "learner_instructions": "Tick only what you actually did.",
           "scaffolds": [],
           "stimulus": {
             "choices": [],
-            "format": "text",
-            "items": [],
-            "prompt": "Which joint needs rework?"
+            "format": "verification",
+            "items": [
+              {
+                "id": "step-1",
+                "label": "Pick a joint this page did not show"
+              },
+              {
+                "id": "step-2",
+                "label": "Compare to the criterion"
+              },
+              {
+                "id": "step-3",
+                "label": "Mark rework"
+              }
+            ],
+            "prompt": "Inspect joints on a board this page never pictured, then tick each step only after you did it."
           }
         },
         "direction": "ltr",
         "lang": "en-US",
         "learner_explanation": "Applying one criterion to many joints is the skill; the criterion itself does not change.",
         "learner_explanation_short": "Applying one criterion to many joints is the skill.",
-        "lesson_intent": "Apply the criterion to a real joint.",
+        "lesson_intent": "Apply the criterion to a joint this page never showed.",
         "media": [],
         "parent_notes": null,
         "section_title": "Inspect a finished joint against the fillet criterion",
@@ -747,7 +761,7 @@
           "prompt": "A worked example of Inspect a finished joint against the fillet criterion",
           "short": "The step is done and checked.",
           "steps": [
-            "Pick a joint",
+            "Pick a joint this page did not show",
             "Compare to the criterion",
             "Mark rework"
           ]
@@ -975,21 +989,34 @@
             "hint": "available"
           },
           "evidence_target": "transfer",
-          "kind": "quiz",
-          "learner_instructions": "Answer in one short phrase, without notes.",
+          "kind": "verification",
+          "learner_instructions": "Tick only what you actually did.",
           "scaffolds": [],
           "stimulus": {
             "choices": [],
-            "format": "text",
-            "items": [],
-            "prompt": "Which meter setting proves the repair conducts?"
+            "format": "verification",
+            "items": [
+              {
+                "id": "step-1",
+                "label": "Set continuity"
+              },
+              {
+                "id": "step-2",
+                "label": "Probe both ends of your own repair"
+              },
+              {
+                "id": "step-3",
+                "label": "Confirm the beep"
+              }
+            ],
+            "prompt": "After your own rework, probe the repaired path and tick each step only after you did it. This page cannot see your board."
           }
         },
         "direction": "ltr",
         "lang": "en-US",
         "learner_explanation": "A joint can look right and still be open; the meter is the check the eye cannot make.",
         "learner_explanation_short": "A joint can look right and still be open.",
-        "lesson_intent": "Teach the final electrical check.",
+        "lesson_intent": "Teach the final electrical check on a repair this page did not build.",
         "media": [],
         "parent_notes": null,
         "section_title": "Prove continuity with a meter after rework",
@@ -1015,7 +1042,7 @@
           "short": "The step is done and checked.",
           "steps": [
             "Set continuity",
-            "Probe both ends",
+            "Probe both ends of your own repair",
             "Confirm the beep"
           ]
         }
@@ -1129,9 +1156,9 @@
       },
       {
         "objective_id": "000000000000001c",
-        "reference_kind": "exact",
+        "reference_kind": "rubric_only",
         "state": "open",
-        "stimulus_format": "text",
+        "stimulus_format": "verification",
         "version": 1
       },
       {
@@ -1157,9 +1184,9 @@
       },
       {
         "objective_id": "000000000000001f",
-        "reference_kind": "exact",
+        "reference_kind": "rubric_only",
         "state": "open",
-        "stimulus_format": "text",
+        "stimulus_format": "verification",
         "version": 1
       }
     ],
@@ -1277,7 +1304,7 @@
       },
       {
         "evidence_target": "transfer",
-        "kind": "quiz",
+        "kind": "verification",
         "objective_ref": 9
       },
       {
@@ -1292,7 +1319,7 @@
       },
       {
         "evidence_target": "transfer",
-        "kind": "quiz",
+        "kind": "verification",
         "objective_ref": 12
       }
     ],
@@ -1598,7 +1625,7 @@
     ],
     "approve": {
       "approval_provenance": null,
-      "plan_hash": "sha256:8e94bd93c167a363b763897b27594c3ab7c6a9f3e6d970518f66ef60e919bd55",
+      "plan_hash": "sha256:52a3a6ef217323888e9536fb7636c2e1deae23b636436e8b5d0a7129f0c725fc",
       "revision": 1,
       "state_after": "approved"
     },
@@ -1976,7 +2003,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": 2,
-          "plan_hash": "sha256:ae788719c666be983eddf17680904e6d758124bbe8486bc8db5d2ae996e6c13c",
+          "plan_hash": "sha256:654b9d685f5639eed41fde08f8145336c0f37ab778d7922d39cb1627da71ab76",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -2132,7 +2159,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": 3,
-          "plan_hash": "sha256:ae788719c666be983eddf17680904e6d758124bbe8486bc8db5d2ae996e6c13c",
+          "plan_hash": "sha256:654b9d685f5639eed41fde08f8145336c0f37ab778d7922d39cb1627da71ab76",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -2336,7 +2363,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": 4,
-          "plan_hash": "sha256:ae788719c666be983eddf17680904e6d758124bbe8486bc8db5d2ae996e6c13c",
+          "plan_hash": "sha256:654b9d685f5639eed41fde08f8145336c0f37ab778d7922d39cb1627da71ab76",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -2540,7 +2567,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": 5,
-          "plan_hash": "sha256:ae788719c666be983eddf17680904e6d758124bbe8486bc8db5d2ae996e6c13c",
+          "plan_hash": "sha256:654b9d685f5639eed41fde08f8145336c0f37ab778d7922d39cb1627da71ab76",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -2744,7 +2771,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": 6,
-          "plan_hash": "sha256:ae788719c666be983eddf17680904e6d758124bbe8486bc8db5d2ae996e6c13c",
+          "plan_hash": "sha256:654b9d685f5639eed41fde08f8145336c0f37ab778d7922d39cb1627da71ab76",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -2784,8 +2811,8 @@
             "calls": 6,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 14320,
-            "output_tokens": 2947,
+            "input_tokens": 14423,
+            "output_tokens": 3023,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -2900,7 +2927,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": null,
-          "plan_hash": "sha256:ae788719c666be983eddf17680904e6d758124bbe8486bc8db5d2ae996e6c13c",
+          "plan_hash": "sha256:654b9d685f5639eed41fde08f8145336c0f37ab778d7922d39cb1627da71ab76",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -2940,8 +2967,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 11157,
-            "output_tokens": 1926,
+            "input_tokens": 11273,
+            "output_tokens": 2004,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -3122,7 +3149,7 @@
         }
       ],
       "plan": {
-        "plan_hash": "sha256:8e94bd93c167a363b763897b27594c3ab7c6a9f3e6d970518f66ef60e919bd55",
+        "plan_hash": "sha256:52a3a6ef217323888e9536fb7636c2e1deae23b636436e8b5d0a7129f0c725fc",
         "plan_id": "pln_00000000000000000000000000000003",
         "state": "approved",
         "units": [
@@ -3504,8 +3531,8 @@
         "locale": "en-US",
         "next_unit_ordinal": 1,
         "objectives": 12,
-        "plan_content_hash": "sha256:8e94bd93c167a363b763897b27594c3ab7c6a9f3e6d970518f66ef60e919bd55",
-        "plan_hash": "sha256:ae788719c666be983eddf17680904e6d758124bbe8486bc8db5d2ae996e6c13c",
+        "plan_content_hash": "sha256:52a3a6ef217323888e9536fb7636c2e1deae23b636436e8b5d0a7129f0c725fc",
+        "plan_hash": "sha256:654b9d685f5639eed41fde08f8145336c0f37ab778d7922d39cb1627da71ab76",
         "plan_id": "pln_00000000000000000000000000000003",
         "plan_schema": "coursebook.plan.v2",
         "plan_version": 1,
@@ -3560,8 +3587,8 @@
           "calls": 7,
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
-          "input_tokens": 33552,
-          "output_tokens": 2254,
+          "input_tokens": 33576,
+          "output_tokens": 2258,
           "unknown_calls": 0,
           "unknown_cost": false
         },
@@ -3675,7 +3702,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": 2,
           "owners": 2,
-          "plan_hash": "sha256:ae788719c666be983eddf17680904e6d758124bbe8486bc8db5d2ae996e6c13c",
+          "plan_hash": "sha256:654b9d685f5639eed41fde08f8145336c0f37ab778d7922d39cb1627da71ab76",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -3734,7 +3761,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": 3,
           "owners": 2,
-          "plan_hash": "sha256:ae788719c666be983eddf17680904e6d758124bbe8486bc8db5d2ae996e6c13c",
+          "plan_hash": "sha256:654b9d685f5639eed41fde08f8145336c0f37ab778d7922d39cb1627da71ab76",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -3793,7 +3820,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": 4,
           "owners": 2,
-          "plan_hash": "sha256:ae788719c666be983eddf17680904e6d758124bbe8486bc8db5d2ae996e6c13c",
+          "plan_hash": "sha256:654b9d685f5639eed41fde08f8145336c0f37ab778d7922d39cb1627da71ab76",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -3853,7 +3880,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": 5,
           "owners": 2,
-          "plan_hash": "sha256:ae788719c666be983eddf17680904e6d758124bbe8486bc8db5d2ae996e6c13c",
+          "plan_hash": "sha256:654b9d685f5639eed41fde08f8145336c0f37ab778d7922d39cb1627da71ab76",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -3913,7 +3940,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": 6,
           "owners": 2,
-          "plan_hash": "sha256:ae788719c666be983eddf17680904e6d758124bbe8486bc8db5d2ae996e6c13c",
+          "plan_hash": "sha256:654b9d685f5639eed41fde08f8145336c0f37ab778d7922d39cb1627da71ab76",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -3948,8 +3975,8 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 1891,
-            "output_tokens": 662,
+            "input_tokens": 1897,
+            "output_tokens": 666,
             "unknown_calls": 0,
             "unknown_cost": false
           },
@@ -3973,7 +4000,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": null,
           "owners": 2,
-          "plan_hash": "sha256:ae788719c666be983eddf17680904e6d758124bbe8486bc8db5d2ae996e6c13c",
+          "plan_hash": "sha256:654b9d685f5639eed41fde08f8145336c0f37ab778d7922d39cb1627da71ab76",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -4007,8 +4034,8 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 4217,
-            "output_tokens": 542,
+            "input_tokens": 4228,
+            "output_tokens": 551,
             "unknown_calls": 0,
             "unknown_cost": false
           },

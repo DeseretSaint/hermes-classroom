@@ -44,7 +44,8 @@ music_short: PASS  scope=short units=2 objectives=4 checks=5 lessons=5 validatio
   PASS  scope_contract_is_coherent
   PASS  two_units
   PASS  four_objectives
-  PASS  every_check_is_an_exact_lane_quiz
+  PASS  knowledge_checks_are_exact_lane_quizzes
+  PASS  transfer_check_is_a_recorded_verification
   PASS  correct_answer_passes
   PASS  wrong_answer_is_not_yet
   grading[correct]: {"attempt_id": "att_0000000000000000000000000000004b", "verdict": "pass", "evidence_class": "cold", "criteria": [{"id": "c1", "observed": "matches an accepted answer", "met": true}], "next_action": "complete_objective", "revision": 2}
@@ -70,6 +71,7 @@ soldering_full: PASS  scope=full units=6 objectives=12 checks=15 lessons=15 vali
   PASS  prerequisite_edges_declared
   PASS  graded_checks_present
   PASS  procedure_checks_are_verification
+  PASS  transfer_checks_are_verification
   PASS  correct_answer_passes
   PASS  wrong_answer_is_not_yet
   PASS  plan_ceiling_probe_ran
