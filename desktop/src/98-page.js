@@ -285,6 +285,24 @@ function CoursebookPage() {
         setCreating(false)
         setCreateSeed(null)
       },
+      // UP-09: the success screen is also a door. The flow hands back the row it made (ids, the
+      // revision its own approvals returned, and the title it sent), and the route opens that
+      // course. A section press lands on the outline with the objective focused; a start press
+      // opens the classroom on that objective and arms the lesson run behind it.
+      onOpenCourse: (course, objectiveId, start) => {
+        if (!course) return
+        setCreating(false)
+        setCreateSeed(null)
+        if (course.course_id) setSelectedCourseId(course.course_id)
+        rememberedDestination = 'courses'
+        setDestination('courses')
+        setOpenCourse({
+          row: course,
+          objectiveId: objectiveId || null,
+          view: start ? null : 'plan'
+        })
+        if (start && objectiveId) startClassroomRun({ row: course, objectiveId })
+      },
       onCreated: () => {
         setCreateSeed(null)
         reloadHealth()
