@@ -38281,8 +38281,55 @@ function planRejectView({ job, plan, planValidation, objectiveCount, surface, go
   // H-182/D2: a retry that the backend answered by replaying the stored draft is named as such.
   // The renderer never repeats the old "research another pass" claim for a reused result.
   const replayed = checkpoint.reused === true
+  // G5 upstream: the backend refuses a plan whose own size fits no legal band and supplies the
+  // shapes that would hold it. A second authoring pass cannot widen the band, so this refusal
+  // never carries "Try again": the honest repair is the same brief under a different shape.
+  const bandDetails =
+    job && job.error && job.error.details && job.error.details.reason === 'scope_band'
+      ? job.error.details
+      : null
 
   if (failedRun) {
+    if (bandDetails) {
+      const scopeName = String(bandDetails.scope || '')
+      const shapeWord =
+        { single: 'one lesson', short: 'a short course', full: 'a full course' }[scopeName] ||
+        'the shape you chose'
+      const objectives = Number(bandDetails.objectives)
+      const band = Array.isArray(bandDetails.objective_band)
+        ? bandDetails.objective_band.map((value) => Number(value))
+        : []
+      const legal = Array.isArray(bandDetails.legal_scopes)
+        ? bandDetails.legal_scopes.map((value) => String(value)).filter(Boolean)
+        : []
+      const bandLine =
+        band.length === 2 && Number.isFinite(band[0]) && Number.isFinite(band[1])
+          ? `${shapeWord} holds ${band[0]} to ${band[1]} objectives`
+          : `${shapeWord} holds a different number of objectives`
+      const detail = [
+        `The plan had ${Number.isFinite(objectives) ? objectives : 'too many'} objectives; ${bandLine}.`,
+        'Nothing was approved, and no lesson pages exist.'
+      ]
+      if (legal.length > 0) {
+        const shapeNames = legal.map(
+          (name) => ({ single: 'One lesson', short: 'Short course', full: 'Full course' })[name] || name
+        )
+        detail.splice(1, 0, `Shapes that hold this plan: ${shapeNames.join(', ')}.`)
+      }
+      return {
+        kind: 'band',
+        title: `This goal does not fit ${shapeWord}`,
+        body: `The plan came back with ${Number.isFinite(objectives) ? objectives : 'too many'} objectives, and ${bandLine}. No plan was written, so there is no draft to approve. Your goal and every choice you made are saved; choosing a different shape keeps the goal and changes only how much of it a course covers.`,
+        where: 'The whole plan: its size fits no legal shape',
+        detail,
+        action:
+          legal.length > 0
+            ? { id: 'change_shape', label: 'Choose a different shape', scope: legal[0] }
+            : { id: 'try_again', label: 'Try again' },
+        secondary: null,
+        draftKept: Boolean(plan)
+      }
+    }
     const cancelled = job.state === 'cancelled'
     const interrupted = job.state === 'interrupted_requires_retry'
     const errorCode = String((job.error && job.error.code) || '')
@@ -38387,6 +38434,38 @@ function planRejectView({ job, plan, planValidation, objectiveCount, surface, go
     draftKept: Boolean(plan),
     reasons: reasons.map(plainPlanReason)
   }
+}
+
+/**
+ * The create-form seed a change action hands back. `change_shape` keeps the brief that ran and
+ * overrides only the scope with the shape the backend named as legal; `change_goal` keeps the
+ * brief's own scope. Pure so a test can prove the seed the form receives.
+ */
+function planRepairSeed(model, { planRun, course } = {}) {
+  const source = (planRun && planRun.brief) || {}
+  const action = (model && model.action) || {}
+  const scope =
+    action.id === 'change_shape' && action.scope ? String(action.scope) : source.scope || null
+  return {
+    goal: source.goal || '',
+    title: (course && course.title) || '',
+    recipe: source.recipe || null,
+    dials: source.dials || null,
+    locale: source.locale || null,
+    level: source.level || null,
+    subjectDomain: source.subject_domain || null,
+    scope
+  }
+}
+
+/**
+ * Hand a change action to the create form. Returns false when the surface has no form to return
+ * to, which is the one case where the caller must fall back to a repair it can actually run.
+ */
+function planRepairChangeGoal(model, { planRun, course } = {}, onChangeGoal) {
+  if (typeof onChangeGoal !== 'function') return false
+  onChangeGoal(planRepairSeed(model, { planRun, course }))
+  return true
 }
 
 /**
@@ -40151,25 +40230,13 @@ function StudioPlanView({
       startEditing()
       return
     }
-    if (action === 'change_goal') {
-      // The panel offers this action only on a surface that wires a handler (`canChangeGoal`),
-      // so this is a real return to the create form with the brief that ran, never a sentence.
-      // A caller that reaches here without one gets the retry below: the same brief, a new job,
-      // which is the only repair this surface can actually perform.
-      if (typeof onChangeGoal === 'function') {
-        const source = (planRun && planRun.brief) || {}
-        onChangeGoal({
-          goal: source.goal || '',
-          title: (course && course.title) || '',
-          recipe: source.recipe || null,
-          dials: source.dials || null,
-          locale: source.locale || null,
-          level: source.level || null,
-          subjectDomain: source.subject_domain || null,
-          scope: source.scope || null
-        })
-        return
-      }
+    if (action === 'change_goal' || action === 'change_shape') {
+      // The panel offers these only on a surface that wires a handler (`canChangeGoal`), so this
+      // is a real return to the create form with the brief that ran, never a sentence. A band
+      // refusal overrides the scope with the shape the backend named as legal; a plain goal
+      // change keeps the brief's own scope. A caller that reaches here without a handler gets the
+      // retry below: the same brief, a new job, which is the only repair this surface can run.
+      if (planRepairChangeGoal(shownRejection, { planRun, course }, onChangeGoal)) return
     }
     const source = planRun
     if (!source || !source.brief || !source.job_id) {
@@ -48554,6 +48621,8 @@ export {
   primarySurfaceFor,
   planRejectView,
   PlanRejectPanel,
+  planRepairSeed,
+  planRepairChangeGoal,
   PLAN_VALIDATION_LINES,
   PLAN_VALIDATION_SETTINGS_HINT,
   PLAN_VALIDATION_CONFIGURE_LINE,

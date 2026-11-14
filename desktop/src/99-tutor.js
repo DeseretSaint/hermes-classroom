@@ -2457,6 +2457,8 @@ export {
   primarySurfaceFor,
   planRejectView,
   PlanRejectPanel,
+  planRepairSeed,
+  planRepairChangeGoal,
   PLAN_VALIDATION_LINES,
   PLAN_VALIDATION_SETTINGS_HINT,
   PLAN_VALIDATION_CONFIGURE_LINE,

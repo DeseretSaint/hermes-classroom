@@ -34,7 +34,11 @@ def _source() -> str:
 HARNESS = """
 const React = (await import('react')).default
 const { renderToStaticMarkup } = await import('react-dom/server')
-const { planRejectView, PlanRejectPanel } = await import('./plugin.js')
+// Namespace import so a build without an export fails inside one case instead of at link time.
+const plugin = await import('./plugin.js')
+const { planRejectView, PlanRejectPanel } = plugin
+const planRepairChangeGoal =
+  typeof plugin.planRepairChangeGoal === 'function' ? plugin.planRepairChangeGoal : null
 
 const fs = await import('node:fs')
 const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
@@ -64,6 +68,18 @@ if (payload.kind === 'render') {
       })
     )
   }
+} else if (payload.kind === 'repair') {
+  // The same dispatcher the panel's click handler calls, with a recording onChangeGoal: the
+  // proof is the seed the create form actually receives, not a field the model happens to carry.
+  const received = []
+  const delivered = planRepairChangeGoal
+    ? planRepairChangeGoal(
+        model,
+        { planRun: payload.job, course: payload.course || null },
+        (seed) => received.push(seed)
+      )
+    : false
+  output = { model, delivered, received }
 } else {
   output = { model }
 }
@@ -96,6 +112,36 @@ def completed_reject(reasons, *, verdict="reject", outcome="rejected", independe
             }
         },
         "error": None
+    }
+
+
+def band_refused(objectives=12, *, legal_scopes=("full",), band=(2, 10), scope="short"):
+    """The job line a G5 scope-band refusal leaves: a failed run with no plan row at all."""
+    return {
+        "job_id": "job_band_refused",
+        "kind": "plan",
+        "state": "failed",
+        "brief": {
+            "stage": "plan",
+            "goal": "Order coffee and ask for the bill in Kyoto, politely.",
+            "recipe": "casual",
+            "dials": {"pace": "steady"},
+            "scope": scope,
+        },
+        "checkpoint": {},
+        "error": {
+            "code": "VALIDATION_FAILED",
+            "message": "The plan has 12 objective(s), which scope 'short' does not hold.",
+            "details": {
+                "reason": "scope_band",
+                "scope": scope,
+                "objectives": objectives,
+                "units": 4,
+                "legal_scopes": list(legal_scopes),
+                "objective_band": list(band),
+                "unit_band": [2, 6],
+            },
+        },
     }
 
 
@@ -241,6 +287,66 @@ class PlanRejectModelTest(unittest.TestCase):
         self.assertEqual(model["secondary"]["id"], "try_again")
         self.assertEqual(model["secondary"]["label"], "Try again")
         self.assertTrue(model["draftKept"])
+
+    # ── G5 scope-band refusal: one repair that can actually succeed ─────────
+
+    def test_a_scope_band_refusal_names_the_legal_shape_and_never_offers_try_again(self) -> None:
+        """A band miss cannot be authored away, so retrying the same brief is a dead button.
+
+        The backend refuses with `details.reason == 'scope_band'`, names the objectives that did
+        not fit, the band the chosen shape holds, and the shapes that would hold the plan. The
+        repair is the same brief under the first legal shape — never `try_again`.
+        """
+        out = self.run_case(
+            {
+                "kind": "repair",
+                "job": band_refused(objectives=12, legal_scopes=("full",)),
+                "objectiveCount": 0,
+                "surface": "learner",
+            }
+        )
+        model = out["model"]
+        self.assertEqual(model["kind"], "band")
+        self.assertEqual(model["action"]["id"], "change_shape")
+        self.assertEqual(model["action"]["label"], "Choose a different shape")
+        self.assertIsNone(model["secondary"])
+        # The copy names the count and the band the chosen shape holds, in learner words.
+        self.assertIn("12", model["body"])
+        self.assertIn("2 to 10", model["body"])
+        self.assertIn("a short course", model["title"].lower())
+        # The action is handed to the create form with the same brief and the legal shape.
+        self.assertTrue(out["delivered"])
+        self.assertEqual(len(out["received"]), 1)
+        seed = out["received"][0]
+        self.assertEqual(seed["scope"], "full")
+        self.assertEqual(seed["goal"], "Order coffee and ask for the bill in Kyoto, politely.")
+
+    def test_a_band_refusal_with_no_legal_shape_falls_back_to_try_again(self) -> None:
+        """Only an empty `legal_scopes` may keep the generic retry — there is nothing else to name."""
+        out = self.run_case(
+            {
+                "kind": "model",
+                "job": band_refused(objectives=12, legal_scopes=()),
+                "objectiveCount": 0,
+            }
+        )
+        model = out["model"]
+        self.assertEqual(model["kind"], "band")
+        self.assertEqual(model["action"]["id"], "try_again")
+
+    def test_a_band_refusal_never_leaks_the_pipeline_words(self) -> None:
+        out = self.run_case(
+            {
+                "kind": "render",
+                "job": band_refused(objectives=12, legal_scopes=("full",)),
+                "objectiveCount": 0,
+                "surface": "learner",
+            }
+        )
+        visible = f"{out['model']['title']} {out['model']['body']} {out['model']['where']} {' '.join(out['model']['detail'])} {out['html']}"
+        self.assertNotIn("scope_band", visible)
+        self.assertNotIn("VALIDATION FAILED", visible)
+        self.assertNotIn("job_band_refused", visible)
 
     def test_provider_failure_names_trying_again_and_keeps_the_brief(self) -> None:
         out = self.run_case(
@@ -559,6 +665,11 @@ class PlanRejectWiringTest(unittest.TestCase):
         self.assertIn("return", edit)
         self.assertNotIn("jobs.create", edit)
         self.assertLess(handler.index("if (action === 'edit_plan')"), handler.index("'jobs.create'"))
+    def test_a_band_refusal_routes_its_shape_action_to_the_create_form(self) -> None:
+        """The model can carry `change_shape`; the click handler must run it, not the retry."""
+        source = _source()
+        self.assertIn("action === 'change_goal' || action === 'change_shape'", source)
+        self.assertIn("planRepairChangeGoal(shownRejection, { planRun, course }, onChangeGoal)", source)
 
     def test_the_dead_change_goal_sentence_is_gone(self) -> None:
         """CREATE-5: the control returns to the form or is not offered at all."""
