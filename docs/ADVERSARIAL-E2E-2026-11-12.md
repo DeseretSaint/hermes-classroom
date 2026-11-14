@@ -6,8 +6,8 @@ least twenty ways to make it better?
 
 Method: three live generations on the real host route (one per scope, isolated homes, independent
 validator), then a hop-by-hop trace of the learner path and an audit of the learner surfaces. The
-quality bar is `docs/QUALITY-RUBRIC.md` (L1–L12); a structural pass is reported separately from a
-learning-quality pass. Findings are **[ran]** when a live run produced the evidence, **[read]** when
+quality bar is `docs/COURSE-QUALITY-RUBRIC.md` (D1–D8); a structural pass is reported separately from
+a learning-quality pass. Findings are **[ran]** when a live run produced the evidence, **[read]** when
 the code says so, **[probe]** when a targeted probe reproduced it.
 
 ## Verdict
