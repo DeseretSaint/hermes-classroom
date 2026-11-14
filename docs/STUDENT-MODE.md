@@ -41,8 +41,9 @@ Two consequences follow and are part of the design, not caveats bolted on:
    DTD/entity and zip-bomb guards). PDF cannot be parsed honestly without an extractor. The
    optional `pypdf` dependency answers `PARSER_UNAVAILABLE` — a typed refusal, not a guess — when
    it is absent. Markdown, plain text and pasted text work with no new dependency. A weekly schedule
-   printed as a ruled table is a second, optional step up: `pdfplumber>=0.11,<0.12` is declared too,
-   and when it is present `coursebook/syllabus.py` emits one block per table row (cells tab-separated)
+   printed as a ruled table is a second, optional step up: `pdfplumber>=0.11,<0.12` is declared in
+   `requirements-dev.txt` (it is a proof/test dependency, not a runtime one), and when it is present
+   `coursebook/syllabus.py` emits one block per table row (cells tab-separated)
    so "Week 3" keeps the reading beside it. When it is absent the parse falls back to `pypdf`'s flat
    page text, which is what shipped before; absence never refuses a file that pypdf can read.
 2. **`full` scope was blocked on H-21 at design time.** `PLAN_SCHEMA` was 4–8 objectives and 2–8

@@ -37,6 +37,26 @@ hermes plugins validate . --install-deps
 
 That is the same command catalog CI runs.
 
+### Running the test suite
+
+The suite additionally needs wheels that are not runtime dependencies, so install
+`requirements-dev.txt` into the interpreter Hermes runs (the one `hermes serve` uses; `scripts/test.sh`
+calls it `python3` or `COURSEBOOK_PYTHON`) before running it:
+
+```
+uv pip install --python "$(command -v python3)" -r requirements-dev.txt
+python3 -m unittest discover -s tests -t .
+```
+
+A standalone venv cannot be this gate: the suite imports the Hermes agent itself
+(`plugins.plugin_storage`, the dashboard API) and the agent's own dependencies, which only the
+Hermes install carries. `pdfplumber` is the wheel to know about: `coursebook/print_geometry.py`
+measures a printed PDF's glyphs and raises its typed `GeometryUnavailable` when the wheel is absent,
+which is why it is not declared in `plugin.yaml` — a host without it still answers a learner. Without
+it `tests/test_up_print_geometry.py` reports a named skip that quotes the install command, and
+without the declared optional dependencies `tests/test_install_provisioning.py` reports the missing
+module, so a bare interpreter gives a reason rather than twenty-one errors.
+
 ## 1. Get the source
 
 The repository is public (`DeseretSaint/hermes-classroom`; measured 2026-11-10 — `gh repo view`

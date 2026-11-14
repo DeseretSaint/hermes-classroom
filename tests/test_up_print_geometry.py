@@ -20,6 +20,7 @@ sheet.
 
 from __future__ import annotations
 
+import importlib.util
 import io
 import unittest
 from pathlib import Path
@@ -32,6 +33,14 @@ from tests.print_pdf_fixture import A4_PORTRAIT, build_pdf, ruled_table
 ROOT = Path(__file__).resolve().parent.parent
 PROOF = ROOT / "docs" / "visual-review" / "gm-014"
 
+#: ``pdfplumber`` is the only wheel these cases need beyond the standard library, and it is a
+#: proof/test dependency rather than a runtime one: ``coursebook/print_geometry.py`` raises its
+#: typed ``GeometryUnavailable`` when it is absent, so the product keeps answering. This module
+#: measures real PDFs, so on an interpreter without the wheel it must be one named skip, never
+#: twenty-one ``ModuleNotFoundError`` errors that read as product failures.
+DEV_REQUIREMENTS = "python3 -m pip install -r requirements-dev.txt"
+HAS_PDFPLUMBER = importlib.util.find_spec("pdfplumber") is not None
+
 A4_MARGINS = {"top": 18.0, "right": 16.0, "bottom": 16.0, "left": 16.0}
 A4_FOOTER = print_geometry.FooterBand(
     pattern=__import__("re").compile(hp.FOLIO_LINE_PATTERN),
@@ -40,6 +49,7 @@ A4_FOOTER = print_geometry.FooterBand(
 )
 
 
+@unittest.skipUnless(HAS_PDFPLUMBER, f"pdfplumber is not installed: run `{DEV_REQUIREMENTS}`")
 class PrintGeometryTest(unittest.TestCase):
     def test_a_caption_in_the_margin_fails_with_its_bbox(self) -> None:
         """A sheet whose caption sits in the bottom margin fails, and says which box it left."""
@@ -148,6 +158,7 @@ class PrintGeometryTest(unittest.TestCase):
             print_geometry.glyph_violations(odd, margins_mm=A4_MARGINS)
 
 
+@unittest.skipUnless(HAS_PDFPLUMBER, f"pdfplumber is not installed: run `{DEV_REQUIREMENTS}`")
 class SyllabusTableGeometryTest(unittest.TestCase):
     """The syllabus parser reads a weekly schedule as rows, not as run-on page text."""
 
