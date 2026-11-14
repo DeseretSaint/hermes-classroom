@@ -16,6 +16,7 @@ approved concept frames. The isolated rig and ``docs/visual-review/gm-004/`` car
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 import tempfile
@@ -470,6 +471,111 @@ class CourseWorldSurfaceTest(Base):
         self.assertIn("World not approved yet", html)
         self.assertIn("Open World Studio", html)
         self.assertNotIn("data-cb-world-hero", html)
+
+
+# ── desktop: the mode badge clears AA on its own background ───────────────────
+
+V3_CONTRACT = ROOT / "contracts" / "cb.tokens.v3.json"
+BADGE_OPEN = re.compile(r'<span data-cb-mode-badge="(?P<mode>[^"]+)" style="(?P<style>[^"]*)">')
+VAR_ROLE = re.compile(r"^var\(--cb3-(?P<role>[a-z0-9-]+)\)$")
+
+
+def resolve_role(value: str, mode_tokens: dict) -> str:
+    """Resolve the one custom property the shipped style names against the v3 contract."""
+    match = VAR_ROLE.match(value.strip())
+    if not match:
+        raise AssertionError(f"the badge style is not a --cb3-* role: {value!r}")
+    return mode_tokens[match.group("role")]
+
+
+def luminance(hex_value: str) -> float:
+    raw = hex_value.lstrip("#")
+    channels = [int(raw[index:index + 2], 16) / 255 for index in (0, 2, 4)]
+    linear = [c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+
+def contrast_ratio(foreground: str, background: str) -> float:
+    first, second = luminance(foreground), luminance(background)
+    high, low = max(first, second), min(first, second)
+    return (high + 0.05) / (low + 0.05)
+
+
+class ModeBadgeContrastTest(Base):
+    """The 12 px mode word must clear 4.5:1 on its own background in both appearances.
+
+    The badge paints the word in ink and keeps the mode hue on the 1 px border and the dot, so the
+    hue survives as identity while the caption carries the contrast. This reads the shipped module's
+    rendered style and resolves ``var(--cb3-*)`` against the v3 contract; it fails at the pre-fix
+    gold-on-card-stock value (3.55:1 light) without opening a Desktop window.
+    """
+
+    def badge(self, html: str, mode: str) -> tuple[dict, str]:
+        match = BADGE_OPEN.search(html)
+        self.assertIsNotNone(match, "the mode badge did not render into the course home")
+        assert match is not None  # narrows for type checkers; the assertion above already failed
+        self.assertEqual(match.group("mode"), mode, "the badge names the wrong mode")
+        # The dot span closes first; the second close ends the badge itself.
+        tail = html[match.end():]
+        inner = tail[: tail.index("</span>", tail.index("</span>") + len("</span>"))]
+        declarations = {}
+        for part in match.group("style").split(";"):
+            if ":" in part:
+                name, value = part.split(":", 1)
+                declarations[name.strip()] = value.strip()
+        return declarations, re.sub(r"<[^>]+>", "", inner).strip()
+
+    def course_home(self, mode: str) -> str:
+        game = mode == "game"
+        return self.render({
+            "kind": "course-home",
+            "rows": [row()],
+            "world": {"status": "ready", "error": None,
+                      "data": {"course_id": "crs_0000000000000001",
+                               "presentation_mode": mode,
+                               "world": world_value() if game else None,
+                               "fallback": None if game else "textbook",
+                               "revision": 4 if game else 0}},
+        })
+
+    def test_badge_word_is_ink_on_card_stock_in_light_and_dark(self) -> None:
+        contract = json.loads(V3_CONTRACT.read_text(encoding="utf-8"))["modes"]
+        self.assertNotEqual(contract["light"]["ink"], contract["dark"]["ink"],
+                            "one appearance's ink was compared with itself")
+        words = {"textbook": "Textbook", "game": "Game"}
+        for mode, word in words.items():
+            with self.subTest(mode=mode):
+                html = self.course_home(mode)
+                declarations, text = self.badge(html, mode)
+                # The acceptance is the measured ratio itself, first: at HEAD the gold word
+                # measured 3.55:1 and the terracotta word 4.23:1 light, both under 4.5.
+                for appearance in ("light", "dark"):
+                    tokens = contract[appearance]
+                    measured = contrast_ratio(
+                        resolve_role(declarations["color"], tokens),
+                        resolve_role(declarations["background"], tokens),
+                    )
+                    self.assertGreaterEqual(
+                        measured, 4.5,
+                        f"{mode} badge in {appearance}: {measured:.2f}:1 on card stock at 12 px",
+                    )
+                self.assertIn(word, text, "the badge no longer names the mode in visible text")
+                self.assertEqual(declarations.get("color"), "var(--cb3-ink)",
+                                 "the mode word is not painted in ink")
+                self.assertEqual(declarations.get("background"), "var(--cb3-card-stock)")
+                # The hue stays on the 1 px border and the dot, never on the word alone.
+                hue = "gold" if mode == "game" else "terracotta"
+                self.assertEqual(declarations.get("border"), f"1px solid var(--cb3-{hue})")
+                self.assertIn(f"background:var(--cb3-{hue})", html,
+                              "the 0.4rem dot no longer carries the mode hue")
+
+    def test_the_shipped_badge_no_longer_tints_its_own_word(self) -> None:
+        """The word is ink in the source the build ships, for every mode branch."""
+        source = (ROOT / "desktop" / "src" / "97-world.js").read_text(encoding="utf-8")
+        start = source.index("function ModeBadge(")
+        block = source[start:source.index("\n}\n", start)]
+        self.assertIn("color: 'var(--cb3-ink)'", block)
+        self.assertNotIn("color: game ?", block, "the badge still splits the word's colour by mode")
 
 
 # ── desktop: the World Studio ─────────────────────────────────────────────────
