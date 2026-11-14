@@ -264,6 +264,15 @@ action, the sheet, the field card, the four completion sentences and the two lis
 (+ the form, print, save and studio-record rows in the inventory table; CP-001 should take the whole
 table, not only this subset.)
 
+**The notebook row's own family** (`desktop/src/90-course.js:1007-1124`, swept as §1b of
+`CP-031-sweep-homework.md`): `hw.notebook.action.{open,media,edit,remove}`, the technical-detail lines
+`hw.notebook.detail.{summary,section,kind,source,tags,saved_at}`, the edit form
+`hw.notebook.edit.{note_label,tags_label,save,cancel}`, and the only dialog on the surface
+`hw.notebook.remove_{title,body,confirm}`. The card's `880-1000` slice excluded this block; it renders
+directly under the list. `hw.notebook.search_label` / `.search_placeholder` (`868`, `871`) are the
+same exclusion on the other side of the slice. These ids belong to `GAP-23` — a Homework section
+authored without them would ship a list whose buttons have no deck words.
+
 ### GAP-24 — no Game section
 
 | proposed id | text | source | cap |
@@ -389,17 +398,325 @@ source. A stored NULL reads as Textbook (`world.read` response description, `con
 
 `cards/CP-025b.md` lines 37–55 are CP-021's body. Repair before dispatch.
 
-### GAP-30 — the shipped-string inventories are a partial sample
+### GAP-30 — the shipped-string inventories are a partial sample — **CLOSED** by CP-031b
 
 `CP-025a-homework-game.md` and `CP-025b-studio.md` cite the visible strings of the v2 surfaces they
-replace, but the **whole** of `desktop/src/95-studio.js` (6931 lines), `97-world.js`,
-`90-course.js:880-1000` and `30-home.js:3650-4100` was not swept: the tables cover the named
-regions — the export refusals, the print-font refusal, the approval/print flow, the take-home source
-picker, the Parent Studio detail chrome, the leave guard and the adult-only claims — and a complete
-literal sweep is still outstanding. **Decision for CP-001:** author `hw.*` / `game.*` / `world.*` /
-`studio.*` from the named regions now, and keep a follow-up sweep card open, or fund the full sweep
-before authoring. Do not treat these tables as the complete shipped inventory. A follow-up card is
-requested in this card's review summary.
+replace, but a literal-by-literal sweep was outstanding. **CP-031b (`t_adc9bdee`) performed it**;
+the complete inventories are:
+
+| file | in-scope source | rows |
+|---|---|---|
+| `CP-031-sweep-parent-studio.md` | `desktop/src/95-studio.js` (all 6931 lines; Parent Studio, take-home pack, the homework surface hosted in the same file) | section tables 1–12 |
+| `CP-031-sweep-world.md` | `desktop/src/97-world.js` (all 1097 lines) | sections 1–5 |
+| `CP-031-sweep-game.md` | `desktop/src/30-home.js:3611-4100` (the Game block is `3706-4037`; `3650-3705` is the `ChildSafeLine` block, rowed in the Parent Studio sweep §3.1; `3611-3650` is the Home defaults line, §1a) + the mode words in `00-header.js` | sections 1, 1a–1c, 2 |
+| `CP-031-sweep-homework.md` | `desktop/src/90-course.js:735-1133` (the whole `NotebookView`, which is wider than the card's `880-1000` slice; the two are explained in the file) + §6 of the studio sweep | sections 1, 1b–2 |
+| `CP-031-sweep-chrome.md` | `desktop/src/00-header.js` (all 1126 lines) + the shared offline lines | sections 1–5 |
+
+The tables in `CP-025a-homework-game.md` and `CP-025b-studio.md` stay as the **sample** they are;
+neither is the complete source, and both now point here. The sweep also closes the scope decision:
+a full sweep was funded, so CP-001 authors `hw.*` / `game.*` / `world.*` / `studio.*` from the
+sweep files, not from the samples. **No string was changed by the sweep.**
+
+The sweep found twelve categories the samples had no gap for at all: `GAP-31` (homework enum maps and
+sheet guards), `GAP-32` (plan-validation independence words), `GAP-33` (fine-tune editor, second
+dialog and regenerate preflight), `GAP-34` (the export gate and its formats), `GAP-35` (offline and
+overflow), `GAP-36` (the `Guided` presentation word), plus `GAP-37` (the create-form vocabulary that
+neither sample owned), `GAP-38` (the approval-invalidation banner and the plan-check reason labels),
+`GAP-39` (the shell's contract-envelope error and the `describeError()` fallback behind every failed
+read), `GAP-40` (the classroom tutor path the chrome sweep used to say CP-023 carried), `GAP-41` (the
+Home defaults line a sweep note wrongly assigned to `CP-022-home.md`) and `GAP-42` (the
+objective-state words every Game card renders, likewise wrongly assigned). The last five were added
+when review of this sweep's own cuts — and, for the last two, a re-lex before the fifth review —
+found strings the sweep had displaced rather than rowed. The figure is a record of what a complete
+sweep finds, not of what one pass found.
+
+Two rows are worth stating as a rule, because each review round found the same defect: **a "belongs to
+another inventory" note is only allowed after that inventory has been read and found to carry the
+strings.** Rounds 3 and 4 of this sweep's review removed three such notes (`00-header.js` tutor path,
+`30-home.js:3642, 3647`, `DESK_STATE_WORD`) and each had been displacing a real block. A note of that
+shape is a coverage claim, and it is checked like one.
+
+### GAP-31 — the homework enum→copy maps and the sheet guards have no rows
+
+`CB_HOMEWORK_STATE_WORD` (`desktop/src/95-studio.js:1640-1646`) and `CB_HOMEWORK_KIND_WORD`
+(`1648-1655`) are enum→copy maps that a v3 restyle can silently shrink. The state map is **not
+complete against the contract**: `homework.read` returns `task.state` over
+`{proposed, assigned, self_reported_done, parent_reported_done, skipped, expired}`
+(`$defs.homework_task.properties.state`), and the shipped map has only five words — `assigned` has
+none. The two sheet guards (`1818, 1821`) are refusals, not truncation, and the already-reported
+refusal (`2507`) is a third.
+
+| proposed id | text (as shipped) | source | cap |
+|---|---|---|---|
+| `hw.state.proposed` | Planned | `field:homework.read.task.state` == `proposed` | 12 |
+| `hw.state.assigned` | *(no shipped word — decision: "Assigned")* | `field:homework.read.task.state` == `assigned` | 12 |
+| `hw.state.self_reported_done` | Done — you recorded it | `field:homework.read.task.state` == `self_reported_done` | 24 |
+| `hw.state.parent_reported_done` | Done — a parent recorded it | `field:homework.read.task.state` == `parent_reported_done` | 24 |
+| `hw.state.skipped` | Skipped | `field:homework.read.task.state` == `skipped` | 12 |
+| `hw.state.expired` | Expired | `field:homework.read.task.state` == `expired` | 12 |
+| `hw.kind.real_world_use` | Use it for real | `field:homework.read.task.task_kind` == `real_world_use` | 16 |
+| `hw.kind.observe` | Notice it | `field:homework.read.task.task_kind` == `observe` | 12 |
+| `hw.kind.label` | Label it | `field:homework.read.task.task_kind` == `label` | 12 |
+| `hw.kind.practice` | Say it aloud | `field:homework.read.task.task_kind` == `practice` | 16 |
+| `hw.kind.make` | Make it | `field:homework.read.task.task_kind` == `make` | 12 |
+| `hw.kind.teach_back` | Tell someone | `field:homework.read.task.task_kind` == `teach_back` | 16 |
+| `hw.sheet.guard.word` | This task would print a word a take-home sheet must not carry, so it is not shown. | deck | 100 |
+| `hw.sheet.guard.steps` | A field card carries at most three steps, so this task is not shown. | deck | 80 |
+| `hw.record.already_reported` | This task already carries a report; it cannot be reported twice. | deck | 70 |
+
+**Decision for CP-001:** word `assigned` ("Assigned" is the proposal) rather than folding it into
+`Planned`; the two states differ (a task the backend assigned is not one the learner proposed).
+
+### GAP-32 — the plan-validation independence words have no rows
+
+`desktop/src/95-studio.js:3417-3703` states, in about 30 sentences, whether a second model checked
+the plan, whether the sources were checked, and whether a pass is factual verification. These are
+the product's honesty claims: a restyle that paraphrases "The author model checked its own work"
+into "Checked" turns a `model_assessed` draft into an advertisement for an independent validator.
+`GAP-28` owns the section; this gap exists so the family is authored as a unit and reviewed as one.
+
+Proposed ids: `studio.verify.{rejected, same_model, independent, no_record, models_differ,
+models_same, models_unknown, research_fetched, research_partial, research_unavailable, badge.*,
+state.*, configure, not_configured, owner_edited, stale, refusal_record, passed_record,
+stored_record, not_factual, no_binding, carried, passed, model_line, sources_unchecked,
+checking_model, provenance_rule}` — one row per sentence, source `deck` except the two model-name
+lines, which are `computed:model_identity` over the stored validation record.
+
+**Decision:** whether the v3 surface keeps the full family or collapses it to a badge plus one
+sentence. Collapsing is allowed only if the independent/same-model distinction and "not factual
+verification" both survive somewhere on the surface.
+
+### GAP-33 — the fine-tune editor and its second dialog have no rows
+
+`desktop/src/95-studio.js:4200-5140` is the H-194 fine-tune block. CP-025b extracted the leave guard
+(`6822-6848`) but not this block, which contains a **second** `role="alertdialog"` for unsaved
+section changes (`5009-5040`), the per-section edit form (`4871-4932`), the reorder/undo messages
+(`4319-4436`), and the one-section regeneration cost preflight (`5059-5110`).
+
+Proposed ids: `studio.finetune.*` (title, note, order_label, move_label, shortcut, move.up/down,
+edit, regenerate, field.*, save, unsaved_title, editor_note, consequence_label, consequence_dialog,
+consequence_error, consequence_review,
+confirm, saved_page, saved_meta, queued, undo, undone, order_saved, scope, no_changes, no_page,
+no_page_short,
+no_digest, err.*), `studio.dialog.*` (unsaved_title, unsaved_body, discard, keep), `studio.regen.*`
+(estimate, no_estimate, queue, queued, preflight), `studio.revision.*` (edited, needs_review,
+approved, edited_note, needs_review_note, approved_note), `studio.review.*` (title, loading, error,
+clean, blocked, blocked_unknown, empty, changed, order, row.*).
+
+The cost preflight sentence carries a number from the backend, so its source cell is
+`computed:regen_preflight`; the two dialogs are `deck` rows with the same body shape as the leave
+guard, and the second one must not be dropped because the first exists.
+
+The evidence-consequence sentence is shipped in **three** renderings that do not share wording and
+must be authored separately, not collapsed into one `{consequence}` placeholder: the in-panel
+dialog (`4983`, "…reference this section. {consequence}"), the refusal toast after a
+`lesson.revise` that needs confirmation (`4613-4614`, "…**learner** attempt(s) **already** reference
+this section. {consequence} **Confirm to store the edit.**"), and the review row for a stored
+revision (`4158`, "…reference this section**; the edit was confirmed against that consequence.**").
+The sweep rows them as `consequence_dialog`, `consequence_error` and `consequence_review`.
+
+### GAP-34 — the lesson-set export gate has no rows
+
+The gate at `desktop/src/95-studio.js:6329-6514` is the **second** approval in the product. CP-025b
+has the export *refusals* but neither the gate table (`Plan / Lesson set approval / Approved content
+hash / Current content hash / Final approval`), the two formats, the artifact notes, nor the
+download names.
+
+Proposed ids: `studio.gate.{title, row.*, note, approved_line, no_plan, no_pages, unsupported,
+approve, available, blocked, backend_reason, formats, minima, export, files, export_line, pack_note,
+privacy_note, filename.*, download.*, artifact_note}` plus `studio.gate.format.{archive,pdf}`.
+Source is `deck` except `approved_line` and `export_line`, which are `computed:` over the approval
+and export records.
+
+### GAP-35 — offline and overflow on the four surfaces
+
+CP-025a/CP-025b said "no offline copy" and "overflow: no copy". The sweep makes that precise:
+
+- **Offline:** the shell has one sentence per route (`30-home.js:527`, `32-desk.js:352`,
+  `98-page.js:562`, `10-primitives.js:273`), and **none of the four surfaces mounts it** —
+  `95-studio.js`, `97-world.js` and the Game block in `30-home.js` never call `useOnline()`.
+  A failed read says "could not be read", which misnames the cause. Proposed: `hw.offline.*`,
+  `game.offline.*`, `world.offline.*`, `studio.offline.*` — one sentence each, in the shipped
+  shell's voice ("… is paused until the connection returns"), source `deck`.
+- **Overflow:** only one surface has words — the tab-limit `clipped` badge (`95-studio.js:6226`)
+  and `· the served text was clipped at the tab limit` (`6234`), both Parent Studio. The Game
+  journal silently caps at 12 cards (`30-home.js:3933`), the homework card refuses rather than
+  truncates, and World Studio has none. Proposed: `game.journal.overflow`,
+  `world.plates.overflow`; `hw.card.overflow` is **not** needed — the sheet guard is the honest
+  state and already has a row (`GAP-31`).
+
+**Decision:** whether the four offline sentences are surface-specific or one shared
+`shell.offline.surface` row. The shipped code has four different sentences for four routes, so one
+shared row would be a rewrite, not a restyle.
+
+### GAP-36 — the `Guided` presentation word has no contract enum and no row
+
+`CB_PRESENTATION_LABEL` (`00-header.js:180`) offers `Game / Guided / Textbook`, and `guided` is a
+stored device/create option (`00-header.js:176`). The world contract's `presentation_mode` enum is
+`{game, textbook}` (`contracts/rpc.v24.json`, `$defs.course_world.properties.presentation_mode`);
+`guided` is **not** a world value. A deck row for "Guided" must therefore not cite
+`field:world.read.presentation_mode` — that claim would be false and the inventory gate rejects it.
+It is not a `game.*` word either: it labels a lesson view, not the play layer.
+
+| proposed id | text (as shipped) | source | cap |
+|---|---|---|---|
+| `studio.presentation.guided` | Guided | deck | 12 |
+
+**Decision for CP-001/atlas:** word it as a device view (`studio.presentation.guided`) or drop the
+third option from the shell. It is not a `world.*` row and it is not a `game.*` row.
+
+### GAP-37 — the create-form recipe and dial vocabulary has no rows
+
+`desktop/src/00-header.js:62-123` holds `RECIPE_COPY`, `DIALS` and `FILTERS`: five recipe cards
+(title + description), four dials with their options, and four course filters. No card inventories
+them and no deck section owns them. The `parent` card is the only shell pointer into Parent Studio
+("That happens in Parent Studio, not here"), so a restyle there changes where a parent is sent.
+
+Proposed ids: `create.recipe.{one_off,casual,committed,companion,parent}` plus `.desc` for each;
+`create.dial.{pace,depth,assessment,autonomy}` plus `create.dial.pace.{light,steady,intense}`,
+`create.dial.depth.{survey,working,deep}`, `create.dial.assessment.{none,self_check,graded}`,
+`create.dial.autonomy.{guided,balanced,independent}`; `create.filter.{all,in_progress,review_due,
+archived}`. All source `deck`.
+
+Needed by: CP-022 (the Home create form) and CP-025b (the parent door). This is a new gap because
+the CP-031 samples were scoped to the six screens and the create form's vocabulary fell between
+them.
+
+### GAP-38 — the approval-invalidation banner and the plan-check reason labels have no rows
+
+Two enum→copy families on the Parent Studio detail page had no row in any inventory. Both are
+visible without opening a disclosure, and both are the kind of copy a restyle paraphrases into a
+misleading claim.
+
+1. **The approval-invalidation banner.** `APPROVAL_INVALIDATION_COPY`
+   (`desktop/src/95-studio.js:3742-3747`) is the reason sentence inside `StudioReviewBanner`
+   (`3750-3768`), which renders only when the stored approval row is `superseded` — it is derived
+   from the approval row, never from local state. It has four reasons and two fallbacks (`3760` for
+   an unknown reason, `3766` for the export line). A restyle that drops a reason leaves a parent
+   with "Changes need review" and no cause, and one that rewords `content_changed` can imply the
+   pages are wrong rather than that the approval no longer covers them.
+2. **The plan-check reason labels.** `PLAN_CHECK_LABELS` (`3868-3874`) is the five-sentence
+   vocabulary `planCheckLabel()` (`3877-3884`) feeds into "Checks that did not clear: {reasons}"
+   (`4392`, rowed under `GAP-28`). Only `structure` had a row, so the deck could word the frame and
+   none of the reasons a parent is actually shown.
+
+| proposed id | text (as shipped) | source | cap |
+|---|---|---|---|
+| `studio.banner.title` | Changes need review | deck | 24 |
+| `studio.banner.reason.plan_edited` | You edited the plan after approving the lesson set. | `field:parent.blueprint.read.approval.invalidated_reason` == `plan_edited` | 60 |
+| `studio.banner.reason.content_changed` | The generated pages changed after you approved them. | `field:parent.blueprint.read.approval.invalidated_reason` == `content_changed` | 60 |
+| `studio.banner.reason.course_edited` | You changed the course title or goal after approving the lesson set. | `field:parent.blueprint.read.approval.invalidated_reason` == `course_edited` | 80 |
+| `studio.banner.reason.replaced` | A newer approval replaced this one. | `field:parent.blueprint.read.approval.invalidated_reason` == `replaced` | 40 |
+| `studio.banner.reason.unknown` | The lesson set you approved no longer matches the current pages. | deck | 70 |
+| `studio.banner.export_approve` | Approve the current lesson set before exporting. | deck | 60 |
+| `studio.check.alignment` | whether each objective matches the goal | deck | 50 |
+| `studio.check.sources` | whether each claim has a source that was actually read | deck | 60 |
+| `studio.check.structure` | whether the units, objectives and checks fit together | deck | 60 |
+| `studio.check.schedule` | whether the schedule and time estimates add up | deck | 50 |
+| `studio.check.policy` | whether the plan follows the recipe and its limits | deck | 50 |
+
+`studio.review.blocked` / `studio.review.blocked_unknown` (`GAP-33`) are the export-status sentences
+in the same banner; `3766` renders `Export is blocked ({reason}).`, the same words as the gate at
+`7392` (`GAP-34`), so it is cited on that row rather than duplicated here.
+
+**Decision for CP-001:** whether the banner keeps all six sentences or collapses to the reason plus
+a disclosure. If it collapses, every reason must still be reachable, and the check labels must stay
+one sentence per check — the reason list is the only place the product says which check failed.
+
+### GAP-39 — the shell's contract-envelope error sentence has no row
+
+`desktop/src/00-header.js:702-712` synthesizes an `INTERNAL_ERROR` envelope when the backend answers
+with something that is not a contract envelope, and the message field of that envelope is rendered
+by `describeError()` wherever a surface shows a failed read. Every surface that calls `cb.rpc` can
+show it, including all four this card covers — so a learner can read "not a contract envelope",
+which is product-internal vocabulary. It is also a claim: it says the answer was malformed, so a
+restyle must not soften it into "something went wrong".
+
+| proposed id | text (as shipped) | source | cap |
+|---|---|---|---|
+| `shell.rpc.envelope` | The Coursebook backend answered with something that is not a contract envelope. | deck | 90 |
+| `shell.rpc.no_answer` | The Coursebook backend did not answer. | deck | 40 |
+
+The second row is the same defect on the other branch: `describeError()` (`00-header.js:1057-1061`)
+falls back to that sentence whenever the error object carries no `message` and no string — so a
+failed read on any surface can print it, and `95-studio.js` calls the helper 20 times. It is a
+synthesized answer, not the backend's, so it must not read as if the backend said it.
+
+**Decision for CP-001:** keep this diagnostic sentence (honest, but internal) or replace it with a
+plain failure line plus the code. If it is replaced, a malformed answer must stay distinguishable
+from a timeout and from an offline read (`GAP-35`).
+
+---
+
+### GAP-40 — the classroom tutor path claims coverage it does not have
+
+`desktop/src/00-header.js:836-1055` (the `loadBinding` / `resumeBoundSession` / `beginLessonFor`
+block) returns a family of learner-visible sentences: `This lesson has no chat to return to yet.`
+(`867`), `This lesson is not connected to a chat right now.` (`870`), `Update Hermes Desktop to
+resume a bound lesson.` (`873`), `The saved lesson chat could not be opened from this desktop. The
+section is still available to read.` (`883`), `Coursebook lesson` (`937`), `{code}: {backend message |
+this chat could not be bound.}` (`961`), `No course was read for this action.` (`984`), `This course
+has no current objective yet; approve the plan first.` (`987`), `Resumed the bound lesson chat.`
+(`1024`), `There is no saved lesson chat for this section yet. …` (`1033`), `The lesson is ready.
+Your section is open below. …` (`1053`).
+
+These sit on the Classroom/course-detail tutor path, so CP-031b correctly did not row them — but
+until this card the sweep's §5 said they were "inventoried by `CP-023-classroom.md`", and they are
+not. `CP-023-classroom.md` records the deck's own no-chat state (`classroom.nochat.title/body/action`,
+deck `161-163`: "This section has no chat yet" / "Start a fresh run to open a chat for this
+section."), whose wording is not the shipped wording; no other inventory in this directory names any
+of the sentences above. Leaving the claim in place would let CP-001 believe the tutor path is
+covered.
+
+**Minimum:** CP-023's owner (or CP-001 when it revises the Classroom section) copies the block into
+an inventory and decides whether the deck's `nochat.*` rows are restated to match the shipped
+sentences or the code is changed to emit the deck's wording. Not blocking for CP-025a/CP-025b, which
+do not paint this path.
+
+---
+
+### GAP-41 — the Home defaults line claims coverage `CP-022-home.md` does not have
+
+`HomeDefaultsLine` (`desktop/src/30-home.js:4739-4781`) paints, above the Game band:
+
+| shipped string | line |
+|---|---|
+| `Default view · ` + the mode label, falling back to `Game` | `4751-4752` |
+| `· This classroom · ` + the mode label, only when the selected classroom overrides the default | `4760-4761` |
+| `· Child-safe defaults` | `4770` |
+| `· Session · ` + `{n} min` | `4775` |
+
+The Game sweep's first cuts said the home-route twin of the child-safe line — the words are at
+`4770` and `4775` — "belonged to `CP-022-home.md`". It does not. `CP-022-home.md` is a gap analysis
+of the Home surface: it names `30-home.js` in two notes only — the settings sheet's source lines and
+the companion fallback — and it cites the defaults line nowhere. It also has no row for any string,
+so nothing in it could carry this block. The two forms also do not share wording with the long
+ChildSafeLine sentence at `4798` ("Child-safe defaults · no loss-framed reminders, no ranking, no
+random rewards, no streaks · XP is cosmetic Game feedback"), so collapsing them would lose one of the
+two.
+
+**Minimum:** CP-022's owner rows the block (it is Home chrome, not Game copy, which is why it is
+`home.*` and not `game.*`) or CP-001 authors `home.defaults.*` from §1a of
+`CP-031-sweep-game.md`. Not blocking for CP-025a/CP-025b.
+
+### GAP-42 — the objective-state words every Game card renders have no row
+
+`CB_COPY.state` (`desktop/src/00-header.js:64-75`) maps seven evidence states to copy, and the Game
+journal card renders it directly at `5204` (`children: CB_COPY.stateWord(card.state)`):
+
+`not_started` → *Not started*, `introduced` → *Started*, `independent_evidence` → *Independent
+evidence*, `delayed_evidence` → *Delayed evidence*, `review_due` → *Review due*, `needs_review` →
+*Could not be written*, `overridden` → *Moved on without a grade*.
+
+No deck file in this directory carries any of those seven words as a row; the Game sweep used to say
+they were "inventoried in `CP-022-home.md`", which is false on the same reading as `GAP-41`. The map is
+also the only place the Game surface says *Independent evidence* at all, and `GAP-17` already owns the
+integrity words for the same states on the Classroom surface — the two must be authored against one
+decision, not two.
+
+**Minimum:** CP-001 authors `game.state.*` (or extends `GAP-17`'s family) with all seven values, and
+decides whether *Independent evidence* / *Delayed evidence* are the same words the Classroom uses.
+Not blocking for CP-025a/CP-025b, which do not paint the journal.
 
 ---
 
@@ -412,10 +729,22 @@ requested in this card's review summary.
    them. `GAP-17` needs all six `evidence_class` values, not three.
 4. `GAP-22` — the missing offline state; one row set, three strings.
 5. `GAP-23`, `GAP-24`, `GAP-27`, `GAP-28` — the two missing deck sections; CP-025a and CP-025b stay
-   blocked until these land. `GAP-30` says how complete the source tables are.
-6. Body corrections and card-body repairs (`GAP-06`, `GAP-08`–`GAP-10`, `GAP-18`, `GAP-21`,
+   blocked until these land. `GAP-30` is **closed**: author from the `CP-031-sweep-*.md` files, not
+   from the sample tables.
+6. `GAP-31`–`GAP-42` — the categories the sweep found with no gap. `GAP-31` (homework maps) blocks
+   CP-025a for the same reason `GAP-23` does; `GAP-32`–`GAP-34` block CP-025b's fine-tune, validation
+   and export surfaces; `GAP-35` is the §3.12 offline/overflow obligation for all four surfaces;
+   `GAP-36` is a shell decision that must land before the mode words are restyled; `GAP-37` is the
+   create-form vocabulary CP-022 and CP-025b both read; `GAP-38` is the banner and check-reason
+   family CP-025b's detail section needs alongside `GAP-28`; `GAP-39` is the shell error sentence
+   every surface can paint; `GAP-41` (Home defaults line) and `GAP-42` (Game objective-state words)
+   are blocks the sample shelves and this sweep's own notes had wrongly assigned to
+   `CP-022-home.md`, so neither is a CP-025a/CP-025b blocker but both are deck debt.
+7. Body corrections and card-body repairs (`GAP-06`, `GAP-08`–`GAP-10`, `GAP-18`, `GAP-21`,
    `GAP-26`, `GAP-29`) are `hermes kanban edit` work on the card bodies, not deck work.
 
 Owner decisions required (not wordable by the deck author alone): `GAP-04`, `GAP-05`, `GAP-07`
 (source), `GAP-15` (three sentences), `GAP-17` (the three non-cold integrity words), `GAP-20`,
-`GAP-22` (body text), `GAP-25` (empty vs unavailable), `GAP-30` (sweep scope).
+`GAP-22` (body text), `GAP-25` (empty vs unavailable), `GAP-31` (the `assigned` word), `GAP-32`
+(keep or collapse the independence family), `GAP-35` (per-surface or shared offline), `GAP-36`
+(the `Guided` word).
