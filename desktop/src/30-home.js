@@ -4186,24 +4186,39 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
   // from the SDK button, so the plugin-owned wrapper paints the identity ring while the inner
   // control matches `:focus-visible` — the same rule every other keyboard stop in this plugin uses.
   const [gameFeedbackFocused, setGameFeedbackFocused] = useState(false)
+  // The notices surface is a second, real dialog on top of this sheet. While it is open the sheet
+  // stops answering Escape and Tab, so one key press cannot close both surfaces at once.
+  const [noticesOpen, setNoticesOpen] = useState(false)
+  const noticesTriggerRef = useRef(null)
   const courseId = classroom && classroom.courseId ? classroom.courseId : null
   const override = courseId ? (prefs.classrooms && prefs.classrooms[courseId]) || null : null
 
+  const focusables = () => {
+    const panel = panelRef.current
+    if (!panel || typeof panel.querySelectorAll !== 'function') return []
+    return Array.from(
+      panel.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter((node) => !node.disabled && node.getAttribute('aria-hidden') !== 'true')
+  }
+
+  // Focus enters the sheet on OPEN, and only on open. A second dependency here would re-run this
+  // when the notices dialog opens or closes and steal focus back from it.
   useEffect(() => {
     if (!open) return undefined
-    const focusables = () => {
-      const panel = panelRef.current
-      if (!panel || typeof panel.querySelectorAll !== 'function') return []
-      return Array.from(
-        panel.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        )
-      ).filter((node) => !node.disabled && node.getAttribute('aria-hidden') !== 'true')
-    }
     const nodes = focusables()
     if (nodes.length > 0 && typeof nodes[0].focus === 'function') nodes[0].focus({ preventScroll: true })
+    return undefined
+  }, [open])
+
+  // The key handler is keyed to `noticesOpen` as well: while the notices dialog is open this sheet
+  // answers nothing, so one Escape cannot close both surfaces at once.
+  useEffect(() => {
+    if (!open) return undefined
     const onKeyDown = (event) => {
       if (!event || !event.key) return
+      if (noticesOpen) return
       if (event.key === 'Escape' || event.key === 'Esc') {
         if (typeof event.preventDefault === 'function') event.preventDefault()
         if (typeof event.stopPropagation === 'function') event.stopPropagation()
@@ -4232,7 +4247,7 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
         document.removeEventListener('keydown', onKeyDown, true)
       }
     }
-  }, [open, onClose])
+  }, [open, onClose, noticesOpen])
 
   if (!open) return null
 
@@ -4250,13 +4265,16 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
     onMouseDown: (event) => {
       if (event && event.target === event.currentTarget) onClose()
     },
-    children: jsxs(
+    children: [jsxs(
       'div',
       {
         ref: panelRef,
         role: 'dialog',
         'aria-modal': 'true',
         'aria-labelledby': CB_SETTINGS_TITLE_ID,
+        // Notices is a modal on top of this sheet: while it is open the sheet is not reachable,
+        // not even by a screen reader's virtual cursor.
+        'aria-hidden': noticesOpen ? 'true' : undefined,
         'data-cb-settings-sheet': 'open',
         style: {
           width: '28.75rem',
@@ -4617,11 +4635,61 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
               children: jsx(CbGenerationUsage, {})
             },
             'usage'
-          )
+          ),
+          // A licence obligation, not a preference: the inventory lives at the foot of the one
+          // settings sheet, where a reader looking for what the app ships will find it.
+          jsxs('div', {
+            'data-cb-notices-launcher': '',
+            style: {
+              marginTop: '0.9rem',
+              paddingTop: '0.8rem',
+              borderTop: '1px solid var(--cb-rule)',
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '0.5rem 0.75rem'
+            },
+            children: [
+              jsxs('div', {
+                style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0 },
+                children: [
+                  jsx('span', {
+                    style: { fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-ink)' },
+                    children: 'Third-party notices'
+                  }),
+                  jsx('span', {
+                    style: { fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+                    children: `${CB_NOTICE_ROWS.length} asset sources, with the licence each manifest declares.`
+                  })
+                ]
+              }),
+              jsx('span', {
+                ref: noticesTriggerRef,
+                style: { display: 'inline-flex', alignItems: 'center' },
+                children: jsx(sdk.Button, {
+                  size: 'sm',
+                  variant: 'ghost',
+                  'data-cb-notices-open': '',
+                  'aria-label': 'Open third-party notices',
+                  'aria-haspopup': 'dialog',
+                  style: { minHeight: '44px' },
+                  onClick: () => setNoticesOpen(true),
+                  children: 'View notices'
+                })
+              })
+            ]
+          }, 'notices-launcher')
         ]
       },
       'sheet'
-    )
+      ),
+      jsx(NoticesDialog, {
+        open: noticesOpen,
+        onClose: () => setNoticesOpen(false),
+        returnFocusRef: noticesTriggerRef
+      }, 'notices')
+    ]
   })
 }
 
