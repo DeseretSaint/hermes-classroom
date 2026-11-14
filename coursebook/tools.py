@@ -392,13 +392,10 @@ def _section_and_check(
         # H-186: every kind that opens a section must open the same objective the label names.
         # Ordering by lesson-run recency returned the last imported run instead of the current
         # objective, and the ordinal-based answer is shared with `domain._library_next_step`.
-<<<<<<< HEAD
         current = domain._current_objective(connection, course_id, enrollment_id)
-=======
         # UP-3's `write_lesson` names the objective whose page is missing, which is the same
         # earliest incomplete objective, so the due row reports its section and its check state.
         current = domain._current_objective(connection, course_id)
->>>>>>> wt/t_5eaa2afe
         objective_id = str(current["id"]) if current is not None else None
     if objective_id is None:
         return None, None

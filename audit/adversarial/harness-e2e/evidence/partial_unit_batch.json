@@ -39,19 +39,19 @@
       "max_cost_usd": 100.0,
       "source": "caller"
     },
-    "job_id": "job_0000000000000000000000000000001a",
+    "job_id": "job_00000000000000000000000000000017",
     "job_kind": "unit_sections",
     "next_unit_ordinal": null,
     "owners": 2,
-    "plan_hash": "sha256:e71d5565080253e991fc4940dc85ce9dc374532aab5d1b7cd0d102a2d796f569",
+    "plan_hash": "sha256:df50ddf557db4be152d5333ae278ca20210eaf219461cf9c65c668df3c1bf59a",
     "plan_id": "pln_00000000000000000000000000000003",
     "rejection_reasons": [],
     "reused": false,
     "reviews": 1,
     "section_ids": [
-      "000000000000001b",
-      "000000000000001c",
-      "000000000000001e"
+      "0000000000000019",
+      "000000000000001a",
+      "000000000000001c"
     ],
     "sections": 3,
     "stage": "unit_sections",
@@ -78,12 +78,12 @@
       "calls": 4,
       "cost_usd": 0.0,
       "estimated_cost_usd": 0.0,
-      "input_tokens": 2327,
-      "output_tokens": 1043,
+      "input_tokens": 2332,
+      "output_tokens": 1045,
       "unknown_calls": 0,
       "unknown_cost": false
     },
-    "validation_id": "000000000000001f",
+    "validation_id": "000000000000001d",
     "validation_verdict": "pass"
   },
   "unit_stage_refusal": null
