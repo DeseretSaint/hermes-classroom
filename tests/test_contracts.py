@@ -5561,7 +5561,7 @@ class V29AmendmentTest(unittest.TestCase):
         v28_plan = before["outline_plan"]
         self.assertEqual(
             set(after["outline_plan"]["properties"]) - set(v28_plan["properties"]),
-            {"time_estimate"},
+            {"time_estimate", "exclusions"},
         )
         self.assertEqual(after["outline_plan"]["required"], v28_plan["required"])
         # The v28 document stays frozen history.
