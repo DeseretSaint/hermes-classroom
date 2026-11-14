@@ -189,3 +189,59 @@ block is not a second approval surface (see the residual note in
 section media artifact; `tests/test_pack_import_usability.py` proves an imported course's check is
 now a real gradable row (import used to leave `checks` empty, so no attempt was possible).
 
+## 7. A source URL is `http`/`https` or absent (H-115 D1)
+
+`sources[].url` is the one manifest field whose value becomes a **link**, not text: `pack.preview`
+returns it, the review screen lists it and the Desktop Sources tab renders it as an anchor. It is
+therefore held to the pack's untrusted-data rule rather than to the contract's structural one.
+
+**The rule.** A source URL is accepted only when it is an absolute `http` or `https` URL with a host
+and no raw whitespace or control characters (`packs.is_http_url`, mirroring
+`research._is_http_url`, the research ledger's rule). Every other form is refused:
+
+| Refused | Why it is not a citation |
+|---|---|
+| `javascript:alert(document.domain)` | the value is a program to run in whatever page links it |
+| `data:text/html,…`, `blob:…` | the value is a payload the renderer decodes into a document |
+| `file:///etc/passwd` | the value names a local file outside the pack |
+| `//169.254.169.254/…`, `chapter-1.md` | scheme-relative and relative values resolve against the reading page, not the citation |
+| `mailto:`, `tel:`, `ftp://`, `about:` | not a web document, and not a scheme Coursebook can vet |
+| `http://`, `https:///path`, `http:no-host` | a scheme without a host is not an address |
+
+A source that carries **no** URL is still legal when it names a `publisher` — that is the existing
+gate and it is unchanged. A publisher does not excuse a hostile URL: the URL is what gets rendered.
+
+**Where it is enforced.** In `packs.validate_minima`, the policy-minimum gate that runs before the
+first write on every path that can return or store a manifest:
+
+* `pack.preview` and `pack.import` — `pack_flow.validate_and_audit`, before any staging is adopted;
+* `pack.export` and the explicit cross-recipe conversion — `packs.build_export` /
+  `pack_flow.build_conversion`;
+* `parent.export` and the authored-pack readiness read — `packs.build_manifest` behind
+  `parent_authoring.build_pack`;
+* the Workshop listing and its cover read — `workshop.py`, both the listing gate and the cover
+  artifact path;
+* the archive writer and archive staging — `archive.write_archive`, `archive.extract_archive` →
+  `_verify_extracted`;
+* reading a pack directory — `archive.read_directory` → `_verify_extracted`, the path
+  `pack.inspect`/`pack.list` use to re-read an adopted pack and the fixture/probe scripts
+  (`scripts/probe-backend.py`, `scripts/proof_contract_v4.py`) use for a bundled one.
+
+A refusal is `PACK_REJECTED` with `reason: pack_not_importable` and a message naming the source id
+and the value. Nothing is adopted, so no pack, course, objective, source or segment row is left
+behind (`tests/test_pack_source_urls.py` asserts every table is empty after each attempt). A pack
+that was adopted **before** this rule is re-read through the same gate, so `pack.inspect`/`pack.list`
+report it as `unreadable` (`PACK_REJECTED`, `pack_unreadable`) instead of echoing the link.
+
+**Why the contract file did not change.** `cb.pack` v1 is frozen and already installed packs must
+keep parsing; a scheme constraint is a policy minimum, not a structural field, so the rule lives in
+code beside the other minima (duplicate ids, rubric minimums, measure-your-objective). `cb.pack` has
+since advanced to v3 for unrelated reasons (v2 media, v3 presentation), and every version inherits
+this policy rule. The v1 bytes and version are pinned by
+`tests/test_pack_source_urls.py::ManifestRefusalTest::test_the_frozen_manifest_contract_is_unchanged`.
+
+**What this does not cover.** Host reputation and network position: `http://127.0.0.1:8787/…` and
+`http://169.254.169.254/…` pass the scheme rule and stay visible as citations. Fetching is a separate
+seam (`source.revalidate`), where private-address filtering belongs; this rule makes a link a link,
+not a fetch, and claims no SSRF defence.
+
