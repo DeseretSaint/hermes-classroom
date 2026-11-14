@@ -2259,6 +2259,11 @@ export {
   CoursebookHome,
   HomeScene,
   CB_HOME_SCENE,
+  // Slot type: the pure rule is the test seam, the component is the render seam.
+  CB_SLOT_TYPE,
+  cbSlotPlaneCorners,
+  cbSlotTypeLayout,
+  CbSlotType,
   cbShelfEdgeMask,
   HomeLibraryPanel,
   HomeCourseCard,
