@@ -3629,6 +3629,27 @@ LESSON_SCHEMA: dict[str, Any] = {
                             "type": "string",
                             "enum": ["answer_shown", "hinted", "none"],
                         },
+                        # UP-14 (t_92039128): assistance is a ladder, not one binary event. The
+                        # author names up to three rungs in reveal order; the pane shows one per
+                        # recorded press. The last authored rung is the strongest assistance and
+                        # carries the existing `answer_shown` penalty, so the ladder never invents
+                        # a new evidence class. A check with no ladder keeps the v28 binary hint.
+                        "ladder": {
+                            "type": "array",
+                            "maxItems": 3,
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": False,
+                                "required": ["kind", "text"],
+                                "properties": {
+                                    "kind": {
+                                        "type": "string",
+                                        "enum": ["nudge", "cue", "worked_step"],
+                                    },
+                                    "text": {"type": "string", "minLength": 3, "maxLength": 400},
+                                },
+                            },
+                        },
                     },
                 },
                 # Locale-aware, bounded scaffold vocabulary (H-18). The legacy

@@ -610,6 +610,23 @@ function useOpenCheck({ enrollmentId, objectiveId, revision, enabled, implemente
               facts.attempt_count = Math.max(0, Number(detailResult.attempt_count))
             }
             if (detailResult.state) facts.state = detailResult.state
+            // UP-14: the authored assistance policy is a fact of the check, not of the click. A
+            // v29 read carries it; a v28 backend omits it and the card keeps its binary controls.
+            if (detailResult.assistance) facts.assistance = detailResult.assistance
+            else if (detailResult.stimulus && detailResult.stimulus.assistance_policy) {
+              const policy = detailResult.stimulus.assistance_policy
+              const attempts = Math.max(0, Number(detailResult.attempt_count) || 0)
+              const gateOpen = policy.hint === 'available' || (policy.hint === 'after_attempt' && attempts > 0)
+              const ladder = Array.isArray(policy.ladder) ? policy.ladder : []
+              facts.assistance = {
+                policy: policy.hint || 'none',
+                available: gateOpen,
+                rungs: ladder,
+                used: 0,
+                next_rung: gateOpen && ladder.length > 0 ? 0 : null,
+                total: ladder.length
+              }
+            }
             const stimulus = detailResult.stimulus || null
             setState((previous) =>
               previous.check && previous.check.check_id === opened.check_id
@@ -1954,6 +1971,30 @@ function AttemptControls({
   const assistRecorded = assistClass || uncommittedClass
   const hintUsed = assistRecorded === 'hinted' || assistRecorded === 'answer_shown'
   const answerUsed = assistRecorded === 'answer_shown'
+  // UP-14: the authored ladder, read from `check.get.assistance`. Absent on a v28 backend, where
+  // the card keeps its binary controls. `policy: 'none'` means the check authored no hint at all,
+  // so no hint control is offered; the answer disclosure stays, because seeing the answer is a
+  // fact to record, not assistance the check chose to give.
+  const assistance = check && check.assistance && typeof check.assistance === 'object' ? check.assistance : null
+  const assistPolicyNone = Boolean(assistance && assistance.policy === 'none')
+  const assistRungs = assistance && Array.isArray(assistance.rungs)
+    ? assistance.rungs.filter((rung) => rung && typeof rung.kind === 'string' && typeof rung.label === 'string')
+    : []
+  const hintLadderMode = assistRungs.length > 0
+  const hintGateOpen = !assistance || assistance.available !== false
+  const [revealedRungs, setRevealedRungs] = useState([])
+  const [ladderCursor, setLadderCursor] = useState(null)
+  const ladderSeededFor = useRef(null)
+  // Seed the cursor from the read, once per check. A refresh after a press carries the same
+  // check id, so the locally advanced cursor wins over a stale `used` count.
+  useEffect(() => {
+    const id = check && check.check_id
+    if (!assistance || !id || ladderSeededFor.current === id) return
+    ladderSeededFor.current = id
+    setRevealedRungs([])
+    setLadderCursor(Number.isInteger(assistance.next_rung) ? assistance.next_rung : null)
+  }, [assistance, check])
+  const activeRung = ladderCursor !== null ? assistRungs[ladderCursor] || null : null
   // H-206: pressing an assist control replaces it with a statement. Keep focus on the group that
   // replaced it so a keyboard learner is not dropped back on <body>; only a real press sets the
   // flag, so a page that mounts with a hint already recorded never steals focus.
@@ -2171,17 +2212,23 @@ function AttemptControls({
    * nothing is graded: the control records the learner's own statement.
    */
   const recordAssist = useCallback(
-    async (kind) => {
+    async (kind, rung) => {
       if (!check || assistBusy) return false
       // H-206: a hint is one recorded statement per attempt. The control is already in its used
       // state after the first one, so a repeat may not add a second event that changes nothing.
-      if (kind === 'hint_request' && hintUsed) return false
-      if (kind === 'answer_shown' && answerUsed) return false
+      // UP-14: a ladder press names the next rung and is allowed to advance; the backend still
+      // refuses an out-of-order or exhausted rung.
+      if (rung === undefined || rung === null) {
+        if (kind === 'hint_request' && hintUsed) return false
+        if (kind === 'answer_shown' && answerUsed) return false
+      }
       setAssistPending(kind)
       setError(null)
+      const body = { enrollment_id: enrollmentId, objective_id: objectiveId, kind }
+      if (Number.isInteger(rung)) body.rung = rung
       const response = await rpc(
         'lesson.assist',
-        { enrollment_id: enrollmentId, objective_id: objectiveId, kind },
+        body,
         {
           idempotencyKey: newOperationId('assist'),
           expectedRevision: fenceRevision
@@ -2192,14 +2239,24 @@ function AttemptControls({
         setError(response.error)
         return false
       }
-      const recorded = response.result && response.result.evidence_class
+      const result = response.result || {}
+      const recorded = result.evidence_class
       assistRecordedNow.current = true
       setAssistClass(recorded || (kind === 'answer_shown' ? 'answer_shown' : 'hinted'))
+      // UP-14: the backend returns the one rung this press revealed. Append it, then advance the
+      // cursor; the last rung leaves no next rung, so the control becomes a statement.
+      const revealed = result.rung && typeof result.rung === 'object' ? result.rung : null
+      if (revealed && Number.isInteger(revealed.index)) {
+        setRevealedRungs((previous) =>
+          previous.some((entry) => entry.index === revealed.index) ? previous : [...previous, revealed]
+        )
+        setLadderCursor(revealed.last ? null : revealed.index + 1)
+      }
       // The assist moved the enrollment revision; adopt it before the async page refresh lands so
       // a hint followed immediately by a submit cannot be refused as STALE_REVISION.
-      const bumped = response.result ? Number(response.result.revision) : NaN
+      const bumped = Number(result.revision)
       if (Number.isFinite(bumped) && bumped > 0) setAssistRevision(bumped)
-      if (onCommitted) onCommitted(response.result)
+      if (onCommitted) onCommitted(result)
       return true
     },
     [check, assistBusy, hintUsed, answerUsed, enrollmentId, objectiveId, fenceRevision, onCommitted]
@@ -2226,6 +2283,22 @@ function AttemptControls({
     await recordAssist('hint_request')
     setAssistIntent(null)
   }, [recordAssist])
+
+  /**
+   * Reveal exactly one authored rung (UP-14).
+   *
+   * The press names the rung `check.get` reported as next; the backend orders the ladder and
+   * refuses a skip, so clicking does not walk the learner to the answer in one write. The
+   * revealed text is the author's, never the reference answer, and the response's `evidence_class`
+   * is what the next attempt inherits (the last rung is the full `answer_shown` penalty).
+   */
+  const revealRung = useCallback(async () => {
+    if (assistBusy || ladderCursor === null) return false
+    setAssistIntent('reveal')
+    const revealed = await recordAssist('hint_request', ladderCursor)
+    setAssistIntent(null)
+    return revealed
+  }, [assistBusy, ladderCursor, recordAssist])
 
   /**
    * U2: the answer disclosure asks first.
@@ -2662,30 +2735,83 @@ function AttemptControls({
                     tabIndex: -1,
                     style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem 0.6rem', outlineOffset: '2px' },
                     children: [
-                      hintUsed
-                        ? jsx(AssistUsedFlag, { kind: 'hint_request', children: 'Hint recorded' })
-                        : jsxs('span', {
-                            style: { display: 'inline-flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem 0.6rem' },
-                            children: [
-                              jsx(sdk.Button, {
-                                variant: 'text',
-                                size: 'sm',
-                                'data-cb-ask-hint': '',
-                                disabled: locked || assistBusy,
-                                onClick: askHintBesideCheck,
-                                children: assistIntent === 'ask' && assistPending === 'hint_request' ? 'Asking…' : 'Ask for a hint'
-                              }, 'ask'),
-                              jsx(sdk.Button, {
-                                variant: 'text',
-                                size: 'sm',
-                                'data-cb-assist-disclosure': 'hint_request',
-                                disabled: locked || assistBusy,
-                                'data-cb-assist-pending': assistPending === 'hint_request' && assistIntent === 'record' ? '' : undefined,
-                                onClick: recordHintDisclosure,
-                                children: assistIntent === 'record' && assistPending === 'hint_request' ? 'Recording…' : 'I already used a hint'
-                              }, 'disclosure')
-                            ]
-                          }),
+                      assistPolicyNone
+                        ? null
+                        : hintLadderMode
+                          ? jsxs('div', {
+                              'data-cb-hint-ladder': '',
+                              style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', flexBasis: '100%', minWidth: 0 },
+                              children: [
+                                revealedRungs.length > 0
+                                  ? jsx('ol', {
+                                      'data-cb-hint-rungs': '',
+                                      style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '0.3rem', maxWidth: CB_MEASURE },
+                                      children: revealedRungs.map((rung) =>
+                                        jsx('li', {
+                                          'data-cb-hint-rung': rung.kind,
+                                          style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink)', overflowWrap: 'anywhere' },
+                                          children: [
+                                            jsx('span', {
+                                              'data-cb-hint-rung-label': '',
+                                              style: { fontWeight: 600 },
+                                              children: `${rung.label}: `
+                                            }, 'label'),
+                                            jsx('span', { 'data-cb-hint-rung-text': '', children: rung.text }, 'text')
+                                          ]
+                                        }, `rung-${rung.index}`)
+                                      )
+                                    }, 'rungs')
+                                  : null,
+                                activeRung && hintGateOpen
+                                  ? jsx(sdk.Button, {
+                                      variant: 'text',
+                                      size: 'sm',
+                                      'data-cb-ask-hint': '',
+                                      'data-cb-hint-next': activeRung.kind,
+                                      disabled: locked || assistBusy,
+                                      onClick: revealRung,
+                                      children: assistIntent === 'reveal' && assistPending === 'hint_request'
+                                        ? 'Revealing…'
+                                        : `Get a ${String(activeRung.label).toLowerCase()}`
+                                    }, 'reveal')
+                                  : revealedRungs.length > 0
+                                    ? jsx(AssistUsedFlag, {
+                                        kind: revealedRungs[revealedRungs.length - 1].kind === 'worked_step' ? 'answer_shown' : 'hint_request',
+                                        children: revealedRungs[revealedRungs.length - 1].kind === 'worked_step' ? 'Worked step shown' : 'Hint recorded'
+                                      }, 'used')
+                                    : !hintGateOpen
+                                      ? jsx('span', {
+                                          'data-cb-hint-gate': 'after_attempt',
+                                          style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+                                          children: 'Hints open after your first try.'
+                                        }, 'gate')
+                                      : null
+                              ]
+                            })
+                          : hintUsed
+                            ? jsx(AssistUsedFlag, { kind: 'hint_request', children: 'Hint recorded' })
+                            : jsxs('span', {
+                                style: { display: 'inline-flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem 0.6rem' },
+                                children: [
+                                  jsx(sdk.Button, {
+                                    variant: 'text',
+                                    size: 'sm',
+                                    'data-cb-ask-hint': '',
+                                    disabled: locked || assistBusy,
+                                    onClick: askHintBesideCheck,
+                                    children: assistIntent === 'ask' && assistPending === 'hint_request' ? 'Asking…' : 'Ask for a hint'
+                                  }, 'ask'),
+                                  jsx(sdk.Button, {
+                                    variant: 'text',
+                                    size: 'sm',
+                                    'data-cb-assist-disclosure': 'hint_request',
+                                    disabled: locked || assistBusy,
+                                    'data-cb-assist-pending': assistPending === 'hint_request' && assistIntent === 'record' ? '' : undefined,
+                                    onClick: recordHintDisclosure,
+                                    children: assistIntent === 'record' && assistPending === 'hint_request' ? 'Recording…' : 'I already used a hint'
+                                  }, 'disclosure')
+                                ]
+                              }),
                       answerUsed
                         ? jsx(AssistUsedFlag, { kind: 'answer_shown', children: 'Answer shown' })
                         : answerConfirmOpen
