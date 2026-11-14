@@ -44,6 +44,15 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   --cb3-dur-verdict: 300ms;
   --cb3-dur-complete: 600ms;
   --cb3-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* CP-TEXT-SCALE — the wide Home scene paints on a pinned 520x162 px sign, so its type is capped
+     to the size the plate was authored at (the caps themselves are on [data-cb-home-scene]).
+     The alias has to live here, one level above the scene: a scene rule that read
+     var(--cb3-text-display) while redefining the same name would be a cycle and resolve to
+     nothing at all. */
+  --cb3-scene-type-display: var(--cb3-text-display);
+  --cb3-scene-type-lead: var(--cb3-text-lead);
+  --cb3-scene-type-meta: var(--cb3-text-meta);
+  --cb3-scene-type-heading: var(--cb3-text-heading);
 }
 
 [data-cb-v3] .cb3-material {
@@ -244,6 +253,16 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   isolation: isolate;
   transform: scale(var(--cb-home-scene-scale, 1));
   transform-origin: top left;
+  /* CP-TEXT-SCALE — the scene's type is a scene-local step, never the root-relative one. Every run
+     this surface paints (headline, subline, CTA labels, card titles, cover mark, tag, see-all)
+     resolves through these overrides, and each cap is exactly the value its token produced at a
+     16 px root on the 1344 px route. Above that root the composition cannot grow — the sign is a
+     pinned 520x162 px quad and the board row starts at y 319 — so the cap engages and the lettering
+     keeps the frame it was authored to. At 100 % it does not bite at all: min() returns the token. */
+  --cb3-text-display: min(var(--cb3-scene-type-display), 64px);
+  --cb3-text-lead: min(var(--cb3-scene-type-lead), 20px);
+  --cb3-text-meta: min(var(--cb3-scene-type-meta), 14px);
+  --cb3-text-heading: min(var(--cb3-scene-type-heading), 32.64px);
   /* D-007 — the room's ground is the approved hero plate (data-cb-home-scene-backdrop), a full
      bleed painted backdrop. The token canvas stays as the ground under it so a plate that fails to
      decode leaves the canvas, never a blank route. */
@@ -323,8 +342,14 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   color: var(--cb3-ink);
 }
 
+/* CP-TEXT-SCALE — at a 16 px root the 44 px pill row closed at y 194.27, 2.27 px below the sign's
+   own 192 px lower edge, so the buttons already hung on the painted wall before any text was
+   enlarged: the sign's 118 px content box is over-subscribed by 24.27 px of type and the row lives
+   in the bottom padding. The gap under the subline shrinks to 1 px, which closes the row at
+   191.27 px inside the sign. The pinned quads (hero 520x162 at 196,30; boards at y 319; tag; fox)
+   do not move, and the sign itself is not enlarged over the plate. */
 [data-cb-v3] [data-cb-home-scene-cta] {
-  margin-top: 4px;
+  margin-top: 1px;
   display: flex;
   gap: 12px;
   justify-content: flex-start;

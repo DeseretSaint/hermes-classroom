@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-14T07:14:14.310Z",
+  "generated_at": "2026-11-14T11:10:28.289Z",
   "reference_time": "2026-11-07T10:00:00.000Z",
   "kind": "painted audit of the shipped Desktop module rendered in jsdom, painted and measured in headless Chromium",
   "chromium": "Chrome/155.0.8059.84",
@@ -37484,8 +37484,8 @@
         "source": "committed fixture"
       }
     },
-    "plugin_sha256": "9408fcb1e232f25a3f80b6a73523e81b49ef84c87d0e70f25b63931ea4f468da",
-    "branch": "wt/leg-03-union",
+    "plugin_sha256": "52fb71f6ab488bf56b2f075956a1cd574f1ef387d322119922fccf4c42a394b8",
+    "branch": "HEAD",
     "note": "the evidence is pinned by plugin_sha256; find the generating commit in the branch history that carries audit/visual/m4-visual/audit.json"
   }
 }
