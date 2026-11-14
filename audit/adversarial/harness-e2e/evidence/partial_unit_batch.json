@@ -16,10 +16,75 @@
     "state": "not_started",
     "title": "Use the circle of fifths to name the chords in a pop song"
   },
-  "persisted_sections": [],
-  "unit_result": null,
-  "unit_stage_refusal": {
-    "message": "unit 2 sections failed validation: unit 2 targets 3 lesson(s); this batch would leave 2 section(s)",
-    "type": "GenerationRejected"
-  }
+  "persisted_sections": [
+    {
+      "objective_refs_json": "[3]",
+      "ordinal": 1,
+      "section_role": "owner"
+    },
+    {
+      "objective_refs_json": "[4]",
+      "ordinal": 2,
+      "section_role": "owner"
+    },
+    {
+      "objective_refs_json": "[4]",
+      "ordinal": 3,
+      "section_role": "review"
+    }
+  ],
+  "unit_result": {
+    "budget": {
+      "max_calls": 400,
+      "max_cost_usd": 100.0,
+      "source": "caller"
+    },
+    "job_id": "job_0000000000000000000000000000001a",
+    "job_kind": "unit_sections",
+    "next_unit_ordinal": null,
+    "owners": 2,
+    "plan_hash": "sha256:e71d5565080253e991fc4940dc85ce9dc374532aab5d1b7cd0d102a2d796f569",
+    "plan_id": "pln_00000000000000000000000000000003",
+    "rejection_reasons": [],
+    "reused": false,
+    "reviews": 1,
+    "section_ids": [
+      "000000000000001b",
+      "000000000000001c",
+      "000000000000001e"
+    ],
+    "sections": 3,
+    "stage": "unit_sections",
+    "state": "validated",
+    "unit_ordinal": 2,
+    "usage": {
+      "budget": {
+        "max_calls": 400,
+        "max_cost_usd": 100.0,
+        "source": "caller"
+      },
+      "by_purpose": {
+        "coursebook.unit_sections.generate": {
+          "calls": 2,
+          "cost_usd": 0.0,
+          "unknown_cost": false
+        },
+        "coursebook.unit_sections.validate": {
+          "calls": 2,
+          "cost_usd": 0.0,
+          "unknown_cost": false
+        }
+      },
+      "calls": 4,
+      "cost_usd": 0.0,
+      "estimated_cost_usd": 0.0,
+      "input_tokens": 2327,
+      "output_tokens": 1043,
+      "unknown_calls": 0,
+      "unknown_cost": false
+    },
+    "validation_id": "000000000000001f",
+    "validation_verdict": "pass"
+  },
+  "unit_stage_refusal": null
 }

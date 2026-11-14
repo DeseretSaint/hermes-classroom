@@ -3657,6 +3657,14 @@ _VIEW_NOTE_PARKED_REVIEW = (
     "served until it is approved. Its check stays closed until then."
 )
 
+#: Upgrade 35: an authored page whose unit is still only partly authored is never served. A
+#: partial unit is a pipeline fact, so the note says the learner-facing truth without naming a
+#: stage, a job or a reason code.
+_VIEW_NOTE_UNIT_PARTIAL = (
+    "This section belongs to a unit that is still being prepared, so its lesson is not available "
+    "yet."
+)
+
 #: ``gen_lessons`` states a learner may be offered: independently validated, assessed by its own
 #: author model (honestly labelled), or an authored edit an adult signed off.
 _SERVABLE_LESSON_STATES = ("validated", "model_assessed", "parent_approved")
@@ -3872,6 +3880,18 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
         provenance = None
         authored_incomplete = False
         authored = _authored_lesson_page(connection, objective)
+        # Upgrade 35: a unit whose section batch was only partly cleared for use is not a lesson
+        # set. Even a section-scoped job can have written a page for one of its sections, so the
+        # fence is read here — the learner surface — and not only in the authoring stages.
+        partial_unit = (
+            generation.partial_unit_for_objective(
+                connection, str(objective["plan_id"]), int(objective["ordinal"])
+            )
+            if authored is not None
+            else None
+        )
+        if partial_unit is not None:
+            authored = None
         # t_3a3c6ea1: a section whose newest authored revision is parked (`needs_review`) has a
         # page that no one approved. `_authored_lesson_page` correctly refuses it; remember that
         # so the empty document can name the real state instead of claiming nothing was authored.
@@ -3917,7 +3937,11 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
                     row["id"]: {"kind": row["kind"], "mime": row["mime"]} for row in artifacts
                 },
             )
-            if authored_incomplete and not document["blocks"]:
+            if partial_unit is not None and not document["blocks"]:
+                # Upgrade 35: the unit is still being prepared. Say that, not "no teaching
+                # content", and attach no check to an empty page.
+                document["view_note"] = _VIEW_NOTE_UNIT_PARTIAL
+            elif authored_incomplete and not document["blocks"]:
                 # The generated page had no teaching segments and the chat wrote none either.
                 # Name the missing piece instead of a generic "no content" note.
                 document["view_note"] = (

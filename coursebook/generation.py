@@ -265,7 +265,9 @@ PLAN_PROMPT_VERSION_V2 = "plan-prompt.v27"
 #: the objectives it reinforces, and an uncited objective is not a licence to cite others.
 #: v4 (E2E S1/S3): the final unit of a full course must end on its exit owner section, and every
 #: declared review slot must author a different form of the owner's target.
-UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v4"
+#: v5 (Upgrade 35): a resumed unit is told which sections are already stored, so it authors only
+#: the missing objectives and the review slots that remain instead of re-authoring the whole unit.
+UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v5"
 #: The lesson author prompt. H-06 adds the procedure header block to the instruction text; master's
 #: ``lesson-prompt.v7`` (the rubric-profile fix) shipped a *different* instruction text under the
 #: same label, and the label is recorded in stored validation bindings and the idempotency
@@ -11439,6 +11441,22 @@ _GENERATION_DDL: tuple[str, ...] = (
         UNIQUE(plan_id, plan_hash, ordinal)
     )
     """,
+    # Upgrade 35: a unit whose batch was only partly cleared for use keeps the sections that
+    # passed their own gate, and this row is the durable fence that says the unit is still
+    # partial. It is cleared only when the union of stored and newly authored rows clears every
+    # batch-level gate, so a half-covered unit can never read as complete, be served as a lesson
+    # set, or be exported. ``reasons_json`` carries the refused sections' own reasons for the
+    # operator; no learner surface reads this table.
+    """
+    CREATE TABLE IF NOT EXISTS gen_unit_partials (
+        plan_id TEXT NOT NULL,
+        plan_hash TEXT NOT NULL,
+        unit_id TEXT NOT NULL,
+        reasons_json TEXT NOT NULL DEFAULT '[]',
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY (plan_id, plan_hash, unit_id)
+    )
+    """,
     """
     CREATE TABLE IF NOT EXISTS gen_lessons (
         id TEXT PRIMARY KEY,
@@ -13849,6 +13867,8 @@ def _unit_sections_instructions(*, unit: dict[str, Any], objectives: Sequence[di
                                 recipe: str, locale: str | None,
                                 spaced_review: bool = False,
                                 final_unit_of_full: bool = False,
+                                stored_owner_count: int = 0,
+                                stored_review_count: int = 0,
                                 feedback: str | None = None) -> str:
     lines = [
         "Design the sections for exactly one unit of an approved blueprint plan.",
@@ -13858,7 +13878,22 @@ def _unit_sections_instructions(*, unit: dict[str, Any], objectives: Sequence[di
         "order. An owner section names its objective in primary_objective_ref, leaves reinforces "
         "empty, and carries a lesson_intent that names the construct the lesson must teach.",
     ]
-    review_slots = int(unit.get("target_lessons", 0)) - len(objectives)
+    if stored_owner_count:
+        # Upgrade 35: a resumed unit keeps the sections that already cleared their own gate, so the
+        # author must not write them again — a second owner section for a stored objective is
+        # refused, and re-authoring it spends money on work already on disk.
+        lines.append(
+            f"This unit already has {stored_owner_count} owner section(s)"
+            + (f" and {stored_review_count} review section(s)" if stored_review_count else "")
+            + " stored. Author only the objectives listed here; never author a second owner "
+            "section for an objective that is already stored."
+        )
+    review_slots = (
+        int(unit.get("target_lessons", 0))
+        - stored_owner_count
+        - stored_review_count
+        - len(objectives)
+    )
     if review_slots > 0:
         lines.append(
             f"Author exactly {review_slots} review section(s) after the owner sections. A review "
@@ -13949,10 +13984,18 @@ def build_unit_sections_request(
     sources: Sequence[SourceRecord],
     research_status: str,
     feedback: str | None = None,
+    existing_owner_refs: Sequence[int] = (),
+    existing_review_count: int = 0,
     timeout_s: float | None = None,
 ) -> LLMRequest:
     """The unit stage request. It carries the unit's objectives and the shared ledger, never the
-    whole course outline (§6: no call grows with course length except the blueprint)."""
+    whole course outline (§6: no call grows with course length except the blueprint).
+
+    Upgrade 35: a resumed unit names the sections already stored for it. Without that fact the
+    author was told ``review_sections = target_lessons - len(objectives)``, which on a resumed
+    unit asks for review slots the stored rows already fill and re-asks for objectives that are
+    already on disk.
+    """
     payload = {
         "artifact_kind": "unit_sections",
         "goal": goal,
@@ -13966,6 +14009,10 @@ def build_unit_sections_request(
             "goal": unit["goal"],
             "target_lessons": int(unit["target_lessons"]),
             "prereq_unit_ordinals": list(unit.get("prereq_unit_ordinals") or []),
+        },
+        "already_authored": {
+            "owner_objectives": [int(ref) for ref in existing_owner_refs],
+            "review_sections": int(existing_review_count),
         },
         "objectives": [
             {
@@ -13986,7 +14033,12 @@ def build_unit_sections_request(
         "sources": _source_brief(sources),
         "rules": {
             "owner_sections": "exactly one per listed objective",
-            "review_sections": "target_lessons minus the listed objectives",
+            "review_sections": (
+                int(unit["target_lessons"])
+                - len(existing_owner_refs)
+                - int(existing_review_count)
+                - len(objectives)
+            ),
             "source_ids": "use only ids present in sources",
         },
     }
@@ -14006,6 +14058,8 @@ def build_unit_sections_request(
             unit=unit, objectives=objectives, recipe=recipe, locale=locale,
             spaced_review=bool(plan.get("spaced_review")),
             final_unit_of_full=final_unit_of_full,
+            stored_owner_count=len(existing_owner_refs),
+            stored_review_count=int(existing_review_count),
             feedback=feedback,
         ),
         input_text=_bounded_input(
@@ -14112,7 +14166,8 @@ def enforce_unit_section_rules(
     ledger: Sequence[SourceRecord],
     existing_owner_refs: Sequence[int] = (),
     existing_reviews: Sequence[dict[str, Any]] = (),
-) -> None:
+    per_section: bool = False,
+) -> list[dict[str, Any]]:
     """§5 rules 4 and 7, on the batch the unit stage just authored.
 
     The writer assigns global ordinals, so the model's ``ordinal`` is advisory and never trusted
@@ -14130,16 +14185,25 @@ def enforce_unit_section_rules(
     are structural (unclosed fence, dangling function word, no terminal punctuation and no
     continuation marker) and never a length threshold. A ``title`` is a label, so only the
     block-structure signals apply to it.
+
+    **Per-section mode (Upgrade 35).** ``per_section=True`` runs only the rules that judge one
+    section on its own — role shape, unit ref, media need and capability, citation ids, title and
+    ``lesson_intent`` completeness, and a repeated owner inside the batch. It returns the refused
+    sections as ``{"index": i, "reasons": [...]}`` and never raises, so a batch can keep the
+    sections that passed. The rules that need the whole batch — owner coverage, the target count,
+    the exit performance and review-check overuse — stay in the batch mode and are re-run over the
+    union of stored and new rows by :func:`_judge_unit_union`. A per-section result is therefore
+    *not* a cleared unit, and nothing may treat it as one.
     """
-    reasons: list[str] = []
     unit_ordinal = int(unit["ordinal"])
     objective_ordinals = [int(obj["ordinal"]) for obj in objectives]
     ledger_ids = {source.source_id for source in ledger}
-    reasons.extend(review_check_overuse_reasons(sections, existing_reviews=existing_reviews))
+    section_reasons: list[list[str]] = []
     owners: dict[int, int] = {}
     reviews = 0
     seen_review = False
     for index, section in enumerate(sections):
+        reasons: list[str] = []
         intent = section.get("lesson_intent")
         if isinstance(intent, str):
             reasons.extend(
@@ -14175,6 +14239,11 @@ def enforce_unit_section_rules(
                 )
             else:
                 owners[int(primary)] = owners.get(int(primary), 0) + 1
+                if per_section and owners[int(primary)] > 1:
+                    reasons.append(
+                        f"objective {int(primary)} is owned by {owners[int(primary)]} sections; "
+                        "author exactly one"
+                    )
             if reinforces:
                 reasons.append(f"owner section {index + 1} must not carry reinforces")
         elif role == "review":
@@ -14231,6 +14300,17 @@ def enforce_unit_section_rules(
             reasons.append(f"section {index + 1} has no title")
         if len(str(section.get("lesson_intent") or "")) < 10:
             reasons.append(f"section {index + 1} has no usable lesson_intent")
+        section_reasons.append(reasons)
+
+    if per_section:
+        return [
+            {"index": index, "reasons": problems}
+            for index, problems in enumerate(section_reasons)
+            if problems
+        ]
+
+    reasons: list[str] = [problem for problems in section_reasons for problem in problems]
+    reasons.extend(review_check_overuse_reasons(sections, existing_reviews=existing_reviews))
 
     # S1: a full course ends on its exit performance. One owner section per objective means the
     # last owner section owns the plan's final objective; when this is the final unit, the batch
@@ -14304,6 +14384,336 @@ def enforce_unit_section_rules(
 
     if reasons:
         raise _RuleViolation(reasons)
+    return []
+
+
+# ── partial units (Upgrade 35) ──────────────────────────────────────────────
+
+
+def _unit_partial_row(
+    connection: sqlite3.Connection, plan_id: str, plan_hash: str, unit_id: str
+) -> dict[str, Any] | None:
+    """The durable partial record for one unit at one plan digest, or ``None``."""
+    try:
+        row = connection.execute(
+            "SELECT unit_id, reasons_json, updated_at FROM gen_unit_partials"
+            " WHERE plan_id = ? AND plan_hash = ? AND unit_id = ?",
+            (str(plan_id), str(plan_hash), str(unit_id)),
+        ).fetchone()
+    except sqlite3.OperationalError:
+        return None
+    if row is None:
+        return None
+    return {
+        "unit_id": str(row["unit_id"]),
+        "reasons": _load_json(row["reasons_json"], []),
+        "updated_at": row["updated_at"],
+    }
+
+
+def _mark_unit_partial(
+    connection: sqlite3.Connection,
+    *,
+    plan_id: str,
+    plan_hash: str,
+    unit_id: str,
+    reasons: Sequence[str],
+    now: datetime | None = None,
+) -> None:
+    """Record that this unit's section batch was only partly cleared for use.
+
+    The row is the fence, not a progress claim: ``unit_authoring_state`` never reports the unit
+    complete while it exists, the lesson stage refuses to author it, and ``lesson.page`` /
+    ``course.export`` refuse to serve or ship it. It is cleared only by a union of stored and
+    newly authored rows that clears every batch-level gate.
+    """
+    with _transaction(connection):
+        connection.execute(
+            "INSERT INTO gen_unit_partials (plan_id, plan_hash, unit_id, reasons_json, updated_at)"
+            " VALUES (?,?,?,?,?)"
+            " ON CONFLICT(plan_id, plan_hash, unit_id) DO UPDATE SET"
+            " reasons_json = excluded.reasons_json, updated_at = excluded.updated_at",
+            (
+                str(plan_id),
+                str(plan_hash),
+                str(unit_id),
+                _json([str(reason) for reason in reasons]),
+                _now_iso(now),
+            ),
+        )
+
+
+def _clear_unit_partial(
+    connection: sqlite3.Connection, *, plan_id: str, plan_hash: str, unit_id: str
+) -> None:
+    with _transaction(connection):
+        connection.execute(
+            "DELETE FROM gen_unit_partials WHERE plan_id = ? AND plan_hash = ? AND unit_id = ?",
+            (str(plan_id), str(plan_hash), str(unit_id)),
+        )
+
+
+def partial_units_for_plan(
+    connection: sqlite3.Connection, plan_id: str, plan_hash: str | None = None
+) -> list[dict[str, Any]]:
+    """Every unit of ``plan_id`` whose section batch is still partial (read-only).
+
+    ``course.export`` calls this so a half-authored unit is a blocker with no reason codes on the
+    parent's surface, and ``unit_authoring_state`` calls it so a partial unit is never counted
+    complete. A profile that has never generated anything has no table: that is "no partial
+    units", the honest answer.
+    """
+    sql = "SELECT unit_id, reasons_json, updated_at FROM gen_unit_partials WHERE plan_id = ?"
+    params: list[Any] = [str(plan_id)]
+    if plan_hash is not None:
+        sql += " AND plan_hash = ?"
+        params.append(str(plan_hash))
+    try:
+        rows = connection.execute(sql, tuple(params)).fetchall()
+    except sqlite3.OperationalError:
+        return []
+    return [
+        {
+            "unit_id": str(row["unit_id"]),
+            "reasons": _load_json(row["reasons_json"], []),
+            "updated_at": row["updated_at"],
+        }
+        for row in rows
+    ]
+
+
+def partial_unit_for_objective(
+    connection: sqlite3.Connection, plan_id: str, ordinal: int
+) -> dict[str, Any] | None:
+    """The partial record of the unit that owns ``ordinal`` at the current plan digest.
+
+    Read-only. ``lesson.page`` uses it to refuse an authored page whose unit is still partial, so
+    a half-covered unit cannot be served even if a section-scoped job wrote one of its lessons.
+    """
+    try:
+        document = connection.execute(
+            "SELECT plan_hash FROM gen_plan_documents WHERE plan_id = ?"
+            " ORDER BY created_at DESC, rowid DESC LIMIT 1",
+            (str(plan_id),),
+        ).fetchone()
+        if document is None:
+            return None
+        row = connection.execute(
+            "SELECT p.unit_id, p.reasons_json FROM gen_plan_sections s"
+            " JOIN gen_unit_partials p ON p.plan_id = s.plan_id"
+            " AND p.plan_hash = s.plan_hash AND p.unit_id = s.unit_id"
+            " WHERE s.plan_id = ? AND s.plan_hash = ?"
+            " AND json_extract(s.objective_refs_json, '$[0]') = ? LIMIT 1",
+            (str(plan_id), str(document["plan_hash"]), int(ordinal)),
+        ).fetchone()
+    except sqlite3.OperationalError:
+        return None
+    if row is None:
+        return None
+    return {"unit_id": str(row["unit_id"]), "reasons": _load_json(row["reasons_json"], [])}
+
+
+def _section_as_authored(section: Mapping[str, Any]) -> dict[str, Any]:
+    """One section in the shape :func:`enforce_unit_section_rules` judges.
+
+    Two shapes reach the gates: the provider's authored item (``role``/``primary_objective_ref``)
+    and a stored ``gen_plan_sections`` row (``section_role``/``objective_refs``). The union of
+    stored and newly authored rows can only be judged by one gate if both are normalised here, so
+    the completeness and media checks cannot disagree with the batch that wrote the rows.
+    """
+    if "role" in section and "section_role" not in section:
+        return dict(section)
+    role = str(section.get("section_role") or "owner")
+    refs = [int(ref) for ref in section.get("objective_refs") or []]
+    reinforces = section.get("reinforces")
+    if reinforces is None:
+        reinforces = refs if role == "review" else []
+    return {
+        "unit_ref": section.get("unit_ref"),
+        "role": role,
+        "primary_objective_ref": refs[0] if role == "owner" and len(refs) == 1 else None,
+        "reinforces": [int(ref) for ref in reinforces] if role == "review" else [],
+        "title": section.get("title"),
+        "lesson_intent": section.get("lesson_intent"),
+        "media_need": section.get("media_need"),
+        "context_needs": list(section.get("context_needs") or []),
+        # The writer derives a stored row's citations from the plan's own objective support
+        # (CP-015g D3), beyond the ids the authoring gate saw, so a stored row's citation list is
+        # not re-judged against this pass's ledger. An authored id was judged when it was stored.
+        "source_ids": [],
+    }
+
+
+def _judge_unit_union(
+    *,
+    stored: Sequence[Mapping[str, Any]],
+    authored: Sequence[Mapping[str, Any]],
+    unit: dict[str, Any],
+    objectives: Sequence[dict[str, Any]],
+    plan: dict[str, Any],
+    recipe: str,
+    dials: dict[str, Any],
+    locale: str | None,
+    ledger: Sequence[SourceRecord],
+) -> list[str]:
+    """The batch-level gates over the union of stored and newly authored rows.
+
+    This is the only reader that decides whether a unit's section set is complete: owner coverage
+    and the target count are measured over everything that would be stored, so a partial unit can
+    never be counted complete, and the exit-performance rule (S1) sees the real last owner instead
+    of the last owner of one batch. Returns the reasons; an empty list is the clear.
+    """
+    entries = [_section_as_authored(section) for section in stored]
+    entries.extend(_section_as_authored(section) for section in authored)
+    unit_ordinal = int(unit["ordinal"])
+    for entry in entries:
+        entry["unit_ref"] = unit_ordinal
+    try:
+        enforce_unit_section_rules(
+            entries,
+            unit=unit,
+            objectives=objectives,
+            plan=plan,
+            recipe=recipe,
+            dials=dials,
+            locale=locale,
+            ledger=ledger,
+        )
+    except _RuleViolation as exc:
+        return exc.reasons
+    return []
+
+
+def _unit_store_problems(
+    passing: Sequence[Mapping[str, Any]],
+    existing_sections: Sequence[Mapping[str, Any]],
+    *,
+    unit_ordinal: int,
+    target: int,
+) -> list[str]:
+    """Why this passing prefix must not be written, or an empty list.
+
+    The per-section gate cannot see the unit: two owners for one objective and a batch that would
+    leave more section rows than the unit targets are batch facts. Both are checked before any
+    insert, so a corrupt unit is refused instead of stored and then discovered by the next reader.
+    """
+    reasons: list[str] = []
+    stored_owners = {
+        ref for ref in (_section_owner_ref(dict(section)) for section in existing_sections)
+        if ref is not None
+    }
+    new_owners = [
+        int(ref)
+        for ref in (
+            section.get("primary_objective_ref")
+            for section in passing
+            if str(section.get("role") or "owner") == "owner"
+        )
+        if ref is not None
+    ]
+    duplicated = sorted({ref for ref in new_owners if new_owners.count(ref) > 1})
+    for ref in duplicated:
+        reasons.append(f"objective {ref} is owned by 2 sections; author exactly one")
+    for ref in sorted(set(new_owners) & stored_owners):
+        reasons.append(f"objective {ref} already has a stored owner section")
+    total_after = len(existing_sections) + len(passing)
+    if total_after > target:
+        reasons.append(
+            f"unit {unit_ordinal} targets {target} lesson(s); this batch would leave "
+            f"{total_after} section(s)"
+        )
+    return reasons
+
+
+def _unit_batch_safety_problems(
+    passing: Sequence[dict[str, Any]],
+    existing_sections: Sequence[dict[str, Any]],
+    existing_reviews: Sequence[dict[str, Any]],
+    *,
+    unit_ordinal: int,
+    target: int,
+) -> list[str]:
+    """Batch facts that make *any* section of this batch unfit to store.
+
+    Two kinds of rule cannot be decided section by section and cannot be repaired by keeping a
+    prefix: a review section over an already-reinforced objective (one owner check serves one
+    review, CP-015f), and a batch that would duplicate an owner or overshoot the unit's target.
+    Both are refused before validation and before any insert, so a batch that trips them keeps
+    nothing — the retry is a re-author of the whole batch, with these reasons as its feedback.
+    """
+    reasons = review_check_overuse_reasons(passing, existing_reviews=existing_reviews)
+    reasons.extend(
+        _unit_store_problems(
+            passing, existing_sections, unit_ordinal=unit_ordinal, target=target
+        )
+    )
+    return reasons
+
+
+def _insert_unit_sections(
+    connection: sqlite3.Connection,
+    *,
+    plan_id: str,
+    plan_hash: str,
+    unit_id: str,
+    plan: Mapping[str, Any],
+    sections: Sequence[Mapping[str, Any]],
+    next_ordinal: int,
+    all_objective_ordinals: Sequence[int] | set[int],
+) -> tuple[list[str], int]:
+    """Write one batch of authored sections and return ``(section_ids, next_ordinal)``.
+
+    The caller owns the transaction: a batch is written whole or not at all. Citations are derived
+    from the plan's own objective support, never trusted from the model (CP-015g D3).
+    """
+    ordinals = set(all_objective_ordinals)
+    section_ids: list[str] = []
+    for section in sections:
+        section_id = _new_id()
+        section_ids.append(section_id)
+        role = str(section.get("role") or "owner")
+        primary = section.get("primary_objective_ref")
+        refs = (
+            [int(primary)]
+            if role == "owner" and primary is not None
+            else [int(ref) for ref in section.get("reinforces") or []]
+        )
+        for ref in refs:
+            if ref not in ordinals:
+                raise GenerationRejected(
+                    f"unit sections reference objective {ref}, which the plan does not contain"
+                )
+        # CP-015g D3: the stored citations are derived, not trusted from the model. The objective
+        # citations for the bound refs come first, then any authored ids, both deduped and capped
+        # at the schema's six. A batch that authored `[]` therefore stores the plan's own
+        # provenance; an unfetched authored id was already refused by the rule gate.
+        stored_source_ids = _cited_source_ids(plan.get("objectives") or [], refs)
+        for authored_source_id in section.get("source_ids") or []:
+            text = str(authored_source_id)
+            if text not in stored_source_ids:
+                stored_source_ids.append(text)
+        stored_source_ids = stored_source_ids[:6]
+        connection.execute(
+            "INSERT INTO gen_plan_sections (id, plan_id, ordinal, plan_hash, title, "
+            "lesson_intent, media_need_json, objective_refs_json, context_needs_json, "
+            "source_ids_json, unit_id, section_role) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                section_id,
+                str(plan_id),
+                next_ordinal,
+                plan_hash,
+                str(section["title"]),
+                str(section["lesson_intent"]),
+                _json(section.get("media_need")),
+                _json(refs),
+                _json(section.get("context_needs") or []),
+                _json(stored_source_ids),
+                str(unit_id),
+                role,
+            ),
+        )
+        next_ordinal += 1
+    return section_ids, next_ordinal
 
 
 def unit_sections_timeout_recovery(
@@ -14347,15 +14757,21 @@ def run_unit_sections_job(
     six-call budget (two attempts, each generation + validation + one truncation re-ask; see
     :func:`unit_sections_cost_budget`) and a durable checkpoint; it never enqueues the next unit.
 
-    **Transactional over the unit.** A batch is written only after it is cleared for use. A batch
-    that breaks the unit's own rules (on either attempt) or that the validator rejects is
-    discarded: no ``gen_plan_sections`` row from that attempt survives, and the job fails with
-    the rejection reasons. Persisting a partial unit as ``needs_review`` was the alternative, but
-    it is neither honest (a half-covered unit) nor resumable (the reuse branch treated the
-    leftover rows as done), so an operator had to reason about a half-written unit. Re-running the
-    same brief starts the unit clean. A *pass that is not independent* is different: it is usable
-    content, so it is stored and parked as ``needs_review`` with its provenance, exactly as the
-    plan stage does.
+    **Partial over the unit, complete only as a union (Upgrade 35).** A batch is no longer written
+    only as a whole. Each section is judged by the per-section mode of
+    :func:`enforce_unit_section_rules` first; the prefix that passes is validated (against the
+    objectives those sections actually serve) and stored, and the unit is marked partial in
+    ``gen_unit_partials`` with the refused sections' reasons. The next attempt — in this job or a
+    later one — asks only for the objectives still missing, so a unit that keeps failing stops
+    paying twice for the sections that were fine.
+
+    A partial unit is *not* a usable unit. The batch-level gates (owner coverage, target count,
+    exit performance, review overuse) run over the union of stored and new rows, and the partial
+    marker is cleared only when that union clears every one of them. While the marker exists
+    ``unit_authoring_state`` never reports the unit complete, the lesson stage refuses to author
+    it, ``lesson.page`` refuses to serve an authored page from it and ``course.export`` refuses to
+    package the course. A *pass that is not independent* is different: it is usable content, so it
+    is stored and parked as ``needs_review`` with its provenance, exactly as the plan stage does.
     """
     ensure_schema(connection)
     job = dict(job or {})
@@ -14414,24 +14830,48 @@ def run_unit_sections_job(
         or ""
     )
 
-    existing_sections = _unit_section_rows(connection, str(plan_id), str(unit["id"]))
-    existing_owner_refs = [
-        ref for ref in (_section_owner_ref(section) for section in existing_sections) if ref is not None
-    ]
-    # CP-015f: reviews already stored for this unit count against the same one-review-per-objective
-    # rule, so a unit authored in two batches cannot hide a second review over one owner check.
-    existing_reviews = [
-        section
-        for section in existing_sections
-        if str(section.get("section_role") or "owner") == "review"
-    ]
-    missing_objectives = [
-        objective
-        for objective in objectives
-        if int(objective["ordinal"]) not in set(existing_owner_refs)
-    ]
-    unit_sources = _unit_cited_sources(plan, missing_objectives, sources)
     target = int(unit["target_lessons"])
+    all_objective_ordinals = {
+        int(obj.get("ordinal", 0))
+        for obj in plan.get("objectives") or []
+        if isinstance(obj, dict)
+    }
+
+    def _current_unit_state() -> tuple[list[dict[str, Any]], list[int], list[dict[str, Any]], list[dict[str, Any]]]:
+        """Stored rows, their owner refs, their reviews and the objectives still missing.
+
+        Read fresh on every attempt: an attempt that kept the sections which passed its own gate
+        has changed what this unit still owes, and the next request must name only that remainder.
+        """
+        stored = _unit_section_rows(connection, str(plan_id), str(unit["id"]))
+        owners = [
+            ref for ref in (_section_owner_ref(section) for section in stored) if ref is not None
+        ]
+        reviews = [
+            section
+            for section in stored
+            if str(section.get("section_role") or "owner") == "review"
+        ]
+        missing = [
+            objective for objective in objectives if int(objective["ordinal"]) not in set(owners)
+        ]
+        return stored, owners, reviews, missing
+
+    def _union_reasons() -> list[str]:
+        stored = _unit_section_rows(connection, str(plan_id), str(unit["id"]))
+        return _judge_unit_union(
+            stored=stored,
+            authored=[],
+            unit=unit,
+            objectives=objectives,
+            plan=plan,
+            recipe=recipe,
+            dials=dials,
+            locale=locale,
+            ledger=sources,
+        )
+
+    existing_sections, existing_owner_refs, existing_reviews, missing_objectives = _current_unit_state()
     if not missing_objectives and len(existing_sections) >= target:
         # The stored batch is what the lesson stage will author from. Claiming it as reusable
         # while the lesson stage can prove it unexecutable is the disagreement CP-015f reports,
@@ -14443,6 +14883,26 @@ def run_unit_sections_job(
                 + "; ".join(overuse)
                 + ". Re-author the plan's unit sections so each objective has at most one review."
             )
+        # Upgrade 35: a unit can reach its section count in two batches. The batch gates run over
+        # the union before it reads as reusable, and a partial marker is only cleared by a union
+        # that clears them; a stored set that does not is a refusal, not a checkpoint.
+        union_reasons = _union_reasons()
+        if union_reasons:
+            _mark_unit_partial(
+                connection,
+                plan_id=str(plan_id),
+                plan_hash=digest,
+                unit_id=str(unit["id"]),
+                reasons=union_reasons,
+                now=now,
+            )
+            raise GenerationRejected(
+                f"unit {requested_unit} sections are stored but do not form a complete unit: "
+                + "; ".join(union_reasons)
+            )
+        _clear_unit_partial(
+            connection, plan_id=str(plan_id), plan_hash=digest, unit_id=str(unit["id"])
+        )
         return {
             "job_id": job_id,
             "job_kind": "unit_sections",
@@ -14471,15 +14931,44 @@ def run_unit_sections_job(
     verdict: dict[str, Any] | None = None
     feedback: str | None = None
     rejection_reasons: list[str] = []
-    authored: list[dict[str, Any]] = []
-    request: LLMRequest | None = None
+    stored_section_ids: list[str] = []
+    final_state: str = "needs_review"
+    partial_stored = False
+    completed = False
+    validation_id: str | None = None
+
+    def _refused_feedback(reasons: Sequence[str]) -> str:
+        return "The unit sections broke required rules:\n- " + "\n- ".join(list(reasons))
 
     try:
         for attempt in UNIT_SECTIONS_ATTEMPTS:
             validation_request = None
             validation_response = None
             verdict = None
-            authored = []
+            existing_sections, existing_owner_refs, existing_reviews, missing_objectives = (
+                _current_unit_state()
+            )
+            unit_sources = _unit_cited_sources(plan, missing_objectives, sources)
+            if not missing_objectives and len(existing_sections) >= target:
+                # An earlier attempt in this job stored the section that was still missing. The
+                # union is the completion fact; this attempt spends nothing.
+                union_reasons = _union_reasons()
+                if union_reasons:
+                    rejection_reasons = union_reasons
+                    _mark_unit_partial(
+                        connection,
+                        plan_id=str(plan_id),
+                        plan_hash=digest,
+                        unit_id=str(unit["id"]),
+                        reasons=union_reasons,
+                        now=now,
+                    )
+                else:
+                    _clear_unit_partial(
+                        connection, plan_id=str(plan_id), plan_hash=digest, unit_id=str(unit["id"])
+                    )
+                    completed = True
+                break
             request = build_unit_sections_request(
                 plan=plan,
                 unit=unit,
@@ -14490,6 +14979,8 @@ def run_unit_sections_job(
                 sources=unit_sources,
                 research_status=research_status,
                 feedback=feedback,
+                existing_owner_refs=existing_owner_refs,
+                existing_review_count=len(existing_reviews),
             )
             response = _call_llm(llm, request, usage)
             candidate, candidate_repaired = _parse_structured_document(
@@ -14501,35 +14992,92 @@ def run_unit_sections_job(
                 # the document as the provider's own valid JSON.
                 response = replace(response, json_repaired=True)
             batch = [dict(item) for item in candidate.get("sections") or []]
-            try:
-                enforce_unit_section_rules(
-                    batch,
-                    unit=unit,
-                    objectives=missing_objectives,
-                    plan=plan,
-                    recipe=recipe,
-                    dials=dials,
-                    locale=locale,
-                    ledger=sources,
-                    existing_owner_refs=existing_owner_refs,
+            # A resumed unit is asked only for its missing objectives, but an author (or an older
+            # fixture) can still return a section for an objective that is already stored. The
+            # stored row is authoritative: drop the duplicate instead of refusing the batch, so a
+            # re-run that re-authors the whole unit still advances.
+            stored_owner_refs = set(existing_owner_refs)
+            batch = [
+                section
+                for section in batch
+                if not (
+                    str(section.get("role") or "owner") == "owner"
+                    and section.get("primary_objective_ref") is not None
+                    and int(section["primary_objective_ref"]) in stored_owner_refs
                 )
-            except _RuleViolation as exc:
-                rejection_reasons = exc.reasons
-                if attempt == 2:
-                    # A batch that breaks the unit's own rules is not persisted, not even as a
-                    # ``needs_review`` partial: see the transactional note above.
+            ]
+            # Upgrade 35: judge each section on its own first. A batch whose last sections are
+            # unacceptable keeps the sections before them instead of discarding the whole unit and
+            # paying to author those sections again on the next job.
+            refused = enforce_unit_section_rules(
+                batch,
+                unit=unit,
+                objectives=missing_objectives or list(objectives),
+                plan=plan,
+                recipe=recipe,
+                dials=dials,
+                locale=locale,
+                ledger=sources,
+                existing_owner_refs=existing_owner_refs,
+                existing_reviews=existing_reviews,
+                per_section=True,
+            )
+            first_refused = min((item["index"] for item in refused), default=len(batch))
+            passing = batch[:first_refused]
+            refused_reasons = [reason for item in refused for reason in item["reasons"]]
+            if first_refused < len(batch):
+                # A unit's sections are an ordered plan: an owner section that follows a refused
+                # one cannot be placed at the right ordinal, and the exit-performance rule reads
+                # the last owner. The storable part of a refused batch is therefore its prefix.
+                refused_reasons.append(
+                    f"sections {first_refused + 1}-{len(batch)} follow refused section "
+                    f"{first_refused + 1}; a unit batch is kept as an ordered prefix"
+                )
+            store_problems = _unit_batch_safety_problems(
+                passing,
+                existing_sections,
+                existing_reviews,
+                unit_ordinal=requested_unit,
+                target=target,
+            )
+            if store_problems:
+                rejection_reasons = store_problems + refused_reasons
+                if attempt == UNIT_SECTIONS_ATTEMPTS[-1]:
                     break
-                feedback = "The unit sections broke required rules:\n- " + "\n- ".join(exc.reasons)
+                feedback = _refused_feedback(rejection_reasons)
                 continue
+            if not passing:
+                rejection_reasons = list(refused_reasons)
+                if attempt == UNIT_SECTIONS_ATTEMPTS[-1]:
+                    break
+                feedback = _refused_feedback(rejection_reasons)
+                continue
+            # The validator judges the sections this attempt will actually store, against the
+            # objectives those sections serve. A subset is not dressed up as the whole unit.
+            covered_ordinals: set[int] = set()
+            for section in passing:
+                role = str(section.get("role") or "owner")
+                if role == "owner" and section.get("primary_objective_ref") is not None:
+                    covered_ordinals.add(int(section["primary_objective_ref"]))
+                elif role == "review":
+                    covered_ordinals.update(
+                        int(ref) for ref in section.get("reinforces") or []
+                    )
+            validation_objectives = [
+                objective
+                for objective in objectives
+                if int(objective["ordinal"]) in covered_ordinals
+            ] or list(missing_objectives)
+            validation_sources = _unit_cited_sources(plan, validation_objectives, sources)
             validation_request = build_unit_sections_validation_request(
                 plan=plan,
                 unit=unit,
-                objectives=missing_objectives,
-                sections=batch,
+                objectives=validation_objectives,
+                sections=passing,
                 goal=goal,
                 recipe=recipe,
                 locale=locale,
-                sources=unit_sources,
+                sources=validation_sources,
                 research_status=research_status,
             )
             assert request is not None
@@ -14579,105 +15127,52 @@ def run_unit_sections_job(
             verdict = validation_verdict(
                 report,
                 research_status=research_status,
-                ledger=sources,
+                ledger=validation_sources,
                 independence=independence,
                 canonical=identity_detail["canonical"],
                 criteria=lesson_validation_criteria(recipe=recipe),
                 not_applicable=lesson_validation_waivers(recipe=recipe),
             )
-            if verdict["verdict"] == "pass":
-                authored = batch
-                break
-            rejection_reasons = _refusal_reasons(verdict)
-            if attempt == 2:
-                # A rejected batch is not a partial unit to finish later: the validator refused
-                # it, so it is discarded and the job fails with its reasons (transactional unit).
-                break
-            feedback = _feedback(verdict)
-
-        if verdict is None or verdict["verdict"] != "pass":
-            # Deterministic rule violations, malformed batches and validator rejections all take
-            # this exit. Nothing from the attempt reached ``gen_plan_sections``; the durable
-            # failure record carries every reason, and a retry starts the unit clean.
-            detail = "; ".join(rejection_reasons) or "the unit batch was not cleared for use"
-            raise GenerationRejected(
-                f"unit {requested_unit} sections failed validation: {detail}"
-            )
-        # Only an independent pass with grounded facts certifies the authored sections. A pass
-        # that is not independent is still usable and is parked as ``needs_review`` with its
-        # provenance attached, exactly as the plan stage does.
-        outcome = verdict.get("outcome") or OUTCOME_MODEL_ASSESSED
-        state = "validated" if outcome == OUTCOME_INDEPENDENT else "needs_review"
-        timestamp = _now_iso(now)
-        # Global ordinals after the highest already stored for this plan, in unit order. The
-        # writer assigns identity; the model's ordinal is advisory.
-        ordinal_row = connection.execute(
-            "SELECT COALESCE(MAX(ordinal), 0) AS n FROM gen_plan_sections WHERE plan_id = ?",
-            (str(plan_id),),
-        ).fetchone()
-        next_ordinal = int((ordinal_row["n"] if isinstance(ordinal_row, sqlite3.Row) else ordinal_row[0]) or 0) + 1
-        objective_ids = {int(obj["ordinal"]): str(obj["id"]) for obj in objectives}
-        all_objective_ordinals = {
-            int(obj.get("ordinal", 0))
-            for obj in plan.get("objectives") or []
-            if isinstance(obj, dict)
-        }
-        validation_id: str | None = None
-        section_ids: list[str] = []
-        with _transaction(connection):
-            for section in authored:
-                section_id = _new_id()
-                section_ids.append(section_id)
-                role = str(section.get("role") or "owner")
-                primary = section.get("primary_objective_ref")
-                refs = (
-                    [int(primary)]
-                    if role == "owner" and primary is not None
-                    else [int(ref) for ref in section.get("reinforces") or []]
+            if verdict["verdict"] != "pass":
+                rejection_reasons = _refusal_reasons(verdict) + refused_reasons
+                if attempt == UNIT_SECTIONS_ATTEMPTS[-1]:
+                    # A rejected section is not a kept section: the validator refused it, so the
+                    # batch is discarded and the job fails with its reasons (transactional unit).
+                    break
+                feedback = _feedback(verdict)
+                continue
+            # Only an independent pass with grounded facts certifies the authored sections. A pass
+            # that is not independent is still usable and is parked as ``needs_review`` with its
+            # provenance attached, exactly as the plan stage does.
+            outcome = verdict.get("outcome") or OUTCOME_MODEL_ASSESSED
+            final_state = "validated" if outcome == OUTCOME_INDEPENDENT else "needs_review"
+            # Global ordinals after the highest already stored for this plan, in unit order. The
+            # writer assigns identity; the model's ordinal is advisory.
+            ordinal_row = connection.execute(
+                "SELECT COALESCE(MAX(ordinal), 0) AS n FROM gen_plan_sections WHERE plan_id = ?",
+                (str(plan_id),),
+            ).fetchone()
+            next_ordinal = int(
+                (ordinal_row["n"] if isinstance(ordinal_row, sqlite3.Row) else ordinal_row[0]) or 0
+            ) + 1
+            validation_id: str | None = None
+            with _transaction(connection):
+                section_ids, next_ordinal = _insert_unit_sections(
+                    connection,
+                    plan_id=str(plan_id),
+                    plan_hash=digest,
+                    unit_id=str(unit["id"]),
+                    plan=plan,
+                    sections=passing,
+                    next_ordinal=next_ordinal,
+                    all_objective_ordinals=all_objective_ordinals,
                 )
-                for ref in refs:
-                    if ref not in all_objective_ordinals:
-                        raise GenerationRejected(
-                            f"unit {requested_unit} references objective {ref}, which the plan "
-                            "does not contain"
-                        )
-                # CP-015g D3: the stored citations are derived, not trusted from the model. The
-                # objective citations for the bound refs come first, then any authored ids, both
-                # deduped and capped at the schema's six. A batch that authored `[]` therefore
-                # stores the plan's own provenance; an unfetched authored id was already refused
-                # by ``enforce_unit_section_rules`` above.
-                stored_source_ids = _cited_source_ids(plan.get("objectives") or [], refs)
-                for authored_source_id in section.get("source_ids") or []:
-                    text = str(authored_source_id)
-                    if text not in stored_source_ids:
-                        stored_source_ids.append(text)
-                stored_source_ids = stored_source_ids[:6]
-                connection.execute(
-                    "INSERT INTO gen_plan_sections (id, plan_id, ordinal, plan_hash, title, "
-                    "lesson_intent, media_need_json, objective_refs_json, context_needs_json, "
-                    "source_ids_json, unit_id, section_role) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-                    (
-                        section_id,
-                        str(plan_id),
-                        next_ordinal,
-                        digest,
-                        str(section["title"]),
-                        str(section["lesson_intent"]),
-                        _json(section.get("media_need")),
-                        _json(refs),
-                        _json(section.get("context_needs") or []),
-                        _json(stored_source_ids),
-                        str(unit["id"]),
-                        role,
-                    ),
-                )
-                next_ordinal += 1
-            if validation_request is not None and validation_response is not None:
+                stored_section_ids.extend(section_ids)
                 validation_id = _record_validation(
                     connection,
                     subject_kind="unit_sections",
                     subject_id=f"{plan_id}:{requested_unit}",
-                    subject_hash=sha256_of_text(canonical_json(authored)),
+                    subject_hash=sha256_of_text(canonical_json(passing)),
                     generation_request=request,
                     generation_response=response,
                     validation_request=validation_request,
@@ -14686,8 +15181,51 @@ def run_unit_sections_job(
                     now=now,
                     attempt_index=int(attempt),
                 )
+            partial_stored = True
+            union_reasons = _union_reasons()
+            if refused_reasons or union_reasons:
+                reasons = refused_reasons + union_reasons
+                _mark_unit_partial(
+                    connection,
+                    plan_id=str(plan_id),
+                    plan_hash=digest,
+                    unit_id=str(unit["id"]),
+                    reasons=reasons,
+                    now=now,
+                )
+                rejection_reasons = reasons
+                if attempt == UNIT_SECTIONS_ATTEMPTS[-1]:
+                    break
+                feedback = _refused_feedback(reasons)
+                continue
+            _clear_unit_partial(
+                connection, plan_id=str(plan_id), plan_hash=digest, unit_id=str(unit["id"])
+            )
+            completed = True
+            break
+
+        if not completed:
+            # Deterministic rule violations, malformed batches and validator rejections all take
+            # this exit. What passed its per-section gate is stored and fenced as a partial unit;
+            # nothing reads it as a lesson set, and a retry asks only for what is still missing.
+            # The union's own shortfall is added to the message so the operator reads what the
+            # unit still owes, not only why one batch was refused.
+            union_shortfall = _union_reasons()
+            for reason in union_shortfall:
+                if reason not in rejection_reasons:
+                    rejection_reasons.append(reason)
+            detail = "; ".join(rejection_reasons) or "the unit batch was not cleared for use"
+            kept = (
+                " The sections that passed its own rules are stored; re-running the unit asks only "
+                "for what is still missing."
+                if partial_stored
+                else ""
+            )
+            raise GenerationRejected(
+                f"unit {requested_unit} sections failed validation: {detail}.{kept}"
+            )
         _record_usage(connection, job_id, usage, now)
-        total_sections = len(existing_sections) + len(authored)
+        stored_after, owner_refs_after, reviews_after, _missing = _current_unit_state()
         return {
             "job_id": job_id,
             "job_kind": "unit_sections",
@@ -14695,23 +15233,18 @@ def run_unit_sections_job(
             "plan_hash": digest,
             "stage": "unit_sections",
             "unit_ordinal": requested_unit,
-            "state": state,
-            "sections": total_sections,
-            "owners": len(existing_owner_refs) + len(
-                [s for s in authored if str(s.get("role") or "owner") == "owner"]
-            ),
-            "reviews": len(
-                [s for s in authored if str(s.get("role") or "owner") == "review"]
-            )
-            + (len(existing_sections) - len(existing_owner_refs)),
-            "section_ids": section_ids,
+            "state": final_state,
+            "sections": len(stored_after),
+            "owners": len(owner_refs_after),
+            "reviews": len(reviews_after),
+            "section_ids": stored_section_ids,
             "validation_id": validation_id,
-            "validation_verdict": verdict["verdict"],
+            "validation_verdict": (verdict or {}).get("verdict"),
             "reused": False,
             "next_unit_ordinal": _next_unit_ordinal(connection, str(plan_id), requested_unit),
             "usage": usage.summary(),
             "budget": resolved_budget.as_dict(),
-            "rejection_reasons": rejection_reasons if state == "needs_review" else [],
+            "rejection_reasons": [],
         }
     except CostCeilingExceeded as exc:
         # A budget stop is not a rejection and leaves no partial unit (the batch is written in one
@@ -14767,10 +15300,10 @@ def unit_authoring_state(
     invents a unit that the stored plan does not have.
 
     A unit is **complete** when it has exactly its ``target_lessons`` section rows at the stored
-    plan digest and every one of those sections has a stored lesson at that digest. Anything less
-    — no sections, a partial section batch, or sections without lessons — leaves the unit at the
-    front of the queue, so a retried job resumes the unit it was authoring instead of skipping
-    ahead to a later one.
+    plan digest, every one of those sections has a stored lesson at that digest, and the unit does
+    not carry a partial marker. Anything less — no sections, a partial section batch, a partial
+    marker, or sections without lessons — leaves the unit at the front of the queue, so a retried
+    job resumes the unit it was authoring instead of skipping ahead to a later one.
 
     This is a read of generation rows, not a progress claim: ``units_complete`` counts units whose
     lessons are actually stored and ``next_unit_ordinal`` is ``None`` only when every unit is.
@@ -14809,7 +15342,11 @@ def unit_authoring_state(
                     (digest, *section_ids),
                 ).fetchone()
                 lessons = int((row["n"] if isinstance(row, sqlite3.Row) else row[0]) or 0)
-            if len(section_ids) == target and lessons == len(section_ids):
+            # Upgrade 35: a unit whose section batch was only partly cleared is never complete,
+            # whatever its row count says. The marker is cleared only by a union that clears every
+            # batch-level gate, so this is the same fact the lesson stage and the export gate read.
+            partial = _unit_partial_row(connection, str(plan_id), digest, str(unit["id"]))
+            if len(section_ids) == target and lessons == len(section_ids) and partial is None:
                 complete.append(ordinal)
             elif next_unit is None:
                 next_unit = {
@@ -14818,6 +15355,7 @@ def unit_authoring_state(
                     "target_lessons": target,
                     "sections": len(section_ids),
                     "lessons": lessons,
+                    "partial": partial is not None,
                 }
     except sqlite3.OperationalError:
         # A profile that has never generated anything has no staging tables yet; "no unit
@@ -15237,12 +15775,13 @@ def _prerequisite_unit_shortfall(
                 (str(digest), *section_ids),
             ).fetchone()["n"]
         )
-        if len(section_ids) != target or lessons != len(section_ids):
+        partial = _unit_partial_row(connection, plan_id, digest, str(prerequisite["id"]))
+        if partial is not None or len(section_ids) != target or lessons != len(section_ids):
             shortfall.append(
                 {
                     "unit_ordinal": raw,
                     "title": prerequisite.get("title"),
-                    "reason": "lessons_unauthored",
+                    "reason": "sections_partial" if partial is not None else "lessons_unauthored",
                     "sections_total": target,
                     "sections_authored": len(section_ids),
                     "lessons_authored": lessons,
@@ -15260,6 +15799,8 @@ def _describe_prerequisite_shortfall(shortfall: Sequence[Mapping[str, Any]]) -> 
             parts.append(f"{label} does not exist in this plan")
         elif item.get("reason") == "no_sections":
             parts.append(f"{label} has no authored sections")
+        elif item.get("reason") == "sections_partial":
+            parts.append(f"{label} has only part of its sections authored")
         else:
             parts.append(
                 f"{label} has {item.get('lessons_authored', 0)} of "
@@ -15358,6 +15899,15 @@ def run_lesson_job(
         unit = _unit_row(connection, str(plan_id), requested_unit)
         if unit is None:
             raise GenerationRejected(f"plan {plan_id!r} has no unit {requested_unit}")
+        # Upgrade 35: a partial section set is not a unit. Authoring its lessons would spend money
+        # on sections the unit stage has not cleared, and a section-scoped regeneration skips the
+        # coverage gates below, so the fence is stated here for every blueprint lessons job.
+        if _unit_partial_row(connection, str(plan_id), digest, str(unit["id"])) is not None:
+            raise GenerationRejected(
+                f"unit {unit['ordinal']} of plan {plan_id!r} has only part of its sections "
+                "authored; author the remaining unit sections before its lessons. No lesson was "
+                "authored and no provider call was made."
+            )
         # E2E S4: prerequisite edges were enforced only as shape (backwards, unique, acyclic), so
         # authoring unit 3 before unit 1 was legal — and unit 3's review then failed the whole
         # batch because unit 1's owner checks did not exist. Refuse the batch here, before the

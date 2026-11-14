@@ -366,12 +366,14 @@ class UnitSectionsStageTest(UnitStageCase):
             ).fetchone()["n"]
         self.assertEqual(int(count), 1)
 
-    def test_a_rule_failing_unit_batch_writes_no_rows_and_fails_the_job(self) -> None:
-        """D1/H-42: the unit stage is transactional over its unit.
+    def test_a_rule_failing_unit_batch_keeps_the_section_that_passed(self) -> None:
+        """Upgrade 35: a refused batch keeps the prefix that passed its own gate.
 
         The fixture is H-40's partial-batch shape: unit 2 needs two owner sections and the model
-        returns one, twice. The batch is discarded, the job fails with the same reasons, and the
-        untouched objective still reads ``not_started`` with no check on both learner surfaces.
+        returns one, twice. The section that passed is stored, the unit is marked partial, the job
+        fails with the union's shortfall, and the untouched objective still reads ``not_started``
+        with no check on both learner surfaces. The retry asks only for the missing objective and
+        completes the unit without re-authoring the stored section.
         """
         plan = blueprint_plan(scope="short", units=2, objectives_per_unit=2)
         course_id, plan_id = self.seed(plan)
@@ -387,7 +389,12 @@ class UnitSectionsStageTest(UnitStageCase):
             objective for objective in plan["objectives"] if int(objective["unit_ref"]) == 2
         ][:1]  # 1 of 2 owner sections: the failing batch
         incomplete = unit_sections_document(unit=unit_two, objectives=authored)
-        llm = FakeLLM({"coursebook.unit_sections.generate": response(incomplete)})
+        llm = FakeLLM(
+            {
+                "coursebook.unit_sections.generate": response(incomplete),
+                "coursebook.unit_sections.validate": response(validation_pass()),
+            }
+        )
         brief = {"stage": "unit_sections", "plan_id": plan_id, "unit_ordinal": 2}
         job_id = job_service.create("plan", brief, now=T0)["job_id"]
         stages = executor.resolvers(llm=llm, search=None, now=T0)["plan"](brief)
@@ -397,12 +404,19 @@ class UnitSectionsStageTest(UnitStageCase):
         message = view["error"]["message"]
         self.assertIn("objective 4 has no owner section", message)
         self.assertIn("unit 2 targets 2 lesson(s); this batch would leave 1 section(s)", message)
+        self.assertIn("sections that passed its own rules are stored", message)
         self.assertEqual(llm.calls_for("coursebook.unit_sections.generate"), 2)
         with db.read() as connection:
             rows = connection.execute(
-                "SELECT COUNT(*) AS n FROM gen_plan_sections WHERE unit_id = 'unt_2'"
-            ).fetchone()["n"]
-        self.assertEqual(int(rows), 0, "a failed unit batch must leave no durable section row")
+                "SELECT id, objective_refs_json FROM gen_plan_sections WHERE unit_id = 'unt_2'"
+            ).fetchall()
+            partial = connection.execute(
+                "SELECT reasons_json FROM gen_unit_partials WHERE unit_id = 'unt_2'"
+            ).fetchall()
+        self.assertEqual(len(rows), 1, "the section that passed its own gate is kept")
+        self.assertEqual(json.loads(rows[0]["objective_refs_json"]), [3])
+        self.assertEqual(len(partial), 1, "the unit is marked partial, not complete")
+        self.assertTrue(any("objective 4 has no owner section" in reason for reason in json.loads(partial[0]["reasons_json"])))
 
         status, outline = domain.course_outline(
             {"enrollment_id": "enr_d1"}, {"contract": "cb.rpc", "contract_version": 11}
@@ -420,8 +434,8 @@ class UnitSectionsStageTest(UnitStageCase):
         self.assertIsNone(page["document"]["check_id"])
         self.assertEqual(page["checks"], [])
 
-        # Cleanly resumable: the same brief run with a complete batch authors the whole unit,
-        # because the failed attempt left nothing to be mistaken for finished work.
+        # Resumable: the next job is asked only for objective 4, and the stored section is not
+        # authored (or paid for) again.
         retry = gen.run_unit_sections_job(
             db.connect(),
             {"job_id": None, "brief": {"plan_id": plan_id, "unit_ordinal": 2}},
@@ -432,6 +446,11 @@ class UnitSectionsStageTest(UnitStageCase):
         )
         self.assertEqual(retry["sections"], 2)
         self.assertEqual(retry["owners"], 2)
+        with db.read() as connection:
+            partial = connection.execute(
+                "SELECT COUNT(*) AS n FROM gen_unit_partials WHERE unit_id = 'unt_2'"
+            ).fetchone()["n"]
+        self.assertEqual(int(partial), 0, "a cleared union clears the partial marker")
         with db.read() as connection:
             rows = connection.execute(
                 "SELECT COUNT(*) AS n FROM gen_plan_sections WHERE unit_id = 'unt_2'"

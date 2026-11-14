@@ -18,7 +18,7 @@ Three different calls, three different prompts, three different schemas:
 |---|---|---|---|
 | Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v23` | `PLAN_SCHEMA` |
 | Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v27` | `PLAN_SCHEMA_V2` |
-| Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v4` | `UNIT_SECTIONS_SCHEMA` |
+| Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v5` | `UNIT_SECTIONS_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
 | Unit-sections validator | `coursebook.unit_sections.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
 | Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v19` | `LESSON_SCHEMA` |
@@ -1402,9 +1402,12 @@ cut off by the completion cap (`TRUNCATION_REPAIR_CALLS`) — the same demand, r
 `.cut` prompt version. A ceiling that does not count that call refuses a run that behaved exactly
 as designed and reports the refusal as though the artifact had been rejected (CP-015e).
 
-The unit-sections stage is transactional — its batch is written in one transaction after a passing
-verdict — so an abort loses the whole unit. Its budget is therefore sized to the true worst legal
-path:
+The unit-sections stage keeps every section that passed its own gate: a refused batch stores its
+clean prefix, marks the unit partial and lets the next attempt (or the next job) ask only for the
+missing objectives, so an abort no longer loses the sections that were fine. The batch-level gates
+run over the union of stored and new rows, and the partial marker is cleared only by a union that
+clears them. Each attempt still spends at most one generate + one validate + one repair, so the
+stage budget is unchanged and sized to the true worst legal path:
 
     max_calls    = 2 attempts x (generate + validate + 1 repair)     (6)
     max_cost_usd = max(DEFAULT_MAX_COST_USD, max_calls * DECLARED_CALL_COST_USD)

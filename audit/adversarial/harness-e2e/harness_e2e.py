@@ -388,12 +388,34 @@ class RecordedLLM:
                     "audio": {"level": "none", "role": "none"},
                 },
             })
-        review_slots = int(unit.get("target_lessons", 0)) - len(payload["objectives"])
+        # Upgrade 35: on a resumed unit the request names only the review slots that remain, so
+        # the count comes from the payload's own rule and a review may need to reinforce an owner
+        # objective that is already stored (its title is read from the recorded plan shape).
+        review_slots = int((payload.get("rules") or {}).get("review_sections") or 0)
+        if review_slots <= 0:
+            review_slots = int(unit.get("target_lessons", 0)) - len(payload["objectives"])
+        shape_objectives = {
+            int(item["ordinal"]): str(item["title"])
+            for item in (self.transcript.get("shape") or {}).get("objectives") or []
+            if isinstance(item, dict) and "ordinal" in item
+        }
+        stored_owners = [
+            int(ref)
+            for ref in (payload.get("already_authored") or {}).get("owner_objectives") or []
+        ]
+        if payload["objectives"]:
+            reviewed_ordinal = int(payload["objectives"][-1]["ordinal"])
+            reviewed_title = str(payload["objectives"][-1]["title"])
+        elif stored_owners:
+            reviewed_ordinal = stored_owners[-1]
+            reviewed_title = shape_objectives.get(reviewed_ordinal, "")
+        else:
+            raise AssertionError("a review slot with no owner objective to reinforce")
         for slot in range(max(0, review_slots)):
             # S3: a review re-presents the unit's latest owner target in a new form. One review
             # per slot, reinforcing the unit's final objective; the recorded lesson supplies the
             # teaching and the review check prefix makes the stimulus a variant.
-            objective = payload["objectives"][-1]
+            objective = {"ordinal": reviewed_ordinal, "title": reviewed_title}
             title = str(objective["title"])
             if title not in by_title:
                 raise AssertionError(f"recording has no lesson for objective {title!r}")
@@ -1303,21 +1325,28 @@ def _run_ceiling_probe(home: Path) -> dict:
 
 
 class DropSectionLLM(RecordedLLM):
-    """The recorded unit batch with one required owner section missing."""
+    """The recorded unit batch with one required section missing, on its first attempt only.
+
+    Upgrade 35: the batch that failed is not the end of the unit. This author drops the last
+    section once, then answers the resumed request (which names only what is still missing)
+    honestly, which is exactly the path that used to re-author the whole unit and pay twice.
+    """
 
     def __init__(self, transcript: dict, *, unit_ordinal: int) -> None:
         super().__init__(transcript)
         self.drop_unit_ordinal = unit_ordinal
+        self.dropped = False
 
     def _unit_sections(self, payload: dict) -> dict:
         document = super()._unit_sections(payload)
-        if int(payload["unit"]["ordinal"]) == self.drop_unit_ordinal:
+        if int(payload["unit"]["ordinal"]) == self.drop_unit_ordinal and not self.dropped:
+            self.dropped = True
             document["sections"] = document["sections"][:-1]
         return document
 
 
 def run_partial_unit_probe(home: Path) -> dict:
-    """What a unit stage that cannot author every owner section actually persists."""
+    """What a unit stage that cannot author every section on its first attempt persists."""
     with deterministic_ids():
         return _run_partial_unit_probe(home)
 
@@ -1740,7 +1769,7 @@ def main(argv: list[str]) -> int:
     partial = _run("partial", run_partial_unit_probe, prefix="partial-unit")
     (EVIDENCE / "partial_unit_batch.json").write_text(_json_dump(partial) + "\n", encoding="utf-8")
     unit_state = (partial["unit_result"] or {}).get("state") or "refused"
-    emit("partial_unit_batch (H-42 transactional unit stage; H-30b D1): "
+    emit("partial_unit_batch (Upgrade 35 keeps the sections that passed; H-42; H-30b D1): "
          f"unit state={unit_state} "
          f"unit_refusal={(partial.get('unit_stage_refusal') or {}).get('type')} "
          f"persisted_sections={len(partial['persisted_sections'])} "
