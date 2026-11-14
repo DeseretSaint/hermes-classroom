@@ -3522,8 +3522,8 @@
             "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. how to teach curriculum sequence",
             "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. official procedure steps safety limits",
             "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. prerequisite knowledge learning progression",
-            "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. reference documentation",
-            "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. official guidance"
+            "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. common mistakes",
+            "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. examples and practice"
           ],
           "query_failures": [],
           "query_results": [
@@ -3579,12 +3579,12 @@
             },
             {
               "error": null,
-              "query": "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. reference documentation",
+              "query": "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. common mistakes",
               "result_count": 6
             },
             {
               "error": null,
-              "query": "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. official guidance",
+              "query": "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. examples and practice",
               "result_count": 6
             }
           ],
@@ -3624,7 +3624,7 @@
           "calls": 7,
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
-          "input_tokens": 34076,
+          "input_tokens": 34074,
           "output_tokens": 2254,
           "unknown_calls": 0,
           "unknown_cost": false
