@@ -23,6 +23,7 @@ from __future__ import annotations
 import contextvars
 import hashlib
 import json
+import re
 import threading
 from dataclasses import dataclass, field
 from typing import Any, Callable
@@ -194,6 +195,103 @@ def grade_confirmation(
         },
         evidence_class=CONFIRMATION_EVIDENCE_CLASS,
     )
+
+
+# ── what the chat lane can collect ──────────────────────────────────────────
+
+#: The numbered lint a learner types in chat instead of ticking boxes. Digits and number words
+#: only: an unnumbered sentence is never read as a confirmation (docs/CHAT-CHECK-GATE.md).
+_NUMBER_WORDS = {
+    "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6,
+    "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12,
+}
+_NUMBER_TOKEN = re.compile(r"\d+|[a-z]+", re.IGNORECASE)
+_RANGE = re.compile(r"(\d+|[a-z]+)\s*(?:-|\u2010|\u2011|\u2012|\u2013|\u2014|to|through)\s*(\d+|[a-z]+)",
+                    re.IGNORECASE)
+
+
+def parse_confirmation_numbers(text: str, items: list[dict[str, str]]) -> list[str]:
+    """Read the steps a learner numbered in chat as a selection of declared item ids.
+
+    The chat lane cannot tick boxes, so it collects the same self-report as a list of numbers:
+    ``1 and 3``, ``2, 3``, ``1-3``, ``one through three``. Parsing is membership only — a number
+    selects the declared item at that position, in declared order, and nothing reads the prose
+    around it. A message with no in-range number selects nothing, so the caller refuses it and
+    never turns an unnumbered sentence into a tick (the adversarial note on the confirmation lane
+    stays true: no model reads the learner's words).
+    """
+    declared = [item["id"] for item in items[:40]]
+    if not declared or not isinstance(text, str):
+        return []
+    budget = len(declared)
+    selected: list[int] = []
+
+    def number_of(token: str) -> int | None:
+        lowered = token.lower()
+        if lowered.isdigit():
+            return int(lowered)
+        return _NUMBER_WORDS.get(lowered)
+
+    def take(value: int | None) -> None:
+        if value is not None and 1 <= value <= budget and value not in selected:
+            selected.append(value)
+
+    for match in _RANGE.finditer(text):
+        start, end = number_of(match.group(1)), number_of(match.group(2))
+        if start is None or end is None:
+            continue
+        low, high = sorted((start, end))
+        for value in range(low, high + 1):
+            take(value)
+    remaining = _RANGE.sub(" ", text)
+    for token in _NUMBER_TOKEN.findall(remaining):
+        # Standalone selections must be digits: a bare prose word ("one", "two") is not a step
+        # number, and reading it as one would tick a box the learner never meant to tick.
+        if token.isdigit():
+            take(int(token))
+    return [declared[value - 1] for value in sorted(selected)]
+
+
+#: The readable sentence a learner sees when the chat lane cannot collect this check. No reason
+#: code, no stage name, no job id (learner copy stays the product's words).
+CHAT_CHECK_UNCOLLECTABLE = (
+    "This check needs a written answer that nothing in this build grades, so chat cannot record "
+    "it. Open the check in the course pane and answer there."
+)
+
+#: A parent-recipe checklist is recorded by the parent's observation, never by a child's chat.
+CHAT_CHECK_PARENT_REPORTED = (
+    "This check is recorded by a parent observing it, not in this chat. A parent can record it "
+    "in Parent Studio."
+)
+
+
+def chat_collection_refusal(
+    reference: dict[str, Any] | None,
+    stimulus: dict[str, Any] | None,
+    *,
+    allow_confirmation: bool = True,
+) -> str | None:
+    """Why the chat lane cannot collect this check, or ``None`` when it can.
+
+    The chat lane can grade a closed-form check from typed text, a verification checklist from
+    numbered steps, and a conversation check from the stored transcript. A ``rubric_only`` check
+    that is not a checklist needs the aux grader, and this build has no aux grader: collecting it
+    in chat can only produce ``needs_retry`` forever, so the gate refuses before it submits.
+    ``allow_confirmation=False`` (a parent-recipe enrollment) refuses the checklist too, because
+    its only recording path is ``observation.record``.
+    """
+    if confirmation_items(reference, stimulus) is not None:
+        return None if allow_confirmation else CHAT_CHECK_PARENT_REPORTED
+    try:
+        kind = validators.reference_kind(reference)
+    except validators.ReferenceSpecError:
+        return CHAT_CHECK_UNCOLLECTABLE
+    if kind in validators.CLOSED_KINDS or kind == "conversation":
+        return None
+    if _aux_grader is None:
+        return CHAT_CHECK_UNCOLLECTABLE
+    return None
 
 
 def _run_with_deadline(grader: AuxGrader, deadline_ms: int, **kwargs: Any) -> dict[str, Any]:
