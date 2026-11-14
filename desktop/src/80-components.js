@@ -4692,6 +4692,10 @@ function SectionPage({
   // The check surface prints one label per structured item; the document prose must not print the
   // same line again on the teaching block or the practice block.
   const checkStimulus = check.check && check.check.stimulus ? check.check.stimulus : null
+  // UP-15: the same check card carries the section's authored worked answer, so "I saw the
+  // answer" can disclose it instead of only recording the penalty. Read from the page this
+  // surface already holds; a section with none passes null and the confirm says so.
+  const workedAnswer = workedAnswerFromPage(page, checkStimulus)
   const checkLabels =
     checkStimulus && Array.isArray(checkStimulus.items)
       ? checkStimulus.items.map((item) => item && item.label).filter(Boolean)
@@ -4755,6 +4759,7 @@ function SectionPage({
           implemented,
           bindingState: runtime ? runtime.binding_status : 'detached',
           parentLed,
+          workedAnswer,
           // L7: the reading path pays through the same award path as the desk. `gameMode` is the
           // durable course mode its host read from `world.read`; unknown (`false`) never pays.
           courseId: row.course_id || null,
@@ -4782,6 +4787,7 @@ function SectionPage({
           implemented,
           bindingState: runtime ? runtime.binding_status : 'detached',
           parentLed,
+          workedAnswer,
           // L7: the Field player is the same commit path as the reader, so it pays identically.
           courseId: row.course_id || null,
           gameMode,

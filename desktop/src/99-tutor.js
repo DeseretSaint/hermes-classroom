@@ -2121,6 +2121,9 @@ export {
   // render test of the refused-bind note has to arm the exact run before it mounts the pane.
   armPendingBind,
   AttemptControls,
+  // UP-15 test seam: the disclosure is the page's own example block, and the refusal of a block
+  // that restates the check's prompt is a pure function a Node test can exercise directly.
+  workedAnswerFromPage,
   TakeHomeStudio,
   TakeHomeShelf,
   TakeHomeSourcePanel,
