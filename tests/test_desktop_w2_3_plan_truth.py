@@ -365,6 +365,140 @@ process.stdout.write(JSON.stringify(out))
 """
 
 
+LEARNER_JOBS_ERROR_HARNESS = r"""
+import React, { act } from 'react'
+import { JSDOM } from 'jsdom'
+import fs from 'node:fs'
+
+const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
+  url: 'http://127.0.0.1/', pretendToBeVisual: true
+})
+globalThis.window = dom.window
+globalThis.document = dom.window.document
+Object.defineProperty(globalThis, 'navigator', { configurable: true, value: dom.window.navigator })
+globalThis.HTMLElement = dom.window.HTMLElement
+globalThis.Node = dom.window.Node
+globalThis.Event = dom.window.Event
+globalThis.KeyboardEvent = dom.window.KeyboardEvent
+globalThis.IS_REACT_ACT_ENVIRONMENT = true
+window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} })
+
+const mod = await import('./plugin.js')
+const counts = {}
+const fakeRest = async (path, options) => {
+  const base = String(path).split('?')[0]
+  if (base === '/rpc') {
+    const method = options && options.body && options.body.method
+    counts[method] = (counts[method] || 0) + 1
+    if (method === 'course.outline') {
+      return { ok: true, contract_version: 30, operation_id: 'test', result: { plan: null, objectives: [] } }
+    }
+    if (method === 'jobs.list') {
+      // The read itself fails. The surface must not read that as "this course has no plan":
+      // the plan job may be running and unreachable through a failing read.
+      return {
+        ok: false,
+        contract_version: 30,
+        operation_id: 'test',
+        error: { code: 'HOST_UNAVAILABLE', message: 'jobs.list did not answer' }
+      }
+    }
+    return { ok: true, contract_version: 30, operation_id: 'test', result: {} }
+  }
+  if (base === '/runtime') {
+    return {
+      ok: true,
+      contract_version: 30,
+      operation_id: 'test',
+      result: {
+        wire_version: 30,
+        implemented_methods: [
+          'jobs.list',
+          'course.outline',
+          'parent.blueprint.read',
+          'plan.approve',
+          'jobs.create'
+        ],
+        single_home_host: false
+      }
+    }
+  }
+  return { ok: true, result: {} }
+}
+
+mod.default.register({
+  rest: fakeRest,
+  register: () => {},
+  onDispose: () => {},
+  setTimeout: (fn, ms) => { const h = window.setTimeout(fn, ms); return () => window.clearTimeout(h) },
+  clearTimeout: (h) => window.clearTimeout(h)
+})
+
+const { createRoot } = await import('react-dom/client')
+const container = document.getElementById('root')
+const root = createRoot(container)
+const flush = async (ms = 120) => { await act(async () => { await new Promise((r) => setTimeout(r, ms)) }) }
+const text = (node) => ((node && node.textContent) || '').replace(/\s+/g, ' ').trim()
+const byText = (label) =>
+  [...container.querySelectorAll('button')].find((node) => text(node) === label) || null
+
+await act(async () => {
+  root.render(
+    React.createElement(mod.LearnerPlanView, {
+      course: { course_id: 'crs_0123456789abcdef', enrollment_id: 'enr_0123456789abcdef', title: 'Order at a counter' },
+      revision: 1,
+      onRevision: () => {},
+      implemented: null,
+      onOpenSection: () => {},
+      onStartLesson: () => {},
+      onChanged: () => {},
+      jobHint: null,
+      scopeHint: 'short',
+      reloadSignal: 0,
+      onChangeGoal: () => {},
+      onNewSyllabus: () => {}
+    })
+  )
+})
+await flush(180)
+const before = { text: text(container), retry: Boolean(byText('Try again')), counts: { ...counts } }
+const retry = byText('Try again')
+if (retry) {
+  await act(async () => { retry.click() })
+  await flush(180)
+}
+const after = { text: text(container), retry: Boolean(byText('Try again')), counts: { ...counts } }
+
+// The same surface when the backend does not implement jobs.list at all: it cannot know whether a
+// plan is being written, so it must not claim the course has none.
+await act(async () => { root.render(null) })
+await flush(30)
+await act(async () => {
+  root.render(
+    React.createElement(mod.LearnerPlanView, {
+      course: { course_id: 'crs_0123456789abcdef', enrollment_id: 'enr_0123456789abcdef', title: 'Order at a counter' },
+      revision: 1,
+      onRevision: () => {},
+      implemented: new Set(['course.outline', 'parent.blueprint.read', 'plan.approve', 'jobs.create']),
+      onOpenSection: () => {},
+      onStartLesson: () => {},
+      onChanged: () => {},
+      jobHint: null,
+      scopeHint: 'short',
+      reloadSignal: 0,
+      onChangeGoal: () => {},
+      onNewSyllabus: () => {}
+    })
+  )
+})
+await flush(180)
+const unsupported = { text: text(container), retry: Boolean(byText('Try again')) }
+await act(async () => { root.render(null) })
+await flush(20)
+process.stdout.write(JSON.stringify({ before, after, unsupported }))
+"""
+
+
 def _node_root(prefix: str, harness: str):
     modules = _desktop_node_modules()
     if modules is None:
@@ -422,11 +556,43 @@ class PlanWaitTruth(unittest.TestCase):
             raise unittest.SkipTest("react/react-dom are not installed beside the desktop app")
         cls.tmp, root = built
         cls.out = _run(root, {})
+        error_built = _node_root("coursebook-w23-jobs-error-", LEARNER_JOBS_ERROR_HARNESS)
+        if error_built is None:
+            raise unittest.SkipTest("react/react-dom are not installed beside the desktop app")
+        cls.tmp_error, error_root = error_built
+        cls.error_out = _run(error_root, {})
 
     @classmethod
     def tearDownClass(cls) -> None:
         if hasattr(cls, "tmp"):
             cls.tmp.cleanup()
+        if hasattr(cls, "tmp_error"):
+            cls.tmp_error.cleanup()
+
+    # -- Upgrade 2: a failed jobs.list read is an error, not an empty course ---------------------
+    def test_a_jobs_list_error_is_never_presented_as_no_plan(self) -> None:
+        before = self.error_out["before"]
+        self.assertIn("The plan's progress could not be read", before["text"], before["text"])
+        self.assertTrue(before["retry"], "a failed jobs.list read must offer Try again")
+        self.assertNotIn("This course has no plan attached", before["text"])
+        self.assertNotIn("No plan yet", before["text"])
+        after = self.error_out["after"]
+        self.assertTrue(after["retry"], "the error state survives a retry that still fails")
+        self.assertGreater(
+            after["counts"].get("jobs.list", 0),
+            before["counts"].get("jobs.list", 0),
+            after,
+        )
+        self.assertGreater(
+            after["counts"].get("course.outline", 0),
+            before["counts"].get("course.outline", 0),
+            after,
+        )
+        # The same absence of knowledge when the backend does not implement jobs.list.
+        unsupported = self.error_out["unsupported"]
+        self.assertIn("The plan's progress could not be read", unsupported["text"], unsupported["text"])
+        self.assertTrue(unsupported["retry"], "an unsupported jobs.list must still offer Try again")
+        self.assertNotIn("This course has no plan attached", unsupported["text"])
 
     # -- item 3: clock, real stage, honest band ------------------------------------------------
     def test_a_waiting_plan_renders_a_clock_the_real_stage_and_the_scope_band(self) -> None:

@@ -6672,6 +6672,19 @@ function LearnerPlanView({
       children: jsx(sdk.Button, { variant: 'secondary', onClick: outline.reload, children: 'Try again' })
     })
   }
+  // A failed or unsupported jobs.list read means the plan job is unknown, not absent. The empty
+  // state would assert the course has no plan and invite a duplicate while the run may still be
+  // going, so the read failure is named and retried instead of falling through.
+  if ((!plan || objectives.length === 0) && (jobs.status === 'error' || !supports('jobs.list'))) {
+    return jsx(sdk.ErrorState, {
+      title: "The plan's progress could not be read",
+      description:
+        jobs.status === 'error'
+          ? describeError(jobs.error)
+          : 'This backend cannot check whether a plan is being written for this course.',
+      children: jsx(sdk.Button, { variant: 'secondary', onClick: reloadAll, children: 'Try again' })
+    })
+  }
 
   const lessonsFailed = Boolean(
     lessonsJob && ['failed', 'cancelled', 'interrupted_requires_retry'].includes(lessonsJob.state)
