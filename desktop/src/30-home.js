@@ -191,7 +191,7 @@ const CB_HOME_V3_COPY = Object.freeze({
   offlineTitle: 'You are offline',
   offlineBody: 'Your shelf is here. New lessons wait until you reconnect.',
   offlineAction: 'Try again',
-  cardNew: 'New',
+  cardNew: 'New', untitled: 'Untitled course', // deck rows `home.card.new` / `home.card.untitled`
   emptyShippedTitle: 'No courses yet.',
   emptyArchivedBody: 'Every course here is archived. Unarchive one in Courses to continue it.',
   // CP-031 — these strings still carry no `COPY.md` §2 id. They are enumerated in
@@ -1489,7 +1489,7 @@ function hubSlotName(row) {
   const label = row && typeof row.learner_label === 'string' ? row.learner_label.trim() : ''
   if (label) return label
   const title = row && typeof row.title === 'string' ? row.title.trim() : ''
-  return title || 'Untitled course'
+  return title || CB_HOME_V3_COPY.untitled // deck row `home.card.untitled`; the string is unchanged
 }
 
 function hubSlotFrom(entry) {

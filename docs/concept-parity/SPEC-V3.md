@@ -372,7 +372,7 @@ filled plus one outline (D1); stars and progress bars become an evidence tally.
 | H2 | threshold band | content 905, top 32, 216 tall | 852, top 24, 200 tall | 428, top 16, 184 tall | `home.title`, `home.sub` |
 | H3 | action row | 2 × 48 tall, gap 16, starts 24 under the sub | same | stacked, 48 each, gap 12, full width | `home.primary`, `home.secondary` |
 | H4 | shelf heading | 24 tall, 32 under the action row | 24, 24 under | 24, 24 under | `home.shelf.label` |
-| H5 | shelf frame | 905 × 227 (art 143 + text 68 + ledge 16), 4 × 214, gap 16 | 852 × 266, 3 × 273, gap 16 | rows 428 × 88, gap 12 | `home.card.meta`, `home.card.practice`, `home.card.new`, `home.card.next` |
+| H5 | shelf frame | 905 × 227 (art 143 + text 68 + ledge 16), 4 × 214, gap 16 | 852 × 266, 3 × 273, gap 16 | rows 428 × 88, gap 12 | `home.card.untitled`, `home.card.meta`, `home.card.practice`, `home.card.new`, `home.card.next` |
 | H6 | lower ledge + fox box | ledge 16 tall, fox box 176 × 160 at the right end | 160 × 144 | hidden | `home.tag.firstuse` (first use only) |
 | H7 | settings entry | 44 × 44, top-right of H2 | same | same | `home.settings` |
 
@@ -383,7 +383,7 @@ the ground line the fox stands on. The shelf never renders as a bordered box: no
 
 | State | Shows | One next action | Copy ids |
 |---|---|---|---|
-| default | 1–4 real courses on the shelf, each with title, subject line, evidence line; newest or most urgent first; a course whose objectives are all practice prints its recorded checks, never `0 of 0 sections done` | the top card's own next step — activating the card opens the course; the filled primary stays `Start a course` | `home.card.meta`, `home.card.practice`, `home.card.new`, `home.card.next` |
+| default | 1–4 real courses on the shelf, each with title, subject line, evidence line; a course row that carries no title yet reads `Untitled course`, never a blank card; newest or most urgent first; a course whose objectives are all practice prints its recorded checks, never `0 of 0 sections done` | the top card's own next step — activating the card opens the course; the filled primary stays `Start a course` | `home.card.untitled`, `home.card.meta`, `home.card.practice`, `home.card.new`, `home.card.next` |
 | first-use | empty shelf geometry preserved; fox `wave` holding the tag; one short line says what starting does | `Start your first course` (same filled control, longer label) | `home.firstuse.title`, `home.firstuse.sub`, `home.firstuse.primary`, `home.tag.firstuse` |
 | overflow | 5+ courses at wide / 4+ at mid; shelf scrolls inside its frame with a 32 px right mask, keyboard order intact | scroll or `Browse library` | `home.overflow.hint` |
 | empty | no courses match this filter, or everything is archived | `See archived courses` (quiet) | `home.empty.title`, `home.empty.body`, `home.empty.action` |
