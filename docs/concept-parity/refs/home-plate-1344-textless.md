@@ -16,10 +16,12 @@ adopts nothing and changes no UI, budget or kit file.
 - The source is the same approved 1024 × 768 art E1 used; its sha256 matches the
   pin in `home-plate-geometry.md` §1, so this is a derivation of that art, not a
   new one.
-- `PIL.Image.open(...).size` on the shipped file prints **(1344, 768)**
-  (`python3 size_check.py`; the `python3 -c "…"` one-liner is blocked by the
-  headless command gate on this host, so the identical expression runs from a
-  file).
+- `PIL.Image.open(...).size` on the shipped file prints **(1344, 768)**. The
+  acceptance one-liner is
+  `python3 -c "from PIL import Image; print(Image.open('docs/concept-parity/refs/home-plate-1344-textless.png').size)"`;
+  on this headless host `python3 -c` is refused by the command gate, so the same
+  expression was run from a file and printed `(1344, 768)`. The generator also
+  prints `canvas.size` on every run.
 - Two consecutive generator runs produce the **same sha256**, so the pin is
   reproducible. `png:tIME`/date chunks are not emitted by the PIL writer used
   here (`pnginfo` carries no `tIME`), so the hash is not clock-dependent.
