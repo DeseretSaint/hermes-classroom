@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Coursebook accessibility fixture — injection blocked</title>
+<script>
+  // axe-core publishes itself as `window.axe = ...`. This fixture makes that assignment throw, so
+  // the audit's crashed-injection path is exercised by the page itself, not by a test-only flag
+  // inside the audit script.
+  Object.defineProperty(window, 'axe', {
+    configurable: false,
+    get: function () { return undefined },
+    set: function () { throw new Error('axe injection blocked by fixture') }
+  })
+</script>
+<style>
+  body { margin: 0; background: #fff; color: #1b1b1b; font: 16px/1.5 system-ui, sans-serif; }
+  main { max-width: 40rem; padding: 24px; }
+  h1 { margin: 0 0 12px; font-size: 2rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Injection blocked</h1>
+  <p>This page refuses the axe-core script tag, so the audit must fail rather than report a clean
+  page it never measured.</p>
+</main>
+</body>
+</html>
