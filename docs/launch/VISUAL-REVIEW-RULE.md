@@ -53,9 +53,10 @@ dispatches inherits it.
 
 * `python3 scripts/build_plugin.py` once, so `desktop/plugin.js` matches `desktop/src` (the rig
   renders the built module, never the sources);
-* `visual/node_modules` with `playwright` — `npm --prefix visual ci` in a fresh worktree, or a
+* `visual/node_modules` with `playwright` — `cd visual && npm ci` in a fresh worktree, or a
   symlink to a checkout that has it. Without it the shot step fails with
-  `Cannot find module 'playwright'` and no frame is written;
+  `Cannot find module 'playwright'` and no frame is written; `--preflight` now refuses first and
+  names the `npm ci` fix.
 * the host's React (`react`, `react-dom`, `scheduler`) beside `~/.hermes/hermes-agent`, where
   `tests.test_desktop_lesson_views._desktop_node_modules()` looks for it.
 
