@@ -61,7 +61,7 @@ REQUIRED_ROW_KEYS = (
     "path",
 )
 FORBIDDEN_IN_EMBEDDED = (
-    # D-007: the curated `field_atlas@2` display plates are the product-surface lane and are
+    # D-007: the curated `field_atlas@3` display plates are the product-surface lane and are
     # embedded as `assets/kit/*`. Per-course pack covers and the world kit stay on the media route.
     "assets/art/covers",
     "pattern-plate",
@@ -412,7 +412,7 @@ class Determinism(unittest.TestCase):
         shutil.copytree(ROOT / "assets" / "art" / "objects", tmp / "assets" / "art" / "objects")
         # CP-005f: so are the owner-signed painted fox exports (assets/art/fox/*.png).
         shutil.copytree(ROOT / "assets" / "art" / "fox", tmp / "assets" / "art" / "fox")
-        # VQ-002: the curated field_atlas@2 plates are build inputs, not masters.
+        # VQ-002: the curated field_atlas@3 plates are build inputs, not masters.
         shutil.copytree(ROOT / "assets" / "visual-kits", tmp / "assets" / "visual-kits")
         (tmp / "contracts").mkdir()
         shutil.copy2(CONTRACT, tmp / "contracts" / "cb.tokens.v3.json")

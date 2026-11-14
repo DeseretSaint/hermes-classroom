@@ -1,9 +1,9 @@
 {
   "grammar": "field_atlas",
-  "kit_id": "field_atlas@2",
+  "kit_id": "field_atlas@3",
   "label": "Field atlas",
-  "version": 2,
-  "status": "owner_rework_of_rejected_v1",
+  "version": 3,
+  "status": "owner_rework_of_rejected_v1_plus_adopted_home_ground",
   "art_bible": "docs/concept-parity/ART-BIBLE.md",
   "lane": "display_plate",
   "palette": {
@@ -120,6 +120,48 @@
             "reviewed_on": "2026-11-11",
             "checks": "full-bleed street, three depth planes, blank lanterns, blank gate panel, no notice board or sign, no people",
             "residual": "lantern strings and roof eaves cross the title band; the painted sky between them is the quiet field, so the DOM title must not sit on a lantern"
+          }
+        }
+      }
+    ],
+    "home_ground": [
+      {
+        "id": "home-ground",
+        "role": "home_ground",
+        "path": "ground/home-ground.png",
+        "size": [
+          1344,
+          768
+        ],
+        "sha256": "806080bbcdca5376e936fe02975ce605fe9af01415f6768ec8c12dd5d402b4b6",
+        "bytes": 1312571,
+        "textless": true,
+        "source": "derived",
+        "provenance": {
+          "origin": "derived",
+          "derived_from": "docs/concept-parity/refs/home-plate-1344-textless.png (byte-identical copy in this kit at ground/home-ground.png)",
+          "source_art": "~/.hermes/cache/scratch/composite_street.png",
+          "source_art_size": [
+            1024,
+            768
+          ],
+          "source_art_sha256": "3b396360fcc713f9a335962cd10ec8ef3e316f6721984604c06dad069f7640c4",
+          "upstream_plate": "docs/concept-parity/refs/home-plate-1344.png",
+          "upstream_plate_sha256": "a27038eafd8d1676a215d08e775845bb75a1c7ebc9c67d7b8c8b33a9166888a2",
+          "generator": "docs/concept-parity/refs/derive-home-plate-textless.py",
+          "derivation": "the approved 1024x768 art width-extended to 1344x768 (E1), then the baked copy, CTA pill and four Lesson/pct boards repainted out; columns 160..1183 of all 768 rows are bit-identical to the 1024-wide intermediate",
+          "scale": 1.0,
+          "method": "derived from the approved 1024x768 art; already an upscale, no 2x exists",
+          "note": "There is no 2688x1536 source for this ground and there cannot be one: build_kit refuses an upscale, and no hi_res pass may be enabled for it. It ships at its natural 1344x768 with scale 1.0.",
+          "reviewed_on": "2026-11-13",
+          "ocr": {
+            "tool": "tesseract 5.5.3, default page segmentation",
+            "readable_tokens": 0,
+            "note": "0 word-level rows with non-empty text; calibration on refs/home.png finds 16 readable tokens at 83.2-93.0% confidence"
+          },
+          "vision": {
+            "checks": "textless ground: no baked copy, no CTA pill, no Lesson/% boards; every E1 quad measured identical to within 0.0 px",
+            "residual": "the CTA pill's sky patch is a harmonic reconstruction, visible as smoother than the painted clouds at >= 4x; the live sign covers that corner in the wide Home"
           }
         }
       }
@@ -871,6 +913,9 @@
     "hero": [
       "background"
     ],
+    "home_ground": [
+      "background"
+    ],
     "object": [],
     "fox": []
   },
@@ -924,6 +969,11 @@
         1344,
         768
       ],
+      "emit": [
+        1344,
+        768
+      ],
+      "scale": 1.0,
       "source": {
         "path": "hero/home-hero@2x.png",
         "size": [
@@ -933,7 +983,29 @@
         "sha256": "9a170526ee7b1f511d237292977b0ea3364c6283c9e2b731f552fd6e0434703a",
         "scale": 2.0,
         "method": "provider return at 2688x1536 (host upscale pass on), kept un-resized",
-        "note": "the provider source, shipped beside the 1344x768 plate so Gate 2's 'natural size at least 2x rendered' can be satisfied without a second generation"
+        "note": "the provider source, shipped beside the 1344x768 plate as provenance. The build emits the 1344x768 plate itself (emit 1344x768), not this file: no surface renders the alley at 2x, and the Home ruling moved the 2x weight onto the added ground."
+      }
+    },
+    "home_ground": {
+      "size": [
+        1344,
+        768
+      ],
+      "emit": [
+        1344,
+        768
+      ],
+      "scale": 1.0,
+      "source": {
+        "path": "ground/home-ground.png",
+        "size": [
+          1344,
+          768
+        ],
+        "sha256": "806080bbcdca5376e936fe02975ce605fe9af01415f6768ec8c12dd5d402b4b6",
+        "scale": 1.0,
+        "method": "derived from the approved 1024x768 art; already an upscale, no 2x exists",
+        "note": "the textless Home ground, emitted at its natural 1344x768. It must never be upscaled or given a hi_res pass."
       }
     },
     "lesson_scene": {
@@ -941,6 +1013,11 @@
         1344,
         768
       ],
+      "emit": [
+        2688,
+        1536
+      ],
+      "scale": 2.0,
       "source": {
         "path": "lesson-scene/lesson-room@2x.png",
         "size": [
@@ -957,6 +1034,11 @@
   "reference": {
     "path": "docs/concept-parity/refs/home.png",
     "sha256": "fd75bed31cd773ab50a5b5ad62daa46566d50b1b7f3ed1582a52915a14f3ffe3",
+    "home_ground": {
+      "path": "docs/concept-parity/refs/home-plate-1344-textless.png",
+      "sha256": "806080bbcdca5376e936fe02975ce605fe9af01415f6768ec8c12dd5d402b4b6",
+      "note": "the owner-adopted Home ground (G1 ruling 2, Home only); home.png stays in the tree as history and is no longer the Home reference"
+    },
     "classroom": {
       "path": "docs/concept-parity/refs/classroom.png",
       "sha256": "ee0c1a664a7317aef2daafc0cfb6ae86464d2f9d9c04ca9dd5ee6016d93695c5"

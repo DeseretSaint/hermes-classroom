@@ -1,10 +1,10 @@
-"""UI-K1: the curated `field_atlas@2` plates reach the shipped module, keyed and hash-checked.
+"""UI-K1: the curated `field_atlas@3` plates reach the shipped module, keyed and hash-checked.
 
 This module reads the owner-approved kit (`assets/visual-kits/field_atlas/kit.json`), the encodes
 this build ships under `assets/kit/`, the generated data-url segment and the built `plugin.js`.
 It proves four things:
 
-* the nine embedded plates are exactly the kit's hero, lesson scene and six covers;
+* the nine embedded plates are exactly the kit's hero, home ground, lesson scene and six covers;
 * every row's recorded source hash is the kit's own declaration, and the file it names hashes to
   that value — the pipeline cannot drift onto a re-derived or re-painted plate;
 * the segment and the shipped module stay inside their budgets, with the segment counted once;
@@ -47,7 +47,7 @@ COVERS = (
     "parent-cover-4x5",
     "technical-cover-4x5",
 )
-FULL_PLATES = ("home-hero", "field-atlas-lesson-room")
+FULL_PLATES = ("home-hero", "home-ground", "field-atlas-lesson-room")
 PLATE_IDS = FULL_PLATES + COVERS
 KIT_PREFIX = "cb.asset.kit.field_atlas."
 
@@ -61,12 +61,19 @@ def _kit() -> dict:
 
 
 def _declared() -> dict:
-    """Every source the kit declares, keyed by its path inside the kit directory."""
+    """Every source the kit declares, keyed by its path inside the kit directory.
+
+    A full role declares two files: its rendered plate and, where it has one, a provider source.
+    The build encodes exactly one of them per role (``resolution.emit`` decides which), and either
+    may be a row's ``master``.
+    """
     kit = _kit()
     declared = {}
-    for role in ("hero", "lesson_scene"):
-        source = kit["resolution"][role]["source"]
-        declared[source["path"]] = source["sha256"]
+    for role in ("hero", "home_ground", "lesson_scene"):
+        declared[kit["roles"][role][0]["path"]] = kit["roles"][role][0]["sha256"]
+        source = kit["resolution"][role].get("source") or {}
+        if source.get("path"):
+            declared[source["path"]] = source["sha256"]
     for row in kit["roles"]["cover"]:
         declared[row["path"]] = row["sha256"]
     return declared
@@ -156,20 +163,20 @@ class KitRows(unittest.TestCase):
                     self.assertLessEqual(row["height"], natural.height, row["path"])
                 self.assertIn(source, declared)
 
-    def test_the_full_plates_use_the_documented_sizes(self):
-        # 2x when the segment can hold it, otherwise the shipped 1x plate. Both are the kit's own
-        # sizes; nothing in between and nothing upscaled.
-        allowed = {("home-hero", 2688, 1536), ("home-hero", 1344, 768),
-                   ("field-atlas-lesson-room", 2688, 1536), ("field-atlas-lesson-room", 1344, 768)}
+    def test_the_full_plates_use_their_declared_emit_sizes(self):
+        # Per-role resolution: hero and home_ground emit their 1344x768 plate, lesson_scene its
+        # 2688x1536 provider source. Nothing in between, and nothing upscaled.
+        allowed = {("home-hero", 1344, 768), ("home-ground", 1344, 768),
+                   ("field-atlas-lesson-room", 2688, 1536)}
         for row in _rows():
             if row["kit_role"] == "cover":
                 continue
             with self.subTest(plate=row["path"]):
                 plate = row["provenance_id"].rsplit(".", 1)[1]
                 self.assertIn((plate, row["width"], row["height"]), allowed)
-        hires = all(row["height"] == 1536 for row in _rows() if row["kit_role"] != "cover")
-        if not hires:
-            self.assertLessEqual(GENERATED.stat().st_size, SEGMENT_BUDGET)
+                emit = _kit()["resolution"][row["kit_role"]]["emit"]
+                self.assertEqual([row["width"], row["height"]], emit, row["path"])
+        self.assertLessEqual(GENERATED.stat().st_size, SEGMENT_BUDGET)
 
     def test_covers_keep_their_natural_aspect_and_size(self):
         kit = _kit()

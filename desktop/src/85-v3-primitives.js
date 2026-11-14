@@ -70,7 +70,7 @@ function cb3ObjectSource(name) {
   return cb3Asset(`cb.asset.object.${name}`)
 }
 
-/** One curated field_atlas@2 display plate (`home-hero`, `field-atlas-lesson-room`, a cover). */
+/** One curated field_atlas@3 display plate (`home-hero`, `home-ground`, `field-atlas-lesson-room`, a cover). */
 function cb3KitSource(id) {
   return cb3Asset(`cb.asset.kit.field_atlas.${id}`)
 }

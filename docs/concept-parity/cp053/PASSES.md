@@ -1,8 +1,21 @@
 # CP-053 — Home scene parity passes
 
-Binding reference: `docs/concept-parity/refs/home.png` (R-HOME in `docs/concept-parity/refs/REFS.md`,
-1344x768, sha256 `fd75bed31cd773ab50a5b5ad62daa46566d50b1b7f3ed1582a52915a14f3ffe3`). This is the
-reference the owner approved for Home; R-BOARD's Home panel is explicitly not ratified.
+## G2 re-pin (2026-11-13, t_8db56021)
+
+Binding reference changed by owner ruling G1 (2 — Home only): the Home scene is now pinned to the
+adopted textless ground `docs/concept-parity/refs/home-plate-1344-textless.png` (sha256
+`806080bb...`), and `docs/concept-parity/refs/home.png` (R-HOME-OLD) is history. `measure.json` was
+re-derived in full from the new plate and the regenerated proof: nothing was carried forward, and
+the band names now follow the plate's own composition (sky, hero sign, wall, board quads, bench,
+ground). Current row: module `ac627cd7...`, `sim_grey` **0.8922** over the full 1344x768 frame.
+
+The sections below describe the pre-plate measurement history and are kept as history only; their
+numbers were taken against R-HOME-OLD and are not comparable with the G2 row.
+
+Binding reference for the history below: `docs/concept-parity/refs/home.png` (R-HOME in
+`docs/concept-parity/refs/REFS.md`, 1344x768, sha256
+`fd75bed31cd773ab50a5b5ad62daa46566d50b1b7f3ed1582a52915a14f3ffe3`). This is the reference the
+owner approved for Home; R-BOARD's Home panel is explicitly not ratified.
 
 ## What is measured (this is what changed in round 3)
 

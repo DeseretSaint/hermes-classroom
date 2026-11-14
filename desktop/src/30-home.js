@@ -333,7 +333,7 @@ const HOME_KIT_REPEAT_FRAMES = Object.freeze([
   Object.freeze({ position: '60% 76%', scale: 1.52 })
 ])
 
-/** The approved field_atlas@2 display plate a Home card reads in, or null. A cover is an asset. */
+/** The approved field_atlas@3 display plate a Home card reads in, or null. A cover is an asset. */
 function homeKitCover(row) {
   const kit = cb3KitCoverFor(row)
   if (!kit) return null
@@ -639,39 +639,53 @@ function cbShelfEdgeMask(scrollLeft, clientWidth, scrollWidth) {
  */
 
 /* ── Home scene (wide) ────────────────────────────────────────────────────────────────────────
- * The owner's approved Home is a room, not a dashboard: a centred invitation, one wooden shelf of
- * collectible cards, and a lower ledge with the mascot, the clock and the new-course tag. This
- * layer is used only on a route at least 1200 px wide; every narrower layout (and jsdom, which
- * reports width 0) keeps the existing compact Home, so the scene never degrades into a list.
- * Geometry is authored at 1344x768 — the reference canvas — and the block is centred on wider
+ * The owner's adopted Home is a painted street, not a dashboard: a hanging sign that asks the
+ * question and offers the two doors, four course boards hung on the wall, and the mascot on the
+ * paving below them. This layer is used only on a route at least 1200 px wide; every narrower
+ * layout (and jsdom, which reports width 0) keeps the existing compact Home, so the scene never
+ * degrades into a list.
+ * Geometry is authored at 1344x768 — the plate's canvas — and the block is centred on wider
  * routes. Art comes from the shipped object kit and each card's real cover artifact; no rating is
  * invented, the row under a title is the course's own section progress.
  */
-/* CP-053 — the scene's authored geometry, measured off the binding reference frame
- * (`docs/concept-parity/refs/home.png`, R-HOME in `docs/concept-parity/refs/REFS.md`, 1344x768).
- * Every number below is a pixel position on that canvas. `design/home-scene.html` is generated
- * from this module by `scripts/gen-home-proof.py` and `tests/test_desktop_home_scene_parity.py`
- * fails if the committed page differs from a fresh render, so the proof cannot drift from the
- * shipped scene. The room's own material tones (wall, plank, card stock, tag) are scene-local
- * because the reference is a lit room, not the desk's flat paper.
+/* CP-053 / G2 — the scene's authored geometry, re-pinned to the adopted painted plate.
+ *
+ * R-HOME is now `docs/concept-parity/refs/home-plate-1344.png` (1344x768, sha256 a27038ea…), the
+ * width-extended street plate E1 delivered. Every number below is a pixel position measured on that
+ * plate by E1 (`docs/concept-parity/refs/home-plate-geometry.md`) and the scene's controls are
+ * authored onto the painted objects it names, not onto empty canvas:
+ *
+ *   - four hanging boards, board1 (261, 319.1) → (379, 458.9), 118 x 139.8, pitch 134 → the four
+ *     course cards, so a card lands exactly on a painted board;
+ *   - the baked CTA pill (218, 126) → (392, 170), 174 x 44 → the primary pill lands exactly on it;
+ *   - the baked copy block x 210..354, y 54..124 → the hero panel covers it, so the plate's mockup
+ *     sentence is never painted beside the live one;
+ *   - the fox's painted silhouette (868, 506) → (967, 683) → the animated fox stands on the same
+ *     paving row (feet 683) and covers the painted one;
+ *   - the plaster patch right of board4 (790, 350) → (864, 486) → the "New course" tag;
+ *   - the plaster band under the board row (620, 462) → (862, 502) → the See-all door.
+ *
+ * `design/home-scene.html` is generated from this module by `scripts/gen-home-proof.py` and
+ * `tests/test_desktop_home_scene_parity.py` fails if the committed page differs from a fresh
+ * render, so the proof cannot drift from the shipped scene. The room's own material tones (wall,
+ * card stock, tag) are scene-local because the reference is a lit street, not the desk's flat paper.
  */
 const CB_HOME_SCENE = Object.freeze({
   canvas: Object.freeze({ width: 1344, height: 768 }),
-  hero: Object.freeze({ top: 128, title: 72, titleTracking: -1.2, subline: 32, sublineGap: 24, ctaGap: 26, ctaHeight: 48, ctaPadding: 22, ctaGapX: 24 }),
-  cards: Object.freeze({ top: 384, left: 273, width: 176, height: 175, gap: 24, cover: 106, radius: 7 }),
-  shelf: Object.freeze({ left: 219, width: 915, top: 559, height: 18, lip: 10 }),
-  ledge: Object.freeze({ left: 130, width: 1150, top: 684, height: 30, face: 24 }),
-  // VQ-011: the plate is the kit's square 256x256 tag object painted at its own aspect (148x148,
-  // rope loop included). The old 164x88 box with background-size: 100% 100% squashed the master
-  // 1.0x horizontally and 0.34x vertically, which bent the rope hole and the corners. The box top
-  // is the shelf's top edge (the rope hangs from behind it) and its bottom lands on the ledge.
-  tag: Object.freeze({ left: 888, top: 559, width: 148, height: 148, font: 23 }),
-  // D-007 seating: the animated group stands ON plank two, whose top edge is y=684. The clock's
-  // painted base sits 2.3 px above its 118 px box bottom and the fox's painted feet 4.9 px above its
-  // 208 px box bottom, so the boxes start at 568 and 481 to land base/feet on 683.7 / 684.1. The fox
-  // also clears the clock's opaque right edge by 11.4 px (1099.5 -> 1153.9): no overlap.
-  clock: Object.freeze({ left: 1042, top: 568, size: 118 }),
-  fox: Object.freeze({ left: 1110, top: 481, size: 208 })
+  // E1: baked copy block x 210..354, y 54..124; CTA pill x 218..392, y 126..170. The panel starts
+  // 22 px left of the pill so its content edge (196 + 22) is the pill's own left edge, and its top
+  // is high enough to swallow the mockup's two copy lines.
+  hero: Object.freeze({ left: 196, top: 30, width: 520, height: 160, padding: 22, question: 40, subline: 20, sublineGap: 2, ctaTop: 126, ctaHeight: 44, ctaGapX: 12 }),
+  // E1: board1 (261, 319.1)..(379, 458.9) = 118 x 139.8; boards repeat at 134 px pitch.
+  cards: Object.freeze({ top: 319, left: 261, width: 118, height: 140, gap: 16, cover: 75, radius: 7 }),
+  // E1: plaster patch right of board4, 74 x 136; the tag is square on the master's own aspect.
+  tag: Object.freeze({ left: 790, top: 356, width: 74, height: 74, font: 14 }),
+  // E1: the painted fox (868, 506)..(967, 683). The kit fox's painted feet sit 203.1 px above its
+  // 208 px box bottom, so top 480 lands the feet at 683.1 on the plate's own fox row, and the
+  // opaque art (43.9..208 wide) spans 834.9..999: it covers the painted silhouette it replaces.
+  fox: Object.freeze({ left: 791, top: 480, size: 208 }),
+  // E1: plaster band under the board row, 242 x 40 at (620, 462).
+  seeAll: Object.freeze({ left: 700, top: 462, height: 40 })
 })
 
 function HomeSceneCard({ slot, index, cover, onOpen }) {
@@ -776,11 +790,12 @@ function useHomeSceneFit() {
 }
 
 function HomeScene({ slots, canCreate, onStartCreate, onBrowseLibrary, onOpenCourse, onShowAll, overflow }) {
-  const wood = cb3ObjectSource('shelf-plank')
-  const clock = cb3ObjectSource('clock')
   const tagObject = cb3ObjectSource('tag')
-  const heroPlate = cb3KitSource('home-hero')
-  const woodImage = wood ? { backgroundImage: `url(${wood})` } : undefined
+  // G2: the adopted Home ground. It is a 1344x768 textless street plate (no baked copy, CTA pill or
+  // course boards), so the scene's controls sit on painted objects they can cover. `home-hero`
+  // stays the alley plate for `90-course.js` and the narrow Home's hero band; it is not this
+  // surface's ground.
+  const groundPlate = cb3KitSource('home-ground')
   const coverPlan = homeCoverPlan(slots)
   // E2E U9: the authored frame is 1344x768 and the scene is chosen from 1200 px up, so a narrower
   // room scales the whole plate instead of cropping the fox and the ledge off its right edge.
@@ -798,8 +813,8 @@ function HomeScene({ slots, canCreate, onStartCreate, onBrowseLibrary, onOpenCou
       'data-cb-home-scene': '',
       style: { '--cb-home-scene-scale': String(scale) },
       children: [
-        heroPlate
-          ? jsx('img', { 'data-cb-home-scene-backdrop': '', src: heroPlate, alt: '', 'aria-hidden': 'true' }, 'backdrop')
+        groundPlate
+          ? jsx('img', { 'data-cb-home-scene-backdrop': '', src: groundPlate, alt: '', 'aria-hidden': 'true' }, 'backdrop')
           : null,
         jsx('div', {
           'data-cb-home-scene-hero': '',
@@ -843,28 +858,17 @@ function HomeScene({ slots, canCreate, onStartCreate, onBrowseLibrary, onOpenCou
           )
         }, 'cards'),
         jsx('div', {
-          'data-cb-home-scene-plank-one': '',
-          'aria-hidden': 'true',
-          style: woodImage,
-          children: jsx('i', {})
-        }, 'plank-one'),
-        jsx('div', {
           'data-cb-home-scene-tag': '',
           style: tagObject ? { backgroundImage: `url(${tagObject})` } : undefined,
           children: CB_HOME_V3_COPY.tagNew
         }, 'tag'),
-        clock
-          ? jsx('img', { 'data-cb-home-scene-clock': '', src: clock, alt: '', 'aria-hidden': 'true' }, 'clock')
-          : null,
         jsx('div', { 'data-cb-home-scene-fox': '', children: jsx(FoxPose, { pose: 'clock', size: CB_HOME_SCENE.fox.size }, 'fox') }, 'fox-wrap'),
-        jsx('div', {
-          'data-cb-home-scene-plank-two': '',
-          'aria-hidden': 'true',
-          style: woodImage,
-          children: jsx('i', {})
-        }, 'plank-two'),
-        // The shelf shows four cards; a fifth course is reached through this door, on the shelf's
-        // own right edge rather than through a cropped fifth card nobody can click.
+        // The plate paints four boards and a bench, not a shelf: the cards hang on the boards and
+        // the fox stands on the paving row the plate's own fox stands on. The kit's planks and clock
+        // are retired from this surface — a plank painted here would be a second shelf, and a clock
+        // has no painted object to land on.
+        // The shelf shows four cards; a fifth course is reached through this door, on the plaster
+        // band under the board row rather than through a cropped fifth card nobody can click.
         overflow && onShowAll
           ? jsx('button', {
               type: 'button',
@@ -4186,24 +4190,39 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
   // from the SDK button, so the plugin-owned wrapper paints the identity ring while the inner
   // control matches `:focus-visible` — the same rule every other keyboard stop in this plugin uses.
   const [gameFeedbackFocused, setGameFeedbackFocused] = useState(false)
+  // The notices surface is a second, real dialog on top of this sheet. While it is open the sheet
+  // stops answering Escape and Tab, so one key press cannot close both surfaces at once.
+  const [noticesOpen, setNoticesOpen] = useState(false)
+  const noticesTriggerRef = useRef(null)
   const courseId = classroom && classroom.courseId ? classroom.courseId : null
   const override = courseId ? (prefs.classrooms && prefs.classrooms[courseId]) || null : null
 
+  const focusables = () => {
+    const panel = panelRef.current
+    if (!panel || typeof panel.querySelectorAll !== 'function') return []
+    return Array.from(
+      panel.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter((node) => !node.disabled && node.getAttribute('aria-hidden') !== 'true')
+  }
+
+  // Focus enters the sheet on OPEN, and only on open. A second dependency here would re-run this
+  // when the notices dialog opens or closes and steal focus back from it.
   useEffect(() => {
     if (!open) return undefined
-    const focusables = () => {
-      const panel = panelRef.current
-      if (!panel || typeof panel.querySelectorAll !== 'function') return []
-      return Array.from(
-        panel.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        )
-      ).filter((node) => !node.disabled && node.getAttribute('aria-hidden') !== 'true')
-    }
     const nodes = focusables()
     if (nodes.length > 0 && typeof nodes[0].focus === 'function') nodes[0].focus({ preventScroll: true })
+    return undefined
+  }, [open])
+
+  // The key handler is keyed to `noticesOpen` as well: while the notices dialog is open this sheet
+  // answers nothing, so one Escape cannot close both surfaces at once.
+  useEffect(() => {
+    if (!open) return undefined
     const onKeyDown = (event) => {
       if (!event || !event.key) return
+      if (noticesOpen) return
       if (event.key === 'Escape' || event.key === 'Esc') {
         if (typeof event.preventDefault === 'function') event.preventDefault()
         if (typeof event.stopPropagation === 'function') event.stopPropagation()
@@ -4232,7 +4251,7 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
         document.removeEventListener('keydown', onKeyDown, true)
       }
     }
-  }, [open, onClose])
+  }, [open, onClose, noticesOpen])
 
   if (!open) return null
 
@@ -4250,13 +4269,16 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
     onMouseDown: (event) => {
       if (event && event.target === event.currentTarget) onClose()
     },
-    children: jsxs(
+    children: [jsxs(
       'div',
       {
         ref: panelRef,
         role: 'dialog',
         'aria-modal': 'true',
         'aria-labelledby': CB_SETTINGS_TITLE_ID,
+        // Notices is a modal on top of this sheet: while it is open the sheet is not reachable,
+        // not even by a screen reader's virtual cursor.
+        'aria-hidden': noticesOpen ? 'true' : undefined,
         'data-cb-settings-sheet': 'open',
         style: {
           width: '28.75rem',
@@ -4617,11 +4639,61 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
               children: jsx(CbGenerationUsage, {})
             },
             'usage'
-          )
+          ),
+          // A licence obligation, not a preference: the inventory lives at the foot of the one
+          // settings sheet, where a reader looking for what the app ships will find it.
+          jsxs('div', {
+            'data-cb-notices-launcher': '',
+            style: {
+              marginTop: '0.9rem',
+              paddingTop: '0.8rem',
+              borderTop: '1px solid var(--cb-rule)',
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '0.5rem 0.75rem'
+            },
+            children: [
+              jsxs('div', {
+                style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0 },
+                children: [
+                  jsx('span', {
+                    style: { fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-ink)' },
+                    children: 'Third-party notices'
+                  }),
+                  jsx('span', {
+                    style: { fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+                    children: `${CB_NOTICE_ROWS.length} asset sources, with the licence each manifest declares.`
+                  })
+                ]
+              }),
+              jsx('span', {
+                ref: noticesTriggerRef,
+                style: { display: 'inline-flex', alignItems: 'center' },
+                children: jsx(sdk.Button, {
+                  size: 'sm',
+                  variant: 'ghost',
+                  'data-cb-notices-open': '',
+                  'aria-label': 'Open third-party notices',
+                  'aria-haspopup': 'dialog',
+                  style: { minHeight: '44px' },
+                  onClick: () => setNoticesOpen(true),
+                  children: 'View notices'
+                })
+              })
+            ]
+          }, 'notices-launcher')
         ]
       },
       'sheet'
-    )
+      ),
+      jsx(NoticesDialog, {
+        open: noticesOpen,
+        onClose: () => setNoticesOpen(false),
+        returnFocusRef: noticesTriggerRef
+      }, 'notices')
+    ]
   })
 }
 

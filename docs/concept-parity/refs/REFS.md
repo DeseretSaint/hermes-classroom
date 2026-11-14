@@ -4,7 +4,8 @@ Copied 2026-11-10. Paths are repo-relative and stable; sha256 pins the exact byt
 
 | Id | File | sha256 | Size | Role |
 |---|---|---|---|---|
-| R-HOME | `docs/concept-parity/refs/home.png` | `fd75bed31cd773ab...` | 1344x768 | Home: "Your field library", shelf, fox with clock |
+| R-HOME | `docs/concept-parity/refs/home-plate-1344-textless.png` | `806080bbcdca5376...` | 1344x768 | Home ground (owner-adopted 2026-11-13, G1 ruling 2: Home only): textless street plate, no baked copy, CTA or course boards |
+| R-HOME-OLD | `docs/concept-parity/refs/home.png` | `fd75bed31cd773ab...` | 1344x768 | history only: the pre-plate Home mockup ("Your field library", shelf, fox with clock). Not the Home reference since 2026-11-13 |
 | R-BOARD | `docs/concept-parity/refs/board.png` | `11387b3fe89bb9b1...` | 2400x1700 | four-panel board; Discover, Classroom and Design System are ratified; its Home panel is not |
 | R-DISC | `docs/concept-parity/refs/discover.png` | `f9ce940f4a0434a6...` | 1344x768 | Discover / Workshop (ratified) |
 | R-CLASS | `docs/concept-parity/refs/classroom.png` | `ee0c1a664a7317ae...` | 1344x768 | Classroom lesson (ratified) |
@@ -13,7 +14,8 @@ Copied 2026-11-10. Paths are repo-relative and stable; sha256 pins the exact byt
 
 Full sha256:
 
-- R-HOME: fd75bed31cd773ab50a5b5ad62daa46566d50b1b7f3ed1582a52915a14f3ffe3
+- R-HOME: 806080bbcdca5376e936fe02975ce605fe9af01415f6768ec8c12dd5d402b4b6
+- R-HOME-OLD: fd75bed31cd773ab50a5b5ad62daa46566d50b1b7f3ed1582a52915a14f3ffe3
 - R-BOARD: 11387b3fe89bb9b140f522fb3ddd02d99f8041f3934b2fdf3caa4f96deeadce2
 - R-DISC: f9ce940f4a0434a68aa75641d2642865cc4e917788a649af590dd5d199170d91
 - R-CLASS: ee0c1a664a7317aef2daafc0cfb6ae86464d2f9d9c04ca9dd5ee6016d93695c5
@@ -21,4 +23,5 @@ Full sha256:
 - R-MAP: a834b27bb365e8dd319d8560af915bccaf765ae63d7e469bd9928eed64b35539
 
 Ratification scope, owner words: "outside of the home page, these images were ratified."
-Home target is R-HOME, not the board Home panel and not F1. R-MAP is used for course home only.
+Home target is R-HOME (the adopted plate), not the board Home panel, R-HOME-OLD or F1. R-MAP is
+used for course home only.

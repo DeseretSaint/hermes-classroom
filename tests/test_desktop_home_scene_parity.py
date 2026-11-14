@@ -83,10 +83,8 @@ class HomeSceneProofTest(unittest.TestCase):
             "data-cb-home-scene-question",
             "data-cb-home-scene-subline",
             "data-cb-home-scene-card",
-            "data-cb-home-scene-plank-one",
-            "data-cb-home-scene-plank-two",
+            "data-cb-home-scene-backdrop",
             "data-cb-home-scene-tag",
-            "data-cb-home-scene-clock",
             "data-cb-home-scene-fox",
         ):
             self.assertIn(hook, self.committed, f"the proof does not carry {hook}")

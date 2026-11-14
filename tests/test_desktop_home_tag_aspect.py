@@ -100,8 +100,8 @@ for (const width of widths) {
   await send('Page.navigate', { url: `file://${htmlPath}` })
   await sleep(600)
   // The proof page is authored at 1344 px. On a narrower viewport it stays 1344 px wide and
-  // scrolls; bring the tag (left 888) into the 900 px frame before measuring/screenshotting.
-  await send('Runtime.evaluate', { expression: 'window.scrollTo(820, 0)' })
+  // scrolls; bring the tag (left 790) into the 900 px frame before measuring/screenshotting.
+  await send('Runtime.evaluate', { expression: 'window.scrollTo(600, 0)' })
   await sleep(150)
   const answer = await send('Runtime.evaluate', { expression, returnByValue: true })
   const value = answer.result.value

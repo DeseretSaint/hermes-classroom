@@ -54,15 +54,20 @@ ART_OBJECTS = ASSETS / "art" / "objects"
 #: The procedural SVG set under assets/masters/fox/ stays on disk for rollback and is no longer
 #: read by this build.
 ART_FOX = ASSETS / "art" / "fox"
-#: VQ-002's owner-approved display-plate kit (`field_atlas@2`). The kit is the source of truth for
+#: VQ-002's owner-approved display-plate kit, now `field_atlas@3`. The kit is the source of truth for
 #: its own hashes: this build never re-derives art, it encodes the curated plates and records the
 #: kit's declaration beside each row so a drifted plate fails the build instead of shipping.
 KIT = ASSETS / "visual-kits" / "field_atlas"
 KIT_JSON = KIT / "kit.json"
+#: The kit's declared identity. Bumped from @2 when the owner-adopted Home ground joined the kit;
+#: ``kit_plates`` refuses a tree whose declaration disagrees, and every row records this id.
+KIT_ID = "field_atlas@3"
 #: Where the embedded encodes live. ``assets/kit/`` is a shipped group like the fox's.
 KIT_EMBED = ASSETS / "kit"
-#: The two full-plate roles carry a 2x provider source; the six covers are already 2x of the render.
-KIT_FULL_ROLES = (("hero", 72), ("lesson_scene", 72))
+#: The full-plate roles, each with its encode quality. Each role's ``resolution.emit`` size decides
+#: what ships: ``hero`` and ``home_ground`` emit their 1344x768 plate, ``lesson_scene`` its 2688x1536
+#: provider source. The build never downsamples one to reach the other, and never upscales.
+KIT_FULL_ROLES = (("hero", 72), ("home_ground", 72), ("lesson_scene", 72))
 KIT_COVER_QUALITY = 80
 GENERATED = ROOT / "desktop" / "cb-assets.generated.js"
 CONTRACT = ROOT / "contracts" / "cb.tokens.v3.json"
@@ -614,9 +619,14 @@ def kit_plates() -> list[dict]:
 
     ``kit.json`` is the authority: the declaration is read, never recomputed, and the file it names
     must hash to the declared value or the build stops. Nothing here reads ``assets/masters/``.
+
+    A full-plate role encodes exactly one declared file: its provider ``source`` when
+    ``resolution.emit`` equals that source's natural size, otherwise the role's own rendered plate.
+    There is no implicit resize: an emit size that matches neither is a build error, which is what
+    keeps the 1344x768 ground from ever being upscaled to a 2x frame.
     """
     kit = json.loads(KIT_JSON.read_text(encoding="utf-8"))
-    if kit.get("kit_id") != "field_atlas@2":
+    if kit.get("kit_id") != KIT_ID:
         raise SystemExit("unexpected kit id in %s: %r" % (KIT_JSON, kit.get("kit_id")))
     plates = []
     resolution = kit.get("resolution") or {}
@@ -626,18 +636,27 @@ def kit_plates() -> list[dict]:
         if len(rows) != 1:
             raise SystemExit("kit role %s must carry exactly one plate" % role)
         plate = rows[0]
-        source = (resolution.get(role) or {}).get("source") or {}
-        if not source.get("path") or not source.get("sha256"):
-            raise SystemExit("kit role %s has no 2x source declaration" % role)
+        declared = resolution.get(role) or {}
+        emit = tuple(declared.get("emit") or plate["size"])
+        source = declared.get("source") or {}
+        if source.get("path") and source.get("sha256") and tuple(source.get("size") or ()) == emit:
+            encode_path, encode_sha = source["path"], source["sha256"]
+        elif tuple(plate["size"]) == emit:
+            encode_path, encode_sha = plate["path"], plate["sha256"]
+        else:
+            raise SystemExit(
+                "kit role %s emits %dx%d, which is neither its %dx%d plate nor a declared source"
+                % (role, emit[0], emit[1], plate["size"][0], plate["size"][1])
+            )
         plates.append(
             {
                 "id": plate["id"],
                 "kit_role": role,
-                "source": source["path"],
-                "source_size": tuple(source["size"]),
-                "render_size": tuple(plate["size"]),
+                "source": encode_path,
+                "source_size": emit,
+                "render_size": emit,
                 "quality": quality,
-                "declared_sha256": source["sha256"],
+                "declared_sha256": encode_sha,
             }
         )
     covers = roles.get("cover") or []
@@ -658,12 +677,13 @@ def kit_plates() -> list[dict]:
     return plates
 
 
-def build_kit(hi_res: bool = True) -> tuple[list, dict, str]:
+def build_kit() -> tuple[list, dict, str]:
     """Encode the curated kit into ``assets/kit/`` and its data-url entries.
 
-    The two full plates are emitted at the provider's 2688x1536 when the segment can afford it, and
-    at the shipped 1344x768 when it cannot. Covers are always emitted at their natural size, which
-    the kit already documents as 2x of the render.
+    Each role ships at its declared ``resolution.emit`` size: ``hero`` and ``home_ground`` at
+    1344x768, ``lesson_scene`` at 2688x1536. Covers are always emitted at their natural size, which
+    the kit already documents as 2x of the render. Nothing is resized here: the declared file is
+    already the emit size.
     """
     from PIL import Image
 
@@ -679,17 +699,13 @@ def build_kit(hi_res: bool = True) -> tuple[list, dict, str]:
                 % (source, actual, KIT_JSON.name, plate["declared_sha256"])
             )
         target = plate["render_size"]
-        if plate["kit_role"] != "cover" and hi_res:
-            target = plate["source_size"]
         with Image.open(source) as opened:
             img = opened.convert("RGB")
             if img.size != target:
-                if target[0] > img.size[0] or target[1] > img.size[1]:
-                    raise SystemExit(
-                        "kit plate %s is %dx%d; %dx%d would be an upscale"
-                        % (source, *img.size, *target)
-                    )
-                img = img.resize(target, Image.Resampling.LANCZOS)
+                raise SystemExit(
+                    "kit plate %s is %dx%d; its role emits %dx%d and this build never resizes"
+                    % (source, *img.size, *target)
+                )
             webp = encode(img, "webp", quality=plate["quality"])
         rel = "assets/kit/field_atlas-%s.webp" % plate["id"]
         out = ROOT / rel
@@ -708,7 +724,7 @@ def build_kit(hi_res: bool = True) -> tuple[list, dict, str]:
             rel,
             master="assets/visual-kits/%s/%s" % (KIT.name, plate["source"]),
             master_sha256=plate["declared_sha256"],
-            kit_id="field_atlas@2",
+            kit_id=KIT_ID,
             kit_role=plate["kit_role"],
             quality=plate["quality"],
         )
@@ -733,8 +749,7 @@ def build_kit(hi_res: bool = True) -> tuple[list, dict, str]:
     (KIT_EMBED / "manifest.json").write_text(
         json.dumps(rows, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
-    scale = "2x" if hi_res else "1x"
-    note = "kit field_atlas@2: hero and lesson scene emitted at %s\n%s" % (scale, "\n".join(notes))
+    note = "kit %s: every plate emitted at its declared resolution.emit size\n%s" % (KIT_ID, "\n".join(notes))
     return rows, entries, note
 
 
@@ -745,7 +760,7 @@ def segment_source(entries: dict) -> str:
         "generated_by": "scripts/build_cb_assets.py",
         "note": (
             "Brand assets only: typefaces, material tiles, the fox, the object kit and the curated "
-            "field_atlas@2 display plates. Per-course pack covers, scene headers and world plates "
+            "%s display plates. Per-course pack covers, scene headers and world plates " % KIT_ID +
             "are never embedded; they stay pack or world media served by /media/{artifact_id} and "
             "/artifacts/{handle}."
         ),
@@ -759,7 +774,7 @@ def segment_source(entries: dict) -> str:
     return (
         "// GENERATED by scripts/build_cb_assets.py -- do not edit by hand.\n"
         "// One frozen brand-asset object: typefaces, material tiles, fox poses, object kit, and the\n"
-        "// curated field_atlas@2 display plates. Per-course covers are not in here.\n"
+        "// curated " + KIT_ID + " display plates. Per-course covers are not in here.\n"
         "const CB_ASSETS = Object.freeze(%s);\n"
         "if (typeof globalThis !== \"undefined\") { globalThis.CB_ASSETS = CB_ASSETS; }\n" % body
     )
@@ -997,11 +1012,12 @@ def build(check: bool = False) -> dict:
             entry["src_avif"] = data_url("image/avif", avif)
         object_entries[prov] = entry
 
-    # curated kit (field_atlas@2) --------------------------------------------------------------
-    # VQ-002's owner-approved display plates. The kit ships its own hashes; this branch encodes
-    # the curated files and stops if any of them has drifted from kit.json. The 2x hero and lesson
-    # scene are used only while the whole segment stays under SEGMENT_BUDGET.
-    kit_rows, kit_entries, kit_note = build_kit(hi_res=True)
+    # curated kit (field_atlas@3) --------------------------------------------------------------
+    # VQ-002's owner-approved display plates plus the owner-adopted Home ground. The kit ships its
+    # own hashes; this branch encodes the curated files and stops if any of them has drifted from
+    # kit.json. Each role ships at its declared resolution.emit size; the segment budget is reported
+    # and enforced, never met by silently changing a role's resolution.
+    kit_rows, kit_entries, kit_note = build_kit()
 
     manifests = {
         "fonts": fonts_rows,
@@ -1059,12 +1075,6 @@ def build(check: bool = False) -> dict:
     entries.update(object_entries)
     entries.update(kit_entries)
     js = segment_source(entries)
-    if len(js.encode("utf-8")) > SEGMENT_BUDGET:
-        # The card's rule: 2x when the segment can hold it, otherwise the shipped 1x plates.
-        kit_rows, kit_entries, kit_note = build_kit(hi_res=False)
-        manifests["kit"] = kit_rows
-        entries.update(kit_entries)
-        js = segment_source(entries)
     GENERATED.parent.mkdir(parents=True, exist_ok=True)
     GENERATED.write_text(js, encoding="utf-8")
 

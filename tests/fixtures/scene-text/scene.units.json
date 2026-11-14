@@ -2,7 +2,7 @@
   {
     "name": "hero-lettering",
     "object": "[data-cb-home-scene-panel]",
-    "centre": true,
+    "centre": false,
     "runs": [
       "[data-cb-home-scene-question]",
       "[data-cb-home-scene-subline]",
