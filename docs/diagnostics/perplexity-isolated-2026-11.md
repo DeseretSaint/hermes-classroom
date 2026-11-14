@@ -32,7 +32,8 @@ is where `~/.hermes/.env` (here, `<HERMES_HOME>/.env`) would be consulted. The r
 `secret_scope.py:252` fires inside step 1 of that pair, so line 2823 is never reached. The
 home's `.env` is not read even when it exists and holds the key.
 
-The gate itself is six lines of `get_secret` (`agent/secret_scope.py:242-252`):
+The gate itself is `get_secret` (`agent/secret_scope.py:242-252`), quoted with the bound-scope
+branch elided:
 
 ```
 242    bound = _SECRET_SCOPE.get()
