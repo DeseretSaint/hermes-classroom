@@ -569,8 +569,13 @@ function WorkshopCard({ item, motion, index, shelfKey, onOpen, onInstall, busy, 
               minHeight: '44px',
               border: '1px solid var(--cb-rule)',
               borderRadius: '2px',
-              background: 'var(--cb-paper)',
-              color: favorite ? 'var(--cb-lamp)' : 'var(--cb-ink-soft)',
+              // The saved state is a lamp *fill* with an on-lamp label (8.65:1 light, 11.2:1 dark),
+              // never the accent as the word: lamp on paper measured 1.83:1 for this 12px caption,
+              // so the one control that reports "this pack is saved" was invisible to a low-vision
+              // reader. The contract gates on-lamp/lamp at 4.5; its 1.25 lamp/paper gate is a fill
+              // edge, which is not what a text run is.
+              background: favorite ? 'var(--cb-lamp)' : 'var(--cb-paper)',
+              color: favorite ? 'var(--cb-on-lamp)' : 'var(--cb-ink-soft)',
               cursor: 'pointer',
               fontFamily: CB_SANS,
               fontSize: CB_TYPE.caption
