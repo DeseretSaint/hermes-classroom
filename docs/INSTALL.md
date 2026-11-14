@@ -24,11 +24,11 @@ a branch, and what is fixture-only: `docs/HARNESS-STATUS.md`.
   `COURSEBOOK_PYTHON` if you need to point it elsewhere.
 - Node.js for `node --check` only. No bundler, no build step, no npm install.
 
-Four declared Python dependencies on the Hermes interpreter: `jsonschema>=4.18,<5`,
-`faster-whisper>=1.0,<2` (optional at runtime), `pypdf>=4.0,<7` (optional at runtime) and
-`tldextract>=5,<6` (required: `coursebook/research.py` imports it to classify a source host on its
-Public Suffix List entry rather than on a substring, and builds it with `suffix_list_urls=()` so the
-PSL snapshot inside the wheel is used and nothing is fetched).
+Three declared Python dependencies on the Hermes interpreter: `jsonschema>=4.18,<5`,
+`faster-whisper>=1.0,<2` (optional at runtime) and `pypdf>=4.0,<7` (optional at runtime).
+`coursebook/research.py` classifies a source host on its Public Suffix List entry rather than on a
+substring, and reads the list from the snapshot vendored in
+`coursebook/data/public_suffix_list.dat` — no PSL package and no runtime fetch is involved.
 Hermes never auto-installs a plugin dependency. If the capability probe fails on import, run:
 
 ```

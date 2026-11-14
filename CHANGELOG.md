@@ -18,9 +18,9 @@ contract versions move independently and are named wherever they changed.
 - **A government source is decided by its public suffix, not by a substring.** `_classify_source`
   treated any host containing `.gov.` as government, so `foo.gov.attacker.example` took
   `SOURCE_TYPE_RANK` first place and the page budget ahead of real publishers. The host test now
-  reads the public suffix from the Public Suffix List (`tldextract>=5,<6`, built with
-  `suffix_list_urls=()` so the wheel's snapshot is used and nothing is fetched), and the same fix
-  covers `.edu`/`.ac.`/`.org` and the reference works. Labels and rank are unchanged. Stored
+  reads the public suffix from the Public Suffix List snapshot vendored in
+  `coursebook/data/public_suffix_list.dat`, so no package is imported and nothing is fetched, and the
+  same fix covers `.edu`/`.ac.`/`.org` and the reference works. Labels and rank are unchanged. Stored
   `source_type` values in existing ledgers keep the old label until their row is re-derived; the fix
   changes classification only, never credibility. Evidence:
   `tests/test_up_source_host_spoof.py::SourceHostSpoofTest::test_a_gov_substring_is_not_government`,
