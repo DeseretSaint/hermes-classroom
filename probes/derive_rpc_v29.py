@@ -39,6 +39,8 @@ value moves; ``contracts/rpc.v28.json`` stays byte-identical history and ``x-sup
 
 from __future__ import annotations
 
+import importlib.util
+import inspect
 import json
 import pathlib
 import sys
@@ -217,7 +219,7 @@ def _add(properties: dict, key: str, schema: dict) -> None:
     properties[key] = schema
 
 
-def derive(source: dict) -> dict:
+def _derive_base(source: dict) -> dict:
     """v28 plus the composed v29 deltas and the four wire echoes, and nothing else."""
     if int(source["x-contract-version"]) != 28:
         raise SystemExit(f"expected rpc.v28.json, found v{source['x-contract-version']}")
@@ -296,6 +298,33 @@ def derive(source: dict) -> dict:
             raise SystemExit(f"unexpected wire echo {echo!r}")
         echo["const"] = 29
     return document
+
+
+def _apply_siblings(document: dict) -> dict:
+    """Apply every sibling ``derive_rpc_v29_*.py`` delta on top of this base.
+
+    One contract version carries every additive change shipped together, so the shipped document
+    is the composition: this script writes the base deltas, then each sibling's own composing
+    script (``derive_rpc_v29_review_interval.py``, ``derive_rpc_v29_pronunciation.py``, …) applies
+    its delta to the document in hand. Applying them here, not only from a shell loop, keeps
+    ``derive()`` and the shipped file in step for every test that re-derives and compares.
+    """
+    for probe in sorted((ROOT / "probes").glob("derive_rpc_v29_*.py")):
+        spec = importlib.util.spec_from_file_location(probe.stem, probe)
+        if spec is None or spec.loader is None:
+            raise SystemExit(f"cannot load sibling derivation {probe.name}")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        sibling = getattr(module, "derive", None)
+        if sibling is None or "composed" not in inspect.signature(sibling).parameters:
+            raise SystemExit(f"{probe.name} does not compose (no composed= parameter)")
+        document = sibling(document, composed=True)
+    return document
+
+
+def derive(source: dict) -> dict:
+    """The shipped v29: this script's base deltas plus every sibling's composing delta."""
+    return _apply_siblings(_derive_base(source))
 
 
 def main() -> int:

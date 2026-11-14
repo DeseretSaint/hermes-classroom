@@ -53,6 +53,11 @@ CONTRACT_FILES: dict[str, str] = {
     # for an approved plan's section that has no authored page yet. No method, required key or
     # vocabulary value moves; `contracts/rpc.v28.json` stays byte-identical history. Any later
     # additive card composes onto this document rather than forking a second v29.
+    # UP-18 (t_6b03b7de): v29 also carries `review_item.interval_reason` — the learner's own
+    # sentence explaining the date the scheduler chose from their attempt record (a first try with
+    # no help, a hint, two or more tries, a miss, a shown answer). Optional; an item with no
+    # attempt record behind it omits it. `probes/derive_rpc_v29_review_interval.py` composes over
+    # an existing v29 rather than forking the version.
     "cb.rpc": "rpc.v29.json",
     # E2E L1: v15 is additive over v14 — one column, `checks.revisit INTEGER NOT NULL DEFAULT 0`.
     # No row is rewritten; every check written before v15 reads as an ordinary (non-revisit) check.
@@ -118,6 +123,8 @@ CONTRACT_VERSION_FILES: dict[str, dict[int, str]] = {
     # `check.get.assistance` read, and `lesson.assist`'s optional `rung` request/response.
     # UP-6: v29 also carries `outline_plan.time_estimate`, the plan's own stored schedule
     # estimate (weeks and the author's declared context), or null when none is stored.
+    # UP-18: v29 also carries `review_item.interval_reason`, the learner's own explanation of the
+    # date the scheduler chose. Optional; an item with no attempt record behind it omits it.
     # v28 stays readable so a client that pinned the composed revisit/completion wire can still
     # validate.
     "cb.rpc": {22: "rpc.v22.json", 23: "rpc.v23.json", 24: "rpc.v24.json", 25: "rpc.v25.json",

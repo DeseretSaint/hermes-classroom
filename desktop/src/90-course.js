@@ -1550,6 +1550,12 @@ function PlanView({ row, review, notebooks, outline, page, implemented, onOpenSe
                         item ? jsx('span', { children: `interval ${item.interval_days}d · step ${item.step}` }) : null
                       ]
                     }),
+                    item && item.interval_reason
+                      ? jsx('div', {
+                          className: 'text-xs text-(--ui-text-secondary)',
+                          children: item.interval_reason
+                        })
+                      : null,
                     jsxs('div', {
                       className: 'flex flex-wrap items-center gap-1',
                       children: [

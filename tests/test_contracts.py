@@ -5536,9 +5536,15 @@ class V29AmendmentTest(unittest.TestCase):
         # Two sibling deltas also name records here: UP-14's check_stimulus property and UP-3's
         # library_item.next_step kind. Skip those records below and assert each delta explicitly.
         for name in before:
-            if name in echoed or name in ("outline_plan", "check_stimulus", "library_item"):
+            if name in echoed or name in ("outline_plan", "check_stimulus", "library_item",
+                                          "review_item"):
                 continue
             self.assertEqual(after[name], before[name], name)
+        # UP-18 owns the only property added to review_item in this version.
+        self.assertEqual(
+            set(after["review_item"]["properties"]) - set(before["review_item"]["properties"]),
+            {"interval_reason"},
+        )
         # UP-3 owns the only enum value added to next_step.kind in this version.
         self.assertEqual(
             set(
@@ -5573,6 +5579,111 @@ class V29AmendmentTest(unittest.TestCase):
         derived = module.serialise(module.derive(_document("rpc.v28.json")))
         shipped = (contracts.CONTRACT_DIR / "rpc.v29.json").read_text(encoding="utf-8")
         self.assertEqual(shipped, derived, "rpc.v29.json drifted from its derivation")
+
+
+class V29ReviewIntervalTest(unittest.TestCase):
+    """UP-18 (`t_6b03b7de`): v29 adds one optional review-item sentence, nothing else.
+
+    The due date stays arithmetic over the target's declared ladder; what moves is that the
+    scheduler now reads the starting rung from the attempt record and can say in the learner's words
+    which rule set the date. The key is optional, so every v28 record keeps its exact shape.
+    """
+
+    def test_v29_adds_only_the_review_interval_reason(self) -> None:
+        v28 = _document("rpc.v28.json")
+        current = contracts.contract("cb.rpc")
+        self.assertEqual(current["$id"], "https://contracts.coursebook.hermes/rpc/v29")
+        self.assertEqual(current["x-contract-version"], 29)
+        self.assertEqual(current["x-supersedes"], v28["$id"])
+        self.assertEqual(current["$defs"]["method"]["enum"], v28["$defs"]["method"]["enum"])
+        before = v28["$defs"]["review_item"]
+        after = current["$defs"]["review_item"]
+        self.assertEqual(set(after["properties"]) - set(before["properties"]),
+                         {"interval_reason"})
+        self.assertEqual(set(before["properties"]) - set(after["properties"]), set())
+        # Optional: no record means no sentence, so it may never become a required key.
+        self.assertEqual(set(after["required"]), set(before["required"]))
+        self.assertNotIn("interval_reason", after["required"])
+        self.assertFalse(after["additionalProperties"])
+        # The scheduler's words may not appear on a learner surface, and neither may a prediction.
+        forbidden = {"mastery", "retention", "probability", "attain", "score", "reason_code",
+                     "evidence_class"}
+        self.assertEqual(_property_names(after) & forbidden, set())
+
+    def test_the_interval_reason_is_prose_or_null(self) -> None:
+        item = contracts.contract("cb.rpc")["$defs"]["review_item"]["properties"]["interval_reason"]
+        validator = Draft202012Validator(item)
+        validator.validate("You needed two tries, so this comes back tomorrow.")
+        validator.validate(None)
+        for bad in (0, 1.5, True, "", []):
+            with self.subTest(value=bad):
+                self.assertTrue(list(validator.iter_errors(bad)))
+
+    def test_a_v28_review_item_still_validates_against_v29(self) -> None:
+        payload = {
+            "enrollment_id": "enr_12345678",
+            "items": [_review_item_payload()],
+            "total_due": 0,
+            "total_overdue": 0,
+            "total_scheduled": 1,
+            "upcoming_hidden": 0,
+            "now": "2026-11-06T12:00:00+00:00",
+            "cap": 10,
+        }
+        # A v28-shaped item — no `interval_reason` at all — is still a valid response.
+        contracts.validate_response_payload("review.queue", payload)
+        with_reason = json.loads(json.dumps(payload))
+        with_reason["items"][0]["interval_reason"] = (
+            "You used a hint, so this comes back in 3 days."
+        )
+        contracts.validate_response_payload("review.queue", with_reason)
+        # An unknown key is still refused: the item never became an open object.
+        extra = json.loads(json.dumps(payload))
+        extra["items"][0]["why"] = "because"
+        with self.assertRaises(contracts.ContractError):
+            contracts.validate_response_payload("review.queue", extra)
+
+    def test_docs_publish_the_v29_delta(self) -> None:
+        text = (contracts.CONTRACT_DIR.parent / "docs" / "CONTRACTS.md").read_text(encoding="utf-8")
+        for needle in (
+            "v29 delta (UP-18)",
+            "rpc.v29.json",
+            "interval_reason",
+            "probes/derive_rpc_v29_review_interval.py",
+        ):
+            self.assertIn(needle, text, f"CONTRACTS.md is missing {needle!r}")
+
+    def test_the_v29_file_is_the_derived_delta_not_a_hand_copy(self) -> None:
+        # The shipped v29 is the composition: the base derivation applies this card's own
+        # composing script (and every other sibling's) on top of its deltas.
+        spec = importlib.util.spec_from_file_location(
+            "derive_rpc_v29_composed",
+            contracts.CONTRACT_DIR.parent / "probes" / "derive_rpc_v29.py",
+        )
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        derived = module.serialise(module.derive(_document("rpc.v28.json")))
+        shipped = (contracts.CONTRACT_DIR / "rpc.v29.json").read_text(encoding="utf-8")
+        self.assertEqual(shipped, derived, "rpc.v29.json drifted from its derivation")
+
+
+def _review_item_payload() -> dict:
+    """One v28-shaped ``review_item``: no ``interval_reason``, exactly as a v28 backend sent it."""
+    return {
+        "objective_id": "obj_12345678",
+        "title": "Order a drink politely",
+        "ordinal": 1,
+        "evidence_target": "recall",
+        "state": "review_due",
+        "interval_days": 3,
+        "step": 1,
+        "ladder_days": [1, 3, 7, 16, 35],
+        "last_evidence_at": "2026-11-05T00:00:00+00:00",
+        "due_at": "2026-11-08T00:00:00+00:00",
+        "overdue": False,
+        "overdue_days": 0,
+    }
 
 
 if __name__ == "__main__":

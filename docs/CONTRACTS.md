@@ -2986,3 +2986,34 @@ derivation; `tests/test_learner_plan_flow.py::LearnerPlanFlowTest::test_home_ste
 approves a one-section plan before any page exists and proves `library.list` returns `write_lesson`
 with that objective's id, and `tests/test_desktop_field_desk.py::FieldDeskRenderTest::test_write_lesson_opens_the_plan_tab`
 proves the control routes to the Plan tab.
+
+### v29 delta (UP-18): the review item explains its own date
+
+A review item's due date was "last pass plus the rung the evidence target's ladder names", so a
+first-try pass with no help and a pass that needed two tries, a hint and a retry were given the
+same next interval. The scheduler now reads the *starting* rung from the attempt record
+(`coursebook.review._earned_rung`, `_short_beat`) and tells the learner why:
+
+* `review_item.interval_reason` — optional. One short sentence in the learner's own words naming
+  what their record shows ("You needed two tries, so this comes back tomorrow."), or `null` when no
+  committed attempt stands behind the date. It is prose: never a reason code, a stage name or an
+  evidence class.
+* The interval itself is unchanged arithmetic over the declared ladder. An unaided first-try pass
+  now starts one rung above the target's floor, a hinted or retried pass keeps the floor, and a
+  pass whose answer was shown, or that followed a miss or more than one attempt, returns on the
+  one-day short beat. No learner is scheduled *sooner* than the ladder's floor except on that
+  short beat.
+* No method is added or removed, no required key, error code, job kind, answer kind, verdict,
+  evidence class or vocabulary value moves, and every v28 record that omits the key keeps its exact
+  shape and bytes. `rpc.v28.json` stays byte-identical history and `x-supersedes` names it. The
+  wire echoes move to 29.
+* `rpc.v29.json` is derived from the frozen v28 document by
+  `probes/derive_rpc_v29_review_interval.py`, never hand-copied. A sibling card that derives its
+  own v29 from the same v28 composes: the script reads an existing v29 as its source and applies
+  only this delta, so the merged tree ships the union instead of forking the version.
+
+Regression guard: `tests/test_contracts.py::V29ReviewIntervalTest` pins the added property's
+optionality and type and proves a v28-shaped item still validates;
+`tests/test_upgrade_review_interval.py` proves a hinted pass keeps the ladder's floor while a cold
+first-try pass earns the next rung, that a miss or a shown answer returns on the short beat, and
+that the reason is the learner's words rather than the pipeline's.
