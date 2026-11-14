@@ -15,6 +15,7 @@ integration gate.
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 import tempfile
@@ -660,7 +661,14 @@ class PlanRejectWiringTest(unittest.TestCase):
         )
         handler = source[source.index("const runPlanRepair = useCallback"):]
         handler = handler[: handler.index("// Clear the gap")]
-        edit = handler[handler.index("if (action === 'edit_plan')"):handler.index("if (action === 'change_goal')")]
+        # End the branch at the next action test at the same indent, not at a sibling literal:
+        # UP-10 folded `change_goal` and `change_shape` into one `||` test, so the literal
+        # `if (action === 'change_goal')` stopped existing and a literal slice had no end.
+        adjust_at = handler.index("if (action === 'edit_plan')")
+        next_action = re.search(r"\n {4}if \(action === ", handler[adjust_at + 1 :])
+        self.assertIsNotNone(next_action, "the edit_plan branch has no following action branch")
+        assert next_action is not None
+        edit = handler[adjust_at : adjust_at + 1 + next_action.start()]
         self.assertIn("startEditing()", edit)
         self.assertIn("return", edit)
         self.assertNotIn("jobs.create", edit)
