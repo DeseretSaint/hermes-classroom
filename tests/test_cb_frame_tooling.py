@@ -11,8 +11,10 @@ These tests mock the visual directory: they never move, delete or install the re
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -85,7 +87,26 @@ class FrameDepsTest(unittest.TestCase):
 
 
 class PreflightCliTest(unittest.TestCase):
-    """End to end through the real CLI, against whatever this checkout actually has installed."""
+    """End to end through the real CLI, against a throwaway home, never the operator's.
+
+    `--preflight` exits 1 when the *installed* plugin is not this checkout's build, and that
+    refusal is the NO LIVE WINDOW rule's teeth. But the suite is forbidden to install the
+    branch, so a test that reads the operator's `~/.hermes/desktop-plugins/coursebook/` is
+    red on every branch that is correctly not installed. The script resolves
+    `INSTALLED` from `Path.home()` (which honours `HOME`), so each test gets its own home
+    and populates — or deliberately does not populate — the plugin dir itself. No new env
+    var, and the printed block is the one the docs quote.
+    """
+
+    def _run_preflight(self, home: Path) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            [sys.executable, str(SCRIPT), "--preflight"],
+            capture_output=True, text=True, cwd=str(ROOT), timeout=300,
+            env={**os.environ, "HOME": str(home)},
+        )
+
+    def _installed_plugin(self, home: Path) -> Path:
+        return home / ".hermes" / "desktop-plugins" / "coursebook" / "plugin.js"
 
     def test_preflight_prints_four_versions_when_installed(self) -> None:
         visual = ROOT / "visual" / "node_modules"
@@ -93,13 +114,42 @@ class PreflightCliTest(unittest.TestCase):
                         ("axe-core", "pixelmatch", "pngjs", "playwright"))
         if not installed:
             self.skipTest("visual/node_modules is absent in this checkout; run `cd visual && npm ci`")
-        run = subprocess.run(
-            [sys.executable, str(SCRIPT), "--preflight"],
-            capture_output=True, text=True, cwd=str(ROOT), timeout=300,
-        )
+        with tempfile.TemporaryDirectory() as home:
+            target = self._installed_plugin(Path(home))
+            target.parent.mkdir(parents=True)
+            target.write_bytes((ROOT / "desktop" / "plugin.js").read_bytes())
+            run = self._run_preflight(Path(home))
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        branch_sha = hashlib.sha256((ROOT / "desktop" / "plugin.js").read_bytes()).hexdigest()
+        self.assertIn(f"installed plugin   {branch_sha}", run.stdout,
+                      "preflight must read the temp home's install, not the operator's")
         for name in ("axe-core", "pixelmatch", "pngjs", "playwright"):
             self.assertRegex(run.stdout, rf"{name} \d+\.\d+", f"preflight must print the {name} version")
+
+    def test_preflight_still_refuses_when_the_installed_build_is_stale(self) -> None:
+        # The human path: a branch that is not installed must still refuse loudly, or a
+        # window review would photograph a different module. Only the *test* installs a
+        # build, and it installs it into its own temp home.
+        visual = ROOT / "visual" / "node_modules"
+        installed = all((visual / name / "package.json").is_file() for name in
+                        ("axe-core", "pixelmatch", "pngjs", "playwright"))
+        if not installed:
+            self.skipTest("visual/node_modules is absent in this checkout; run `cd visual && npm ci`")
+        with tempfile.TemporaryDirectory() as home:
+            target = self._installed_plugin(Path(home))
+            target.parent.mkdir(parents=True)
+            target.write_bytes(b"// some other build\n")
+            run = self._run_preflight(Path(home))
+        self.assertEqual(run.returncode, 1, run.stdout + run.stderr)
+        self.assertIn("REFUSE a window review", run.stdout)
+        self.assertIn("the installed module is not this checkout's build.", run.stdout)
+        self.assertIn("cp desktop/plugin.js ~/.hermes/desktop-plugins/coursebook/plugin.js", run.stdout)
+        branch_sha = hashlib.sha256((ROOT / "desktop" / "plugin.js").read_bytes()).hexdigest()
+        self.assertIn(f"branch plugin.js   {branch_sha}", run.stdout)
+        self.assertRegex(run.stdout, r"installed plugin   [0-9a-f]{64}\n")
+        self.assertNotIn(branch_sha, run.stdout.split("installed plugin")[1].split("\n")[0])
+        for name in ("axe-core", "pixelmatch", "pngjs", "playwright"):
+            self.assertRegex(run.stdout, rf"{name} \d+\.\d+", f"the refusal must still print {name}")
 
 
 if __name__ == "__main__":
