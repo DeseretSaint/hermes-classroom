@@ -50,6 +50,11 @@ MAX_CLAUSES = 8
 MAX_TURN_TEXT = 2000
 MAX_TUTOR_TEXT = 8000
 
+#: What the in-character tutor may see of its own session: the trailing turns, each clipped. A
+#: five-turn role-play stays small instead of growing the context without limit.
+CONTEXT_TURNS = 10
+CONTEXT_TURN_CHARS = 600
+
 TARGET_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$")
 
 SESSION_STATES = ("active", "graded", "cancelled", "abandoned")
@@ -426,6 +431,85 @@ def turns_for(connection, session_id: str) -> list[dict[str, Any]]:
 
 def learner_turns(turns: list[dict[str, Any]]) -> list[str]:
     return [str(turn["text"]) for turn in turns if turn.get("speaker") == "learner"]
+
+
+def clause_matches(clause: dict[str, Any], text: str) -> bool:
+    """One match clause against one learner line. The grader and the tutor context share this rule."""
+    kind = clause.get("type")
+    value = str(clause.get("value") or "")
+    if kind == "exact":
+        from . import validators
+
+        return validators.normalize_text(value) in validators.normalize_text(text)
+    if kind == "regex":
+        return re.search(value, text, re.IGNORECASE) is not None
+    raise ValueError(f"a match clause declares an unknown type {kind!r}")
+
+
+def reference_targets(reference: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+    """The sealed key's target id -> match clauses, refusing a shape it cannot read."""
+    targets = reference.get("targets")
+    if not isinstance(targets, list) or not targets:
+        raise ValueError("a conversation reference declares no targets")
+    resolved: dict[str, list[dict[str, Any]]] = {}
+    for target in targets:
+        if not isinstance(target, dict):
+            raise ValueError("each conversation target is an object")
+        target_id = target.get("id")
+        clauses = target.get("match")
+        if not isinstance(target_id, str) or not isinstance(clauses, list) or not clauses:
+            raise ValueError("each conversation target names an id and its match clauses")
+        for clause in clauses:
+            if not isinstance(clause, dict):
+                raise ValueError("a match clause is an object")
+            if clause.get("type") not in ("exact", "regex"):
+                raise ValueError(f"unknown match clause type {clause.get('type')!r}")
+        resolved[target_id] = clauses
+    return resolved
+
+
+def tutor_context(
+    connection,
+    session,
+    declaration: dict[str, Any],
+    *,
+    turns: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """The practice slice the in-character tutor may see: its own bounded transcript and ids.
+
+    The transcript is this session's turns only, capped to the trailing ``CONTEXT_TURNS`` and each
+    line clipped, so a role-play cannot grow the context without limit. Matched ids are computed with
+    the grader's own clauses, but the projection carries ids alone: a match clause, a label the
+    learner was not shown, and any other session's turns never enter the tutor context.
+    """
+    turns = list(turns if turns is not None else turns_for(connection, str(session["id"])))
+    row = connection.execute(
+        "SELECT reference_json FROM checks WHERE id = ?", (str(session["check_id"]),)
+    ).fetchone()
+    reference = _json_load(row["reference_json"], {}) if row is not None else {}
+    learners = learner_turns(turns)
+    matched: list[str] = []
+    if isinstance(reference, dict) and reference.get("kind") == "conversation":
+        try:
+            for target_id, clauses in reference_targets(reference).items():
+                if any(clause_matches(clause, text) for text in learners for clause in clauses):
+                    matched.append(target_id)
+        except ValueError:
+            # A key this build cannot read names no match; the transcript is still carried.
+            matched = []
+    return {
+        "learner_turns": len(learners),
+        "target_ids": [
+            str(target.get("id"))
+            for target in declaration.get("targets") or []
+            if isinstance(target, dict)
+        ],
+        "matched_target_ids": matched,
+        "turns": [
+            {"speaker": str(turn["speaker"]), "text": str(turn["text"])[:CONTEXT_TURN_CHARS]}
+            for turn in turns[-CONTEXT_TURNS:]
+        ],
+    }
 
 
 def start_session(

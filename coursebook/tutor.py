@@ -19,7 +19,9 @@ The right rail is a *lesson tutor*, not a general agent and not the authoring ch
   fabricated answer. Nothing is persisted for a failed call;
 * ``mode=practice`` reuses the existing ``practice_sessions``/``practice_turns`` engine and the
   authoring the check already carries. Only learner turns reach ``conversation.grade_transcript``;
-  tutor prose is never graded.
+  tutor prose is never graded. The practice slice of the context carries that one session's bounded
+  transcript and the ids of targets already produced, so the partner can answer the last line and
+  steer to an unused target; the practice engine projects ids only, never a match clause.
 
 The module registers its two commands itself, exactly like ``engagement``: a build whose frozen
 ``cb.rpc`` lacks ``tutor.ask``/``tutor.history`` stays ``NOT_IMPLEMENTED`` instead of inventing a
@@ -831,7 +833,8 @@ def _ask_practice(
                 "VALIDATION_FAILED", "the practice check is missing.", reason="practice_not_active"
             )
         declaration = practice.declaration(_load(check["stimulus_json"], {})) or {}
-        learner_count = len(practice.learner_turns(practice.turns_for(connection, str(session["id"]))))
+        turns = practice.turns_for(connection, str(session["id"]))
+        learner_count = len(practice.learner_turns(turns))
         directive = practice.directive_for(declaration, learner_count + 1)
         scene = {
             "scenario": declaration.get("scenario"),
@@ -842,7 +845,13 @@ def _ask_practice(
         context = {
             "objective": resolved["context"]["objective"],
             "glossary": resolved["context"]["glossary"],
-            "practice": scene,
+            # The partner sees the exchange it is in: this session's bounded turns and the ids of
+            # targets the learner already produced, so it can answer the last line and move to an
+            # unused target. The practice engine projects ids only; no match clause rides along.
+            "practice": {
+                **scene,
+                **practice.tutor_context(connection, session, declaration, turns=turns),
+            },
         }
 
     request = _request(context, question, mode="practice", directive=directive)
