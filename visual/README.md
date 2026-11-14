@@ -36,3 +36,18 @@ cannot be scored as parity with a 1344x768 reference. That gap is CP-048.
 
 The plugin is read from `~/.hermes/desktop-plugins/coursebook/plugin.js` at app start, so a code
 change is only visible after the Desktop restarts — CB-017, not a harness bug.
+
+## Measured contrast (`contrast-probe.mjs`)
+
+Dev-only. Reads `getComputedStyle` for every `[data-cb-measure]` row on a page and computes WCAG
+2.x from the *painted* colour strings with `colorjs.io`. APCA is an informational column (draft
+0.0.98G constants); `apca-w3` is refused on licence. This never gates anything by itself — the
+Python token gate stays the shipping arbiter, and `tests/test_up_contrast_measured.py` is what
+checks the two agree on the static pairs and that a `color-mix` surface is measured at all.
+
+```
+node contrast-probe.mjs path/to/page.html [--out result.json]
+```
+
+The page marks each row: `data-cb-measure data-cb-id="light:ink-on-paper" data-cb-kind="pair"
+data-cb-fg="ink" data-cb-bg="paper"`. The probe needs `chromium` on PATH (or `CB_CHROMIUM`).
