@@ -15,6 +15,16 @@ contract versions move independently and are named wherever they changed.
   under the author's account; `confirm: true` is only sent from that dialog's publish control, and
   Escape/Cancel send nothing.
 - **`jsonschema>=4.18,<5`**, because `contracts.py` imports `referencing` directly.
+- **A government source is decided by its public suffix, not by a substring.** `_classify_source`
+  treated any host containing `.gov.` as government, so `foo.gov.attacker.example` took
+  `SOURCE_TYPE_RANK` first place and the page budget ahead of real publishers. The host test now
+  reads the public suffix from the Public Suffix List (`tldextract>=5,<6`, built with
+  `suffix_list_urls=()` so the wheel's snapshot is used and nothing is fetched), and the same fix
+  covers `.edu`/`.ac.`/`.org` and the reference works. Labels and rank are unchanged. Stored
+  `source_type` values in existing ledgers keep the old label until their row is re-derived; the fix
+  changes classification only, never credibility. Evidence:
+  `tests/test_up_source_host_spoof.py::SourceHostSpoofTest::test_a_gov_substring_is_not_government`,
+  which fails at `c3f4e34b` with `'government' != 'web_page'`.
 - **The shipped deadlines fit the route the product runs on** (CP-015g quality). A four-objective
   plan job took 204 s on `nous` / `deepseek/deepseek-v4.1-flash-1017` and was cut twice at the old
   180 s `plan.validate` bound; a three-section lesson job was cut at the old 300 s

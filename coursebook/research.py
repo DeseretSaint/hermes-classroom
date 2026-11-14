@@ -34,6 +34,8 @@ from datetime import datetime, timezone
 from typing import Any, Iterable, Protocol, Sequence
 from urllib.parse import urlparse
 
+import tldextract
+
 from . import curriculum, policy
 from .deadline import (
     CallCapacityExhausted,
@@ -141,6 +143,25 @@ SOURCE_TYPE_RANK: dict[str, int] = {
     "organization": 4,
     "web_page": 5,
 }
+
+#: Public Suffix List lookups for source classification. ``suffix_list_urls=()`` is not an
+#: optimisation: it is what keeps the plugin offline-hermetic. ``tldextract`` ships a PSL snapshot
+#: inside the wheel, so classification uses that snapshot and never dials out for a fresher list.
+_TLDEXTRACT = tldextract.TLDExtract(suffix_list_urls=(), cache_dir=None)
+
+#: First label of a public suffix that marks a government publisher (``gov``, ``gov.uk``,
+#: ``mil``, ``int``). Matched against the suffix, never against the whole host.
+_GOVERNMENT_SUFFIX_LABELS = frozenset({"gov", "mil", "int"})
+
+#: First label of a public suffix that marks a degree-granting/academic publisher (``edu``,
+#: ``ac.uk``, ``ac.jp``).
+_ACADEMIC_SUFFIX_LABELS = frozenset({"edu", "ac"})
+
+#: Registrable domains of the well-known reference works. Matched whole, so
+#: ``wikipedia.org.attacker.example`` is not a reference.
+_REFERENCE_SITES = frozenset(
+    {"wikipedia.org", "britannica.com", "dictionary.com", "merriam-webster.com"}
+)
 
 #: Generation-layer support statuses (this card's vocabulary for the source ledger).
 SUPPORT_STATUSES: tuple[str, ...] = ("supported", "partial", "contradictory", "unverified")
@@ -1566,31 +1587,52 @@ def _publisher_of(url: str) -> str:
     return host[4:] if host.startswith("www.") else host
 
 
+def _host_parts(url: str) -> tuple[str, str, str]:
+    """Return ``(host, suffix, registrable_domain)`` for the URL's host.
+
+    ``host`` is the host name alone (port, userinfo and a leading ``www.`` removed) for the
+    path/brand checks. ``suffix`` and ``registrable_domain`` come from the Public Suffix List, so
+    the label after a dot is not mistaken for a publisher's suffix: in
+    ``foo.gov.attacker.example`` the ``gov`` is a subdomain label of ``example``, whose suffix the
+    list does not know. Lookups are offline by construction (``suffix_list_urls=()``): the snapshot
+    shipped inside ``tldextract`` is the authority and nothing is fetched at runtime.
+    """
+    host = (urlparse(url).hostname or "").lower()
+    if host.startswith("www."):
+        host = host[4:]
+    parts = _TLDEXTRACT(host)
+    suffix = parts.suffix.lower()
+    registrable = f"{parts.domain}.{suffix}" if suffix else ""
+    return host, suffix, registrable
+
+
 def _classify_source(url: str) -> str:
     """Classify *who publishes this URL* from the host/path alone.
 
     The type is a fallible URL fact recorded in the ledger, not a judgement of authority or
     correctness. It drives which candidates are fetched first when the page budget binds.
+
+    Government and academic are decided by the *public suffix* of the host, never by a substring:
+    a lookalike such as ``foo.gov.attacker.example`` is a ``web_page``, while ``nasa.gov`` and
+    ``gov.uk`` are ``government``. An unknown suffix is never promoted to a trusted type.
     """
     parsed = urlparse(url)
-    host = parsed.netloc.lower()
+    host, suffix, registrable = _host_parts(url)
     path = parsed.path.lower()
-    if host.endswith(".gov") or ".gov." in host or host.endswith(".mil") or host.endswith(".int"):
+    suffix_label = suffix.split(".", 1)[0]
+    if suffix_label in _GOVERNMENT_SUFFIX_LABELS:
         return "government"
-    if host.endswith(".edu") or ".edu." in host or ".ac." in host:
+    if suffix_label in _ACADEMIC_SUFFIX_LABELS:
         return "academic"
-    if any(
-        name in host
-        for name in ("wikipedia.org", "britannica.com", "dictionary.com", "merriam-webster.com")
-    ):
+    if registrable in _REFERENCE_SITES:
         return "reference"
     if (
         host.startswith(("docs.", "developer.", "support."))
-        or host in ("w3.org", "www.w3.org", "rfc-editor.org", "www.rfc-editor.org", "ietf.org", "www.ietf.org")
+        or host in ("w3.org", "rfc-editor.org", "ietf.org")
         or path.startswith(("/docs/", "/documentation/", "/reference/"))
     ):
         return "documentation"
-    if host.endswith(".org") or ".org." in host:
+    if suffix_label == "org":
         return "organization"
     return "web_page"
 

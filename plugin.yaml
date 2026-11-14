@@ -40,6 +40,10 @@ python_dependencies:
   # The range must overlap the host's core `documents` pin (pypdf==6.x) or plugin admission refuses
   # the whole plugin; this was the live enable blocker on 2026-11-07.
   - "pypdf>=4.0,<7"
+  # Source classification: the Public Suffix List decides whether a host is a government publisher.
+  # Imported by `coursebook/research.py` and always constructed with `suffix_list_urls=()`, so the
+  # PSL snapshot inside the wheel is used and no list is fetched — the plugin stays offline-hermetic.
+  - "tldextract>=5,<6"
 
 # No requires_env in the skeleton: Coursebook stores no secrets. Every key below has a reader
 # wired in this build (`coursebook/tools.py::configure` <- `ctx.get_config`); a settings field
