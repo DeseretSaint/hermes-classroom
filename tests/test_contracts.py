@@ -5374,7 +5374,7 @@ class V28AmendmentTest(unittest.TestCase):
             self.assertIn(needle, text, f"CONTRACTS.md is missing {needle!r}")
 
 
-class V29AmendmentTest(unittest.TestCase):
+class V29NextStepKindTest(unittest.TestCase):
     """UP-3: cb.rpc v29 is v28 plus one next-step kind, ``write_lesson``.
 
     An approved plan whose section has no authored page yet is not a lesson to start. The kind
@@ -5393,11 +5393,19 @@ class V29AmendmentTest(unittest.TestCase):
         before = v28["$defs"]["methods"]["properties"]
         after = current["$defs"]["methods"]["properties"]
         self.assertEqual(set(after), set(before), "v29 added or removed a method payload")
+        # The composed v29 also carries UP-14's ladder on two method payloads, so carry that
+        # sibling delta before comparing: this assertion names only this card's change.
+        sibling_keys = {"check.get": {"assistance"}, "lesson.assist": {"rung"}}
         for method, schema in before.items():
             with self.subTest(method=method):
                 carried = json.loads(json.dumps(after[method]))
                 if method == "health.get":
                     carried["response"]["properties"]["contract_version"]["const"] = 28
+                for key in sibling_keys.get(method, set()):
+                    carried["response"]["properties"].pop(key, None)
+                    request = carried.get("request")
+                    if isinstance(request, dict) and "properties" in request:
+                        request["properties"].pop(key, None)
                 self.assertEqual(carried, schema, f"{method} moved")
 
     def test_the_next_step_gains_only_write_lesson(self) -> None:
@@ -5502,7 +5510,7 @@ def _library_item_with(next_step: dict) -> dict:
     }
 
 
-class V29NextStepKindTest(unittest.TestCase):
+class V29AmendmentTest(unittest.TestCase):
     """UP-6: ``cb.rpc`` v29 is v28 plus one optional ``outline_plan.time_estimate``.
 
     The estimate is a stored planning fact the plan gate reads; the amendment adds no method, moves
@@ -5525,10 +5533,20 @@ class V29NextStepKindTest(unittest.TestCase):
         # The four wire echoes move 28 -> 29; every other record is carried byte for byte, except
         # the three records the sibling delta names (its methods, its check_stimulus, this plan).
         echoed = {"envelope_request", "envelope_response_ok", "envelope_response_error", "methods"}
+        # Two sibling deltas also name records here: UP-14's check_stimulus property and UP-3's
+        # library_item.next_step kind. Skip those records below and assert each delta explicitly.
         for name in before:
-            if name in echoed or name in ("outline_plan", "check_stimulus"):
+            if name in echoed or name in ("outline_plan", "check_stimulus", "library_item"):
                 continue
             self.assertEqual(after[name], before[name], name)
+        # UP-3 owns the only enum value added to next_step.kind in this version.
+        self.assertEqual(
+            set(
+                after["library_item"]["properties"]["next_step"]["properties"]["kind"]["enum"]
+            )
+            - set(before["library_item"]["properties"]["next_step"]["properties"]["kind"]["enum"]),
+            {"write_lesson"},
+        )
         # UP-14 owns the only other property added to check_stimulus in this version.
         self.assertEqual(
             set(after["check_stimulus"]["properties"]) - set(before["check_stimulus"]["properties"]),
