@@ -677,7 +677,7 @@ function createModeCard(mode, current, choose) {
   }, mode)
 }
 
-function CreateCourseFlow({ onCancel, onCreated, seed }) {
+function CreateCourseFlow({ onCancel, onCreated, onOpenCourse, seed }) {
   // H-103: a rejected plan can hand its goal and choices back here. The seed is a starting point,
   // never a silent submission: the learner still reviews and presses Create. H-170: it opens on the
   // first step whose answer is still missing (goal, then size, then review), so a seed that already
@@ -870,6 +870,25 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
     [onCancel, step, submitting]
   )
 
+  // UP-09: the create result is the success moment, so it is also the way in. The row is built
+  // from the ids the flow already holds, and the revision is the one the learner's own approvals
+  // returned, so the plan tab fences on what is on screen rather than on a stale create response.
+  // The host decides what "open" and "start" mean for its route; a null handler leaves the surface
+  // exactly as it was instead of inventing a navigation.
+  const createdCourse = result
+    ? {
+      course_id: result.courseId,
+      enrollment_id: result.enrollmentId,
+      revision,
+      title: title.trim() || suggestedTitle(goal)
+    }
+    : null
+  const openCreatedCourse = result && onOpenCourse
+    ? (objectiveId, start) => onOpenCourse(createdCourse, objectiveId || null, Boolean(start))
+    : null
+  const openCreatedSection = openCreatedCourse ? (objectiveId) => openCreatedCourse(objectiveId, false) : null
+  const startCreatedLesson = openCreatedCourse ? (objectiveId) => openCreatedCourse(objectiveId, true) : null
+
   if (result) {
     return jsxs('div', {
       className: 'mx-auto flex w-full max-w-2xl flex-col gap-3 py-4',
@@ -902,8 +921,8 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
           course: { course_id: result.courseId, enrollment_id: result.enrollmentId },
           revision,
           onRevision: setRevision,
-          onOpenSection: null,
-          onStartLesson: null,
+          onOpenSection: openCreatedSection,
+          onStartLesson: startCreatedLesson,
           onChanged: null,
           // CREATE-5: this surface *is* the create form, so "Change the goal" hands the brief
           // straight back to it instead of printing that the form cannot be reached from here.
@@ -914,7 +933,13 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
         jsxs('div', {
           className: 'flex flex-wrap items-center gap-2 pt-1',
           children: [
-            jsx(sdk.Button, { onClick: onCancel, variant: 'secondary', children: 'Open in Courses' }, 'open'),
+            openCreatedCourse
+              ? jsx(CbAction, {
+                  onClick: () => openCreatedCourse(null, false),
+                  variant: 'primary',
+                  children: 'Open the course'
+                }, 'open')
+              : null,
             jsx(sdk.Button, {
               onClick: () => {
                 setResult(null)

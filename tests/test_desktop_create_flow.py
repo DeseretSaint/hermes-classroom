@@ -508,8 +508,264 @@ class CreateFlowSequenceTest(unittest.TestCase):
         self.assertNotIn("What kind of course is this?", block)
 
 
+#: UP-09: the success screen is the one moment the learner has a course but no way into it. The
+#: harness mounts the shipped CreateCourseFlow in jsdom with a recording host handler, presses
+#: Create, lets the plan and lessons reads settle as already-approved, then presses the two
+#: controls the result now offers. Nothing is called directly; the buttons are clicked.
+OPEN_RESULT_HARNESS = r"""
+import React, { act } from 'react'
+import { JSDOM } from 'jsdom'
+
+const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
+  url: 'http://127.0.0.1/',
+  pretendToBeVisual: true
+})
+globalThis.window = dom.window
+globalThis.document = dom.window.document
+Object.defineProperty(globalThis, 'navigator', { configurable: true, value: dom.window.navigator })
+globalThis.HTMLElement = dom.window.HTMLElement
+globalThis.Node = dom.window.Node
+globalThis.Event = dom.window.Event
+globalThis.MouseEvent = dom.window.MouseEvent
+globalThis.IS_REACT_ACT_ENVIRONMENT = true
+window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} })
+
+const mod = await import('./plugin.js')
+
+const GOAL = 'Replace the head gasket on a 1998 Civic without stripping the block'
+const COURSE_ID = 'course_1'
+const ENROLLMENT_ID = 'enr_1'
+const PLAN_ID = 'plan_draft_1'
+
+const objectives = [
+  { objective_id: 'obj_a', ordinal: 1, title: 'Alpha', evidence_target: 'recall', state: 'not_started', check_state: 'none' },
+  { objective_id: 'obj_b', ordinal: 2, title: 'Beta', evidence_target: 'comprehension', state: 'not_started', check_state: 'none' }
+]
+const plan = {
+  plan_id: PLAN_ID,
+  state: 'approved',
+  version: 2,
+  plan_hash: 'sha256:plan',
+  validation: { approvable: false, verdict: 'pass', manual_authoring: false, reason: null },
+  units: [{ ordinal: 1, title: 'Unit one' }]
+}
+const planJob = {
+  job_id: 'job_plan_1',
+  kind: 'plan',
+  state: 'completed',
+  brief: { stage: 'plan', course_id: COURSE_ID, enrollment_id: ENROLLMENT_ID, scope: 'short' },
+  checkpoint: {},
+  error: null,
+  created_at: 1,
+  updated_at: 2
+}
+// The run the learner waited for has finished: one terminal lessons job whose checkpoint carries
+// authored lessons. `next_unit_ordinal` is null because this course is fully written.
+const lessonsJob = {
+  job_id: 'job_lessons_1',
+  kind: 'plan',
+  state: 'completed',
+  brief: { stage: 'lessons', plan_id: PLAN_ID, course_id: COURSE_ID, enrollment_id: ENROLLMENT_ID },
+  checkpoint: { unit_ordinal: 1, next_unit_ordinal: null, lessons: 2, units_complete_all: true },
+  error: null,
+  created_at: 1,
+  updated_at: 5
+}
+
+const calls = []
+const opened = []
+const cancelled = []
+const ok = (result) => ({ ok: true, contract_version: 26, operation_id: 'test', result })
+const fakeRest = async (path, options) => {
+  const base = String(path).split('?')[0]
+  const body = (options && options.body) || {}
+  if (base === '/rpc') {
+    calls.push({ method: body.method, payload: body.payload || {} })
+    switch (body.method) {
+      case 'course.create': return ok({ course_id: COURSE_ID, plan_id: PLAN_ID, revision: 0 })
+      case 'enrollment.create': return ok({ enrollment_id: ENROLLMENT_ID, revision: 0 })
+      case 'jobs.create': return ok({ job_id: 'job_plan_1', state: 'queued' })
+      case 'course.outline': return ok({ plan, objectives, total: objectives.length, truncated: false })
+      case 'parent.blueprint.read': return ok({ plan, tabs: {}, sources: [] })
+      case 'jobs.list': return ok({ jobs: [planJob, lessonsJob] })
+      case 'jobs.get': return ok({ job: planJob })
+      default: return ok({ items: [], entries: [], objectives: [], jobs: [], total: 0 })
+    }
+  }
+  if (base === '/runtime') {
+    return {
+      ok: true,
+      contract_version: 26,
+      result: {
+        wire_version: 26,
+        contract_version: 26,
+        implemented_methods: [
+          'course.create', 'enrollment.create', 'jobs.create', 'jobs.get', 'jobs.list',
+          'jobs.cancel', 'plan.approve', 'plan.replan', 'course.outline', 'parent.blueprint.read',
+          'syllabus.alignment.read'
+        ],
+        single_home_host: false
+      }
+    }
+  }
+  return { ok: true, result: {} }
+}
+
+mod.default.register({
+  rest: fakeRest,
+  register: () => {},
+  onDispose: () => {},
+  setTimeout: (fn, ms) => { const handle = window.setTimeout(fn, ms); return () => window.clearTimeout(handle) },
+  clearTimeout: (handle) => window.clearTimeout(handle)
+})
+
+const { createRoot } = await import('react-dom/client')
+const container = document.getElementById('root')
+const root = createRoot(container)
+const flush = async (ms = 80) => { await act(async () => { await new Promise((r) => setTimeout(r, ms)) }) }
+const text = (node) => ((node && node.textContent) || '').replace(/\s+/g, ' ').trim()
+const buttons = () => [...container.querySelectorAll('button')]
+const byText = (label) => buttons().find((node) => text(node) === label) || null
+const press = async (node) => { await act(async () => { node.click() }); await flush(60) }
+const stepMarker = () => {
+  const found = [...container.querySelectorAll('div')].find((node) => /^Step [1-4] of [34]$/.test(text(node)))
+  return found ? text(found) : null
+}
+
+await act(async () => {
+  root.render(React.createElement(mod.CreateCourseFlow, {
+    seed: { goal: GOAL, scope: 'short' },
+    onCancel: () => { cancelled.push('cancel') },
+    onCreated: () => {},
+    onOpenCourse: (course, objectiveId, start) => { opened.push([course, objectiveId, start]) }
+  }))
+})
+await flush(120)
+
+const out = { stepAtReview: stepMarker() }
+const create = byText('Create course')
+out.offeredCreate = Boolean(create)
+if (create) await press(create)
+await flush(320)
+
+const start = byText('Start the first lesson')
+const openSection = byText('Open the first section')
+const openCourse = byText('Open the course')
+out.result = {
+  hasReceipt: Boolean(document.querySelector('[data-cb-create-receipt]')),
+  buttons: buttons().map(text),
+  start: Boolean(start),
+  openSection: Boolean(openSection),
+  openCourse: Boolean(openCourse),
+  openVariant: openCourse
+    ? (openCourse.getAttribute('data-cb-action') || openCourse.getAttribute('data-variant'))
+    : null,
+  openInCourses: Boolean(byText('Open in Courses'))
+}
+if (start) await press(start)
+out.afterStart = { opened: opened.slice(), cancelled: cancelled.slice() }
+if (openCourse) await press(openCourse)
+out.afterOpen = { opened: opened.slice(), cancelled: cancelled.slice() }
+out.createdCalls = calls.filter((call) => call.method === 'course.create').length
+
+process.stdout.write(JSON.stringify(out))
+"""
+
+
+def _jsdom_root(prefix: str, harness: str):
+    """Install plugin.js + harness + the node modules beside it; None when Node/jsdom is absent."""
+    modules = _desktop_node_modules()
+    if modules is None:
+        return None, None
+    tmp = tempfile.TemporaryDirectory(prefix=prefix)
+    root = Path(tmp.name)
+    (root / "plugin.js").write_text(PLUGIN_JS.read_text(encoding="utf-8"), encoding="utf-8")
+    (root / "harness.mjs").write_text(harness, encoding="utf-8")
+    node_modules = root / "node_modules"
+    node_modules.mkdir()
+    for name in ("react", "react-dom", "scheduler", "jsdom"):
+        source = modules / name
+        if source.is_dir():
+            (node_modules / name).symlink_to(source, target_is_directory=True)
+    sdk = node_modules / "@hermes" / "plugin-sdk"
+    sdk.mkdir(parents=True)
+    (sdk / "package.json").write_text(
+        json.dumps({"name": "@hermes/plugin-sdk", "type": "module", "main": "index.js"}),
+        encoding="utf-8",
+    )
+    (sdk / "index.js").write_text(SDK_STUB, encoding="utf-8")
+    return tmp, root
+
+
 class CreateFlowWiringTest(unittest.TestCase):
     """Source-level gates that a Node stub cannot see (which surface renders what)."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        if shutil.which("node") is None:
+            raise unittest.SkipTest("node is required to run the runtime desktop plugin")
+        cls.tmp, cls.root = _jsdom_root("coursebook-create-open-", OPEN_RESULT_HARNESS)
+        if cls.root is None:
+            raise unittest.SkipTest("react/react-dom/jsdom are not installed beside the desktop app")
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        tmp = getattr(cls, "tmp", None)
+        if tmp is not None:
+            tmp.cleanup()
+
+    def run_result_case(self) -> dict:
+        root = self.root
+        assert root is not None
+        result = subprocess.run(
+            ["node", str(root / "harness.mjs")],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr[-3000:])
+        return json.loads(result.stdout)
+
+    def test_the_create_result_can_open_the_course_it_made(self) -> None:
+        """UP-09: the success screen opens the course it made instead of only closing the flow."""
+        out = self.run_result_case()
+        self.assertEqual(out["stepAtReview"], "Step 4 of 4")
+        self.assertTrue(out["offeredCreate"])
+        result = out["result"]
+        self.assertTrue(result["hasReceipt"], out)
+
+        # The result mounts LearnerPlanView with a real open handler in both directions: the
+        # approved outline's section list is reachable, and a finished lessons run offers Start.
+        self.assertTrue(result["openSection"], out)
+        self.assertTrue(result["start"], out)
+
+        # The one exit is a primary press that opens the course, not a secondary that discards it.
+        self.assertTrue(result["openCourse"], result["buttons"])
+        self.assertEqual(result["openVariant"], "primary")
+        self.assertFalse(result["openInCourses"], result["buttons"])
+
+        # Start the first lesson hands the host the created row and the first objective.
+        started = out["afterStart"]
+        self.assertEqual(started["cancelled"], [])
+        self.assertEqual(len(started["opened"]), 1)
+        course, objective_id, start = started["opened"][0]
+        self.assertEqual(course["course_id"], "course_1")
+        self.assertEqual(course["enrollment_id"], "enr_1")
+        self.assertEqual(course["revision"], 0)
+        self.assertEqual(objective_id, "obj_a")
+        self.assertIs(start, True)
+
+        # Open the course opens the same row with no objective, and still never calls onCancel.
+        opened = out["afterOpen"]
+        self.assertEqual(opened["cancelled"], [])
+        self.assertEqual(len(opened["opened"]), 2)
+        course, objective_id, start = opened["opened"][1]
+        self.assertEqual(course["course_id"], "course_1")
+        self.assertEqual(course["enrollment_id"], "enr_1")
+        self.assertIsNone(objective_id)
+        self.assertIs(start, False)
+        self.assertEqual(out["createdCalls"], 1)
 
     def test_the_dead_end_copy_is_gone(self) -> None:
         source = _source()
