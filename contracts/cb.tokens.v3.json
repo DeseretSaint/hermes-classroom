@@ -316,6 +316,20 @@
     "style": "solid",
     "note": "The ring is drawn outside the control on the ground it sits on, which is why the focus gates are measured against grounds, not against the fills the control itself paints."
   },
+  "print": {
+    "paper": "#ffffff",
+    "ink": "#1a1713",
+    "ink-soft": "#5c5347",
+    "rule": "#cdb894",
+    "alert": "#9c2e1c",
+    "page": { "size": "A4 portrait", "margin": "18mm 16mm" },
+    "note": "The route's paper form, and the only palette that may paint it. A sheet has one appearance, so these values are mode-blind: the ink is the light mode's own reading ink on the printer's white, never a dark-mode cream that would vanish on paper. The print block in CB_V3_CSS writes each value to a --cb3-print-* custom property and remaps both palettes onto it; the Parent Studio export sheet reaches the same conclusion ('the paper is the printer's own white'). page is the @page geometry and the stylesheet may not disagree with it.",
+    "rules": [
+      "Every text value here reaches 4.5:1 on paper; rule is a hairline and never carries text.",
+      "No fill survives print: a coloured block becomes paper, and a filled object becomes ink with a paper label.",
+      "The page geometry is a contract value; a stylesheet that prints a different size or margin has drifted."
+    ]
+  },
   "gates": [
     { "foreground": "ink", "background": "canvas", "min": 7.0, "kind": "text", "why": "reading text on parchment, AAA body" },
     { "foreground": "ink", "background": "card-stock", "min": 7.0, "kind": "text", "why": "reading text on a paper card" },

@@ -10,15 +10,15 @@
  * aria-hidden material layers, and every existing surface keeps its own v2 paint. Screens land in
  * CP-021+ and may only use the roles their surface row permits.
  *
- * `CB_TOKENS_V3_JSON` is generated from the contract (six build-critical sections: modes,
- * elevation, radii, type, motion, materials — canonical bytes); `tests/test_desktop_tokens_v3.py`
- * refuses a hand edit. `CB_V3_CSS` carries no colour —
+ * `CB_TOKENS_V3_JSON` is generated from the contract (seven build-critical sections: modes,
+ * elevation, radii, type, motion, materials, print — canonical bytes);
+ * `tests/test_desktop_tokens_v3.py` refuses a hand edit. `CB_V3_CSS` carries no colour —
  * every value arrives through a custom property, so the two token literals stay the only hex in
  * the module. Fonts are composed from `CB_ASSETS.fonts` data URLs at render time, with
  * `font-display: swap`; a face that fails to decode leaves the system fallback in place.
  */
 const CB_TOKENS_V3_JSON =
-  '{"modes":{"light":{"canvas":"#f5e3c8","canvas-edge":"#e6cfae","card-stock":"#f4ecd9","ink":"#1a1713","ink-soft":"#5c5347","rule":"#cdb894","forest":"#0d281b","on-forest":"#f5e3c8","terracotta":"#b4532f","on-terracotta":"#fffaf1","terracotta-quiet":"#f0d5c1","gold":"#a1741f","sage":"#7f9a72","wood":"#a5763f","wood-edge":"#7d5529","plum":"#6a3e74","alert":"#9c2e1c","focus":"#2a813f"},"dark":{"canvas":"#14110c","canvas-edge":"#2a2419","card-stock":"#1e1a13","ink":"#f3e6cf","ink-soft":"#bfae93","rule":"#3c352a","forest":"#0e2a1c","on-forest":"#f3e6cf","terracotta":"#e0794f","on-terracotta":"#1a1713","terracotta-quiet":"#3a241a","gold":"#d8a94e","sage":"#8fae83","wood":"#8f613c","wood-edge":"#c08856","plum":"#cda0d8","alert":"#f0a08c","focus":"#f2c56a"}},"elevation":{"light":{"elev-1":"0 1px 1px rgba(58, 35, 24, 0.10), 0 6px 14px -8px rgba(58, 35, 24, 0.28)","elev-2":"0 2px 2px rgba(58, 35, 24, 0.12), 0 14px 28px -12px rgba(58, 35, 24, 0.34)","inset-1":"inset 0 1px 2px rgba(58, 35, 24, 0.18), inset 0 -1px 0 rgba(255, 250, 240, 0.50)"},"dark":{"elev-1":"0 1px 1px rgba(0, 0, 0, 0.45), 0 6px 14px -8px rgba(0, 0, 0, 0.65)","elev-2":"0 2px 3px rgba(0, 0, 0, 0.50), 0 16px 30px -12px rgba(0, 0, 0, 0.70)","inset-1":"inset 0 1px 2px rgba(0, 0, 0, 0.55), inset 0 -1px 0 rgba(255, 241, 220, 0.08)"},"rules":["Elevation is contact shadow for a physical object on paper, never a glow.","A card uses elev-1 or a 1px rule border, not both.","inset-1 is for pressed and recessed fields only (a tray, an input, a selected slot).","No elevation on text, rules, the rail or the canvas ground."]},"radii":{"square":"0px","soft":"6px","round":"12px","pill":"999px"},"type":{"families":{"display":"\\"CB Display\\", \\"Fraunces\\", ui-serif, Georgia, \\"Noto Serif JP\\", \\"Hiragino Mincho ProN\\", \\"Yu Mincho\\", serif","ui":"\\"CB UI\\", \\"Source Sans 3\\", system-ui, \\"Hiragino Kaku Gothic ProN\\", \\"Yu Gothic\\", \\"Noto Sans JP\\", sans-serif","cjk":"\\"Noto Serif JP\\", \\"Hiragino Mincho ProN\\", \\"Yu Mincho\\", \\"Noto Serif CJK JP\\", serif"},"subsets":{"CB Display":"Fraunces, OFL, subset to Latin plus punctuation","CB UI":"Source Sans 3, OFL, subset to Latin plus punctuation","cjk":"system CJK stack; a shipped Noto Serif JP subset is the first entry when CP-004 embeds it"},"loading":"font-display: swap; a face that fails to load leaves the system fallback in place and never blanks the route","container":{"name":"cb","type":"inline-size","measured_against":"the route container, never the window","note":"Every cqi in this table resolves against the [data-cb-v3] route container."},"scale":{"caption":"0.75rem","meta":"0.875rem","body":"1rem","lead":"1.25rem","heading":"clamp(1.5rem, 1.2rem + 1cqi, 2.25rem)","display":"clamp(2.5rem, 1.5rem + 3cqi, 4rem)"},"line_height":{"caption":1.35,"meta":1.4,"body":1.5,"lead":1.35,"heading":1.15,"display":1.02},"weights":{"display":600,"heading":600,"body":400,"strong":600},"measure":"50-75ch for prose; display headings at most 20ch, section headings at most 34ch","rules":["Six steps and no seventh.","Body is 1rem so a 200 percent root scales every step.","Display is measured against the route container via cqi, so a narrow route shrinks the headline instead of overflowing it.","Japanese lesson lines use the cjk family for kana and kanji and the ui family for romaji; furigana is smaller than the body step by design, never a seventh authored size."]},"motion":{"press":120,"lift":150,"route":240,"verdict":300,"complete":600,"ceiling":600,"loops":false,"easing":"cubic-bezier(0.2, 0.8, 0.2, 1)","properties":["transform","opacity"],"reduced_motion":"transitions are removed, not shortened; the state change still happens on the next frame","rules":["No duration in this table may exceed ceiling (600 ms).","No looping, pulsing, shimmering or infinite animation anywhere.","Motion is feedback for a real event: press, lift, route change, check verdict, completion.","transform and opacity only; never animate layout, colour or filter."]},"materials":{"grain":{"light":{"tile":"cb-grain-paper","file":"material/grain-paper.webp","opacity":0.1},"dark":{"tile":"cb-grain-night","file":"material/grain-night.webp","opacity":0.14}},"vignette":{"light":{"tile":"cb-vignette-parchment","file":"material/vignette-parchment.webp","opacity":0.55},"dark":{"tile":"cb-vignette-night","file":"material/vignette-night.webp","opacity":0.65}},"wood":{"light":{"tile":"cb-wood-plank","file":"material/wood-plank.webp","opacity":1.0},"dark":{"tile":"cb-wood-plank-night","file":"material/wood-plank-night.webp","opacity":1.0}},"opacity_ceiling":0.18,"rules":["Grain and vignette are aria-hidden and pointer-events none; they sit above the canvas and below all content.","Grain opacity may never exceed opacity_ceiling over a text run.","Wood is a tile on the shelf plank and the evidence tray only; it never sits behind text.","Missing texture falls back to flat canvas; never a blank route, never a broken-image mark.","Grain and wood are seamless 3x3 tiles (CP-011 proof) and at most 60 KB each."]}}'
+  '{"modes":{"light":{"canvas":"#f5e3c8","canvas-edge":"#e6cfae","card-stock":"#f4ecd9","ink":"#1a1713","ink-soft":"#5c5347","rule":"#cdb894","forest":"#0d281b","on-forest":"#f5e3c8","terracotta":"#b4532f","on-terracotta":"#fffaf1","terracotta-quiet":"#f0d5c1","gold":"#a1741f","sage":"#7f9a72","wood":"#a5763f","wood-edge":"#7d5529","plum":"#6a3e74","alert":"#9c2e1c","focus":"#2a813f"},"dark":{"canvas":"#14110c","canvas-edge":"#2a2419","card-stock":"#1e1a13","ink":"#f3e6cf","ink-soft":"#bfae93","rule":"#3c352a","forest":"#0e2a1c","on-forest":"#f3e6cf","terracotta":"#e0794f","on-terracotta":"#1a1713","terracotta-quiet":"#3a241a","gold":"#d8a94e","sage":"#8fae83","wood":"#8f613c","wood-edge":"#c08856","plum":"#cda0d8","alert":"#f0a08c","focus":"#f2c56a"}},"elevation":{"light":{"elev-1":"0 1px 1px rgba(58, 35, 24, 0.10), 0 6px 14px -8px rgba(58, 35, 24, 0.28)","elev-2":"0 2px 2px rgba(58, 35, 24, 0.12), 0 14px 28px -12px rgba(58, 35, 24, 0.34)","inset-1":"inset 0 1px 2px rgba(58, 35, 24, 0.18), inset 0 -1px 0 rgba(255, 250, 240, 0.50)"},"dark":{"elev-1":"0 1px 1px rgba(0, 0, 0, 0.45), 0 6px 14px -8px rgba(0, 0, 0, 0.65)","elev-2":"0 2px 3px rgba(0, 0, 0, 0.50), 0 16px 30px -12px rgba(0, 0, 0, 0.70)","inset-1":"inset 0 1px 2px rgba(0, 0, 0, 0.55), inset 0 -1px 0 rgba(255, 241, 220, 0.08)"},"rules":["Elevation is contact shadow for a physical object on paper, never a glow.","A card uses elev-1 or a 1px rule border, not both.","inset-1 is for pressed and recessed fields only (a tray, an input, a selected slot).","No elevation on text, rules, the rail or the canvas ground."]},"radii":{"square":"0px","soft":"6px","round":"12px","pill":"999px"},"type":{"families":{"display":"\\"CB Display\\", \\"Fraunces\\", ui-serif, Georgia, \\"Noto Serif JP\\", \\"Hiragino Mincho ProN\\", \\"Yu Mincho\\", serif","ui":"\\"CB UI\\", \\"Source Sans 3\\", system-ui, \\"Hiragino Kaku Gothic ProN\\", \\"Yu Gothic\\", \\"Noto Sans JP\\", sans-serif","cjk":"\\"Noto Serif JP\\", \\"Hiragino Mincho ProN\\", \\"Yu Mincho\\", \\"Noto Serif CJK JP\\", serif"},"subsets":{"CB Display":"Fraunces, OFL, subset to Latin plus punctuation","CB UI":"Source Sans 3, OFL, subset to Latin plus punctuation","cjk":"system CJK stack; a shipped Noto Serif JP subset is the first entry when CP-004 embeds it"},"loading":"font-display: swap; a face that fails to load leaves the system fallback in place and never blanks the route","container":{"name":"cb","type":"inline-size","measured_against":"the route container, never the window","note":"Every cqi in this table resolves against the [data-cb-v3] route container."},"scale":{"caption":"0.75rem","meta":"0.875rem","body":"1rem","lead":"1.25rem","heading":"clamp(1.5rem, 1.2rem + 1cqi, 2.25rem)","display":"clamp(2.5rem, 1.5rem + 3cqi, 4rem)"},"line_height":{"caption":1.35,"meta":1.4,"body":1.5,"lead":1.35,"heading":1.15,"display":1.02},"weights":{"display":600,"heading":600,"body":400,"strong":600},"measure":"50-75ch for prose; display headings at most 20ch, section headings at most 34ch","rules":["Six steps and no seventh.","Body is 1rem so a 200 percent root scales every step.","Display is measured against the route container via cqi, so a narrow route shrinks the headline instead of overflowing it.","Japanese lesson lines use the cjk family for kana and kanji and the ui family for romaji; furigana is smaller than the body step by design, never a seventh authored size."]},"motion":{"press":120,"lift":150,"route":240,"verdict":300,"complete":600,"ceiling":600,"loops":false,"easing":"cubic-bezier(0.2, 0.8, 0.2, 1)","properties":["transform","opacity"],"reduced_motion":"transitions are removed, not shortened; the state change still happens on the next frame","rules":["No duration in this table may exceed ceiling (600 ms).","No looping, pulsing, shimmering or infinite animation anywhere.","Motion is feedback for a real event: press, lift, route change, check verdict, completion.","transform and opacity only; never animate layout, colour or filter."]},"materials":{"grain":{"light":{"tile":"cb-grain-paper","file":"material/grain-paper.webp","opacity":0.1},"dark":{"tile":"cb-grain-night","file":"material/grain-night.webp","opacity":0.14}},"vignette":{"light":{"tile":"cb-vignette-parchment","file":"material/vignette-parchment.webp","opacity":0.55},"dark":{"tile":"cb-vignette-night","file":"material/vignette-night.webp","opacity":0.65}},"wood":{"light":{"tile":"cb-wood-plank","file":"material/wood-plank.webp","opacity":1.0},"dark":{"tile":"cb-wood-plank-night","file":"material/wood-plank-night.webp","opacity":1.0}},"opacity_ceiling":0.18,"rules":["Grain and vignette are aria-hidden and pointer-events none; they sit above the canvas and below all content.","Grain opacity may never exceed opacity_ceiling over a text run.","Wood is a tile on the shelf plank and the evidence tray only; it never sits behind text.","Missing texture falls back to flat canvas; never a blank route, never a broken-image mark.","Grain and wood are seamless 3x3 tiles (CP-011 proof) and at most 60 KB each."]},"print":{"paper":"#ffffff","ink":"#1a1713","ink-soft":"#5c5347","rule":"#cdb894","alert":"#9c2e1c","page":{"size":"A4 portrait","margin":"18mm 16mm"},"note":"The route\'s paper form, and the only palette that may paint it. A sheet has one appearance, so these values are mode-blind: the ink is the light mode\'s own reading ink on the printer\'s white, never a dark-mode cream that would vanish on paper. The print block in CB_V3_CSS writes each value to a --cb3-print-* custom property and remaps both palettes onto it; the Parent Studio export sheet reaches the same conclusion (\'the paper is the printer\'s own white\'). page is the @page geometry and the stylesheet may not disagree with it.","rules":["Every text value here reaches 4.5:1 on paper; rule is a hairline and never carries text.","No fill survives print: a coloured block becomes paper, and a filled object becomes ink with a paper label.","The page geometry is a contract value; a stylesheet that prints a different size or margin has drifted."]}}'
 
 const CB_TOKENS_V3 = JSON.parse(CB_TOKENS_V3_JSON)
 const CB3_V3_ROLES = Object.freeze(["canvas", "canvas-edge", "card-stock", "ink", "ink-soft", "rule", "forest", "on-forest", "terracotta", "on-terracotta", "terracotta-quiet", "gold", "sage", "wood", "wood-edge", "plum", "alert", "focus"])
@@ -643,6 +643,118 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   color: var(--cb3-ink);
   cursor: pointer;
 }
+
+/* ── The paper form ────────────────────────────────────────────────────────────────────────────
+ * Ctrl+P is one keystroke away on every route, and with no print block the sheet is the live
+ * screen: parchment or night canvas, grain and vignette, the forest rail, the settings sheet, a
+ * 1344 px scene. This is the one block that gives a route a paper form, and it is scoped to the
+ * route root exactly like every other rule here.
+ *
+ * It repaints by remapping the palettes rather than by restyling each surface. Every Coursebook
+ * surface reads its paint from a custom property — the v3 screens from --cb3-*, the lesson and
+ * workshop screens from --cb-* — so one remap reaches text, cards and inline-style components
+ * without a second selector set. The remap is !important because cbV3ScopeStyle and cbScopeStyle
+ * write the same names as inline custom properties on this node, which otherwise beat any
+ * stylesheet declaration; the forced-colors block above uses the same idiom for the same reason.
+ *
+ * A sheet has one appearance, so nothing here is keyed on [data-cb-scope]: a dark route prints
+ * the contract's print ink on the printer's white, never dark-mode cream on white. Every value
+ * still arrives as a custom property from the contract's print section — this block writes no
+ * colour of its own.
+ */
+@media print {
+  @page { size: A4 portrait; margin: 18mm 16mm; }
+
+  [data-cb-v3] {
+    /* Grounds and fills become the paper. An ink-only sheet carries no block of colour: a card, a
+       quiet tint, a medallion or a plank prints as the sheet it sits on. */
+    --cb3-canvas: var(--cb3-print-paper) !important;
+    --cb3-canvas-edge: var(--cb3-print-paper) !important;
+    --cb3-card-stock: var(--cb3-print-paper) !important;
+    --cb3-terracotta-quiet: var(--cb3-print-paper) !important;
+    --cb3-sage: var(--cb3-print-paper) !important;
+    --cb3-gold: var(--cb3-print-paper) !important;
+    --cb3-wood: var(--cb3-print-paper) !important;
+    /* A deckle edge survives as a rule; a plank's own fill does not. */
+    --cb3-wood-edge: var(--cb3-print-rule) !important;
+    /* A filled object prints as ink, so its label prints as paper. */
+    --cb3-terracotta: var(--cb3-print-ink) !important;
+    --cb3-forest: var(--cb3-print-ink) !important;
+    --cb3-on-terracotta: var(--cb3-print-paper) !important;
+    --cb3-on-forest: var(--cb3-print-paper) !important;
+    /* Words. The text roles print as ink, and the two label-on-fill roles above print as the
+       paper they now sit on; each pair reaches 4.5:1 or better (tests/test_desktop_route_print.py
+       computes it from the contract, never from a screenshot). rule and focus are not text. */
+    --cb3-ink: var(--cb3-print-ink) !important;
+    --cb3-ink-soft: var(--cb3-print-ink-soft) !important;
+    --cb3-rule: var(--cb3-print-rule) !important;
+    --cb3-plum: var(--cb3-print-ink) !important;
+    --cb3-alert: var(--cb3-print-alert) !important;
+    --cb3-focus: var(--cb3-print-ink) !important;
+
+    /* The same remap for the v2 ladder the lesson blocks and the workshop still paint from, so a
+       dark route cannot print cream text on white paper. */
+    --cb-paper: var(--cb3-print-paper) !important;
+    --cb-paper-raised: var(--cb3-print-paper) !important;
+    --cb-ink: var(--cb3-print-ink) !important;
+    --cb-ink-soft: var(--cb3-print-ink-soft) !important;
+    --cb-rule: var(--cb3-print-rule) !important;
+    --cb-accent: var(--cb3-print-ink) !important;
+    --cb-accent-soft: var(--cb3-print-paper) !important;
+    --cb-field: var(--cb3-print-ink) !important;
+    --cb-ochre: var(--cb3-print-ink) !important;
+    --cb-coral: var(--cb3-print-alert) !important;
+    --cb-lamp: var(--cb3-print-paper) !important;
+    --cb-lamp-soft: var(--cb3-print-paper) !important;
+    --cb-on-lamp: var(--cb3-print-ink) !important;
+    --cb-plum: var(--cb3-print-ink) !important;
+    --cb-plum-soft: var(--cb3-print-paper) !important;
+
+    /* Paper has no contact shadow, and a form control must not print in the OS dark scheme. */
+    --cb3-elev-1: none !important;
+    --cb3-elev-2: none !important;
+    --cb3-elev-inset-1: none !important;
+    color-scheme: light !important;
+
+    background-color: var(--cb3-print-paper);
+    color: var(--cb3-print-ink);
+    /* A screen fills the window; a sheet is as tall as its content and may run to a second page. */
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* No material layers. Grain and vignette are the screen's texture, and the wide Home's backdrop
+     is a painted plate; a sheet prints neither (GM-PRINT-SPEC, and the export sheet's own rule). */
+  [data-cb-v3] .cb3-material,
+  [data-cb-v3] [data-cb-home-scene-backdrop] {
+    display: none;
+  }
+
+  /* No shell. The rail, its narrow band, the settings sheet and its scrim, and the skip link are
+     controls, not reading matter, and none of them has an action on paper. */
+  [data-cb-v3] [data-cb3-rail],
+  [data-cb-v3] [data-cb3-band],
+  [data-cb-v3] [data-cb-settings-backdrop],
+  [data-cb-v3] [data-cb-settings-sheet],
+  [data-cb-v3] [data-cb-skip] {
+    display: none;
+  }
+
+  /* One lesson block stays on one sheet: a block split across a page break reads as two blocks. A
+     heading never ends a page with its text on the next one. */
+  [data-cb-v3] [data-cb-block],
+  [data-cb-v3] .cb3-card,
+  [data-cb-v3] .cb3-card-elevated {
+    break-inside: avoid;
+  }
+
+  [data-cb-v3] h1,
+  [data-cb-v3] h2,
+  [data-cb-v3] h3 {
+    break-after: avoid;
+  }
+}
 `
 
 /** One mode answer for the palette and the material tiles. */
@@ -675,6 +787,13 @@ function cbV3ScopeStyle(mode) {
   if (families.display) style['--cb3-font-display'] = families.display
   if (families.ui) style['--cb3-font-ui'] = families.ui
   if (families.cjk) style['--cb3-font-cjk'] = families.cjk
+  // The paper form's own palette. Only string values are custom properties; `page` is the @page
+  // geometry the stylesheet is held to, not a variable. The print block remaps both ladders onto
+  // these, so a route prints one mode-blind palette instead of the screen's parchment or night.
+  const print = CB_TOKENS_V3.print || {}
+  for (const key of Object.keys(print)) {
+    if (typeof print[key] === 'string') style[`--cb3-print-${key}`] = print[key]
+  }
   style.colorScheme = theme === 'dark' ? 'dark' : 'light'
   style.backgroundColor = 'var(--cb3-canvas)'
   style.color = 'var(--cb3-ink)'
