@@ -112,10 +112,11 @@ class KernelCase(unittest.TestCase):
     def new_enrollment(self, course_id: str, label: str = "Learner") -> str:
         return self.ok("enrollment.create", {"course_id": course_id, "learner_label": label})["result"]["enrollment_id"]
 
-    def seed_objective(self, plan_id: str, spec: dict | None = None) -> str:
+    def seed_objective(self, plan_id: str, spec: dict | None = None,
+                       *, evidence_target: str = "procedure") -> str:
         spec = spec or numeric_spec()
         return domain.record_objective(
-            plan_id, title="Compute", evidence_target="procedure", criteria=criteria_with(spec)
+            plan_id, title="Compute", evidence_target=evidence_target, criteria=criteria_with(spec)
         )
 
     def approve(self, enrollment_id: str, plan_id: str, revision: int) -> int:

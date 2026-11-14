@@ -201,7 +201,10 @@ class CatalogViewTests(KernelCase):
         item = next(entry for entry in view["items"] if entry["pack_id"] == "parent-measurement-practice")
         self.assertIsNotNone(item["installed"])
         self.assertIn(item["installed"]["next_step"]["kind"], {"start_lesson", "resume_lesson"})
-        self.assertEqual(item["installed"]["evidence_summary"]["total_objectives"], 2)
+        # The pack declares one comprehension and one procedure objective. A procedure objective
+        # is measured by a tick-list, which can never reach independent evidence, so the progress
+        # count covers the comprehension section only (see generation.SELF_REPORT_ONLY_TARGETS).
+        self.assertEqual(item["installed"]["evidence_summary"]["total_objectives"], 1)
 
     def test_trust_labels_are_separate_and_never_a_safe_claim(self) -> None:
         view = workshop.catalog_view()

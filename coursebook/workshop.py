@@ -730,14 +730,18 @@ def _community_entries(catalogued: set[str]) -> list[dict[str, Any]]:
 def _evidence_summary(connection, course_id: str) -> dict[str, Any]:
     from . import domain
 
+    # The same filter ``library.list`` uses: a practice-only objective (a tick-list that can never
+    # reach independent evidence) is not a section the progress count promises. Two shelves must
+    # not report two different totals for the same course.
+    progress_sql, progress_params = domain._progress_only_sql()
     row = connection.execute(
         "SELECT"
         " SUM(CASE WHEN o.state IN ('independent_evidence','delayed_evidence') THEN 1 ELSE 0 END) AS independent,"
         " SUM(CASE WHEN o.state IN ('review_due','needs_review') THEN 1 ELSE 0 END) AS review_due,"
         " COUNT(*) AS total"
         " FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
-        f" WHERE pl.course_id = ? AND {domain._current_plan_sql()}",
-        (course_id,),
+        f" WHERE pl.course_id = ? AND {domain._current_plan_sql()}{progress_sql}",
+        (course_id, *progress_params),
     ).fetchone()
     return {
         "independent": int((row["independent"] if row else 0) or 0),

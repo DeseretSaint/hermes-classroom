@@ -2902,21 +2902,102 @@ def _latest_binding(connection, enrollment_id: str, lesson_run_id: str | None = 
 _INCOMPLETE_OBJECTIVE_STATES = ("not_started", "introduced", "needs_review")
 
 
-def _current_objective(connection, course_id: str) -> Any:
+def _practice_only_objective_sql(alias: str = "o") -> tuple[str, tuple[Any, ...]]:
+    """SQL predicate: this objective's only possible evidence is a self-report.
+
+    One authority, four readers (the library count, the current-objective read, the completion
+    arithmetic and the evidence tray): :data:`generation.SELF_REPORT_ONLY_TARGETS` names the targets
+    whose authored check reports on the learner, and this fragment is the single expression all of
+    them filter on. An objective on such a target is still **counted** when it declares a lane that
+    can reach layer 2:
+
+    * a stored check whose reference is not ``rubric_only`` — the deterministic closed lane
+      (a numeric/exact answer) or a ``conversation`` transcript. Both grade without a provider and
+      a cold pass writes layer 2;
+    * a hidden conversation ``practice`` on an otherwise rubric-only check, which
+      ``conversation.grade_transcript`` grades from the stored learner turns. A visible practice is
+      graded ``hinted`` by ``_classify_evidence``, so it is not a verified lane;
+    * a declared closed-form ``check_spec`` on the objective that has not been minted into a check
+      yet — the same spec ``check.open`` would store, so an untouched but honestly-checkable
+      objective is not misread as practice.
+
+    Stating the predicate against the objective alias keeps those four readers from drifting into
+    four slightly different definitions of "practice".
+    """
+
+    targets = tuple(generation.SELF_REPORT_ONLY_TARGETS)
+    if not targets:
+        return "0", ()
+    placeholders = ",".join("?" for _ in targets)
+    return (
+        f" ({alias}.evidence_target IN ({placeholders})"
+        " AND NOT EXISTS (SELECT 1 FROM checks pc WHERE pc.objective_id = " + alias + ".id AND ("
+        "  (json_extract(pc.reference_json, '$.kind') IS NOT NULL"
+        "   AND json_extract(pc.reference_json, '$.kind') != 'rubric_only')"
+        "  OR (json_extract(pc.stimulus_json, '$.practice') IS NOT NULL"
+        "      AND COALESCE(json_extract(pc.stimulus_json, '$.practice.targets_visible'), 0) = 0)))"
+        " AND NOT (json_extract(" + alias + ".evidence_criteria_json,"
+        " '$[0].check_spec.reference.kind') IS NOT NULL"
+        "  AND json_extract(" + alias + ".evidence_criteria_json,"
+        " '$[0].check_spec.reference.kind') != 'rubric_only'))",
+        targets,
+    )
+
+
+def _progress_only_sql(alias: str = "o") -> tuple[str, tuple[Any, ...]]:
+    """``AND NOT <practice-only objective>`` — the filter every progress count uses."""
+
+    practice_sql, params = _practice_only_objective_sql(alias)
+    return f" AND NOT {practice_sql}", params
+
+
+def _practice_completed_sql() -> tuple[str, tuple[Any, ...]]:
+    """SQL predicate: practice-only *and* the learner already passed its practice.
+
+    A practice-only objective can never reach ``independent_evidence``, so a closed, passed
+    tick-list is the only completion it will ever have. Leaving its state at ``introduced`` — which
+    is the honest evidence state — must not park the whole course on it: the current-objective
+    query skips it once its practice is closed and passed, without claiming any evidence for it.
+    """
+
+    targets = tuple(generation.SELF_REPORT_ONLY_TARGETS)
+    if not targets:
+        return "0", ()
+    practice_sql, params = _practice_only_objective_sql("o")
+    return (
+        f" ({practice_sql} AND EXISTS (SELECT 1 FROM checks c JOIN attempts a ON a.check_id = c.id"
+        " WHERE c.objective_id = o.id AND c.state = 'closed' AND a.state = 'committed'"
+        " AND a.verdict = 'pass' AND a.enrollment_id = ?))",
+        (*params,),
+    )
+
+
+def _current_objective(connection, course_id: str, enrollment_id: str | None = None) -> Any:
     """The plan's earliest objective that still needs learner work, or ``None``.
 
     Order is ``ordinal``, not lesson-run recency. A pack import writes one active run per
     objective up front, so ordering runs by ``updated_at`` made the library point at the last
     imported section (H-186). The ordinal is the course's own sequence and is what "first not
     started" means.
+
+    *enrollment_id* makes the query skip a practice-only objective whose practice the learner has
+    already passed; without it the oldest tick-list would stay "current" forever and block every
+    later section. A caller that omits it gets the older, enrollment-blind read.
     """
+
+    if enrollment_id is None:
+        practice_sql, practice_params, enrollment_params = "0", (), ()
+    else:
+        practice_sql, practice_params = _practice_completed_sql()
+        enrollment_params = (enrollment_id,)
     return _row(
         connection,
         "SELECT o.* FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
         f" WHERE pl.course_id = ? AND {_current_plan_sql()}"
         f" AND o.state IN ({','.join('?' for _ in _INCOMPLETE_OBJECTIVE_STATES)})"
+        f" AND NOT {practice_sql}"
         " ORDER BY o.ordinal ASC LIMIT 1",
-        (course_id, *_INCOMPLETE_OBJECTIVE_STATES),
+        (course_id, *_INCOMPLETE_OBJECTIVE_STATES, *practice_params, *enrollment_params),
     )
 
 
@@ -2992,8 +3073,10 @@ def _library_next_step(connection, enrollment, course) -> dict[str, Any]:
         return {"kind": "review_plan", "label": "Review and approve the plan"}
     # H-186: the current section is the earliest objective that still needs work, not the most
     # recently updated lesson run. Import writes an active run per objective, so recency alone
-    # lands Resume on the last section of the pack.
-    objective = _current_objective(connection, course["id"])
+    # lands Resume on the last section of the pack. The enrollment is passed so a fulfilled
+    # practice-only section (a passed tick-list, which can never become evidence) stops being
+    # "current" and the course can move past it.
+    objective = _current_objective(connection, course["id"], enrollment["id"])
     if objective is not None:
         # A page the validator parked is not a lesson to start: repairing it is the only action
         # that can produce a servable page, and the reasons travel with it so the caller never
@@ -3029,19 +3112,30 @@ def _library_next_step(connection, enrollment, course) -> dict[str, Any]:
             # exist, so the next step is honestly a Start.
             return {"kind": "start_lesson", "label": f"Start {title}"}
         return {"kind": "resume_lesson", "label": f"Continue {title}"}
+    progress_sql, progress_params = _progress_only_sql()
     counts = _row(
         connection,
         "SELECT COUNT(*) AS n,"
         " SUM(CASE WHEN o.state IN ('independent_evidence','delayed_evidence') THEN 1 ELSE 0 END)"
         "   AS settled"
         " FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
-        f" WHERE pl.course_id = ? AND {_current_plan_sql()}",
-        (course["id"],),
+        f" WHERE pl.course_id = ? AND {_current_plan_sql()}{progress_sql}",
+        (course["id"], *progress_params),
     )
     total = int(counts["n"] or 0)
     settled = int(counts["settled"] or 0)
     if total == 0:
         # An approved plan with no objectives is not a finished course; it has nothing to finish.
+        # A plan whose objectives are all practice-only *has* been finished when the current read
+        # returned no open practice above, so it ends there rather than asking for a new plan.
+        any_objective = _row(
+            connection,
+            "SELECT COUNT(*) AS n FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
+            f" WHERE pl.course_id = ? AND {_current_plan_sql()}",
+            (course["id"],),
+        )
+        if int(any_objective["n"] or 0) > 0:
+            return {"kind": "complete", "label": "You have finished this course"}
         return {"kind": "review_plan", "label": "The plan has no sections yet"}
     if settled == total:
         # Terminal state: every objective in the current plan holds evidence and none is due.
@@ -3245,21 +3339,28 @@ def library_list(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
             release = None
             if row["pack_stable_id"]:
                 release = (row["pack_stable_id"], row["pack_version"])
+            progress_sql, progress_params = _progress_only_sql()
+            practice_sql, practice_params = _practice_completed_sql()
+            # The progress counts cover evidence-bearing objectives only: an objective whose only
+            # lane is a self-report (``generation.SELF_REPORT_ONLY_TARGETS``) can never reach
+            # layer-2 evidence, so counting it in the denominator leaves the card permanently
+            # short of its own total.
             summary = connection.execute(
                 "SELECT"
                 " SUM(CASE WHEN o.state IN ('independent_evidence','delayed_evidence') THEN 1 ELSE 0 END) AS independent,"
                 " SUM(CASE WHEN o.state = 'review_due' THEN 1 ELSE 0 END) AS review_due,"
                 " COUNT(*) AS total"
                 " FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
-                f" WHERE pl.course_id = ? AND {_current_plan_sql()}",
-                (row["course_id"],),
+                f" WHERE pl.course_id = ? AND {_current_plan_sql()}{progress_sql}",
+                (row["course_id"], *progress_params),
             ).fetchone()
             current = connection.execute(
                 "SELECT o.id FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
                 f" WHERE pl.course_id = ? AND {_current_plan_sql()}"
                 " AND o.state IN ('introduced', 'needs_review', 'review_due', 'not_started')"
+                f" AND NOT {practice_sql}"
                 " ORDER BY o.ordinal LIMIT 1",
-                (row["course_id"],),
+                (row["course_id"], *practice_params, row["enrollment_id"]),
             ).fetchone()
             current_unit_label = _library_unit_label(
                 connection,

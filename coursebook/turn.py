@@ -681,7 +681,14 @@ def continuation_prompt(*, verdict: str, next_action: str, evidence_class: str =
     """
     label = _PUBLIC_VERDICT.get(verdict, "not graded")
     lines = [f"Coursebook result: {label}."]
-    if verdict == "pass" and evidence_class != "cold":
+    if verdict == "pass" and evidence_class == "self_reported":
+        # The confirmation lane: the learner ticked the steps themselves. There was no hint; the
+        # honest reason this is not evidence is that it is a self-report, not that it was helped.
+        lines.append(
+            "That pass is the learner's own checklist report. It does not count as independent "
+            "evidence and is recorded as practice."
+        )
+    elif verdict == "pass" and evidence_class != "cold":
         lines.append(
             "This pass does not count as independent evidence: the answer followed a hint or a "
             "shown answer. Access may move on, the evidence map stays honest."
@@ -702,6 +709,12 @@ def continuation_prompt(*, verdict: str, next_action: str, evidence_class: str =
         "continue": "Continue the lesson.",
         "rebind_session": "Ask the learner to rebind this chat before continuing.",
     }.get(next_action, "Continue the lesson.")
+    if verdict == "pass" and evidence_class == "self_reported":
+        # A ticked checklist is practice, never a check to retry: the next section is the work.
+        action = (
+            "Summarise the practice the checklist recorded, say plainly that it is the learner's "
+            "own report, and move to the next section."
+        )
     lines.append(action)
     if objective_id:
         lines.append(f"Objective: {objective_id}.")
