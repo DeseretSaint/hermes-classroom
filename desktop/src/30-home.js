@@ -216,6 +216,23 @@ function homeNumber(value) {
 }
 
 /**
+ * COPY.md `home.card.practice` — the one honest progress sentence for a course that has **no
+ * evidence-bearing sections**.
+ *
+ * `sections_done`/`sections_total` count only objectives that can reach independent evidence, so a
+ * course whose objectives are all practice (production/procedure) reports `0 / 0`. "0 of 0
+ * sections done" is not progress; it is an empty denominator, and it stays empty however much the
+ * learner works. The fact the backend already sends for that course is `checks_recorded`: the
+ * distinct checks this enrollment holds a **committed** attempt for. The line renders that fact
+ * and nothing else — no percentage, no second progress authority, no "mastery".
+ */
+function cbChecksRecordedLine(value) {
+  const count = homeNumber(value)
+  if (count === null || count <= 0) return null
+  return count === 1 ? '1 check recorded' : `${count} checks recorded`
+}
+
+/**
  * One metadata pattern for every card in the shelf (SPEC-V3 §3.6): title / one subject line / one
  * evidence line. Every value comes from a CP-005 `library_item` field; the UI computes no count and
  * invents no percentage. A fact the read did not carry is omitted, never guessed.
@@ -227,9 +244,17 @@ function homeCardFacts(row) {
   const total = homeNumber(entry.sections_total)
   const independent = homeNumber(summary.independent)
   const objectives = homeNumber(summary.total_objectives)
+  const checks = homeNumber(entry.checks_recorded)
+  // Deck `home.card.meta`: the CP-005 section pair first, else the evidence summary pair. The
+  // section line needs a denominator, and a course with no evidence-bearing sections keeps the
+  // same `0 / 0` on every read — so that course prints what the learner actually worked
+  // (`checks_recorded`) instead, and a course that has sections keeps the section line unchanged.
+  const sectionsKnown = done !== null && total !== null
   let meta = null
-  if (done !== null && total !== null) meta = `${done} of ${total} sections done`
-  else if (independent !== null && objectives !== null) meta = `${independent} of ${objectives} sections done`
+  if (sectionsKnown && total > 0) meta = `${done} of ${total} sections done`
+  else if (!sectionsKnown && independent !== null && objectives !== null && objectives > 0)
+    meta = `${independent} of ${objectives} sections done`
+  else if (checks !== null && checks > 0) meta = cbChecksRecordedLine(checks)
   const subject =
     typeof entry.subject_label === 'string' && entry.subject_label.trim() ? entry.subject_label.trim() : null
   const isNew = typeof entry.is_new === 'boolean' ? entry.is_new : independent === 0
