@@ -3016,6 +3016,25 @@ def _library_next_step(connection, enrollment, course) -> dict[str, Any]:
             (enrollment["id"], objective["id"]),
         )
         title = str(objective["title"])
+        # UP-3: an approved plan whose section has no authored page yet is not a lesson to start.
+        # `_authored_lesson_identity` answers None when the plan has no generation document or no
+        # section, and a dict whose `state` is None when the section has no `gen_lessons` row. Both
+        # mean Generate lessons has not written this section, so Start opened an empty classroom.
+        # The action that can produce the page is the course's Plan tab, named without a job id or
+        # stage word. A pack-backed course is excluded: `pack.import` writes the page into
+        # `lesson_segments`, never into `gen_lessons`, so its section is already servable. A caller
+        # may hand `_library_next_step` a course shape without `pack_id` (`workshop` does), and
+        # absence is read as "not pack-backed", never as an error.
+        try:
+            pack_backed = course["pack_id"] is not None
+        except (IndexError, KeyError):
+            pack_backed = False
+        if not pack_backed and (lesson is None or lesson["state"] is None):
+            return {
+                "kind": "write_lesson",
+                "label": f"Write the lesson for {title}",
+                "objective_id": str(objective["id"]),
+            }
         # E2E L1: a section whose check is already closed and passed is reopened for review, not
         # for a first run. The desk and the lesson page label the control "Review" from this kind
         # instead of "Start"/"Resume"; `check.open` then serves the authored check as a revisit.

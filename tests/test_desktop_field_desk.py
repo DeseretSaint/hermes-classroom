@@ -139,9 +139,19 @@ mod.default.register({
 
 const { createRoot } = await import('react-dom/client')
 const root = createRoot(document.getElementById('root'))
+// UP-3: the desk's primary is a route, so the harness records exactly what it opened. The shell's
+// `onOpen(row, objectiveId, blockId, view)` carries the course tab the course page opens on.
+const opened = []
 const props = {
   implemented: new Set(IMPLEMENTED),
-  onOpen: () => {},
+  onOpen: (row, objectiveId, blockId, view) => {
+    opened.push({
+      courseId: row && row.course_id ? row.course_id : null,
+      objectiveId: objectiveId || null,
+      blockId: blockId || null,
+      view: view || null
+    })
+  },
   onShowAll: () => {},
   onStartCreate: () => {},
   onStartSyllabus: () => {},
@@ -193,8 +203,20 @@ if (payload.script === 'retry') {
   observed.steps.push({ step: 'after-retry', ...read() })
 }
 
+// The trailhead's first control is its primary: press it and record the route it asked the shell
+// for, so a next step that opens the wrong tab cannot pass by its label alone.
+if (payload.script === 'primary') {
+  const actions = document.querySelector('[data-cb-trailhead-actions]')
+  const primary = actions ? actions.querySelector('button') : null
+  if (!primary) throw new Error('no trailhead primary rendered')
+  await act(async () => { primary.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })) })
+  await flush()
+  observed.steps.push({ step: 'after-primary', ...read() })
+}
+
 // A second read of the scripted queue proves the retry issues a new request.
 observed.rpcMethods = calls.filter((call) => call.path === '/rpc').map((call) => call.path)
+observed.opened = opened
 process.stdout.write(JSON.stringify({ observed, html: document.getElementById('root').innerHTML }))
 """
 
@@ -807,6 +829,41 @@ class FieldDeskRenderTest(unittest.TestCase):
         desk = self.model(library=library(row))["desk"]
         self.assertEqual(desk["primaryKind"], "review_lesson")
         self.assertEqual(desk["primaryLabel"], "Review")
+
+    def test_write_lesson_opens_the_plan_tab(self) -> None:
+        # UP-3: an approved plan whose section has no authored page is not a lesson to start. The
+        # backend says `write_lesson`; the desk names the work and routes to the course's Plan tab
+        # (the shell's `onOpen(..., view)`), where Generate lessons lives — never a lesson run.
+        row = library_row(
+            next_step={
+                "kind": "write_lesson",
+                "label": "Write the lesson for Diagnose a no-start",
+                "objective_id": "obj_0000000000000002",
+            },
+            evidence_summary={
+                "independent": 1,
+                "review_due": 0,
+                "total_objectives": 4,
+                "current_objective_id": "obj_0000000000000002",
+            },
+        )
+        desk = self.model(library=library(row))["desk"]
+        self.assertEqual(desk["primaryKind"], "write_lesson")
+        self.assertEqual(desk["primaryLabel"], "Write the lesson")
+        observed = self.desk_dom({"library.list": {"result": library(row)}}, script="primary", row=row)
+        step = self.first_step(observed)
+        self.assertIn("Write the lesson", step["html"])
+        self.assertEqual(
+            observed["observed"]["opened"],
+            [
+                {
+                    "courseId": "crs_0123456789abcdef",
+                    "objectiveId": None,
+                    "blockId": None,
+                    "view": "plan",
+                }
+            ],
+        )
 
     def test_model_falls_back_to_the_rows_own_current_objective(self) -> None:
         row = library_row(next_step={"kind": "start_lesson", "label": "Start Replace a fouled plug"})

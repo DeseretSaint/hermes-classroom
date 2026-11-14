@@ -90,12 +90,15 @@ class OneDueCourseTest(DueToolCase):
         # `next` is exactly the first due row, not a second derivation.
         self.assertEqual(payload["next"], row)
 
-    def test_a_started_but_unpassed_course_reports_the_start_step_and_no_review_count(self) -> None:
+    def test_a_started_but_unpassed_course_reports_the_write_lesson_step_and_no_review_count(self) -> None:
         lesson = self.prepare()
         payload = self.due()
         self.assertTrue(payload["available"])
         row = payload["due"][0]
-        self.assertEqual(row["next_step"]["kind"], "start_lesson")
+        # UP-3: the course's section has no authored page, so the next step writes it; the due row
+        # still names the section and its (absent) check from the objective the step carries.
+        self.assertEqual(row["next_step"]["kind"], "write_lesson")
+        self.assertEqual(row["next_step"]["objective_id"], lesson["objective_ids"][0])
         self.assertEqual(row["section"], "Compute")
         self.assertEqual(row["check"], "none")  # no checks row has been opened yet
         self.assertNotIn("due_count", row)  # never a fabricated zero

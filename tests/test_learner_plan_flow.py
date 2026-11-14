@@ -446,6 +446,80 @@ class LearnerPlanFlowTest(KernelCase):
         self.assertEqual(result["unit_ordinal"], 1)
         self.assertGreater(len(result.get("lessons") or []), 0)
 
+    # ── UP-3: Home names the missing page, not a Start into an empty classroom ──
+    def test_home_step_is_write_lesson_before_any_page_exists(self) -> None:
+        """Approve a one-section plan, return Home, and read the step before Generate lessons.
+
+        The plan stage wrote the document and its section; no ``gen_lessons`` row exists yet.
+        ``_authored_lesson_identity`` answers ``state: None`` for that section, and Home used to
+        call it a lesson to start, opening a classroom with no authored page. The honest next move
+        is to write the page, named with the objective it belongs to.
+        """
+        plan = blueprint_plan(scope="single", units=1, objectives_per_unit=1, recipe="committed")
+        created = self.ok(
+            "course.create",
+            dict(learner_course_payload(), scope="single"),
+            idempotency_key="cb-up3-create",
+        )
+        course_id = created["result"]["course_id"]
+        enrolled = self.ok(
+            "enrollment.create",
+            {"course_id": course_id, "learner_label": TITLE},
+            idempotency_key="cb-up3-enroll",
+        )
+        enrollment_id = enrolled["result"]["enrollment_id"]
+        brief = dict(learner_plan_brief(course_id, enrollment_id), scope="single")
+        job = self.ok(
+            "jobs.create", {"kind": "plan", "brief": brief}, idempotency_key="cb-up3-plan"
+        )["result"]
+        connection = db.connect()
+        try:
+            generation.run_plan_job(
+                connection,
+                dict(plan_job(job_id=job["job_id"]), brief=dict(brief)),
+                FakeLLM(
+                    {
+                        "coursebook.plan.generate": blueprint_response(plan),
+                        "coursebook.plan.validate": validation_responder(
+                            blueprint_response,
+                            validation_pass(),
+                            model="fake-independent-validator",
+                        ),
+                    }
+                ),
+                FakeSearch(),
+                now=NOW,
+            )
+        finally:
+            connection.close()
+        book = self.ok("parent.blueprint.read", {"course_id": course_id})["result"]
+        self.ok(
+            "plan.approve",
+            {
+                "enrollment_id": enrollment_id,
+                "plan_id": book["plan"]["plan_id"],
+                "plan_hash": book["plan"]["plan_hash"],
+            },
+            expected_revision=0,
+            idempotency_key="cb-up3-approve",
+        )
+        # The plan document exists; no section has been authored and no page has been written.
+        # That is the state the learner returns Home in, and it is not a lesson to start.
+        self.assertEqual(int(self.scalar("SELECT COUNT(*) FROM gen_plan_documents")), 1)
+        self.assertEqual(int(self.scalar("SELECT COUNT(*) FROM gen_plan_sections")), 0)
+        self.assertEqual(int(self.scalar("SELECT COUNT(*) FROM gen_lessons")), 0)
+        self.assertEqual(int(self.scalar("SELECT COUNT(*) FROM lesson_runs")), 0)
+        outline = self.ok("course.outline", {"enrollment_id": enrollment_id})["result"]
+        objective_id = outline["objectives"][0]["objective_id"]
+        title = outline["objectives"][0]["title"]
+
+        row = self.ok("library.list", {})["result"]["items"][0]
+        self.assertEqual(row["enrollment_id"], enrollment_id)
+        self.assertEqual(row["next_step"]["kind"], "write_lesson")
+        self.assertEqual(row["next_step"]["label"], f"Write the lesson for {title}")
+        self.assertEqual(row["next_step"]["objective_id"], objective_id)
+        self.assertEqual(row["evidence_summary"]["current_objective_id"], objective_id)
+
 
 class LearnerPlanJobServiceTest(KernelCase):
     """The job service's own idempotency rule, without the RPC envelope on top."""

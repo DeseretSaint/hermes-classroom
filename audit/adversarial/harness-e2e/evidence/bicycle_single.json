@@ -319,7 +319,7 @@
         },
         "stimulus_format": null,
         "submit": {
-          "contract_version": 28,
+          "contract_version": 29,
           "ok": true,
           "operation_id": "op-h40-attempt-submit-000026",
           "result": {

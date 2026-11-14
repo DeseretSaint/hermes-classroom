@@ -41,8 +41,11 @@ class LibraryTest(KernelCase):
     def test_approved_plan_moves_the_next_step_to_the_first_section(self) -> None:
         lesson = self.prepare_lesson()
         item = self.ok("library.list", {})["result"]["items"][0]
-        self.assertEqual(item["next_step"]["kind"], "start_lesson")
+        # UP-3: an approved plan with no authored page is not a lesson to start; the step names the
+        # page that does not exist yet and carries the objective it belongs to.
+        self.assertEqual(item["next_step"]["kind"], "write_lesson")
         self.assertIn("Compute", item["next_step"]["label"])
+        self.assertEqual(item["next_step"]["objective_id"], lesson["objective_id"])
         self.assertEqual(item["evidence_summary"]["current_objective_id"], lesson["objective_id"])
 
     def test_review_due_filter_follows_evidence_state(self) -> None:

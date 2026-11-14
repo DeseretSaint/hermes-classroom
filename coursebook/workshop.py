@@ -363,7 +363,13 @@ def _install_next_step(connection, enrollment_id: str, course_id: str) -> dict[s
     from . import domain  # local import: ``domain`` imports this module's siblings at load
 
     try:
-        return domain._library_next_step(connection, {"id": enrollment_id}, {"id": course_id})
+        # UP-3: the next step now depends on whether the course is pack-backed (a pack's page
+        # lives in `lesson_segments`, never `gen_lessons`), so hand the kernel the course's own row
+        # instead of a stub that only carries its id.
+        course = connection.execute("SELECT * FROM courses WHERE id = ?", (course_id,)).fetchone()
+        if course is None:
+            return None
+        return domain._library_next_step(connection, {"id": enrollment_id}, course)
     except Exception:  # noqa: BLE001
         return None
 

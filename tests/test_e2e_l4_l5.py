@@ -60,7 +60,8 @@ class CompletionTest(KernelCase):
         }
         self.submit(lesson, "4")
         item = self.ok("library.list", {})["result"]["items"][0]
-        self.assertEqual(item["next_step"]["kind"], "start_lesson")
+        # UP-3: the next objective has no authored page, so the step names writing it, not a start.
+        self.assertEqual(item["next_step"]["kind"], "write_lesson")
         self.assertEqual(item["evidence_summary"]["independent"], 1)
         self.assertEqual(item["evidence_summary"]["total_objectives"], 2)
 
@@ -82,7 +83,8 @@ class NeedsReviewIsNotADueReviewTest(KernelCase):
         self.submit(lesson, "5")  # not_yet -> needs_review
         item = self.ok("library.list", {})["result"]["items"][0]
         self.assertNotEqual(item["next_step"]["kind"], "resolve_review_due")
-        self.assertEqual(item["next_step"]["kind"], "start_lesson")
+        # UP-3: a failed attempt on a section with no authored page is a page to write, not a start.
+        self.assertEqual(item["next_step"]["kind"], "write_lesson")
         self.assertEqual(item["evidence_summary"]["review_due"], 0)
         filtered = self.ok("library.list", {"filter": "review_due"})["result"]
         self.assertEqual(filtered["total"], 0)
