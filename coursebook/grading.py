@@ -104,13 +104,13 @@ def _criteria_from(outcomes: list[validators.Outcome]) -> list[dict[str, Any]]:
             "met": bool(outcome.met),
         }
         # The authored miss travels with the criterion it explains, so a replayed attempt rebuilds
-        # the same block from the stored row and no second column is needed.
+        # the same block from the stored row and no second column is needed. The learner's answer is
+        # carried only alongside a rule: a check that authored none keeps its exact pre-upgrade row.
         if getattr(outcome, "rule", ""):
             row["rule"] = outcome.rule[:validators.MISS_RULE_MAX_CHARS]
-        if getattr(outcome, "next_action", ""):
-            row["next_action"] = outcome.next_action
-        if getattr(outcome, "answer", ""):
-            row["answer"] = outcome.answer[:300]
+            row["next_action"] = outcome.next_action or validators.MISS_NEXT_ACTIONS[0]
+            if getattr(outcome, "answer", ""):
+                row["answer"] = outcome.answer[:300]
         rows.append(row)
     return rows
 
