@@ -1,0 +1,42 @@
+[
+  {
+    "name": "hero-lettering",
+    "object": "[data-cb-home-scene-panel]",
+    "centre": true,
+    "runs": [
+      "[data-cb-home-scene-question]",
+      "[data-cb-home-scene-subline]",
+      "[data-cb-home-scene-cta] button"
+    ]
+  },
+  {
+    "name": "tag-lettering",
+    "object": "[data-cb-home-scene-tag]",
+    "centre": true,
+    "runs": [""]
+  },
+  {
+    "name": "card-1-lettering",
+    "object": "[data-cb-home-scene-card]:nth-child(1)",
+    "centre": false,
+    "runs": ["[data-cb-home-scene-title]", "[data-cb-cover-mark]"]
+  },
+  {
+    "name": "card-2-lettering",
+    "object": "[data-cb-home-scene-card]:nth-child(2)",
+    "centre": false,
+    "runs": ["[data-cb-home-scene-title]", "[data-cb-cover-mark]"]
+  },
+  {
+    "name": "card-3-lettering",
+    "object": "[data-cb-home-scene-card]:nth-child(3)",
+    "centre": false,
+    "runs": ["[data-cb-home-scene-title]", "[data-cb-cover-mark]"]
+  },
+  {
+    "name": "card-4-lettering",
+    "object": "[data-cb-home-scene-card]:nth-child(4)",
+    "centre": false,
+    "runs": ["[data-cb-home-scene-title]", "[data-cb-cover-mark]"]
+  }
+]

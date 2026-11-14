@@ -1,0 +1,3382 @@
+{
+  "schema": "coursebook.text-legibility/1",
+  "generated_at": "2026-11-14T02:54:27+00:00",
+  "subject": {
+    "scene": "wide Home scene (design/home-scene.html, generated from desktop/plugin.js)",
+    "measured_against": "origin/master b7ed6cf0 (2026-11-13)",
+    "measured_files_identical_to_base": true,
+    "worktree_head": "a42b77971ec981a9c1016d097fcd2018ef53900c",
+    "worktree_head_subject": "a42b7797 Legibility floor audit: 6 of 12 Home scene runs are under 11 px cap",
+    "plugin_sha256": "098e65d9970fce6ff1d72800363d47ae19500bcc93dfcc1e096ac0293d33bd47",
+    "page_1344_sha256": "4b9eec1f1048316c99fdb320a1c9912c4257dad21e98a8ffb81f399b8fdb26a1",
+    "page_1200_sha256": "1d30e84b35396a7e323cf27c902f7875db1ee9f51ee908cc50fb07a4a8d687cf"
+  },
+  "floors": {
+    "cap_px": 11.0,
+    "contrast_ratio": 3.0,
+    "how_a_run_fails": "a run is under the cap floor when its rendered cap height at that width is below 11 px; it is under the contrast floor when ANY glyph-core pixel behind it is below 3.0:1 (the worst pixel, not the median). WCAG AA for normal text is 4.5:1 and is reported separately, not applied as this card's floor."
+  },
+  "summary": {
+    "runs_measured": 12,
+    "runs_under_cap_floor_at_1344": 6,
+    "runs_under_cap_floor_at_1200": 6,
+    "runs_under_contrast_floor_at_1344": 1,
+    "runs_under_contrast_floor_at_1200": 1,
+    "runs_under_either_floor_at_1344": 7,
+    "runs_under_either_floor_at_1200": 7,
+    "runs_under_cap_floor": [
+      "hero-lettering#2",
+      "hero-lettering#3",
+      "card-1-lettering#5",
+      "card-2-lettering#7",
+      "card-3-lettering#8",
+      "card-4-lettering#10"
+    ],
+    "runs_under_contrast_floor": [
+      "tag-lettering#4"
+    ],
+    "smallest_cap_px_1344": 9.24,
+    "smallest_cap_px_1200": 8.25,
+    "lowest_contrast_1344": 1.063,
+    "lowest_contrast_1200": 1.075
+  },
+  "type_ladder": {
+    "note": "the smallest runs sit on two adjacent type steps; the floor is not reachable by a token swap alone",
+    "ui_face_cap_ratio_of_em": 0.66,
+    "display_face_cap_ratio_of_em": 0.7,
+    "font_size_needed_for_11px_cap_ui_face_css_px": 16.67,
+    "scene_steps_in_use": "meta 0.875rem = 14 px (card titles, cap 9.24); body 1rem = 16 px (CTA labels, cap 10.56); heading/display are clamp()ed against the route container (1cqi) and land at 32.64 / 64 px at 1344"
+  },
+  "method": {
+    "driver": "the CP-TEXT-GATE method (tests/fixtures/scene-text/README.md) extended with a cap probe, a floor-raise probe and background sampling; no test or product file is edited. The probe is committed at probes/legibility-2026-11/ (measure.mjs drives Chromium, analyse.py turns the captures into this document); the hashes below are the committed files.",
+    "probe_files": [
+      "probes/legibility-2026-11/measure.mjs",
+      "probes/legibility-2026-11/analyse.py",
+      "probes/legibility-2026-11/README.md"
+    ],
+    "driver_sha256": "b37787b6722924c12238d02def5045f2f6f0c6c7cd86440c50ef024564739d08",
+    "analysis_sha256": "0aac9689994670f1bf34dfbdbc7f60dbbba665f036fdcd9113cf90855bc15cdc",
+    "cap_height": "the run's element keeps its own glyphs transparent while an absolutely positioned single capital H, set in the run's computed font, is painted at the run's own text-rect origin (placement residual <= 0.02 px, verified before every capture). Cap height is the face's cap ratio measured at 200 px times the run's rendered font size, corroborated by the H's pixel span at >=50 % coverage (agreement <= 1 px, the pixel span is the tighter antialias boundary).",
+    "contrast": "the declared colour composited over the pixels of the `without-<n>` capture at the run's ink mask (glyph-core pixels, coverage >= 85 %), WCAG 2.x relative luminance; `min` is the worst pixel behind a glyph",
+    "widths": "two fresh renders of the shipped page at route width 1344 and 1200; at 1200 the scene plate is transform-scaled by 1200/1344, so the same authored type paints smaller (measured scene scale 0.892857)",
+    "determinism": "a second base capture is pixel-identical (0 differing px at both widths); after every probe was removed the page returned to its base paint inside every measured text rect (0 px above the ink threshold), while rotated card/tag edges re-rasterised by up to 35/255 outside the text rects, which is why all masks are restricted to the run's own text rects",
+    "commands": [
+      "python3 scripts/gen-home-proof.py --width 1344 --height 768 --out <work>/pages/home-1344.html",
+      "python3 scripts/gen-home-proof.py --width 1200 --height 768 --out <work>/pages/home-1200.html",
+      "node probes/legibility-2026-11/measure.mjs <work>/pages/home-1344.html \"$(cat tests/fixtures/scene-text/scene.units.json)\" <work>/run-1344 1344",
+      "node probes/legibility-2026-11/measure.mjs <work>/pages/home-1200.html \"$(cat tests/fixtures/scene-text/scene.units.json)\" <work>/run-1200 1200",
+      "python3 probes/legibility-2026-11/analyse.py . <work>/run-1344 <work>/run-1200 docs/concept-parity/text-legibility-2026-11.json"
+    ]
+  },
+  "captures": {
+    "1344": {
+      "viewport": [
+        1344,
+        768
+      ],
+      "devicePixelRatio": 1,
+      "scene_scale": 1,
+      "scene_authored_width_css_px": 1344,
+      "repeat_capture_differing_pixels": 0,
+      "restore_differing_pixels": 599,
+      "restore_max_delta": 35,
+      "restore_pixels_over_ink_threshold": 76,
+      "cap_probe_placement_residual_px": {
+        "placed": {
+          "0": [
+            0.0,
+            0.0
+          ],
+          "1": [
+            0.0,
+            0.0
+          ],
+          "2": [
+            0.0,
+            0.0
+          ],
+          "3": [
+            0.0,
+            0.0
+          ],
+          "4": [
+            -0.003,
+            -0.011
+          ],
+          "5": [
+            -0.001,
+            -0.01
+          ],
+          "6": [
+            -0.003,
+            -0.01
+          ],
+          "7": [
+            -0.01,
+            -0.0
+          ],
+          "8": [
+            -0.006,
+            -0.001
+          ],
+          "9": [
+            -0.002,
+            -0.004
+          ],
+          "10": [
+            -0.006,
+            -0.0
+          ],
+          "11": [
+            -0.002,
+            -0.002
+          ]
+        },
+        "before_shot": {
+          "0": [
+            0.0,
+            0.0
+          ],
+          "1": [
+            0.0,
+            0.0
+          ],
+          "2": [
+            0.0,
+            0.0
+          ],
+          "3": [
+            0.0,
+            0.0
+          ],
+          "4": [
+            -0.003,
+            -0.011
+          ],
+          "5": [
+            -0.001,
+            -0.01
+          ],
+          "6": [
+            -0.003,
+            -0.01
+          ],
+          "7": [
+            -0.01,
+            -0.0
+          ],
+          "8": [
+            -0.006,
+            -0.001
+          ],
+          "9": [
+            -0.002,
+            -0.004
+          ],
+          "10": [
+            -0.006,
+            -0.0
+          ],
+          "11": [
+            -0.002,
+            -0.002
+          ]
+        }
+      }
+    },
+    "1200": {
+      "viewport": [
+        1200,
+        768
+      ],
+      "devicePixelRatio": 1,
+      "scene_scale": 0.892857,
+      "scene_authored_width_css_px": 1344,
+      "repeat_capture_differing_pixels": 0,
+      "restore_differing_pixels": 1165,
+      "restore_max_delta": 30,
+      "restore_pixels_over_ink_threshold": 91,
+      "cap_probe_placement_residual_px": {
+        "placed": {
+          "0": [
+            0.0,
+            -0.014
+          ],
+          "1": [
+            0.0,
+            0.0
+          ],
+          "2": [
+            0.0,
+            0.0
+          ],
+          "3": [
+            0.0,
+            0.0
+          ],
+          "4": [
+            -0.003,
+            -0.01
+          ],
+          "5": [
+            -0.001,
+            -0.009
+          ],
+          "6": [
+            -0.002,
+            -0.007
+          ],
+          "7": [
+            -0.009,
+            -0.0
+          ],
+          "8": [
+            -0.005,
+            -0.001
+          ],
+          "9": [
+            -0.002,
+            -0.011
+          ],
+          "10": [
+            -0.005,
+            -0.0
+          ],
+          "11": [
+            -0.002,
+            -0.002
+          ]
+        },
+        "before_shot": {
+          "0": [
+            0.0,
+            -0.014
+          ],
+          "1": [
+            0.0,
+            0.0
+          ],
+          "2": [
+            0.0,
+            0.0
+          ],
+          "3": [
+            0.0,
+            0.0
+          ],
+          "4": [
+            -0.003,
+            -0.01
+          ],
+          "5": [
+            -0.001,
+            -0.009
+          ],
+          "6": [
+            -0.002,
+            -0.007
+          ],
+          "7": [
+            -0.009,
+            -0.0
+          ],
+          "8": [
+            -0.005,
+            -0.001
+          ],
+          "9": [
+            -0.002,
+            -0.011
+          ],
+          "10": [
+            -0.005,
+            -0.0
+          ],
+          "11": [
+            -0.002,
+            -0.002
+          ]
+        }
+      }
+    }
+  },
+  "totals": {
+    "1344": {
+      "runs_measured": 12,
+      "runs_under_cap_floor": 6,
+      "runs_under_contrast_floor": 1,
+      "runs_under_either_floor": 7,
+      "runs_below_wcag_aa_normal_text": 1,
+      "smallest_cap_px": 9.24,
+      "lowest_contrast": 1.063
+    },
+    "1200": {
+      "runs_measured": 12,
+      "runs_under_cap_floor": 6,
+      "runs_under_contrast_floor": 1,
+      "runs_under_either_floor": 7,
+      "runs_below_wcag_aa_normal_text": 1,
+      "smallest_cap_px": 8.25,
+      "lowest_contrast": 1.075
+    },
+    "runs": 12
+  },
+  "ranking_worst_first": [
+    {
+      "rank": 1,
+      "run_id": "tag-lettering#4",
+      "object": "tag-lettering",
+      "text": "New course",
+      "cap_px_1344": 14.0,
+      "cap_px_1200": 12.5,
+      "contrast_1344": 1.063,
+      "contrast_1200": 1.075,
+      "worst_of_floor": 0.354
+    },
+    {
+      "rank": 2,
+      "run_id": "card-1-lettering#5",
+      "object": "card-1-lettering",
+      "text": "Auto Repair Fundamentals",
+      "cap_px_1344": 9.24,
+      "cap_px_1200": 8.25,
+      "contrast_1344": 15.177,
+      "contrast_1200": 15.177,
+      "worst_of_floor": 0.75
+    },
+    {
+      "rank": 3,
+      "run_id": "card-2-lettering#7",
+      "object": "card-2-lettering",
+      "text": "Japanese Cafe Basics",
+      "cap_px_1344": 9.24,
+      "cap_px_1200": 8.25,
+      "contrast_1344": 15.177,
+      "contrast_1200": 15.177,
+      "worst_of_floor": 0.75
+    },
+    {
+      "rank": 4,
+      "run_id": "card-3-lettering#8",
+      "object": "card-3-lettering",
+      "text": "Astronomy",
+      "cap_px_1344": 9.24,
+      "cap_px_1200": 8.25,
+      "contrast_1344": 15.177,
+      "contrast_1200": 15.177,
+      "worst_of_floor": 0.75
+    },
+    {
+      "rank": 5,
+      "run_id": "card-4-lettering#10",
+      "object": "card-4-lettering",
+      "text": "Sourdough",
+      "cap_px_1344": 9.24,
+      "cap_px_1200": 8.25,
+      "contrast_1344": 15.177,
+      "contrast_1200": 15.177,
+      "worst_of_floor": 0.75
+    },
+    {
+      "rank": 6,
+      "run_id": "hero-lettering#2",
+      "object": "hero-lettering",
+      "text": "Start a new course",
+      "cap_px_1344": 10.56,
+      "cap_px_1200": 9.43,
+      "contrast_1344": 4.787,
+      "contrast_1200": 4.787,
+      "worst_of_floor": 0.857
+    },
+    {
+      "rank": 7,
+      "run_id": "hero-lettering#3",
+      "object": "hero-lettering",
+      "text": "Browse library",
+      "cap_px_1344": 10.56,
+      "cap_px_1200": 9.43,
+      "contrast_1344": 12.75,
+      "contrast_1200": 12.75,
+      "worst_of_floor": 0.857
+    },
+    {
+      "rank": 8,
+      "run_id": "hero-lettering#1",
+      "object": "hero-lettering",
+      "text": "Choose a course or start a new expedition.",
+      "cap_px_1344": 21.38,
+      "cap_px_1200": 18.25,
+      "contrast_1344": 5.875,
+      "contrast_1200": 6.227,
+      "worst_of_floor": 1.659
+    },
+    {
+      "rank": 9,
+      "run_id": "card-1-lettering#6",
+      "object": "card-1-lettering",
+      "text": "AR",
+      "cap_px_1344": 22.85,
+      "cap_px_1200": 19.5,
+      "contrast_1344": 4.994,
+      "contrast_1200": 4.994,
+      "worst_of_floor": 1.665
+    },
+    {
+      "rank": 10,
+      "run_id": "card-3-lettering#9",
+      "object": "card-3-lettering",
+      "text": "AS",
+      "cap_px_1344": 22.85,
+      "cap_px_1200": 19.5,
+      "contrast_1344": 4.994,
+      "contrast_1200": 4.994,
+      "worst_of_floor": 1.665
+    },
+    {
+      "rank": 11,
+      "run_id": "card-4-lettering#11",
+      "object": "card-4-lettering",
+      "text": "SO",
+      "cap_px_1344": 22.85,
+      "cap_px_1200": 19.5,
+      "contrast_1344": 4.994,
+      "contrast_1200": 4.994,
+      "worst_of_floor": 1.665
+    },
+    {
+      "rank": 12,
+      "run_id": "hero-lettering#0",
+      "object": "hero-lettering",
+      "text": "Your field library",
+      "cap_px_1344": 44.8,
+      "cap_px_1200": 37.5,
+      "contrast_1344": 5.779,
+      "contrast_1200": 5.84,
+      "worst_of_floor": 1.926
+    }
+  ],
+  "worst_three": [
+    {
+      "rank": 1,
+      "run_id": "tag-lettering#4",
+      "object": "tag-lettering",
+      "text": "New course",
+      "cap_px_1344": 14.0,
+      "cap_px_1200": 12.5,
+      "contrast_1344": 1.063,
+      "contrast_1200": 1.075,
+      "worst_of_floor": 0.354
+    },
+    {
+      "rank": 2,
+      "run_id": "card-1-lettering#5",
+      "object": "card-1-lettering",
+      "text": "Auto Repair Fundamentals",
+      "cap_px_1344": 9.24,
+      "cap_px_1200": 8.25,
+      "contrast_1344": 15.177,
+      "contrast_1200": 15.177,
+      "worst_of_floor": 0.75
+    },
+    {
+      "rank": 3,
+      "run_id": "card-2-lettering#7",
+      "object": "card-2-lettering",
+      "text": "Japanese Cafe Basics",
+      "cap_px_1344": 9.24,
+      "cap_px_1200": 8.25,
+      "contrast_1344": 15.177,
+      "contrast_1200": 15.177,
+      "worst_of_floor": 0.75
+    }
+  ],
+  "worst_three_note": "ranks 2-3 tie with the other two single-line card titles (9.24 px cap at 1344, 8.25 px at 1200); the tie is broken by which card's content already clips",
+  "runs": [
+    {
+      "run_id": "hero-lettering#0",
+      "unit": "hero-lettering",
+      "object": {
+        "width": 645.25,
+        "height": 242.796875,
+        "offsetWidth": 645,
+        "offsetHeight": 243,
+        "scaleX": 1.0003875968992249,
+        "scaleY": 0.9991640946502057,
+        "quad": [
+          [
+            349.375,
+            128
+          ],
+          [
+            994.625,
+            128
+          ],
+          [
+            994.625,
+            370.796875
+          ],
+          [
+            349.375,
+            370.796875
+          ]
+        ],
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "backgroundImage": "none",
+        "backgroundColor": "rgba(0, 0, 0, 0)"
+      },
+      "selector": "[data-cb-home-scene-question]",
+      "text": "Your field library",
+      "font": {
+        "family": "\"CB Display\", Fraunces, ui-serif, Georgia, \"Noto Serif JP\", \"Hiragino Mincho ProN\", \"Yu Mincho\", serif",
+        "size_css_px": 64.0,
+        "weight": "600",
+        "line_height_css_px": 65.28,
+        "letter_spacing": "-1.28px",
+        "text_align": "center"
+      },
+      "measurements": {
+        "1344": {
+          "ink_pixels": 8437,
+          "declared_color": "rgb(26, 23, 19)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 6456,
+            "min": 5.779,
+            "p05": 6.915,
+            "median": 14.738,
+            "max": 15.407,
+            "pixels_below_floor": 0,
+            "pixels_below_wcag_aa": 0,
+            "worst_background_rgb": [
+              161,
+              144,
+              124
+            ],
+            "background_luminance_range": [
+              0.2898,
+              0.8559
+            ]
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 44.0,
+            "pixel_cap_bbox_px": [
+              47,
+              45
+            ],
+            "cap_pixels": 1101,
+            "font_size_css_px": 64.0,
+            "scene_scale": 1,
+            "font_size_rendered_px": 64.0,
+            "cap_ratio_of_em": 0.7,
+            "cap_from_ratio_px": 44.8,
+            "cap_from_textmetrics_px": 45,
+            "x_height_ratio_of_em": 0.44,
+            "spread_px": 1.0
+          },
+          "layout": {
+            "object_local_px": [
+              645.25,
+              242.8
+            ],
+            "lines": 1,
+            "line_widths_px": [
+              469.67
+            ],
+            "margins_object_local": {
+              "left": 87.78,
+              "right": 87.8,
+              "top": 11.0,
+              "bottom": 152.8
+            },
+            "clipped_ancestors": []
+          }
+        },
+        "1200": {
+          "ink_pixels": 6076,
+          "declared_color": "rgb(26, 23, 19)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 4404,
+            "min": 5.84,
+            "p05": 7.268,
+            "median": 14.746,
+            "max": 15.154,
+            "pixels_below_floor": 0,
+            "pixels_below_wcag_aa": 0,
+            "worst_background_rgb": [
+              161,
+              145,
+              126
+            ],
+            "background_luminance_range": [
+              0.2933,
+              0.841
+            ]
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 37.0,
+            "pixel_cap_bbox_px": [
+              39,
+              37
+            ],
+            "cap_pixels": 764,
+            "font_size_css_px": 60.0,
+            "scene_scale": 0.892857,
+            "font_size_rendered_px": 53.571,
+            "cap_ratio_of_em": 0.7,
+            "cap_from_ratio_px": 37.5,
+            "cap_from_textmetrics_px": 38.39,
+            "x_height_ratio_of_em": 0.44,
+            "spread_px": 1.39
+          },
+          "layout": {
+            "object_local_px": [
+              553.25,
+              211.66
+            ],
+            "lines": 1,
+            "line_widths_px": [
+              396.86
+            ],
+            "margins_object_local": {
+              "left": 78.19,
+              "right": 78.19,
+              "top": 9.82,
+              "bottom": 135.77
+            },
+            "clipped_ancestors": []
+          }
+        }
+      },
+      "under_floor": {
+        "cap": [],
+        "contrast": [],
+        "contrast_below_wcag_aa_normal_text": [],
+        "either": false
+      },
+      "remedy": {
+        "cap_floor": {
+          "needed_font_size_css_px": 15.71,
+          "growth_factor": 0.246,
+          "probe_by_width": {
+            "1344": {
+              "applied": false,
+              "reason": "already at or above the 11 px cap floor"
+            },
+            "1200": {
+              "applied": false,
+              "reason": "already at or above the 11 px cap floor"
+            }
+          },
+          "decision": null,
+          "detail": null
+        },
+        "contrast_floor": {
+          "decision": null,
+          "detail": null
+        }
+      }
+    },
+    {
+      "run_id": "hero-lettering#1",
+      "unit": "hero-lettering",
+      "object": {
+        "width": 645.25,
+        "height": 242.796875,
+        "offsetWidth": 645,
+        "offsetHeight": 243,
+        "scaleX": 1.0003875968992249,
+        "scaleY": 0.9991640946502057,
+        "quad": [
+          [
+            349.375,
+            128
+          ],
+          [
+            994.625,
+            128
+          ],
+          [
+            994.625,
+            370.796875
+          ],
+          [
+            349.375,
+            370.796875
+          ]
+        ],
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "backgroundImage": "none",
+        "backgroundColor": "rgba(0, 0, 0, 0)"
+      },
+      "selector": "[data-cb-home-scene-subline]",
+      "text": "Choose a course or start a new expedition.",
+      "font": {
+        "family": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "size_css_px": 32.64,
+        "weight": "500",
+        "line_height_css_px": 37.536,
+        "letter_spacing": "normal",
+        "text_align": "center"
+      },
+      "measurements": {
+        "1344": {
+          "ink_pixels": 4694,
+          "declared_color": "rgb(26, 23, 19)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 2759,
+            "min": 5.875,
+            "p05": 6.856,
+            "median": 10.964,
+            "max": 15.048,
+            "pixels_below_floor": 0,
+            "pixels_below_wcag_aa": 0,
+            "worst_background_rgb": [
+              163,
+              145,
+              126
+            ],
+            "background_luminance_range": [
+              0.2954,
+              0.8347
+            ]
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 21.0,
+            "pixel_cap_bbox_px": [
+              17,
+              21
+            ],
+            "cap_pixels": 213,
+            "font_size_css_px": 32.64,
+            "scene_scale": 1,
+            "font_size_rendered_px": 32.64,
+            "cap_ratio_of_em": 0.655,
+            "cap_from_ratio_px": 21.38,
+            "cap_from_textmetrics_px": 21,
+            "x_height_ratio_of_em": 0.49,
+            "spread_px": 0.38
+          },
+          "layout": {
+            "object_local_px": [
+              645.25,
+              242.8
+            ],
+            "lines": 1,
+            "line_widths_px": [
+              581.25
+            ],
+            "margins_object_local": {
+              "left": 32.0,
+              "right": 32.0,
+              "top": 102.27,
+              "bottom": 94.53
+            },
+            "clipped_ancestors": []
+          }
+        },
+        "1200": {
+          "ink_pixels": 3728,
+          "declared_color": "rgb(26, 23, 19)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 1959,
+            "min": 6.227,
+            "p05": 7.127,
+            "median": 11.298,
+            "max": 14.881,
+            "pixels_below_floor": 0,
+            "pixels_below_wcag_aa": 0,
+            "worst_background_rgb": [
+              167,
+              150,
+              129
+            ],
+            "background_luminance_range": [
+              0.3161,
+              0.8249
+            ]
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 18.0,
+            "pixel_cap_bbox_px": [
+              14,
+              18
+            ],
+            "cap_pixels": 147,
+            "font_size_css_px": 31.2,
+            "scene_scale": 0.892857,
+            "font_size_rendered_px": 27.857,
+            "cap_ratio_of_em": 0.655,
+            "cap_from_ratio_px": 18.25,
+            "cap_from_textmetrics_px": 18.75,
+            "x_height_ratio_of_em": 0.49,
+            "spread_px": 0.75
+          },
+          "layout": {
+            "object_local_px": [
+              553.25,
+              211.66
+            ],
+            "lines": 1,
+            "line_widths_px": [
+              496.11
+            ],
+            "margins_object_local": {
+              "left": 28.57,
+              "right": 28.57,
+              "top": 87.67,
+              "bottom": 84.71
+            },
+            "clipped_ancestors": []
+          }
+        }
+      },
+      "under_floor": {
+        "cap": [],
+        "contrast": [],
+        "contrast_below_wcag_aa_normal_text": [],
+        "either": false
+      },
+      "remedy": {
+        "cap_floor": {
+          "needed_font_size_css_px": 16.79,
+          "growth_factor": 0.515,
+          "probe_by_width": {
+            "1344": {
+              "applied": false,
+              "reason": "already at or above the 11 px cap floor"
+            },
+            "1200": {
+              "applied": false,
+              "reason": "already at or above the 11 px cap floor"
+            }
+          },
+          "decision": null,
+          "detail": null
+        },
+        "contrast_floor": {
+          "decision": null,
+          "detail": null
+        }
+      }
+    },
+    {
+      "run_id": "hero-lettering#2",
+      "unit": "hero-lettering",
+      "object": {
+        "width": 645.25,
+        "height": 242.796875,
+        "offsetWidth": 645,
+        "offsetHeight": 243,
+        "scaleX": 1.0003875968992249,
+        "scaleY": 0.9991640946502057,
+        "quad": [
+          [
+            349.375,
+            128
+          ],
+          [
+            994.625,
+            128
+          ],
+          [
+            994.625,
+            370.796875
+          ],
+          [
+            349.375,
+            370.796875
+          ]
+        ],
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "backgroundImage": "none",
+        "backgroundColor": "rgba(0, 0, 0, 0)"
+      },
+      "selector": "[data-cb-home-scene-cta] button",
+      "text": "Start a new course",
+      "font": {
+        "family": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "size_css_px": 16.0,
+        "weight": "600",
+        "line_height_css_px": 19.2,
+        "letter_spacing": "normal",
+        "text_align": "center"
+      },
+      "measurements": {
+        "1344": {
+          "ink_pixels": 682,
+          "declared_color": "rgb(255, 250, 241)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 268,
+            "min": 4.787,
+            "p05": 4.787,
+            "median": 4.787,
+            "max": 4.787,
+            "pixels_below_floor": 0,
+            "pixels_below_wcag_aa": 0,
+            "worst_background_rgb": [
+              180,
+              83,
+              47
+            ],
+            "background_luminance_range": [
+              0.161,
+              0.161
+            ]
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 10.0,
+            "pixel_cap_bbox_px": [
+              9,
+              10
+            ],
+            "cap_pixels": 66,
+            "font_size_css_px": 16.0,
+            "scene_scale": 1,
+            "font_size_rendered_px": 16.0,
+            "cap_ratio_of_em": 0.66,
+            "cap_from_ratio_px": 10.56,
+            "cap_from_textmetrics_px": 10,
+            "x_height_ratio_of_em": 0.495,
+            "spread_px": 0.56
+          },
+          "layout": {
+            "object_local_px": [
+              645.25,
+              242.8
+            ],
+            "lines": 1,
+            "line_widths_px": [
+              126.2
+            ],
+            "margins_object_local": {
+              "left": 175.66,
+              "right": 343.39,
+              "top": 183.8,
+              "bottom": 37.0
+            },
+            "clipped_ancestors": []
+          }
+        },
+        "1200": {
+          "ink_pixels": 565,
+          "declared_color": "rgb(255, 250, 241)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 203,
+            "min": 4.787,
+            "p05": 4.787,
+            "median": 4.787,
+            "max": 4.787,
+            "pixels_below_floor": 0,
+            "pixels_below_wcag_aa": 0,
+            "worst_background_rgb": [
+              180,
+              83,
+              47
+            ],
+            "background_luminance_range": [
+              0.161,
+              0.161
+            ]
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 9.0,
+            "pixel_cap_bbox_px": [
+              9,
+              9
+            ],
+            "cap_pixels": 60,
+            "font_size_css_px": 16.0,
+            "scene_scale": 0.892857,
+            "font_size_rendered_px": 14.286,
+            "cap_ratio_of_em": 0.66,
+            "cap_from_ratio_px": 9.43,
+            "cap_from_textmetrics_px": 8.93,
+            "x_height_ratio_of_em": 0.495,
+            "spread_px": 0.5
+          },
+          "layout": {
+            "object_local_px": [
+              553.25,
+              211.66
+            ],
+            "lines": 1,
+            "line_widths_px": [
+              112.68
+            ],
+            "margins_object_local": {
+              "left": 145.41,
+              "right": 295.16,
+              "top": 158.98,
+              "bottom": 33.04
+            },
+            "clipped_ancestors": []
+          }
+        }
+      },
+      "under_floor": {
+        "cap": [
+          1344,
+          1200
+        ],
+        "contrast": [],
+        "contrast_below_wcag_aa_normal_text": [],
+        "either": true
+      },
+      "remedy": {
+        "cap_floor": {
+          "needed_font_size_css_px": 16.67,
+          "growth_factor": 1.042,
+          "probe_by_width": {
+            "1344": {
+              "applied": true,
+              "needed_font_px": 16.666666666666664,
+              "line_height_px": 19.999999999999996,
+              "object": {
+                "width": 645.25,
+                "height": 242.796875,
+                "after_width": 645.25,
+                "after_height": 242.796875
+              },
+              "element": {
+                "width": 170.203125,
+                "height": 48,
+                "after_width": 175.375,
+                "after_height": 48
+              },
+              "object_quad": [
+                [
+                  349.375,
+                  128
+                ],
+                [
+                  994.625,
+                  128
+                ],
+                [
+                  994.625,
+                  370.796875
+                ],
+                [
+                  349.375,
+                  370.796875
+                ]
+              ],
+              "rects": [
+                [
+                  522.453125,
+                  310.796875,
+                  131.375,
+                  24
+                ]
+              ],
+              "clipping": [],
+              "scroll": {
+                "dx": 0,
+                "dy": 0
+              },
+              "file": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/legibility/repro/run-1344/raised-2.png"
+            },
+            "1200": {
+              "applied": true,
+              "needed_font_px": 16.666666666666664,
+              "line_height_px": 19.999999999999996,
+              "object": {
+                "width": 553.2505493164062,
+                "height": 211.6629638671875,
+                "after_width": 553.2505493164062,
+                "after_height": 211.6629638671875
+              },
+              "element": {
+                "width": 151.96707153320312,
+                "height": 42.857147216796875,
+                "after_width": 156.58480834960938,
+                "after_height": 42.857147216796875
+              },
+              "object_quad": [
+                [
+                  323.36773681640625,
+                  114.28571319580078
+                ],
+                [
+                  876.6182861328125,
+                  114.28571319580078
+                ],
+                [
+                  876.6182861328125,
+                  325.94866943359375
+                ],
+                [
+                  323.36773681640625,
+                  325.94866943359375
+                ]
+              ],
+              "rects": [
+                [
+                  466.4620361328125,
+                  272.3772277832031,
+                  117.29913330078125,
+                  21.428558349609375
+                ]
+              ],
+              "clipping": [],
+              "scroll": {
+                "dx": 0,
+                "dy": 0
+              },
+              "file": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/legibility/repro/run-1200/raised-2.png"
+            }
+          },
+          "decision": "object can grow",
+          "detail": "at 16.67 px (11 px cap) the run stays 1 line(s), the element itself widens 5.2 css px to hold it, and nothing clips at either width: the object absorbs the floor size without the run changing"
+        },
+        "contrast_floor": {
+          "decision": null,
+          "detail": null
+        }
+      }
+    },
+    {
+      "run_id": "hero-lettering#3",
+      "unit": "hero-lettering",
+      "object": {
+        "width": 645.25,
+        "height": 242.796875,
+        "offsetWidth": 645,
+        "offsetHeight": 243,
+        "scaleX": 1.0003875968992249,
+        "scaleY": 0.9991640946502057,
+        "quad": [
+          [
+            349.375,
+            128
+          ],
+          [
+            994.625,
+            128
+          ],
+          [
+            994.625,
+            370.796875
+          ],
+          [
+            349.375,
+            370.796875
+          ]
+        ],
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "backgroundImage": "none",
+        "backgroundColor": "rgba(0, 0, 0, 0)"
+      },
+      "selector": "[data-cb-home-scene-cta] button",
+      "text": "Browse library",
+      "font": {
+        "family": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "size_css_px": 16.0,
+        "weight": "600",
+        "line_height_css_px": 19.2,
+        "letter_spacing": "normal",
+        "text_align": "center"
+      },
+      "measurements": {
+        "1344": {
+          "ink_pixels": 586,
+          "declared_color": "rgb(26, 23, 19)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 212,
+            "min": 12.75,
+            "p05": 12.75,
+            "median": 12.75,
+            "max": 12.75,
+            "pixels_below_floor": 0,
+            "pixels_below_wcag_aa": 0,
+            "worst_background_rgb": [
+              240,
+              213,
+              193
+            ],
+            "background_luminance_range": [
+              0.6996,
+              0.6996
+            ]
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 10.0,
+            "pixel_cap_bbox_px": [
+              9,
+              10
+            ],
+            "cap_pixels": 66,
+            "font_size_css_px": 16.0,
+            "scene_scale": 1,
+            "font_size_rendered_px": 16.0,
+            "cap_ratio_of_em": 0.66,
+            "cap_from_ratio_px": 10.56,
+            "cap_from_textmetrics_px": 10,
+            "x_height_ratio_of_em": 0.495,
+            "spread_px": 0.56
+          },
+          "layout": {
+            "object_local_px": [
+              645.25,
+              242.8
+            ],
+            "lines": 1,
+            "line_widths_px": [
+              99.72
+            ],
+            "margins_object_local": {
+              "left": 369.86,
+              "right": 175.67,
+              "top": 183.8,
+              "bottom": 37.0
+            },
+            "clipped_ancestors": []
+          }
+        },
+        "1200": {
+          "ink_pixels": 487,
+          "declared_color": "rgb(26, 23, 19)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 164,
+            "min": 12.75,
+            "p05": 12.75,
+            "median": 12.75,
+            "max": 12.75,
+            "pixels_below_floor": 0,
+            "pixels_below_wcag_aa": 0,
+            "worst_background_rgb": [
+              240,
+              213,
+              193
+            ],
+            "background_luminance_range": [
+              0.6996,
+              0.6996
+            ]
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 9.0,
+            "pixel_cap_bbox_px": [
+              8,
+              9
+            ],
+            "cap_pixels": 58,
+            "font_size_css_px": 16.0,
+            "scene_scale": 0.892857,
+            "font_size_rendered_px": 14.286,
+            "cap_ratio_of_em": 0.66,
+            "cap_from_ratio_px": 9.43,
+            "cap_from_textmetrics_px": 8.93,
+            "x_height_ratio_of_em": 0.495,
+            "spread_px": 0.5
+          },
+          "layout": {
+            "object_local_px": [
+              553.25,
+              211.66
+            ],
+            "lines": 1,
+            "line_widths_px": [
+              89.03
+            ],
+            "margins_object_local": {
+              "left": 318.81,
+              "right": 145.41,
+              "top": 158.98,
+              "bottom": 33.04
+            },
+            "clipped_ancestors": []
+          }
+        }
+      },
+      "under_floor": {
+        "cap": [
+          1344,
+          1200
+        ],
+        "contrast": [],
+        "contrast_below_wcag_aa_normal_text": [],
+        "either": true
+      },
+      "remedy": {
+        "cap_floor": {
+          "needed_font_size_css_px": 16.67,
+          "growth_factor": 1.042,
+          "probe_by_width": {
+            "1344": {
+              "applied": true,
+              "needed_font_px": 16.666666666666664,
+              "line_height_px": 19.999999999999996,
+              "object": {
+                "width": 645.25,
+                "height": 242.796875,
+                "after_width": 645.25,
+                "after_height": 242.796875
+              },
+              "element": {
+                "width": 143.71875,
+                "height": 48,
+                "after_width": 147.8125,
+                "after_height": 48
+              },
+              "object_quad": [
+                [
+                  349.375,
+                  128
+                ],
+                [
+                  994.625,
+                  128
+                ],
+                [
+                  994.625,
+                  370.796875
+                ],
+                [
+                  349.375,
+                  370.796875
+                ]
+              ],
+              "rects": [
+                [
+                  717.1875,
+                  310.796875,
+                  103.8125,
+                  24
+                ]
+              ],
+              "clipping": [],
+              "scroll": {
+                "dx": 0,
+                "dy": 0
+              },
+              "file": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/legibility/repro/run-1344/raised-3.png"
+            },
+            "1200": {
+              "applied": true,
+              "needed_font_px": 16.666666666666664,
+              "line_height_px": 19.999999999999996,
+              "object": {
+                "width": 553.2505493164062,
+                "height": 211.6629638671875,
+                "after_width": 553.2505493164062,
+                "after_height": 211.6629638671875
+              },
+              "element": {
+                "width": 128.3203125,
+                "height": 42.857147216796875,
+                "after_width": 131.9754638671875,
+                "after_height": 42.857147216796875
+              },
+              "object_quad": [
+                [
+                  323.36773681640625,
+                  114.28571319580078
+                ],
+                [
+                  876.6182861328125,
+                  114.28571319580078
+                ],
+                [
+                  876.6182861328125,
+                  325.94866943359375
+                ],
+                [
+                  323.36773681640625,
+                  325.94866943359375
+                ]
+              ],
+              "rects": [
+                [
+                  640.345947265625,
+                  272.3772277832031,
+                  92.68975830078125,
+                  21.428558349609375
+                ]
+              ],
+              "clipping": [],
+              "scroll": {
+                "dx": 0,
+                "dy": 0
+              },
+              "file": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/legibility/repro/run-1200/raised-3.png"
+            }
+          },
+          "decision": "object can grow",
+          "detail": "at 16.67 px (11 px cap) the run stays 1 line(s), the element itself widens 4.1 css px to hold it, and nothing clips at either width: the object absorbs the floor size without the run changing"
+        },
+        "contrast_floor": {
+          "decision": null,
+          "detail": null
+        }
+      }
+    },
+    {
+      "run_id": "tag-lettering#4",
+      "unit": "tag-lettering",
+      "object": {
+        "width": 155.54290771484375,
+        "height": 155.5428466796875,
+        "offsetWidth": 148,
+        "offsetHeight": 148,
+        "scaleX": 1.0509655926678632,
+        "scaleY": 1.0509651802681588,
+        "quad": [
+          [
+            884.2285766601562,
+            562.9743041992188
+          ],
+          [
+            1032.0257568359375,
+            555.2285766601562
+          ],
+          [
+            1039.771484375,
+            703.0256958007812
+          ],
+          [
+            891.9743041992188,
+            710.7714233398438
+          ]
+        ],
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "backgroundImage": "url(\"data:image/webp;base64,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\")",
+        "backgroundColor": "rgba(0, 0, 0, 0)"
+      },
+      "selector": "(self)",
+      "text": "New course",
+      "font": {
+        "family": "\"CB Display\", Fraunces, ui-serif, Georgia, \"Noto Serif JP\", \"Hiragino Mincho ProN\", \"Yu Mincho\", serif",
+        "size_css_px": 20.0,
+        "weight": "400",
+        "line_height_css_px": 24.0,
+        "letter_spacing": "normal",
+        "text_align": "start"
+      },
+      "measurements": {
+        "1344": {
+          "ink_pixels": 601,
+          "declared_color": "rgb(26, 23, 19)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 203,
+            "min": 1.063,
+            "p05": 1.453,
+            "median": 7.2,
+            "max": 9.659,
+            "pixels_below_floor": 26,
+            "pixels_below_wcag_aa": 53,
+            "worst_background_rgb": [
+              42,
+              26,
+              9
+            ],
+            "background_luminance_range": [
+              0.0125,
+              0.5179
+            ],
+            "below_floor_local_u": [
+              96.29,
+              126.51
+            ],
+            "object_local_width": 148.0
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 15.0,
+            "pixel_cap_bbox_px": [
+              16,
+              15
+            ],
+            "cap_pixels": 122,
+            "font_size_css_px": 20.0,
+            "scene_scale": 1,
+            "font_size_rendered_px": 20.0,
+            "cap_ratio_of_em": 0.7,
+            "cap_from_ratio_px": 14.0,
+            "cap_from_textmetrics_px": 15,
+            "x_height_ratio_of_em": 0.435,
+            "spread_px": 1.0
+          },
+          "layout": {
+            "object_local_px": [
+              148.0,
+              148.0
+            ],
+            "lines": 1,
+            "line_widths_px": [
+              109.83
+            ],
+            "margins_object_local": {
+              "left": 18.35,
+              "right": 18.37,
+              "top": 55.82,
+              "bottom": 55.82
+            },
+            "clipped_ancestors": []
+          }
+        },
+        "1200": {
+          "ink_pixels": 508,
+          "declared_color": "rgb(26, 23, 19)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 139,
+            "min": 1.075,
+            "p05": 1.285,
+            "median": 7.159,
+            "max": 9.288,
+            "pixels_below_floor": 19,
+            "pixels_below_wcag_aa": 37,
+            "worst_background_rgb": [
+              37,
+              29,
+              19
+            ],
+            "background_luminance_range": [
+              0.0132,
+              0.4961
+            ],
+            "below_floor_local_u": [
+              86.49,
+              112.67
+            ],
+            "object_local_width": 132.14
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 13.0,
+            "pixel_cap_bbox_px": [
+              14,
+              14
+            ],
+            "cap_pixels": 101,
+            "font_size_css_px": 20.0,
+            "scene_scale": 0.892857,
+            "font_size_rendered_px": 17.857,
+            "cap_ratio_of_em": 0.7,
+            "cap_from_ratio_px": 12.5,
+            "cap_from_textmetrics_px": 13.39,
+            "x_height_ratio_of_em": 0.435,
+            "spread_px": 0.89
+          },
+          "layout": {
+            "object_local_px": [
+              132.14,
+              132.14
+            ],
+            "lines": 1,
+            "line_widths_px": [
+              98.06
+            ],
+            "margins_object_local": {
+              "left": 16.38,
+              "right": 16.4,
+              "top": 49.84,
+              "bottom": 49.84
+            },
+            "clipped_ancestors": []
+          }
+        }
+      },
+      "under_floor": {
+        "cap": [],
+        "contrast": [
+          1344,
+          1200
+        ],
+        "contrast_below_wcag_aa_normal_text": [
+          1344,
+          1200
+        ],
+        "either": true
+      },
+      "remedy": {
+        "cap_floor": {
+          "needed_font_size_css_px": 15.71,
+          "growth_factor": 0.786,
+          "probe_by_width": {
+            "1344": {
+              "applied": false,
+              "reason": "already at or above the 11 px cap floor"
+            },
+            "1200": {
+              "applied": false,
+              "reason": "already at or above the 11 px cap floor"
+            }
+          },
+          "decision": null,
+          "detail": null
+        },
+        "contrast_floor": {
+          "decision": "run must shorten",
+          "detail": "26 of 203 glyph-core pixels are below 3.0:1 (worst 1.063:1 against rgb(42, 26, 9)); the failing pixels sit at u=96..127 of the object's 148 px width, i.e. the type runs off the tag's kraft face onto the dark bench behind it. Growing the plate cannot fix a dark background under the letters: the words must end where the kraft does (or the tag's face must move under them)"
+        }
+      }
+    },
+    {
+      "run_id": "card-1-lettering#5",
+      "unit": "card-1-lettering",
+      "object": {
+        "width": 180.81768798828125,
+        "height": 179.84597778320312,
+        "offsetWidth": 176,
+        "offsetHeight": 175,
+        "scaleX": 1.0273732272061435,
+        "scaleY": 1.0276913016183036,
+        "quad": [
+          [
+            268.14801025390625,
+            386.52532958984375
+          ],
+          [
+            444.07940673828125,
+            381.6111145019531
+          ],
+          [
+            448.9656982421875,
+            556.5429077148438
+          ],
+          [
+            273.0343017578125,
+            561.4570922851562
+          ]
+        ],
+        "overflowX": "hidden",
+        "overflowY": "hidden",
+        "backgroundImage": "none",
+        "backgroundColor": "rgb(244, 236, 217)"
+      },
+      "selector": "[data-cb-home-scene-title]",
+      "text": "Auto Repair Fundamentals",
+      "font": {
+        "family": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "size_css_px": 14.0,
+        "weight": "600",
+        "line_height_css_px": 19.6,
+        "letter_spacing": "normal",
+        "text_align": "start"
+      },
+      "measurements": {
+        "1344": {
+          "ink_pixels": 918,
+          "declared_color": "rgb(26, 23, 19)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 281,
+            "min": 15.177,
+            "p05": 15.177,
+            "median": 15.177,
+            "max": 15.177,
+            "pixels_below_floor": 0,
+            "pixels_below_wcag_aa": 0,
+            "worst_background_rgb": [
+              244,
+              236,
+              217
+            ],
+            "background_luminance_range": [
+              0.8423,
+              0.8423
+            ]
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 9.0,
+            "pixel_cap_bbox_px": [
+              8,
+              11
+            ],
+            "cap_pixels": 55,
+            "font_size_css_px": 14.0,
+            "scene_scale": 1,
+            "font_size_rendered_px": 14.0,
+            "cap_ratio_of_em": 0.66,
+            "cap_from_ratio_px": 9.24,
+            "cap_from_textmetrics_px": 9,
+            "x_height_ratio_of_em": 0.495,
+            "spread_px": 0.24
+          },
+          "layout": {
+            "object_local_px": [
+              176.0,
+              175.0
+            ],
+            "lines": 2,
+            "line_widths_px": [
+              70.48,
+              86.73
+            ],
+            "margins_object_local": {
+              "left": 9.44,
+              "right": 79.24,
+              "top": 111.05,
+              "bottom": 20.0
+            },
+            "clipped_ancestors": [
+              {
+                "tag": "ARTICLE",
+                "dx": 0,
+                "dy": 2,
+                "cls": ""
+              }
+            ]
+          }
+        },
+        "1200": {
+          "ink_pixels": 776,
+          "declared_color": "rgb(26, 23, 19)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 201,
+            "min": 15.177,
+            "p05": 15.177,
+            "median": 15.177,
+            "max": 15.177,
+            "pixels_below_floor": 0,
+            "pixels_below_wcag_aa": 0,
+            "worst_background_rgb": [
+              244,
+              236,
+              217
+            ],
+            "background_luminance_range": [
+              0.8423,
+              0.8423
+            ]
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 8.0,
+            "pixel_cap_bbox_px": [
+              7,
+              9
+            ],
+            "cap_pixels": 42,
+            "font_size_css_px": 14.0,
+            "scene_scale": 0.892857,
+            "font_size_rendered_px": 12.5,
+            "cap_ratio_of_em": 0.66,
+            "cap_from_ratio_px": 8.25,
+            "cap_from_textmetrics_px": 8.04,
+            "x_height_ratio_of_em": 0.495,
+            "spread_px": 0.25
+          },
+          "layout": {
+            "object_local_px": [
+              157.14,
+              156.25
+            ],
+            "lines": 2,
+            "line_widths_px": [
+              62.93,
+              77.44
+            ],
+            "margins_object_local": {
+              "left": 8.43,
+              "right": 70.75,
+              "top": 99.15,
+              "bottom": 17.86
+            },
+            "clipped_ancestors": [
+              {
+                "tag": "ARTICLE",
+                "dx": 0,
+                "dy": 2,
+                "cls": ""
+              }
+            ]
+          }
+        }
+      },
+      "under_floor": {
+        "cap": [
+          1344,
+          1200
+        ],
+        "contrast": [],
+        "contrast_below_wcag_aa_normal_text": [],
+        "either": true
+      },
+      "remedy": {
+        "cap_floor": {
+          "needed_font_size_css_px": 16.67,
+          "growth_factor": 1.19,
+          "probe_by_width": {
+            "1344": {
+              "applied": true,
+              "needed_font_px": 16.666666666666664,
+              "line_height_px": 23.333333333333332,
+              "object": {
+                "width": 180.81768798828125,
+                "height": 179.84597778320312,
+                "after_width": 180.81768798828125,
+                "after_height": 179.84597778320312
+              },
+              "element": {
+                "width": 157.03335571289062,
+                "height": 43.52801513671875,
+                "after_width": 157.24191284179688,
+                "after_height": 50.99383544921875
+              },
+              "object_quad": [
+                [
+                  268.14801025390625,
+                  386.52532958984375
+                ],
+                [
+                  444.07940673828125,
+                  381.6111145019531
+                ],
+                [
+                  448.9656982421875,
+                  556.5429077148438
+                ],
+                [
+                  273.0343017578125,
+                  561.4570922851562
+                ]
+              ],
+              "rects": [
+                [
+                  281.29925537109375,
+                  496.8784484863281,
+                  83.8564453125,
+                  26.314239501953125
+                ],
+                [
+                  281.95062255859375,
+                  519.6578369140625,
+                  103.177001953125,
+                  26.8538818359375
+                ]
+              ],
+              "clipping": [
+                {
+                  "tag": "ARTICLE",
+                  "dx": 0,
+                  "dy": 10,
+                  "cls": ""
+                }
+              ],
+              "scroll": {
+                "dx": 0,
+                "dy": 0
+              },
+              "file": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/legibility/repro/run-1344/raised-5.png"
+            },
+            "1200": {
+              "applied": true,
+              "needed_font_px": 16.666666666666664,
+              "line_height_px": 23.333333333333332,
+              "object": {
+                "width": 161.44435119628906,
+                "height": 160.57675170898438,
+                "after_width": 161.44435119628906,
+                "after_height": 160.57675170898438
+              },
+              "element": {
+                "width": 140.20835876464844,
+                "height": 38.864288330078125,
+                "after_width": 140.39454650878906,
+                "after_height": 45.53021240234375
+              },
+              "object_quad": [
+                [
+                  239.41786193847656,
+                  345.1119079589844
+                ],
+                [
+                  396.4994812011719,
+                  340.7242126464844
+                ],
+                [
+                  400.8622131347656,
+                  496.9132995605469
+                ],
+                [
+                  243.78062438964844,
+                  501.30096435546875
+                ]
+              ],
+              "rects": [
+                [
+                  251.16004943847656,
+                  443.6414794921875,
+                  74.87181091308594,
+                  23.494842529296875
+                ],
+                [
+                  251.7416229248047,
+                  463.9801940917969,
+                  92.12232971191406,
+                  23.9766845703125
+                ]
+              ],
+              "clipping": [
+                {
+                  "tag": "ARTICLE",
+                  "dx": 0,
+                  "dy": 10,
+                  "cls": ""
+                }
+              ],
+              "scroll": {
+                "dx": 0,
+                "dy": 0
+              },
+              "file": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/legibility/repro/run-1200/raised-5.png"
+            }
+          },
+          "decision": "run must shorten",
+          "detail": "at 16.67 px (11 px cap, 1344 px width) the run still needs 2 line(s) and the object (card-1-lettering) clips 10 px of height / 0 px of width: the fixed 176x175 plate cannot absorb the type, so the run must shorten (or the object's geometry must change)"
+        },
+        "contrast_floor": {
+          "decision": null,
+          "detail": null
+        }
+      }
+    },
+    {
+      "run_id": "card-1-lettering#6",
+      "unit": "card-1-lettering",
+      "object": {
+        "width": 180.81768798828125,
+        "height": 179.84597778320312,
+        "offsetWidth": 176,
+        "offsetHeight": 175,
+        "scaleX": 1.0273732272061435,
+        "scaleY": 1.0276913016183036,
+        "quad": [
+          [
+            268.14801025390625,
+            386.52532958984375
+          ],
+          [
+            444.07940673828125,
+            381.6111145019531
+          ],
+          [
+            448.9656982421875,
+            556.5429077148438
+          ],
+          [
+            273.0343017578125,
+            561.4570922851562
+          ]
+        ],
+        "overflowX": "hidden",
+        "overflowY": "hidden",
+        "backgroundImage": "none",
+        "backgroundColor": "rgb(244, 236, 217)"
+      },
+      "selector": "[data-cb-cover-mark]",
+      "text": "AR",
+      "font": {
+        "family": "\"CB Display\", Fraunces, ui-serif, Georgia, \"Noto Serif JP\", \"Hiragino Mincho ProN\", \"Yu Mincho\", serif",
+        "size_css_px": 32.64,
+        "weight": "600",
+        "line_height_css_px": 37.536,
+        "letter_spacing": "3.264px",
+        "text_align": "start"
+      },
+      "measurements": {
+        "1344": {
+          "ink_pixels": 573,
+          "declared_color": "rgb(92, 83, 71)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 367,
+            "min": 4.994,
+            "p05": 4.994,
+            "median": 4.994,
+            "max": 4.994,
+            "pixels_below_floor": 0,
+            "pixels_below_wcag_aa": 0,
+            "worst_background_rgb": [
+              230,
+              207,
+              174
+            ],
+            "background_luminance_range": [
+              0.645,
+              0.645
+            ]
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 24.0,
+            "pixel_cap_bbox_px": [
+              26,
+              24
+            ],
+            "cap_pixels": 347,
+            "font_size_css_px": 32.64,
+            "scene_scale": 1,
+            "font_size_rendered_px": 32.64,
+            "cap_ratio_of_em": 0.7,
+            "cap_from_ratio_px": 22.85,
+            "cap_from_textmetrics_px": 23,
+            "x_height_ratio_of_em": 0.44,
+            "spread_px": 1.15
+          },
+          "layout": {
+            "object_local_px": [
+              176.0,
+              175.0
+            ],
+            "lines": 1,
+            "line_widths_px": [
+              55.55
+            ],
+            "margins_object_local": {
+              "left": 59.65,
+              "right": 59.66,
+              "top": 28.21,
+              "bottom": 103.75
+            },
+            "clipped_ancestors": [
+              {
+                "tag": "ARTICLE",
+                "dx": 0,
+                "dy": 2,
+                "cls": ""
+              }
+            ]
+          }
+        },
+        "1200": {
+          "ink_pixels": 426,
+          "declared_color": "rgb(92, 83, 71)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 243,
+            "min": 4.994,
+            "p05": 4.994,
+            "median": 4.994,
+            "max": 4.994,
+            "pixels_below_floor": 0,
+            "pixels_below_wcag_aa": 0,
+            "worst_background_rgb": [
+              230,
+              207,
+              174
+            ],
+            "background_luminance_range": [
+              0.645,
+              0.645
+            ]
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 20.0,
+            "pixel_cap_bbox_px": [
+              22,
+              21
+            ],
+            "cap_pixels": 257,
+            "font_size_css_px": 31.2,
+            "scene_scale": 0.892857,
+            "font_size_rendered_px": 27.857,
+            "cap_ratio_of_em": 0.7,
+            "cap_from_ratio_px": 19.5,
+            "cap_from_textmetrics_px": 19.64,
+            "x_height_ratio_of_em": 0.44,
+            "spread_px": 0.5
+          },
+          "layout": {
+            "object_local_px": [
+              157.14,
+              156.25
+            ],
+            "lines": 1,
+            "line_widths_px": [
+              47.47
+            ],
+            "margins_object_local": {
+              "left": 54.34,
+              "right": 54.34,
+              "top": 25.99,
+              "bottom": 92.84
+            },
+            "clipped_ancestors": [
+              {
+                "tag": "ARTICLE",
+                "dx": 0,
+                "dy": 2,
+                "cls": ""
+              }
+            ]
+          }
+        }
+      },
+      "under_floor": {
+        "cap": [],
+        "contrast": [],
+        "contrast_below_wcag_aa_normal_text": [],
+        "either": false
+      },
+      "remedy": {
+        "cap_floor": {
+          "needed_font_size_css_px": 15.71,
+          "growth_factor": 0.481,
+          "probe_by_width": {
+            "1344": {
+              "applied": false,
+              "reason": "already at or above the 11 px cap floor"
+            },
+            "1200": {
+              "applied": false,
+              "reason": "already at or above the 11 px cap floor"
+            }
+          },
+          "decision": null,
+          "detail": null
+        },
+        "contrast_floor": {
+          "decision": null,
+          "detail": null
+        }
+      }
+    },
+    {
+      "run_id": "card-2-lettering#7",
+      "unit": "card-2-lettering",
+      "object": {
+        "width": 178.42623901367188,
+        "height": 177.44024658203125,
+        "offsetWidth": 176,
+        "offsetHeight": 175,
+        "scaleX": 1.0137854489413174,
+        "scaleY": 1.0139442661830358,
+        "quad": [
+          [
+            475.45196533203125,
+            382.78839111328125
+          ],
+          [
+            651.434814453125,
+            385.2457275390625
+          ],
+          [
+            648.991455078125,
+            560.2286376953125
+          ],
+          [
+            473.0085754394531,
+            557.7713623046875
+          ]
+        ],
+        "overflowX": "hidden",
+        "overflowY": "hidden",
+        "backgroundImage": "none",
+        "backgroundColor": "rgb(244, 236, 217)"
+      },
+      "selector": "[data-cb-home-scene-title]",
+      "text": "Japanese Cafe Basics",
+      "font": {
+        "family": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "size_css_px": 14.0,
+        "weight": "600",
+        "line_height_css_px": 19.6,
+        "letter_spacing": "normal",
+        "text_align": "start"
+      },
+      "measurements": {
+        "1344": {
+          "ink_pixels": 729,
+          "declared_color": "rgb(26, 23, 19)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 194,
+            "min": 15.177,
+            "p05": 15.177,
+            "median": 15.177,
+            "max": 15.177,
+            "pixels_below_floor": 0,
+            "pixels_below_wcag_aa": 0,
+            "worst_background_rgb": [
+              244,
+              236,
+              217
+            ],
+            "background_luminance_range": [
+              0.8423,
+              0.8423
+            ]
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 9.0,
+            "pixel_cap_bbox_px": [
+              8,
+              10
+            ],
+            "cap_pixels": 48,
+            "font_size_css_px": 14.0,
+            "scene_scale": 1,
+            "font_size_rendered_px": 14.0,
+            "cap_ratio_of_em": 0.66,
+            "cap_from_ratio_px": 9.24,
+            "cap_from_textmetrics_px": 9,
+            "x_height_ratio_of_em": 0.495,
+            "spread_px": 0.24
+          },
+          "layout": {
+            "object_local_px": [
+              176.0,
+              175.0
+            ],
+            "lines": 1,
+            "line_widths_px": [
+              127.5
+            ],
+            "margins_object_local": {
+              "left": 9.72,
+              "right": 38.49,
+              "top": 111.22,
+              "bottom": 40.22
+            },
+            "clipped_ancestors": []
+          }
+        },
+        "1200": {
+          "ink_pixels": 611,
+          "declared_color": "rgb(26, 23, 19)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 145,
+            "min": 15.177,
+            "p05": 15.177,
+            "median": 15.177,
+            "max": 15.177,
+            "pixels_below_floor": 0,
+            "pixels_below_wcag_aa": 0,
+            "worst_background_rgb": [
+              244,
+              236,
+              217
+            ],
+            "background_luminance_range": [
+              0.8423,
+              0.8423
+            ]
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 8.0,
+            "pixel_cap_bbox_px": [
+              8,
+              9
+            ],
+            "cap_pixels": 54,
+            "font_size_css_px": 14.0,
+            "scene_scale": 0.892857,
+            "font_size_rendered_px": 12.5,
+            "cap_ratio_of_em": 0.66,
+            "cap_from_ratio_px": 8.25,
+            "cap_from_textmetrics_px": 8.04,
+            "x_height_ratio_of_em": 0.495,
+            "spread_px": 0.25
+          },
+          "layout": {
+            "object_local_px": [
+              157.14,
+              156.25
+            ],
+            "lines": 1,
+            "line_widths_px": [
+              113.84
+            ],
+            "margins_object_local": {
+              "left": 8.68,
+              "right": 34.36,
+              "top": 99.31,
+              "bottom": 35.91
+            },
+            "clipped_ancestors": []
+          }
+        }
+      },
+      "under_floor": {
+        "cap": [
+          1344,
+          1200
+        ],
+        "contrast": [],
+        "contrast_below_wcag_aa_normal_text": [],
+        "either": true
+      },
+      "remedy": {
+        "cap_floor": {
+          "needed_font_size_css_px": 16.67,
+          "growth_factor": 1.19,
+          "probe_by_width": {
+            "1344": {
+              "applied": true,
+              "needed_font_px": 16.666666666666664,
+              "line_height_px": 23.333333333333332,
+              "object": {
+                "width": 178.42623901367188,
+                "height": 177.44024658203125,
+                "after_width": 178.42623901367188,
+                "after_height": 177.44024658203125
+              },
+              "element": {
+                "width": 156.25839233398438,
+                "height": 21.769927978515625,
+                "after_width": 156.310546875,
+                "after_height": 25.503936767578125
+              },
+              "object_quad": [
+                [
+                  475.45196533203125,
+                  382.78839111328125
+                ],
+                [
+                  651.434814453125,
+                  385.2457275390625
+                ],
+                [
+                  648.991455078125,
+                  560.2286376953125
+                ],
+                [
+                  473.0085754394531,
+                  557.7713623046875
+                ]
+              ],
+              "rects": [
+                [
+                  483.53814697265625,
+                  495.9169921875,
+                  151.69537353515625,
+                  26.1112060546875
+                ]
+              ],
+              "clipping": [],
+              "scroll": {
+                "dx": 0,
+                "dy": 0
+              },
+              "file": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/legibility/repro/run-1344/raised-7.png"
+            },
+            "1200": {
+              "applied": true,
+              "needed_font_px": 16.666666666666664,
+              "line_height_px": 23.333333333333332,
+              "object": {
+                "width": 159.30917358398438,
+                "height": 158.42877197265625,
+                "after_width": 159.30917358398438,
+                "after_height": 158.42877197265625
+              },
+              "element": {
+                "width": 139.51641845703125,
+                "height": 19.437408447265625,
+                "after_width": 139.56295776367188,
+                "after_height": 22.7713623046875
+              },
+              "object_quad": [
+                [
+                  424.51068115234375,
+                  341.7753601074219
+                ],
+                [
+                  581.6382446289062,
+                  343.9693908691406
+                ],
+                [
+                  579.4566650390625,
+                  500.2041320800781
+                ],
+                [
+                  422.3290710449219,
+                  498.0101318359375
+                ]
+              ],
+              "rects": [
+                [
+                  431.7304992675781,
+                  442.78302001953125,
+                  135.44229125976562,
+                  23.313568115234375
+                ]
+              ],
+              "clipping": [],
+              "scroll": {
+                "dx": 0,
+                "dy": 0
+              },
+              "file": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/legibility/repro/run-1200/raised-7.png"
+            }
+          },
+          "decision": "object can grow",
+          "detail": "at 16.67 px (11 px cap) the run stays 1 line(s), its widest line is 151.7 css px with 4.9 px of slack to the 156.6 px content edge, and nothing clips at either width: the object absorbs the floor size without the run changing"
+        },
+        "contrast_floor": {
+          "decision": null,
+          "detail": null
+        }
+      }
+    },
+    {
+      "run_id": "card-3-lettering#8",
+      "unit": "card-3-lettering",
+      "object": {
+        "width": 177.82293701171875,
+        "height": 176.83343505859375,
+        "offsetWidth": 176,
+        "offsetHeight": 175,
+        "scaleX": 1.010357596657493,
+        "scaleY": 1.010476771763393,
+        "quad": [
+          [
+            671.1722412109375,
+            384.9311218261719
+          ],
+          [
+            847.16259765625,
+            383.08807373046875
+          ],
+          [
+            848.9951782226562,
+            558.0784912109375
+          ],
+          [
+            673.0048217773438,
+            559.9215087890625
+          ]
+        ],
+        "overflowX": "hidden",
+        "overflowY": "hidden",
+        "backgroundImage": "none",
+        "backgroundColor": "rgb(244, 236, 217)"
+      },
+      "selector": "[data-cb-home-scene-title]",
+      "text": "Astronomy",
+      "font": {
+        "family": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "size_css_px": 14.0,
+        "weight": "600",
+        "line_height_css_px": 19.6,
+        "letter_spacing": "normal",
+        "text_align": "start"
+      },
+      "measurements": {
+        "1344": {
+          "ink_pixels": 377,
+          "declared_color": "rgb(26, 23, 19)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 108,
+            "min": 15.177,
+            "p05": 15.177,
+            "median": 15.177,
+            "max": 15.177,
+            "pixels_below_floor": 0,
+            "pixels_below_wcag_aa": 0,
+            "worst_background_rgb": [
+              244,
+              236,
+              217
+            ],
+            "background_luminance_range": [
+              0.8423,
+              0.8423
+            ]
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 9.0,
+            "pixel_cap_bbox_px": [
+              8,
+              10
+            ],
+            "cap_pixels": 61,
+            "font_size_css_px": 14.0,
+            "scene_scale": 1,
+            "font_size_rendered_px": 14.0,
+            "cap_ratio_of_em": 0.66,
+            "cap_from_ratio_px": 9.24,
+            "cap_from_textmetrics_px": 9,
+            "x_height_ratio_of_em": 0.495,
+            "spread_px": 0.24
+          },
+          "layout": {
+            "object_local_px": [
+              176.0,
+              175.0
+            ],
+            "lines": 1,
+            "line_widths_px": [
+              66.11
+            ],
+            "margins_object_local": {
+              "left": 9.79,
+              "right": 99.88,
+              "top": 112.31,
+              "bottom": 41.31
+            },
+            "clipped_ancestors": []
+          }
+        },
+        "1200": {
+          "ink_pixels": 300,
+          "declared_color": "rgb(26, 23, 19)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 69,
+            "min": 15.177,
+            "p05": 15.177,
+            "median": 15.177,
+            "max": 15.177,
+            "pixels_below_floor": 0,
+            "pixels_below_wcag_aa": 0,
+            "worst_background_rgb": [
+              244,
+              236,
+              217
+            ],
+            "background_luminance_range": [
+              0.8423,
+              0.8423
+            ]
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 8.0,
+            "pixel_cap_bbox_px": [
+              7,
+              9
+            ],
+            "cap_pixels": 43,
+            "font_size_css_px": 14.0,
+            "scene_scale": 0.892857,
+            "font_size_rendered_px": 12.5,
+            "cap_ratio_of_em": 0.66,
+            "cap_from_ratio_px": 8.25,
+            "cap_from_textmetrics_px": 8.04,
+            "x_height_ratio_of_em": 0.495,
+            "spread_px": 0.25
+          },
+          "layout": {
+            "object_local_px": [
+              157.14,
+              156.25
+            ],
+            "lines": 1,
+            "line_widths_px": [
+              59.03
+            ],
+            "margins_object_local": {
+              "left": 8.74,
+              "right": 89.18,
+              "top": 100.28,
+              "bottom": 36.88
+            },
+            "clipped_ancestors": []
+          }
+        }
+      },
+      "under_floor": {
+        "cap": [
+          1344,
+          1200
+        ],
+        "contrast": [],
+        "contrast_below_wcag_aa_normal_text": [],
+        "either": true
+      },
+      "remedy": {
+        "cap_floor": {
+          "needed_font_size_css_px": 16.67,
+          "growth_factor": 1.19,
+          "probe_by_width": {
+            "1344": {
+              "applied": true,
+              "needed_font_px": 16.666666666666664,
+              "line_height_px": 23.333333333333332,
+              "object": {
+                "width": 177.82293701171875,
+                "height": 176.83343505859375,
+                "after_width": 177.82293701171875,
+                "after_height": 176.83343505859375
+              },
+              "element": {
+                "width": 156.1966552734375,
+                "height": 21.226287841796875,
+                "after_width": 156.23577880859375,
+                "after_height": 24.960418701171875
+              },
+              "object_quad": [
+                [
+                  671.1722412109375,
+                  384.9311218261719
+                ],
+                [
+                  847.16259765625,
+                  383.08807373046875
+                ],
+                [
+                  848.9951782226562,
+                  558.0784912109375
+                ],
+                [
+                  673.0048217773438,
+                  559.9215087890625
+                ]
+              ],
+              "rects": [
+                [
+                  682.35498046875,
+                  496.9991455078125,
+                  78.6533203125,
+                  24.8197021484375
+                ]
+              ],
+              "clipping": [],
+              "scroll": {
+                "dx": 0,
+                "dy": 0
+              },
+              "file": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/legibility/repro/run-1344/raised-8.png"
+            },
+            "1200": {
+              "applied": true,
+              "needed_font_px": 16.666666666666664,
+              "line_height_px": 23.333333333333332,
+              "object": {
+                "width": 158.77044677734375,
+                "height": 157.88699340820312,
+                "after_width": 158.77044677734375,
+                "after_height": 157.88699340820312
+              },
+              "element": {
+                "width": 139.4613037109375,
+                "height": 18.9520263671875,
+                "after_width": 139.4962158203125,
+                "after_height": 22.28607177734375
+              },
+              "object_quad": [
+                [
+                  599.2609252929688,
+                  343.6885070800781
+                ],
+                [
+                  756.3951416015625,
+                  342.04290771484375
+                ],
+                [
+                  758.0313720703125,
+                  498.28436279296875
+                ],
+                [
+                  600.8971557617188,
+                  499.9299011230469
+                ]
+              ],
+              "rects": [
+                [
+                  609.2454833984375,
+                  443.7492370605469,
+                  70.2261962890625,
+                  22.160430908203125
+                ]
+              ],
+              "clipping": [],
+              "scroll": {
+                "dx": 0,
+                "dy": 0
+              },
+              "file": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/legibility/repro/run-1200/raised-8.png"
+            }
+          },
+          "decision": "object can grow",
+          "detail": "at 16.67 px (11 px cap) the run stays 1 line(s), its widest line is 78.7 css px with 77.8 px of slack to the 156.4 px content edge, and nothing clips at either width: the object absorbs the floor size without the run changing"
+        },
+        "contrast_floor": {
+          "decision": null,
+          "detail": null
+        }
+      }
+    },
+    {
+      "run_id": "card-3-lettering#9",
+      "unit": "card-3-lettering",
+      "object": {
+        "width": 177.82293701171875,
+        "height": 176.83343505859375,
+        "offsetWidth": 176,
+        "offsetHeight": 175,
+        "scaleX": 1.010357596657493,
+        "scaleY": 1.010476771763393,
+        "quad": [
+          [
+            671.1722412109375,
+            384.9311218261719
+          ],
+          [
+            847.16259765625,
+            383.08807373046875
+          ],
+          [
+            848.9951782226562,
+            558.0784912109375
+          ],
+          [
+            673.0048217773438,
+            559.9215087890625
+          ]
+        ],
+        "overflowX": "hidden",
+        "overflowY": "hidden",
+        "backgroundImage": "none",
+        "backgroundColor": "rgb(244, 236, 217)"
+      },
+      "selector": "[data-cb-cover-mark]",
+      "text": "AS",
+      "font": {
+        "family": "\"CB Display\", Fraunces, ui-serif, Georgia, \"Noto Serif JP\", \"Hiragino Mincho ProN\", \"Yu Mincho\", serif",
+        "size_css_px": 32.64,
+        "weight": "600",
+        "line_height_css_px": 37.536,
+        "letter_spacing": "3.264px",
+        "text_align": "start"
+      },
+      "measurements": {
+        "1344": {
+          "ink_pixels": 491,
+          "declared_color": "rgb(92, 83, 71)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 296,
+            "min": 4.994,
+            "p05": 4.994,
+            "median": 4.994,
+            "max": 4.994,
+            "pixels_below_floor": 0,
+            "pixels_below_wcag_aa": 0,
+            "worst_background_rgb": [
+              230,
+              207,
+              174
+            ],
+            "background_luminance_range": [
+              0.645,
+              0.645
+            ]
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 23.0,
+            "pixel_cap_bbox_px": [
+              25,
+              24
+            ],
+            "cap_pixels": 342,
+            "font_size_css_px": 32.64,
+            "scene_scale": 1,
+            "font_size_rendered_px": 32.64,
+            "cap_ratio_of_em": 0.7,
+            "cap_from_ratio_px": 22.85,
+            "cap_from_textmetrics_px": 23,
+            "x_height_ratio_of_em": 0.44,
+            "spread_px": 0.15
+          },
+          "layout": {
+            "object_local_px": [
+              176.0,
+              175.0
+            ],
+            "lines": 1,
+            "line_widths_px": [
+              50.15
+            ],
+            "margins_object_local": {
+              "left": 62.71,
+              "right": 62.72,
+              "top": 29.21,
+              "bottom": 104.74
+            },
+            "clipped_ancestors": []
+          }
+        },
+        "1200": {
+          "ink_pixels": 385,
+          "declared_color": "rgb(92, 83, 71)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 213,
+            "min": 4.994,
+            "p05": 4.994,
+            "median": 4.994,
+            "max": 4.994,
+            "pixels_below_floor": 0,
+            "pixels_below_wcag_aa": 0,
+            "worst_background_rgb": [
+              230,
+              207,
+              174
+            ],
+            "background_luminance_range": [
+              0.645,
+              0.645
+            ]
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 20.0,
+            "pixel_cap_bbox_px": [
+              22,
+              20
+            ],
+            "cap_pixels": 268,
+            "font_size_css_px": 31.2,
+            "scene_scale": 0.892857,
+            "font_size_rendered_px": 27.857,
+            "cap_ratio_of_em": 0.7,
+            "cap_from_ratio_px": 19.5,
+            "cap_from_textmetrics_px": 19.64,
+            "x_height_ratio_of_em": 0.44,
+            "spread_px": 0.5
+          },
+          "layout": {
+            "object_local_px": [
+              157.14,
+              156.25
+            ],
+            "lines": 1,
+            "line_widths_px": [
+              42.86
+            ],
+            "margins_object_local": {
+              "left": 56.96,
+              "right": 56.96,
+              "top": 26.84,
+              "bottom": 93.7
+            },
+            "clipped_ancestors": []
+          }
+        }
+      },
+      "under_floor": {
+        "cap": [],
+        "contrast": [],
+        "contrast_below_wcag_aa_normal_text": [],
+        "either": false
+      },
+      "remedy": {
+        "cap_floor": {
+          "needed_font_size_css_px": 15.71,
+          "growth_factor": 0.481,
+          "probe_by_width": {
+            "1344": {
+              "applied": false,
+              "reason": "already at or above the 11 px cap floor"
+            },
+            "1200": {
+              "applied": false,
+              "reason": "already at or above the 11 px cap floor"
+            }
+          },
+          "decision": null,
+          "detail": null
+        },
+        "contrast_floor": {
+          "decision": null,
+          "detail": null
+        }
+      }
+    },
+    {
+      "run_id": "card-4-lettering#10",
+      "unit": "card-4-lettering",
+      "object": {
+        "width": 180.22314453125,
+        "height": 179.247802734375,
+        "offsetWidth": 176,
+        "offsetHeight": 175,
+        "scaleX": 1.0239951393821023,
+        "scaleY": 1.024273158482143,
+        "quad": [
+          [
+            877.3018798828125,
+            381.9022216796875
+          ],
+          [
+            1053.2493896484375,
+            386.2022705078125
+          ],
+          [
+            1048.9737548828125,
+            561.1500244140625
+          ],
+          [
+            873.0262451171875,
+            556.8499755859375
+          ]
+        ],
+        "overflowX": "hidden",
+        "overflowY": "hidden",
+        "backgroundImage": "none",
+        "backgroundColor": "rgb(244, 236, 217)"
+      },
+      "selector": "[data-cb-home-scene-title]",
+      "text": "Sourdough",
+      "font": {
+        "family": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "size_css_px": 14.0,
+        "weight": "600",
+        "line_height_css_px": 19.6,
+        "letter_spacing": "normal",
+        "text_align": "start"
+      },
+      "measurements": {
+        "1344": {
+          "ink_pixels": 407,
+          "declared_color": "rgb(26, 23, 19)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 123,
+            "min": 15.177,
+            "p05": 15.177,
+            "median": 15.177,
+            "max": 15.177,
+            "pixels_below_floor": 0,
+            "pixels_below_wcag_aa": 0,
+            "worst_background_rgb": [
+              244,
+              236,
+              217
+            ],
+            "background_luminance_range": [
+              0.8423,
+              0.8423
+            ]
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 9.0,
+            "pixel_cap_bbox_px": [
+              8,
+              11
+            ],
+            "cap_pixels": 62,
+            "font_size_css_px": 14.0,
+            "scene_scale": 1,
+            "font_size_rendered_px": 14.0,
+            "cap_ratio_of_em": 0.66,
+            "cap_from_ratio_px": 9.24,
+            "cap_from_textmetrics_px": 9,
+            "x_height_ratio_of_em": 0.495,
+            "spread_px": 0.24
+          },
+          "layout": {
+            "object_local_px": [
+              176.0,
+              175.0
+            ],
+            "lines": 1,
+            "line_widths_px": [
+              67.11
+            ],
+            "margins_object_local": {
+              "left": 9.51,
+              "right": 98.87,
+              "top": 111.37,
+              "bottom": 40.37
+            },
+            "clipped_ancestors": []
+          }
+        },
+        "1200": {
+          "ink_pixels": 328,
+          "declared_color": "rgb(26, 23, 19)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 84,
+            "min": 15.177,
+            "p05": 15.177,
+            "median": 15.177,
+            "max": 15.177,
+            "pixels_below_floor": 0,
+            "pixels_below_wcag_aa": 0,
+            "worst_background_rgb": [
+              244,
+              236,
+              217
+            ],
+            "background_luminance_range": [
+              0.8423,
+              0.8423
+            ]
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 8.0,
+            "pixel_cap_bbox_px": [
+              7,
+              9
+            ],
+            "cap_pixels": 47,
+            "font_size_css_px": 14.0,
+            "scene_scale": 0.892857,
+            "font_size_rendered_px": 12.5,
+            "cap_ratio_of_em": 0.66,
+            "cap_from_ratio_px": 8.25,
+            "cap_from_textmetrics_px": 8.04,
+            "x_height_ratio_of_em": 0.495,
+            "spread_px": 0.25
+          },
+          "layout": {
+            "object_local_px": [
+              157.14,
+              156.25
+            ],
+            "lines": 1,
+            "line_widths_px": [
+              59.92
+            ],
+            "margins_object_local": {
+              "left": 8.49,
+              "right": 88.28,
+              "top": 99.44,
+              "bottom": 36.05
+            },
+            "clipped_ancestors": []
+          }
+        }
+      },
+      "under_floor": {
+        "cap": [
+          1344,
+          1200
+        ],
+        "contrast": [],
+        "contrast_below_wcag_aa_normal_text": [],
+        "either": true
+      },
+      "remedy": {
+        "cap_floor": {
+          "needed_font_size_css_px": 16.67,
+          "growth_factor": 1.19,
+          "probe_by_width": {
+            "1344": {
+              "applied": true,
+              "needed_font_px": 16.666666666666664,
+              "line_height_px": 23.333333333333332,
+              "object": {
+                "width": 180.22314453125,
+                "height": 179.247802734375,
+                "after_width": 180.22314453125,
+                "after_height": 179.247802734375
+              },
+              "element": {
+                "width": 156.43212890625,
+                "height": 23.39935302734375,
+                "after_width": 156.52337646484375,
+                "after_height": 27.13262939453125
+              },
+              "object_quad": [
+                [
+                  877.3018798828125,
+                  381.9022216796875
+                ],
+                [
+                  1053.2493896484375,
+                  386.2022705078125
+                ],
+                [
+                  1048.9737548828125,
+                  561.1500244140625
+                ],
+                [
+                  873.0262451171875,
+                  556.8499755859375
+                ]
+              ],
+              "rects": [
+                [
+                  883.9517211914062,
+                  495.11279296875,
+                  79.85955810546875,
+                  25.93023681640625
+                ]
+              ],
+              "clipping": [],
+              "scroll": {
+                "dx": 0,
+                "dy": 0
+              },
+              "file": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/legibility/repro/run-1344/raised-10.png"
+            },
+            "1200": {
+              "applied": true,
+              "needed_font_px": 16.666666666666664,
+              "line_height_px": 23.333333333333332,
+              "object": {
+                "width": 160.91351318359375,
+                "height": 160.04266357421875,
+                "after_width": 160.91351318359375,
+                "after_height": 160.04266357421875
+              },
+              "element": {
+                "width": 139.6715087890625,
+                "height": 20.89227294921875,
+                "after_width": 139.75299072265625,
+                "after_height": 24.225555419921875
+              },
+              "object_quad": [
+                [
+                  783.3052368164062,
+                  340.984130859375
+                ],
+                [
+                  940.4012451171875,
+                  344.8234558105469
+                ],
+                [
+                  936.5836791992188,
+                  501.02679443359375
+                ],
+                [
+                  779.4877319335938,
+                  497.1874694824219
+                ]
+              ],
+              "rects": [
+                [
+                  789.2426147460938,
+                  442.06500244140625,
+                  71.30316162109375,
+                  23.1519775390625
+                ]
+              ],
+              "clipping": [],
+              "scroll": {
+                "dx": 0,
+                "dy": 0
+              },
+              "file": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/legibility/repro/run-1200/raised-10.png"
+            }
+          },
+          "decision": "object can grow",
+          "detail": "at 16.67 px (11 px cap) the run stays 1 line(s), its widest line is 79.9 css px with 77.1 px of slack to the 157.0 px content edge, and nothing clips at either width: the object absorbs the floor size without the run changing"
+        },
+        "contrast_floor": {
+          "decision": null,
+          "detail": null
+        }
+      }
+    },
+    {
+      "run_id": "card-4-lettering#11",
+      "unit": "card-4-lettering",
+      "object": {
+        "width": 180.22314453125,
+        "height": 179.247802734375,
+        "offsetWidth": 176,
+        "offsetHeight": 175,
+        "scaleX": 1.0239951393821023,
+        "scaleY": 1.024273158482143,
+        "quad": [
+          [
+            877.3018798828125,
+            381.9022216796875
+          ],
+          [
+            1053.2493896484375,
+            386.2022705078125
+          ],
+          [
+            1048.9737548828125,
+            561.1500244140625
+          ],
+          [
+            873.0262451171875,
+            556.8499755859375
+          ]
+        ],
+        "overflowX": "hidden",
+        "overflowY": "hidden",
+        "backgroundImage": "none",
+        "backgroundColor": "rgb(244, 236, 217)"
+      },
+      "selector": "[data-cb-cover-mark]",
+      "text": "SO",
+      "font": {
+        "family": "\"CB Display\", Fraunces, ui-serif, Georgia, \"Noto Serif JP\", \"Hiragino Mincho ProN\", \"Yu Mincho\", serif",
+        "size_css_px": 32.64,
+        "weight": "600",
+        "line_height_css_px": 37.536,
+        "letter_spacing": "3.264px",
+        "text_align": "start"
+      },
+      "measurements": {
+        "1344": {
+          "ink_pixels": 542,
+          "declared_color": "rgb(92, 83, 71)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 347,
+            "min": 4.994,
+            "p05": 4.994,
+            "median": 4.994,
+            "max": 4.994,
+            "pixels_below_floor": 0,
+            "pixels_below_wcag_aa": 0,
+            "worst_background_rgb": [
+              230,
+              207,
+              174
+            ],
+            "background_luminance_range": [
+              0.645,
+              0.645
+            ]
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 23.0,
+            "pixel_cap_bbox_px": [
+              25,
+              24
+            ],
+            "cap_pixels": 330,
+            "font_size_css_px": 32.64,
+            "scene_scale": 1,
+            "font_size_rendered_px": 32.64,
+            "cap_ratio_of_em": 0.7,
+            "cap_from_ratio_px": 22.85,
+            "cap_from_textmetrics_px": 23,
+            "x_height_ratio_of_em": 0.44,
+            "spread_px": 0.15
+          },
+          "layout": {
+            "object_local_px": [
+              176.0,
+              175.0
+            ],
+            "lines": 1,
+            "line_widths_px": [
+              53.01
+            ],
+            "margins_object_local": {
+              "left": 60.99,
+              "right": 61.01,
+              "top": 28.46,
+              "bottom": 103.99
+            },
+            "clipped_ancestors": []
+          }
+        },
+        "1200": {
+          "ink_pixels": 411,
+          "declared_color": "rgb(92, 83, 71)",
+          "declared_alpha": 1.0,
+          "contrast": {
+            "core_pixels": 244,
+            "min": 4.994,
+            "p05": 4.994,
+            "median": 4.994,
+            "max": 4.994,
+            "pixels_below_floor": 0,
+            "pixels_below_wcag_aa": 0,
+            "worst_background_rgb": [
+              230,
+              207,
+              174
+            ],
+            "background_luminance_range": [
+              0.645,
+              0.645
+            ]
+          },
+          "cap": {
+            "probe": "an absolutely positioned capital H in the run's computed font, painted at the run's own text-rect origin while the run's glyphs are transparent",
+            "pixel_cap_px": 19.0,
+            "pixel_cap_bbox_px": [
+              22,
+              21
+            ],
+            "cap_pixels": 264,
+            "font_size_css_px": 31.2,
+            "scene_scale": 0.892857,
+            "font_size_rendered_px": 27.857,
+            "cap_ratio_of_em": 0.7,
+            "cap_from_ratio_px": 19.5,
+            "cap_from_textmetrics_px": 19.64,
+            "x_height_ratio_of_em": 0.44,
+            "spread_px": 0.64
+          },
+          "layout": {
+            "object_local_px": [
+              157.14,
+              156.25
+            ],
+            "lines": 1,
+            "line_widths_px": [
+              45.29
+            ],
+            "margins_object_local": {
+              "left": 55.5,
+              "right": 55.5,
+              "top": 26.2,
+              "bottom": 93.06
+            },
+            "clipped_ancestors": []
+          }
+        }
+      },
+      "under_floor": {
+        "cap": [],
+        "contrast": [],
+        "contrast_below_wcag_aa_normal_text": [],
+        "either": false
+      },
+      "remedy": {
+        "cap_floor": {
+          "needed_font_size_css_px": 15.71,
+          "growth_factor": 0.481,
+          "probe_by_width": {
+            "1344": {
+              "applied": false,
+              "reason": "already at or above the 11 px cap floor"
+            },
+            "1200": {
+              "applied": false,
+              "reason": "already at or above the 11 px cap floor"
+            }
+          },
+          "decision": null,
+          "detail": null
+        },
+        "contrast_floor": {
+          "decision": null,
+          "detail": null
+        }
+      }
+    }
+  ]
+}

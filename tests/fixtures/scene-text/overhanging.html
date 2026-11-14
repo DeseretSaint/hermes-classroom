@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Scene text containment fixture — one board inside, one deliberately overhanging</title>
+<style>
+  html, body { margin: 0; padding: 0; width: 600px; height: 320px; overflow: hidden; background: #efe2cb; }
+  * { box-sizing: border-box; }
+  .board { position: absolute; width: 220px; height: 110px; background: #d8c39a;
+           border-radius: 6px; color: #1a1713; font-family: system-ui, sans-serif; }
+  /* control: a rotated board whose single label is centred by the grid, like the scene's tag */
+  #board-pass { left: 40px; top: 40px; display: grid; place-items: center;
+                transform: rotate(-2.4deg); font-size: 18px; line-height: 1.2; }
+  /* defect: a rotated board whose lettering is deliberately wider and taller than the board.
+     No overflow:hidden, so the glyphs leave the object and the difference mask sees them. */
+  #board-fail { left: 320px; top: 40px; display: block; padding: 8px 0 0 10px;
+                transform: rotate(3.1deg); font-size: 34px; line-height: 1.15;
+                white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="board-pass" class="board">Field note</div>
+<div id="board-fail" class="board">Overhanging board label</div>
+</body>
+</html>
