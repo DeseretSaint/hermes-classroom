@@ -8,7 +8,9 @@ without rendering a browser:
 
   1. the measured commit exists, and the recorded desktop/plugin.js sha256 is the real
      hash of that file at that commit;
-  2. the recorded cb.rpc declared-method count matches contracts/rpc.<v>.json;
+  2. the recorded cb.rpc version matches WIRE_CONTRACT_VERSION in coursebook/contracts.py
+     and no newer contracts/rpc.<v>.json sits on disk than the record names, and the
+     recorded declared-method count matches the tree's live contracts/rpc.<v>.json;
   3. the recorded schema version matches coursebook/db.py and contracts/db.<v>.json;
   4. every document quotes the recorded values (tests, text nodes, pin, versions);
   5. no document still carries a known stale string;
@@ -18,11 +20,15 @@ without rendering a browser:
      commit the record attributes it to;
   8. every 64-hex desktop/plugin.js sha256 a release document quotes is the module's real
      hash, verified against the commit its passage names (or against module history);
-  9. optionally (default on) the suite still reports the recorded test count.
+  9. optionally (default on) the suite still reports the recorded test count;
+  10. optionally (--require-head) every recorded measured_commit is this checkout's HEAD and
+      the recorded module pin is this tree's module, so a release cannot pass on a
+      self-consistent record of an older tree.
 
 Usage:
   python3 scripts/check-docs-truth.py              # full check, re-runs the suite
   python3 scripts/check-docs-truth.py --skip-tests # fast doc/contract lint
+  python3 scripts/check-docs-truth.py --require-head  # release run: the record must be HEAD's
   python3 scripts/check-docs-truth.py --json       # machine-readable result
 
 Exit codes: 0 every check passed, 1 at least one check failed, 2 setup error.
@@ -198,9 +204,129 @@ def check_measured_commit(ev: dict) -> None:
         notes.append(f"{path} at {commit[:7]} is {recorded[:12]}…")
 
 
+def live_wire_contract_version() -> int | None:
+    """`WIRE_CONTRACT_VERSION` the tree actually ships, or None when the module is silent.
+
+    The record must follow the tree. Reading the version out of `coursebook/contracts.py`
+    (the way the db block reads `DB_SCHEMA_VERSION`) is what makes a stale record visible:
+    before this, the gate opened whichever `contracts/rpc.v<recorded>.json` the record
+    named, so a v25 record passed on a v26 tree.
+    """
+    api = REPO / "coursebook" / "contracts.py"
+    if not api.exists():
+        fail(f"missing {api.relative_to(REPO)}")
+        return None
+    match = re.search(r"^WIRE_CONTRACT_VERSION\s*=\s*(\d+)", api.read_text(), re.MULTILINE)
+    if not match:
+        fail("coursebook/contracts.py has no WIRE_CONTRACT_VERSION assignment")
+        return None
+    return int(match.group(1))
+
+
+def newest_on_disk_wire_contract() -> int | None:
+    """Highest `contracts/rpc.v<N>.json` present, or None when there are no amendments."""
+    versions: list[int] = []
+    for path in (REPO / "contracts").glob("rpc.v*.json"):
+        match = re.fullmatch(r"rpc\.v(\d+)\.json", path.name)
+        if match:
+            versions.append(int(match.group(1)))
+    return max(versions) if versions else None
+
+
+def recorded_measured_commits(ev: dict, prefix: str = "") -> list[tuple[str, str]]:
+    """Every `measured_commit` in the record, with the dotted path that carries it.
+
+    The record names its measurement per block (tests, rpc, db, top level), so a
+    freshness check has to walk them all: a record can be internally consistent and still
+    describe a tree that is several merges behind the one the gate is running in.
+    """
+    found: list[tuple[str, str]] = []
+    for key, value in ev.items():
+        name = f"{prefix}{key}"
+        if isinstance(value, dict):
+            found.extend(recorded_measured_commits(value, f"{name}."))
+        elif key == "measured_commit" and isinstance(value, str):
+            found.append((name, value))
+    return found
+
+
+def check_record_is_head(ev: dict) -> None:
+    """Opt-in (`--require-head`): every recorded measurement must name this checkout's HEAD.
+
+    The default mode verifies the record against the commits it names, which is right for a
+    historical audit and exactly wrong for a release: a fully consistent record of an old
+    tree passes. This mode asks the other question — is the record about the tree in front
+    of you — and fails naming both commit ids.
+    """
+    head = run(["git", "rev-parse", "HEAD"]).stdout.strip()
+    if not re.fullmatch(r"[0-9a-f]{40}", head):
+        fail("--require-head: could not read HEAD in this checkout")
+        return
+    checked = 0
+    for name, recorded in recorded_measured_commits(ev):
+        full = resolve_commit(recorded) if recorded else ""
+        target = full or recorded
+        checked += 1
+        if target != head:
+            fail(
+                f"--require-head: {name} is {recorded} ({(full or recorded)[:12]}…), "
+                f"but HEAD is {head} ({head[:12]}…): the record describes a stale tree"
+            )
+    if checked and not [f for f in failures if f.startswith("--require-head:")]:
+        notes.append(f"--require-head: {checked} recorded commit(s) all name HEAD {head[:7]}")
+
+    # The record's module pin describes a tree too. A record can name HEAD and still quote
+    # the module hash of an older build, which is the same staleness in another field.
+    plugin = ev.get("plugin") or {}
+    recorded_pin = plugin.get("sha256", "")
+    plugin_path = REPO / plugin.get("path", "desktop/plugin.js")
+    try:
+        plugin_label = str(plugin_path.relative_to(REPO))
+    except ValueError:  # a record may name a path outside the repo; report it, never crash
+        plugin_label = str(plugin_path)
+    if recorded_pin:
+        if not plugin_path.exists():
+            fail(f"--require-head: missing {plugin_label}")
+        else:
+            actual_pin = hashlib.sha256(plugin_path.read_bytes()).hexdigest()
+            if actual_pin != recorded_pin:
+                fail(
+                    f"--require-head: {plugin_label} is {actual_pin} "
+                    f"({actual_pin[:12]}…), but the record pins {recorded_pin} "
+                    f"({recorded_pin[:12]}…): the pin describes a stale module"
+                )
+            else:
+                notes.append("--require-head: the recorded module pin is this tree's module")
+
+
 def check_contracts(ev: dict) -> None:
     rpc = ev["rpc"]
-    contract = REPO / "contracts" / f"rpc.v{rpc['version']}.json"
+    recorded_version = rpc["version"]
+    if not isinstance(recorded_version, int) or isinstance(recorded_version, bool):
+        fail(f"rpc version in the record is not an integer: {recorded_version!r}")
+        return
+    live_version = live_wire_contract_version()
+
+    if live_version is not None:
+        if recorded_version != live_version:
+            fail(
+                f"rpc contract version: evidence says cb.rpc v{recorded_version}, but "
+                f"WIRE_CONTRACT_VERSION in coursebook/contracts.py is {live_version}"
+            )
+        else:
+            notes.append(f"cb.rpc v{live_version} agrees with coursebook/contracts.py")
+
+    newest = newest_on_disk_wire_contract()
+    if newest is not None and newest > recorded_version:
+        fail(
+            f"contracts/rpc.v{newest}.json is newer than the recorded cb.rpc "
+            f"v{recorded_version}: move the record and every doc it feeds to v{newest}"
+        )
+
+    # The method count is asserted against the tree's own contract, never the file the
+    # record happens to name; the record cannot vouch for itself.
+    contract_version = live_version if live_version is not None else recorded_version
+    contract = REPO / "contracts" / f"rpc.v{contract_version}.json"
     if not contract.exists():
         fail(f"missing {contract.relative_to(REPO)}")
     else:
@@ -495,6 +621,12 @@ def run_suite(ev: dict) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--skip-tests", action="store_true", help="do not run the suite")
+    parser.add_argument(
+        "--require-head",
+        action="store_true",
+        help="also fail when any recorded measured_commit is not this checkout's HEAD "
+        "(release runs; the default stays a historical audit of the commits named)",
+    )
     parser.add_argument("--json", action="store_true", help="print a JSON result")
     args = parser.parse_args()
 
@@ -504,6 +636,8 @@ def main() -> int:
 
     ev = read_evidence()
     check_measured_commit(ev)
+    if args.require_head:
+        check_record_is_head(ev)
     check_contracts(ev)
     check_docs(ev)
     check_doc_plugin_pins()
