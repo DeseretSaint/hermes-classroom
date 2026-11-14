@@ -44,6 +44,12 @@ python_dependencies:
   # Imported by `coursebook/research.py` and always constructed with `suffix_list_urls=()`, so the
   # PSL snapshot inside the wheel is used and no list is fetched — the plugin stays offline-hermetic.
   - "tldextract>=5,<6"
+  # UP-45: reads a complete-but-malformed JSON answer (a trailing comma, a stray fence, single
+  # quotes) locally instead of failing the unit job after the earlier sections were paid for. MIT,
+  # pure Python, no network and no config: it is handed text this module has already bounded and
+  # checked for completeness, and its output goes through the same schema and rule gates. Optional
+  # at runtime — when it is absent a malformed answer is `GenerationRejected`, exactly as before.
+  - "json_repair>=0.64,<1"
 
 # No requires_env in the skeleton: Coursebook stores no secrets. Every key below has a reader
 # wired in this build (`coursebook/tools.py::configure` <- `ctx.get_config`); a settings field

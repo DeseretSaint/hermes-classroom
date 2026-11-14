@@ -323,6 +323,8 @@ def inspect_provisioning(source: Path, home: Path | None = None) -> list[Finding
         ("jsonschema", "error", "structured grading and every contract check"),
         ("faster_whisper", "warning", "pronunciation practice (reported unavailable)"),
         ("pypdf", "warning", "syllabus import (answers PARSER_UNAVAILABLE)"),
+        ("json_repair", "warning",
+         "reading a malformed but complete JSON answer (a malformed one is refused instead)"),
     ):
         try:
             __import__(module)

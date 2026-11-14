@@ -1271,6 +1271,12 @@ class LLMResponse:
     #: and matched its schema. It is recorded beside the validation verdict so a repaired answer is
     #: never presented as a first-time result.
     shape_repair_attempts: int = 0
+    #: Whether reading this answer needed a local JSON repair (UP-45): the text was not valid JSON
+    #: but *was* a complete document whose syntax was broken (a trailing comma, a fence, single
+    #: quotes). The answer was not re-asked and no provider call was made, so this is not a
+    #: ``shape_repair_attempts`` count; it is recorded on its own so a repaired document is never
+    #: presented as the provider's own valid JSON.
+    json_repaired: bool = False
 
 
 LLM = Callable[[LLMRequest], LLMResponse]
@@ -8752,11 +8758,141 @@ def _enforce_lesson_document(page: dict[str, Any]) -> dict[str, Any]:
 # ── Response parsing and validation verdicts ────────────────────────────────
 
 
-def _parse_structured(response: LLMResponse, schema: dict[str, Any], *, what: str, max_bytes: int) -> dict[str, Any]:
+#: A markdown fence wrapped around an otherwise complete JSON document. The provider sometimes
+#: returns the object inside ```` ```json … ``` ```` even though the request asked for one object
+#: and no prose; the fence is a wrapper, not a cut, so it is stripped before the completeness scan.
+_ANSWER_FENCE_RE = re.compile(r"^\s*```[A-Za-z0-9_+-]*[ \t]*\r?\n(?P<body>.*?)\r?\n?[ \t]*```\s*$", re.DOTALL)
+
+
+def _strip_answer_fence(text: str) -> str:
+    """The document inside a single enclosing markdown fence, or the text unchanged."""
+    match = _ANSWER_FENCE_RE.match(text)
+    if match is None:
+        return text
+    return match.group("body").strip()
+
+
+def _answer_is_a_complete_document(text: str) -> bool:
+    """Whether this answer is a *whole* JSON document whose syntax is merely broken.
+
+    This is the guard that keeps a JSON repair from defeating the truncation lane
+    (:func:`_stage_answer_with_repair`). ``json_repair`` advertises repairing "truncated values"
+    and does exactly that: given ``{"a": [1, 2,`` it returns ``{"a": [1, 2]}``, and given
+    ``{"a":`` it returns ``{"a": ""}``. Both are documents the provider never wrote — a legal-
+    looking answer invented to fit a shape — so a repair must never run on them.
+
+    The test is structural, not lexical: with an optional enclosing fence removed, the text must
+    start at ``{`` or ``[``, every string must be closed, every bracket balanced, and the first
+    point at which the depth returns to zero must be the end of the text (only a trailing comma may
+    follow). A trailing comma, a missing comma, single quotes, an unquoted key or a comment all
+    keep that shape, so they are repairable; a cut mid-string, an unclosed object, a dangling
+    ``:`` and a second document after the first do not.
+    """
+    body = _strip_answer_fence(text.strip())
+    if not body or body[0] not in "[{":
+        return False
+    depth = 0
+    in_string = False
+    escaped = False
+    closed_at: int | None = None
+    for index, char in enumerate(body):
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char in "[{":
+            depth += 1
+        elif char in "]}":
+            depth -= 1
+            if depth < 0:
+                return False
+            if depth == 0:
+                closed_at = index
+                if body[index + 1 :].strip() not in ("", ","):
+                    return False
+    return depth == 0 and not in_string and closed_at is not None
+
+
+def _json_repair_module() -> Any:
+    """Import ``json_repair`` lazily. Absence is a normal, reportable state.
+
+    ``plugin.yaml`` declares the dependency, but Hermes never auto-installs it, so a machine can
+    run Coursebook without it. When it is absent the pipeline behaves exactly as it did before the
+    repair seam existed: a malformed answer is ``GenerationRejected``. No repair is attempted and
+    nothing claims one was.
+    """
+    try:
+        import json_repair  # type: ignore import-not-found
+    except Exception:  # noqa: BLE001 - any import failure means "unavailable", never a crash
+        return None
+    return json_repair
+
+
+def _repair_complete_answer(text: str) -> tuple[bool, Any]:
+    """Repair the syntax of a complete-but-malformed JSON document; ``(repaired, value)``.
+
+    Returns ``(False, None)`` when the answer is not a complete document
+    (:func:`_answer_is_a_complete_document`), when ``json_repair`` is not installed, or when the
+    library itself refuses. The caller then raises the same ``GenerationRejected`` a malformed
+    answer always raised, so the truncation lane still decides a cut answer.
+    """
+    body = _strip_answer_fence(text.strip())
+    if not _answer_is_a_complete_document(body):
+        return False, None
+    module = _json_repair_module()
+    if module is None:
+        return False, None
+    try:
+        value = module.loads(body)
+    except Exception:  # noqa: BLE001 - a library bug must not become a provider failure
+        return False, None
+    if not isinstance(value, (dict, list)):
+        return False, None
+    return True, value
+
+
+def _parse_structured(
+    response: LLMResponse, schema: dict[str, Any], *, what: str, max_bytes: int
+) -> dict[str, Any]:
+    """Read one answer and return the document only (see :func:`_parse_structured_document`)."""
+    document, _json_repaired = _parse_structured_document(
+        response, schema, what=what, max_bytes=max_bytes
+    )
+    return document
+
+
+def _parse_structured_document(
+    response: LLMResponse, schema: dict[str, Any], *, what: str, max_bytes: int
+) -> tuple[dict[str, Any], bool]:
+    """Read one authored/validator answer; ``(document, json_repaired)``.
+
+    The order here is the whole safety argument (UP-45). Three gates run before a byte of the
+    answer is repaired:
+
+    1. the **byte bound** (``max_bytes``) — an answer over it is refused unread, exactly as before;
+    2. the **cut test** (:func:`_answer_is_a_complete_document`) — an answer that stops mid-string,
+       mid-object or after a dangling ``:`` is refused, so it reaches
+       :func:`_stage_answer_with_repair`'s truncation lane as ``truncated`` instead of becoming a
+       repaired document the provider never wrote;
+    3. the **schema** (:func:`validate_artifact`) — the repaired value is judged by the same
+       contract the provider's own answer was judged by, so a repair buys readability and nothing
+       else. Rule gates run afterwards, unchanged.
+
+    Only a document that *is* complete and whose syntax is broken (a trailing comma, a markdown
+    fence, single quotes, an unquoted key, a missing comma) is repaired. A repair is reported to
+    the caller, which records it — a repaired answer is never presented as a first-time one.
+    """
     text = response.text or ""
     if len(text.encode("utf-8")) > max_bytes:
         raise GenerationRejected(f"{what} is {len(text.encode('utf-8'))} bytes, over the {max_bytes}-byte bound")
     parsed: Any = response.parsed
+    repaired = False
     if parsed is None:
         stripped = text.strip()
         if not stripped:
@@ -8764,12 +8900,17 @@ def _parse_structured(response: LLMResponse, schema: dict[str, Any], *, what: st
         try:
             parsed = json.loads(stripped)
         except json.JSONDecodeError as exc:
-            raise GenerationRejected(f"{what} is not valid JSON: {exc.msg} at line {exc.lineno}") from exc
+            repaired, repaired_value = _repair_complete_answer(stripped)
+            if not repaired:
+                raise GenerationRejected(
+                    f"{what} is not valid JSON: {exc.msg} at line {exc.lineno}"
+                ) from exc
+            parsed = repaired_value
     validate_artifact(schema, parsed, what=what)
     # Hand the caller its own document. A caller decorates the parsed artifact (policy, check
     # mode) before the rule gate; mutating the provider's object would corrupt a reused scripted
     # response and make the retry validate a document the provider never produced.
-    return copy.deepcopy(parsed)
+    return copy.deepcopy(parsed), repaired
 
 
 def _declared_reject_problem(
@@ -8812,6 +8953,14 @@ def _declared_reject_problem(
 def _parse_validation_answer(
     response: LLMResponse, request: LLMRequest, *, what: str
 ) -> dict[str, Any]:
+    """Parse one validator answer; the document only (see :func:`_parse_validation_document`)."""
+    document, _json_repaired = _parse_validation_document(response, request, what=what)
+    return document
+
+
+def _parse_validation_document(
+    response: LLMResponse, request: LLMRequest, *, what: str
+) -> tuple[dict[str, Any], bool]:
     """Parse one validator answer, typing a shape or verdict violation as a contract failure.
 
     H-192: a validator answer that violates its own narrowed schema at the plan stage used to
@@ -8836,7 +8985,7 @@ def _parse_validation_answer(
     """
     schema = request.schema if request.schema is not None else VALIDATION_SCHEMA
     try:
-        document = _parse_structured(
+        document, json_repaired = _parse_structured_document(
             response,
             schema,
             what=what,
@@ -8865,7 +9014,7 @@ def _parse_validation_answer(
                 violation=problem,
                 parse_outcome="verdict_violation",
             )
-    return document
+    return document, json_repaired
 
 
 def _parse_failure_kind(message: str) -> str:
@@ -8976,10 +9125,12 @@ def _validation_answer_with_repair(
     A second unreadable answer raises :class:`ModelOutputInvalid` with ``repair_attempted`` true
     and the named parse outcome, so the job's ``error_json`` says the repair was tried and what
     failed. The returned response carries ``shape_repair_attempts`` >= 1 when a repair produced
-    it, so the recorded verdict is never presented as first-time clean.
+    it, so the recorded verdict is never presented as first-time clean. A locally repaired answer
+    (UP-45) carries ``json_repaired`` instead, and is never counted as a re-ask.
     """
     try:
-        return _parse_validation_answer(response, request, what=what), response
+        document, json_repaired = _parse_validation_document(response, request, what=what)
+        return document, (replace(response, json_repaired=True) if json_repaired else response)
     except ModelOutputInvalid as first:
         if first.parse_outcome == "verdict_violation":
             raise
@@ -9027,7 +9178,7 @@ def _validation_answer_with_repair(
             failure.validation_request = retry  # type: ignore[attr-defined]
             raise failure from gate
         try:
-            document = _parse_validation_answer(repaired, retry, what=what)
+            document, second_repaired = _parse_validation_document(repaired, retry, what=what)
         except ModelOutputInvalid as second:
             second_outcome = (
                 "truncated" if _answer_was_cut(repaired, retry) else second.parse_outcome
@@ -9048,6 +9199,7 @@ def _validation_answer_with_repair(
         return document, replace(
             repaired,
             shape_repair_attempts=max(1, int(getattr(repaired, "shape_repair_attempts", 0) or 0)),
+            json_repaired=bool(second_repaired),
         )
 
 
@@ -9118,9 +9270,18 @@ def _stage_answer_with_repair(
     An answer that did **not** consume its cap is not re-asked here: it is re-raised as
     :class:`GenerationRejected`, unchanged, because a short malformed answer is a different defect
     and the host's own schema gate (:func:`_call_llm`) has already spent its one re-ask on it.
+
+    A **complete** document whose syntax is merely broken is not re-asked and not rejected any
+    more (UP-45): :func:`_parse_structured` repairs it locally, validates it against the same
+    schema, and this function returns the response marked ``json_repaired`` so the row records it.
+    A *cut* document is refused before any repair is attempted — that ordering is what keeps this
+    lane from being defeated, not a second attempt to patch the text.
     """
     try:
-        return _parse_structured(response, schema, what=what, max_bytes=max_bytes), response
+        document, json_repaired = _parse_structured_document(
+            response, schema, what=what, max_bytes=max_bytes
+        )
+        return document, (replace(response, json_repaired=True) if json_repaired else response)
     except GenerationRejected as exc:
         if not _answer_was_cut(response, request):
             raise
@@ -9160,7 +9321,9 @@ def _stage_answer_with_repair(
                 parse_outcome="truncated",
             ) from gate
         try:
-            document = _parse_structured(repaired, schema, what=what, max_bytes=max_bytes)
+            document, second_repaired = _parse_structured_document(
+                repaired, schema, what=what, max_bytes=max_bytes
+            )
         except GenerationRejected as second:
             second_outcome = (
                 "truncated" if _answer_was_cut(repaired, retry) else _parse_failure_kind(str(second))
@@ -9178,6 +9341,7 @@ def _stage_answer_with_repair(
         return document, replace(
             repaired,
             shape_repair_attempts=max(1, int(getattr(repaired, "shape_repair_attempts", 0) or 0)),
+            json_repaired=bool(second_repaired),
         )
 
 
@@ -10876,6 +11040,11 @@ _GENERATION_DDL: tuple[str, ...] = (
         -- ('not_json', 'empty', 'truncated', 'schema_violation', 'verdict_violation').
         parse_outcome TEXT NOT NULL DEFAULT 'parsed',
         repair_attempted INTEGER NOT NULL DEFAULT 0,
+        -- UP-45: 1 when reading an answer in this review needed a *local* JSON repair (a complete
+        -- document with broken syntax: a trailing comma, a fence, single quotes). No provider call
+        -- is made for it, so it is not a repair_attempted re-ask; it says the document was not the
+        -- provider's own valid JSON. The precise per-side split is in rejections_json.
+        json_repaired INTEGER NOT NULL DEFAULT 0,
         failure_json TEXT,
         UNIQUE(subject_kind, subject_id, subject_hash, validator_prompt_version, attempt_index, pass_index)
     )
@@ -10995,6 +11164,9 @@ def ensure_schema(connection: sqlite3.Connection) -> None:
             ("independence", "TEXT"),
             ("facts_unverified", "INTEGER"),
             ("outcome", "TEXT"),
+            # UP-45: additive, like the identity columns. An older database keeps its rows and
+            # reads them as "not repaired", which is what a row written before the seam did.
+            ("json_repaired", "INTEGER NOT NULL DEFAULT 0"),
         ):
             if column not in validation_columns:
                 connection.execute(f"ALTER TABLE gen_validation_records ADD COLUMN {column} {ddl}")
@@ -11030,6 +11202,7 @@ def ensure_schema(connection: sqlite3.Connection) -> None:
                 " attempt_index INTEGER NOT NULL DEFAULT 1,"
                 " parse_outcome TEXT NOT NULL DEFAULT 'parsed',"
                 " repair_attempted INTEGER NOT NULL DEFAULT 0,"
+                " json_repaired INTEGER NOT NULL DEFAULT 0,"
                 " failure_json TEXT,"
                 " UNIQUE(subject_kind, subject_id, subject_hash, validator_prompt_version,"
                 " attempt_index, pass_index))"
@@ -11695,8 +11868,9 @@ def _record_validation(
             "generator_prompt_version, validator_prompt_version, validator_model, generator_model, "
             "generator_provider, validator_provider, independence, facts_unverified, outcome, verdict, "
             "criteria_json, rejections_json, generator_prompt_sha256, validator_prompt_sha256, created_at, "
-            "pass_index, pass_total, attempt_index, parse_outcome, repair_attempted, failure_json) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "pass_index, pass_total, attempt_index, parse_outcome, repair_attempted, json_repaired, "
+            "failure_json) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 validation_id,
                 subject_kind,
@@ -11729,6 +11903,12 @@ def _record_validation(
                         # H-191: how many shape re-asks this answer took. A repaired answer is
                         # stored as repaired, never presented as a first-time one.
                         "shape_violations": int(getattr(response, "shape_repair_attempts", 0) or 0),
+                        # UP-45: which side needed a *local* JSON repair to be read at all. The
+                        # flat column says one happened; this says where.
+                        "json_repaired": {
+                            "generator": bool(getattr(generation_response, "json_repaired", False)),
+                            "validator": bool(getattr(response, "json_repaired", False)),
+                        },
                     }
                 ),
                 sha256_of_text(generation_request.system_prompt),
@@ -11741,6 +11921,12 @@ def _record_validation(
                 int(attempt_index),
                 "parsed",
                 1 if int(getattr(response, "shape_repair_attempts", 0) or 0) else 0,
+                1
+                if (
+                    getattr(generation_response, "json_repaired", False)
+                    or getattr(response, "json_repaired", False)
+                )
+                else 0,
                 None,
             ),
         )
@@ -11797,6 +11983,11 @@ def _record_validation_attempt(
         "output_tokens": None if response is None else response.output_tokens,
         "provider": validator["provider"],
         "model": validator["model"],
+        # UP-45: whether a locally repaired answer was in play, so a failure row never hides it.
+        "json_repaired": {
+            "generator": bool(getattr(generation_response, "json_repaired", False)),
+            "validator": bool(getattr(response, "json_repaired", False)),
+        },
     }
     with _transaction(connection):
         connection.execute(
@@ -11804,8 +11995,9 @@ def _record_validation_attempt(
             "generator_prompt_version, validator_prompt_version, validator_model, generator_model, "
             "generator_provider, validator_provider, independence, facts_unverified, outcome, verdict, "
             "criteria_json, rejections_json, generator_prompt_sha256, validator_prompt_sha256, created_at, "
-            "pass_index, pass_total, attempt_index, parse_outcome, repair_attempted, failure_json) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "pass_index, pass_total, attempt_index, parse_outcome, repair_attempted, json_repaired, "
+            "failure_json) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 validation_id,
                 subject_kind,
@@ -11831,6 +12023,12 @@ def _record_validation_attempt(
                 int(attempt_index),
                 str(parse_outcome),
                 1 if failure.repair_attempted else 0,
+                1
+                if (
+                    getattr(generation_response, "json_repaired", False)
+                    or getattr(response, "json_repaired", False)
+                )
+                else 0,
                 _json(failure_record),
             ),
         )
@@ -11901,6 +12099,10 @@ def validation_record(connection: sqlite3.Connection, validation_id: str | None)
         "waived_unknown": rejections.get("waived_unknown") or [],
         # H-191: a re-asked answer is stored and read back as re-asked.
         "shape_violations": int(rejections.get("shape_violations") or 0),
+        # UP-45: a locally repaired answer is stored and read back as repaired, with the side that
+        # needed it. This is not a re-ask: no second provider call was made.
+        "json_repaired": bool(row.get("json_repaired")),
+        "json_repaired_sides": rejections.get("json_repaired") or {"generator": False, "validator": False},
         "warning": _provenance_warning(outcome, independence, bool(row.get("facts_unverified"))),
     }
 
@@ -13752,9 +13954,14 @@ def run_unit_sections_job(
                 feedback=feedback,
             )
             response = _call_llm(llm, request, usage)
-            candidate = _parse_structured(
+            candidate, candidate_repaired = _parse_structured_document(
                 response, UNIT_SECTIONS_SCHEMA, what="unit sections", max_bytes=MAX_PLAN_BYTES
             )
+            if candidate_repaired:
+                # UP-45: the answer was read by repairing its syntax, so every row that records
+                # this attempt (the validator row below) carries that fact rather than presenting
+                # the document as the provider's own valid JSON.
+                response = replace(response, json_repaired=True)
             batch = [dict(item) for item in candidate.get("sections") or []]
             try:
                 enforce_unit_section_rules(
