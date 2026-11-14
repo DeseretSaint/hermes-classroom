@@ -303,8 +303,14 @@ def scene_objects(fixture: Mapping[str, Any], task: Mapping[str, Any]) -> list[d
                 }
             )
     if not chosen:
-        for target_id in target.get("target_ids") or []:
-            row = target_index(fixture).get(target_id)
+        # A ``real_world_use`` task targets a phrase, not a label set, so the page falls back to the
+        # lesson's phrase targets (``target_index`` marks every ``lesson.targets[]`` entry
+        # ``kind="phrase"``). This used to read ``target.get("target_ids")``, a key no target carries:
+        # the loop never ran, so a phrase task printed an empty frame and no word bank (t_d093fbb0).
+        index = target_index(fixture)
+        for phrase in fixture["lesson"]["targets"]:
+            target_id = phrase["target_id"]
+            row = index.get(target_id)
             if not row:
                 continue
             chosen.append(
@@ -391,7 +397,7 @@ def scene_description(objects: Sequence[Mapping[str, str]]) -> str:
         return "An empty page with a frame to colour in."
     words = "; ".join(f"{obj['display']} ({obj['romaji']}), {obj['meaning']}" for obj in objects)
     return (
-        "A room drawn in outline with one large shape for each word in this lesson: "
+        "A line drawing with one large shape for each word in this lesson: "
         + words
         + ". Colour each shape in, then say the word for it."
     )

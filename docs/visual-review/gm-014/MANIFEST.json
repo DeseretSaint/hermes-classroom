@@ -33,8 +33,8 @@
       "task_id": "hw_premeal",
       "pages": 2,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:4ebf76d4ad25fecb01adbf7a93d54de305e86492932e6fb5284f63ef128b991f",
-      "bytes": 94298,
+      "sha256": "sha256:d0d332d264f950a96cc3f53e37aa236da3ad3ce7e7cf76ab43d1e9d6b514f4c7",
+      "bytes": 100188,
       "required_text": [
         "Say the before-meal greeting at one meal",
         "いただきます",
@@ -44,7 +44,7 @@
       ],
       "required_text_present": true,
       "missing_text": [],
-      "glyphs_measured": 2927,
+      "glyphs_measured": 3111,
       "content_box_mm": {
         "top": 18.0,
         "right": 16.0,
@@ -60,7 +60,7 @@
       "task_id": "hw_premeal",
       "pages": 1,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:3020b95ac41f5ea2c2f4f5bc7cb4fe257045ec1ec38258b6c099c459a1bf4c27",
+      "sha256": "sha256:999d4767d4b1601b110731435323d83eb548bc7eb0aa34de91511f0c9b02e6a0",
       "bytes": 63453,
       "required_text": [
         "Say the before-meal greeting at one meal",
@@ -86,7 +86,7 @@
       "task_id": "hw_premeal",
       "pages": 1,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:b2abbf7632e656c1a31cbb74756da3f49067755278d07af8f6ebf16630a8cc97",
+      "sha256": "sha256:f002d2cd0a3ad137aeb3a8c3b9b95be58ad503ca25d995b19341cf3a7d687ac7",
       "bytes": 60495,
       "required_text": [
         "PARENT ONLY",
@@ -113,7 +113,7 @@
       "task_id": "hw_premeal",
       "pages": 1,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:ead5add4b7bb5ea374ebc4c1a6abf131feb11c0184fa76da734316c1e480d45e",
+      "sha256": "sha256:4ab264536d5247fd34bb0f5fe4295d51cdb42bbc1461bf96c9d8ef5fe5bbc5b3",
       "bytes": 61464,
       "required_text": [
         "Say the before-meal greeting at one meal",
@@ -133,14 +133,42 @@
       "glyphs_outside_box": 0
     },
     {
+      "file": "a4/hw_premeal-coloring-page.pdf",
+      "paper": "A4",
+      "role": "coloring_page",
+      "task_id": "hw_premeal",
+      "pages": 1,
+      "page_size": "594.96 x 841.92 pts (A4)",
+      "sha256": "sha256:515569f8e5ff16fe63e8e941ead18b746cc688d97dc6ce9d14ddddd5f07016ed",
+      "bytes": 47608,
+      "required_text": [
+        "Colour it in",
+        "Words in this picture",
+        "Colouring is the activity, not a reward and not a test.",
+        "Page 1 of 1",
+        "いただきます",
+        "ごちそうさまでした"
+      ],
+      "required_text_present": true,
+      "missing_text": [],
+      "glyphs_measured": 390,
+      "content_box_mm": {
+        "top": 18.0,
+        "right": 16.0,
+        "bottom": 16.0,
+        "left": 16.0
+      },
+      "glyphs_outside_box": 0
+    },
+    {
       "file": "a4/hw_postmeal-parent-guide.pdf",
       "paper": "A4",
       "role": "parent_guide",
       "task_id": "hw_postmeal",
       "pages": 2,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:4b5d162080461ca8c1afd436180b11e7c56f65ff201d2390d7a626e06c15210d",
-      "bytes": 98399,
+      "sha256": "sha256:ac48a2ea018cb5899b0e86833667990b813bb0a2544c3a1d3a43a093750b9865",
+      "bytes": 103531,
       "required_text": [
         "Say the after-meal greeting when you finish",
         "ごちそうさまでした",
@@ -150,7 +178,7 @@
       ],
       "required_text_present": true,
       "missing_text": [],
-      "glyphs_measured": 2797,
+      "glyphs_measured": 2981,
       "content_box_mm": {
         "top": 18.0,
         "right": 16.0,
@@ -166,7 +194,7 @@
       "task_id": "hw_postmeal",
       "pages": 1,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:a420248c7b3063ca358e994e76882d31c50b3bdb131771c72418568ef3a72a83",
+      "sha256": "sha256:2a0480ed9d188d4f18af831036f7d8fdfe4f6e8d80884daaaa13837e773dace7",
       "bytes": 64840,
       "required_text": [
         "Say the after-meal greeting when you finish",
@@ -192,7 +220,7 @@
       "task_id": "hw_postmeal",
       "pages": 1,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:9bd085c043084ea10823f752ccfc79d7af554e47383c647efba309155c256646",
+      "sha256": "sha256:c2170f393dd9498586abb066da606e93e85ee3c39f49c10ceec3d94fccd5d3e8",
       "bytes": 62037,
       "required_text": [
         "PARENT ONLY",
@@ -219,7 +247,7 @@
       "task_id": "hw_postmeal",
       "pages": 1,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:50deee66f5514a09142231ef603376bf9e628b9b22ae81e552ad7c027d600a00",
+      "sha256": "sha256:0d12e631aaabdd1311e3ed6512bbb38bf86eeeab1f0fb40c268ca69f28b40b6e",
       "bytes": 63015,
       "required_text": [
         "Say the after-meal greeting when you finish",
@@ -239,13 +267,41 @@
       "glyphs_outside_box": 0
     },
     {
+      "file": "a4/hw_postmeal-coloring-page.pdf",
+      "paper": "A4",
+      "role": "coloring_page",
+      "task_id": "hw_postmeal",
+      "pages": 1,
+      "page_size": "594.96 x 841.92 pts (A4)",
+      "sha256": "sha256:65d76fba57d1dea5afd90c3d6820f0ef6fba550eebb95d263dbcb5351a827697",
+      "bytes": 47620,
+      "required_text": [
+        "Colour it in",
+        "Words in this picture",
+        "Colouring is the activity, not a reward and not a test.",
+        "Page 1 of 1",
+        "いただきます",
+        "ごちそうさまでした"
+      ],
+      "required_text_present": true,
+      "missing_text": [],
+      "glyphs_measured": 390,
+      "content_box_mm": {
+        "top": 18.0,
+        "right": 16.0,
+        "bottom": 16.0,
+        "left": 16.0
+      },
+      "glyphs_outside_box": 0
+    },
+    {
       "file": "a4/hw_labels-parent-guide.pdf",
       "paper": "A4",
       "role": "parent_guide",
       "task_id": "hw_labels",
       "pages": 2,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:145801f8cd32397e8672bd5b75d795e26ac7feb88da013018d567a7d64bc56bb",
+      "sha256": "sha256:0c51698c90ff18c08a57956d2bbb51ff169baa3849e883166aaa61034c9fcafa",
       "bytes": 109552,
       "required_text": [
         "Label three household objects",
@@ -272,7 +328,7 @@
       "task_id": "hw_labels",
       "pages": 1,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:1aeaa814ed58d21485902fd92b76b8d0c73b2518cbf9725cb3886c3c41e92fcf",
+      "sha256": "sha256:6538bcfb4a2aa9d7dcdf436e2aa7ca2f4866d3cec40eae3cc6ff9e6a0237f3ba",
       "bytes": 69631,
       "required_text": [
         "Label three household objects",
@@ -298,7 +354,7 @@
       "task_id": "hw_labels",
       "pages": 1,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:8362ea4d15405f29e5b9956d96cfb43e655b192daed4970fa1d669b1e75b71a2",
+      "sha256": "sha256:b0d519d451c2d968e02ddee40b5918b357423657272cfc992617b60633183b88",
       "bytes": 62450,
       "required_text": [
         "PARENT ONLY",
@@ -325,7 +381,7 @@
       "task_id": "hw_labels",
       "pages": 1,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:34493f742861c9254a0de01bdd08def2ae83cc3b6df2a86b5ed5661a3ddf9399",
+      "sha256": "sha256:f571e4874b7d5656f017681b43d0c76a12942dfd08ab41656b1687cfb33517db",
       "bytes": 68696,
       "required_text": [
         "Label three household objects",
@@ -345,14 +401,46 @@
       "glyphs_outside_box": 0
     },
     {
+      "file": "a4/hw_labels-coloring-page.pdf",
+      "paper": "A4",
+      "role": "coloring_page",
+      "task_id": "hw_labels",
+      "pages": 1,
+      "page_size": "594.96 x 841.92 pts (A4)",
+      "sha256": "sha256:f5eece3b141bef1a369c3786446ba06aa735022ccdb68d6d18c6a766ec5123ff",
+      "bytes": 53270,
+      "required_text": [
+        "Colour it in",
+        "Words in this picture",
+        "Colouring is the activity, not a reward and not a test.",
+        "Page 1 of 1",
+        "ドア",
+        "まど",
+        "いす",
+        "テーブル",
+        "コップ",
+        "ほん"
+      ],
+      "required_text_present": true,
+      "missing_text": [],
+      "glyphs_measured": 388,
+      "content_box_mm": {
+        "top": 18.0,
+        "right": 16.0,
+        "bottom": 16.0,
+        "left": 16.0
+      },
+      "glyphs_outside_box": 0
+    },
+    {
       "file": "letter/hw_premeal-parent-guide.pdf",
       "paper": "Letter",
       "role": "parent_guide",
       "task_id": "hw_premeal",
       "pages": 2,
       "page_size": "612 x 792 pts (letter)",
-      "sha256": "sha256:c95fcaaadfa1be09145a60a371db771e65840d639f1667968c42b69128a1a954",
-      "bytes": 94303,
+      "sha256": "sha256:31ece0437c687a715d5d092eef217d339f8cbdf538d0fd38fa925b25674dbb5d",
+      "bytes": 100210,
       "required_text": [
         "Say the before-meal greeting at one meal",
         "いただきます",
@@ -362,7 +450,7 @@
       ],
       "required_text_present": true,
       "missing_text": [],
-      "glyphs_measured": 2927,
+      "glyphs_measured": 3111,
       "content_box_mm": {
         "top": 17.779999999999998,
         "right": 16.509999999999998,
@@ -378,7 +466,7 @@
       "task_id": "hw_premeal",
       "pages": 1,
       "page_size": "612 x 792 pts (letter)",
-      "sha256": "sha256:cd96a7557bc0ed24387fff4482fe7863d119e8a18a07bb84e833ac1a449f292e",
+      "sha256": "sha256:d3790b1a825259ffd4b636d43c8fc6e91e8f78f788b7899105b149b448a08b06",
       "bytes": 63431,
       "required_text": [
         "Say the before-meal greeting at one meal",
@@ -404,7 +492,7 @@
       "task_id": "hw_premeal",
       "pages": 1,
       "page_size": "612 x 792 pts (letter)",
-      "sha256": "sha256:cd33c5f358cf1d5eddbef22da9332cd3edc471d9287ebc4993d51f52d7784ce3",
+      "sha256": "sha256:242588dcfe3403effc681eff891b036f5dd8928e8fd1068930767db0fc98ed4d",
       "bytes": 60475,
       "required_text": [
         "PARENT ONLY",
@@ -431,7 +519,7 @@
       "task_id": "hw_premeal",
       "pages": 1,
       "page_size": "612 x 792 pts (letter)",
-      "sha256": "sha256:6e070dd61b02f274ea9ede1dc7b686b8c30626a981c991ea24cf698c56350c94",
+      "sha256": "sha256:7bc7faadf01d33488964b332644993ea5b00924c3a7dd2c95aa71fd3b33e64a5",
       "bytes": 61431,
       "required_text": [
         "Say the before-meal greeting at one meal",
@@ -451,13 +539,41 @@
       "glyphs_outside_box": 0
     },
     {
+      "file": "letter/hw_premeal-coloring-page.pdf",
+      "paper": "Letter",
+      "role": "coloring_page",
+      "task_id": "hw_premeal",
+      "pages": 1,
+      "page_size": "612 x 792 pts (letter)",
+      "sha256": "sha256:c9cd2343b04e50124acc29cde26d7ddef3e4edaa40e0d52eedb3be2fd4416588",
+      "bytes": 47579,
+      "required_text": [
+        "Colour it in",
+        "Words in this picture",
+        "Colouring is the activity, not a reward and not a test.",
+        "Page 1 of 1",
+        "いただきます",
+        "ごちそうさまでした"
+      ],
+      "required_text_present": true,
+      "missing_text": [],
+      "glyphs_measured": 390,
+      "content_box_mm": {
+        "top": 17.779999999999998,
+        "right": 16.509999999999998,
+        "bottom": 15.748,
+        "left": 16.509999999999998
+      },
+      "glyphs_outside_box": 0
+    },
+    {
       "file": "a4/technical-head-gasket.pdf",
       "paper": "A4",
       "role": "technical_sheet",
       "task_id": null,
       "pages": 2,
       "page_size": "594.96 x 841.92 pts (A4)",
-      "sha256": "sha256:dda4e3b7cddd2d93dc71f3a08ef245582f2bbf4fca78e3149cc0b5ed7666e382",
+      "sha256": "sha256:81bb110916f34079bbffbc87f21ec9efb94c5e4fa12dce36b58af0f72f7a9ae6",
       "bytes": 74559,
       "required_text": [
         "Replace the head gasket",
@@ -508,6 +624,11 @@
       "dpi": 144
     },
     {
+      "file": "a4/hw_premeal-coloring-page-1.png",
+      "source": "a4/hw_premeal-coloring-page.pdf",
+      "dpi": 144
+    },
+    {
       "file": "a4/hw_postmeal-parent-guide-1.png",
       "source": "a4/hw_postmeal-parent-guide.pdf",
       "dpi": 144
@@ -530,6 +651,11 @@
     {
       "file": "a4/hw_postmeal-homework-sheet-1.png",
       "source": "a4/hw_postmeal-homework-sheet.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "a4/hw_postmeal-coloring-page-1.png",
+      "source": "a4/hw_postmeal-coloring-page.pdf",
       "dpi": 144
     },
     {
@@ -558,6 +684,11 @@
       "dpi": 144
     },
     {
+      "file": "a4/hw_labels-coloring-page-1.png",
+      "source": "a4/hw_labels-coloring-page.pdf",
+      "dpi": 144
+    },
+    {
       "file": "letter/hw_premeal-parent-guide-1.png",
       "source": "letter/hw_premeal-parent-guide.pdf",
       "dpi": 144
@@ -580,6 +711,11 @@
     {
       "file": "letter/hw_premeal-homework-sheet-1.png",
       "source": "letter/hw_premeal-homework-sheet.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "letter/hw_premeal-coloring-page-1.png",
+      "source": "letter/hw_premeal-coloring-page.pdf",
       "dpi": 144
     },
     {
