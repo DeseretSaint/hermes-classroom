@@ -7,29 +7,33 @@ beside it are the real proof, not a description of one.
 
 | file | paper | role | pages | PDF page size | all page text present | glyphs measured / outside box |
 |---|---|---|---|---|---|---|
-| `a4/hw_premeal-parent-guide.pdf` | A4 | parent_guide | 2 | 594.96 x 841.92 pts (A4) | yes | 2927 / 0 |
+| `a4/hw_premeal-parent-guide.pdf` | A4 | parent_guide | 2 | 594.96 x 841.92 pts (A4) | yes | 3111 / 0 |
 | `a4/hw_premeal-learner-page.pdf` | A4 | learner_page | 1 | 594.96 x 841.92 pts (A4) | yes | 741 / 0 |
 | `a4/hw_premeal-answer-guide.pdf` | A4 | answer_guide | 1 | 594.96 x 841.92 pts (A4) | yes | 985 / 0 |
 | `a4/hw_premeal-homework-sheet.pdf` | A4 | homework_sheet | 1 | 594.96 x 841.92 pts (A4) | yes | 601 / 0 |
-| `a4/hw_postmeal-parent-guide.pdf` | A4 | parent_guide | 2 | 594.96 x 841.92 pts (A4) | yes | 2797 / 0 |
+| `a4/hw_premeal-coloring-page.pdf` | A4 | coloring_page | 1 | 594.96 x 841.92 pts (A4) | yes | 390 / 0 |
+| `a4/hw_postmeal-parent-guide.pdf` | A4 | parent_guide | 2 | 594.96 x 841.92 pts (A4) | yes | 2981 / 0 |
 | `a4/hw_postmeal-learner-page.pdf` | A4 | learner_page | 1 | 594.96 x 841.92 pts (A4) | yes | 756 / 0 |
 | `a4/hw_postmeal-answer-guide.pdf` | A4 | answer_guide | 1 | 594.96 x 841.92 pts (A4) | yes | 998 / 0 |
 | `a4/hw_postmeal-homework-sheet.pdf` | A4 | homework_sheet | 1 | 594.96 x 841.92 pts (A4) | yes | 619 / 0 |
+| `a4/hw_postmeal-coloring-page.pdf` | A4 | coloring_page | 1 | 594.96 x 841.92 pts (A4) | yes | 390 / 0 |
 | `a4/hw_labels-parent-guide.pdf` | A4 | parent_guide | 2 | 594.96 x 841.92 pts (A4) | yes | 2963 / 0 |
 | `a4/hw_labels-learner-page.pdf` | A4 | learner_page | 1 | 594.96 x 841.92 pts (A4) | yes | 908 / 0 |
 | `a4/hw_labels-answer-guide.pdf` | A4 | answer_guide | 1 | 594.96 x 841.92 pts (A4) | yes | 904 / 0 |
 | `a4/hw_labels-homework-sheet.pdf` | A4 | homework_sheet | 1 | 594.96 x 841.92 pts (A4) | yes | 752 / 0 |
-| `letter/hw_premeal-parent-guide.pdf` | Letter | parent_guide | 2 | 612 x 792 pts (letter) | yes | 2927 / 0 |
+| `a4/hw_labels-coloring-page.pdf` | A4 | coloring_page | 1 | 594.96 x 841.92 pts (A4) | yes | 388 / 0 |
+| `letter/hw_premeal-parent-guide.pdf` | Letter | parent_guide | 2 | 612 x 792 pts (letter) | yes | 3111 / 0 |
 | `letter/hw_premeal-learner-page.pdf` | Letter | learner_page | 1 | 612 x 792 pts (letter) | yes | 741 / 0 |
 | `letter/hw_premeal-answer-guide.pdf` | Letter | answer_guide | 1 | 612 x 792 pts (letter) | yes | 985 / 0 |
 | `letter/hw_premeal-homework-sheet.pdf` | Letter | homework_sheet | 1 | 612 x 792 pts (letter) | yes | 601 / 0 |
+| `letter/hw_premeal-coloring-page.pdf` | Letter | coloring_page | 1 | 612 x 792 pts (letter) | yes | 390 / 0 |
 | `a4/technical-head-gasket.pdf` | A4 | technical_sheet | 2 | 594.96 x 841.92 pts (A4) | yes | 1687 / 0 |
 
 - Fixture: `bundled/homework/japanese-l0-mealtime/fixture.json` (`jp-l0-mealtime`).
 - Fixture lesson block hash: `sha256:349968476b95c2a750f302fb6b7dd7aa229868ab4cda22183c6c601947886f1a` — sha256 over the demo fixture's own `lesson` block, not over a live course lesson.
 - Renderer: headless Chromium `Chromium 155.0.8059.84 Arch Linux` printing HTML; text stays selectable and is extracted back with `pdftotext` to prove it.
 - Japanese face: Noto Sans CJK JP (system font), so kana and kanji print as text, not an image.
-- Colour PNGs: 22 pages at 144 dpi.
+- Colour PNGs: 26 pages at 144 dpi.
 - Black-and-white PNGs: 7 pages at 150 dpi from the same PDFs.
 
 ## How the no-clipping claim is checked

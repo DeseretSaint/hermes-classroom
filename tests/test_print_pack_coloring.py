@@ -16,6 +16,7 @@ the amendment that closed that gap:
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import shutil
 import subprocess
@@ -23,10 +24,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from coursebook import coloring_print as cp
 from coursebook import contracts, homework_print as hp, packs
 
 ROOT = Path(__file__).resolve().parent.parent
 TASK = "hw_labels"
+_HAS_PDFPLUMBER = importlib.util.find_spec("pdfplumber") is not None
 
 
 def fixture() -> dict:
@@ -202,7 +205,41 @@ class PackReachabilityTests(unittest.TestCase):
         self.assertTrue(any("active content" in problem for problem in problems), problems)
 
 
-@unittest.skipUnless(shutil.which("chromium") and shutil.which("pdftotext"), "print path needs chromium and pdftotext")
+class PhraseTaskSceneTests(unittest.TestCase):
+    """A ``real_world_use`` task has no label set, so its page draws the lesson's phrase targets.
+
+    This used to read a non-existent ``target_ids`` key and draw nothing: the shipped artefact was
+    a blank frame with no word bank (t_d093fbb0).
+    """
+
+    def setUp(self) -> None:
+        self.fixture = fixture()
+
+    def test_a_phrase_task_draws_the_lessons_phrase_targets(self) -> None:
+        for task_id in ("hw_premeal", "hw_postmeal"):
+            task = hp.task_by_id(self.fixture, task_id)
+            objects = cp.scene_objects(self.fixture, task)
+            self.assertTrue(objects, f"{task_id} must produce a drawing, not an empty frame")
+            self.assertEqual(
+                [obj["id"] for obj in objects],
+                [target["target_id"] for target in self.fixture["lesson"]["targets"]],
+            )
+            # Every drawn word is a lesson word with its own shape; none is invented.
+            for obj in objects:
+                self.assertEqual(obj["kind"], "phrase")
+                self.assertTrue(obj["display"] and obj["romaji"] and obj["meaning"])
+
+    def test_a_phrase_task_page_carries_the_word_bank_in_its_html(self) -> None:
+        html_text = hp.render_documents(self.fixture, "hw_premeal")["coloring_page"]
+        self.assertIn("Words in this picture", html_text)
+        for obj in cp.scene_objects(self.fixture, hp.task_by_id(self.fixture, "hw_premeal")):
+            self.assertIn(obj["display"], html_text)
+
+
+@unittest.skipUnless(
+    shutil.which("chromium") and shutil.which("pdftotext") and _HAS_PDFPLUMBER,
+    "print path needs chromium, pdftotext and pdfplumber",
+)
 class ArtifactPrintTests(unittest.TestCase):
     def test_the_pack_artifact_prints_and_carries_no_answer_text(self) -> None:
         """End to end: the artifact's own bytes are printed, and ``pdftotext`` reads the result."""
@@ -231,6 +268,50 @@ class ArtifactPrintTests(unittest.TestCase):
         guide = hp.render_documents(data, TASK)["parent_guide"]
         self.assertIn("While they colour", guide)
         self.assertIn("Print the colouring page with this pack", guide)
+
+    def test_the_printed_colouring_page_carries_its_drawing_and_words(self) -> None:
+        """The page prints what its HTML contains: the line drawing and the word bank (t_d093fbb0).
+
+        ``hw_premeal`` is a phrase task, so this is the path that used to print a blank frame: the
+        scene had no objects and the word bank was empty. The check reads the rasterised PDF for the
+        drawing (a closed shape sitting between the two figure rules) and the extracted text for
+        every drawn word and the "Words in this picture" heading.
+        """
+        import pdfplumber
+
+        data = fixture()
+        task_id = "hw_premeal"
+        objects = cp.scene_objects(data, hp.task_by_id(data, task_id))
+        self.assertTrue(objects, "a phrase task must draw its lesson's phrase targets")
+        html_text = hp.render_documents(data, task_id, paper="A4")["coloring_page"]
+        with tempfile.TemporaryDirectory() as tmp:
+            pdf = hp.write_pdf(html_text, Path(tmp) / "coloring-page.pdf")
+            text = hp.pdf_text(pdf)
+            with pdfplumber.open(pdf) as document:
+                page = document.pages[0]
+                lines = [(l["x0"], l["top"], l["x1"], l["bottom"]) for l in page.lines]
+                rects = [(r["x0"], r["top"], r["x1"], r["bottom"]) for r in page.rects]
+
+        # The word bank is real text in the PDF, one entry per drawn word.
+        self.assertIn("Words in this picture", text)
+        for obj in objects:
+            self.assertIn(obj["display"], text)
+            self.assertIn(obj["romaji"], text)
+
+        # The drawing: the wall and floor rules frame the figure; a colouring shape must sit
+        # strictly between them. A blank page carries the two rules and nothing else in the band.
+        rule_tops = sorted(top for x0, top, x1, _bottom in lines if abs(x1 - x0) > 200)
+        self.assertGreaterEqual(len(rule_tops), 2, "the figure frame rules are missing")
+        above, below = rule_tops[0], rule_tops[-1]
+        interior = [
+            rect
+            for rect in rects
+            if rect[1] > above + 2.0
+            and rect[3] < below - 2.0
+            and (rect[2] - rect[0]) > 20.0
+            and (rect[3] - rect[1]) > 20.0
+        ]
+        self.assertTrue(interior, "the printed colouring page has no drawing between its frame rules")
 
 
 if __name__ == "__main__":  # pragma: no cover

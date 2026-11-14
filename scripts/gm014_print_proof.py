@@ -26,6 +26,7 @@ from typing import Any, Mapping
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+from coursebook import coloring_print  # noqa: E402
 from coursebook import homework_print as hp  # noqa: E402
 from coursebook import print_geometry  # noqa: E402
 from tests.test_procedure_document import head_gasket_document  # noqa: E402
@@ -197,6 +198,7 @@ def main() -> int:
         "homework_sheet": "No photo, recording or location is asked for.",
         "answer_guide": "It is never a pass, a mastery claim or evidence of learning.",
         "parent_guide": "It does not regenerate a lesson, clone a course or touch any evidence.",
+        "coloring_page": "Colouring is the activity, not a reward and not a test.",
     }
     targets = hp.target_index(fixture)
     labels = hp.label_index(fixture)
@@ -210,16 +212,17 @@ def main() -> int:
         docs = hp.render_documents(fixture, task_id, paper="A4")
         for role, html_text in docs.items():
             if role not in tail:
-                # PRINT-2 (t_6418b9dd) added ``coloring_page`` to ``render_documents``. It is not in
-                # this proof's role set: when it was printed here its drawing and word bank did not
-                # render, which is a defect in that page, not in the proof, and it is reported
-                # separately rather than papered over by a shorter required-text list.
                 continue
             required = [task["title"], display, tail[role], "Page 1 of"]
             if role == "parent_guide":
                 required = [task["title"], display, "The four steps", tail[role], "Page 2 of 2"]
             if role == "answer_guide":
                 required = ["PARENT ONLY", "ANSWER GUIDE", "Common errors", tail[role], "Page 1 of 1"]
+            if role == "coloring_page":
+                # The page's own words, not the joined target display: the word bank prints each
+                # drawn word as its own entry, and the drawing carries no text at all.
+                scene_words = [obj["display"] for obj in coloring_print.scene_objects(fixture, task)]
+                required = ["Colour it in", "Words in this picture", tail[role], "Page 1 of 1"] + scene_words
             relative = f"a4/{task_id}-{role.replace('_', '-')}.pdf"
             pdf = add_document(
                 documents, pngs,
@@ -232,13 +235,17 @@ def main() -> int:
 
     # Letter proof for the whole premeal set.
     letter_docs = hp.render_documents(fixture, "hw_premeal", paper="Letter")
-    for role in ("parent_guide", "learner_page", "answer_guide", "homework_sheet"):
+    for role in ("parent_guide", "learner_page", "answer_guide", "homework_sheet", "coloring_page"):
         relative = f"letter/hw_premeal-{role.replace('_', '-')}.pdf"
         required = [fixture["tasks"][0]["title"], "いただきます", tail[role], "Page 1 of 1"]
         if role == "parent_guide":
             required = [fixture["tasks"][0]["title"], "いただきます", "The four steps", tail[role], "Page 2 of 2"]
         if role == "answer_guide":
             required = ["PARENT ONLY", "ANSWER GUIDE", "Common errors", tail[role], "Page 1 of 1"]
+        if role == "coloring_page":
+            premeal = hp.task_by_id(fixture, "hw_premeal")
+            scene_words = [obj["display"] for obj in coloring_print.scene_objects(fixture, premeal)]
+            required = ["Colour it in", "Words in this picture", tail[role], "Page 1 of 1"] + scene_words
         add_document(
             documents, pngs,
             html_text=letter_docs[role], relative=relative, paper="Letter", role=role,
