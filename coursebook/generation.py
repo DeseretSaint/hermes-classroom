@@ -1233,6 +1233,65 @@ class _RuleViolation(GenerationError):
         return bool(band_reasons) and set(self.reasons) <= band_reasons
 
 
+class PrerequisiteDagRefused(_RuleViolation):
+    """The plan's unit prerequisite edges cannot be sequenced as a DAG (upgrade 46).
+
+    Before this type the rule gate appended untyped prose to ``_RuleViolation.reasons``: the job
+    reported ``INTERNAL_ERROR`` (a retryable-looking backend fault) with no ``details.reason`` and
+    no ordinals, and a redundant transitive edge was not refused at all — the plan was stored and
+    gating followed two orderings of the same dependency at once.
+
+    It stays a ``_RuleViolation`` so every caller that already refuses a rule-breaking document
+    keeps catching it; it adds the contract code and the typed cause. ``VALIDATION_FAILED`` is the
+    code verified content already carries (:class:`GenerationRejected`); the *cause* is a
+    ``details.reason`` label from :data:`mastery_path.PREREQUISITE_DAG_REASONS`, never a new
+    ``cb.errors`` code. The type names the offending ordinals and the closing path. It infers no
+    prerequisite and repairs nothing.
+    """
+
+    code = "VALIDATION_FAILED"
+
+    def __init__(
+        self,
+        *,
+        problems: Sequence[Mapping[str, Any]],
+        rule_reasons: Sequence[str] = (),
+    ) -> None:
+        first = dict(problems[0]) if problems else {}
+        self.reason = str(first.get("reason") or mastery_path.PREREQUISITE_DAG_REASONS[0])
+        # ``details`` is the contract's open, non-sensitive context object: ordinals and a count
+        # only, never a claim, an excerpt or a reference answer.
+        self.error_details: dict[str, Any] = {"reason": self.reason}
+        for key, value in first.items():
+            self.error_details.setdefault(key, value)
+        self.error_details["problem_count"] = int(len(problems))
+        reasons_out = [str(item) for item in rule_reasons]
+        sentence = _dag_sentence(first)
+        if sentence and sentence not in "; ".join(reasons_out):
+            reasons_out.append(sentence)
+        super().__init__(reasons_out or ["unit prerequisites are not a DAG"])
+
+
+def _dag_sentence(problem: Mapping[str, Any]) -> str:
+    """A human sentence for one DAG problem; the typed reason stays in ``details.reason``."""
+    reason = str(problem.get("reason") or "")
+    if reason == "prerequisite_cycle":
+        path = " -> ".join(str(value) for value in problem.get("cycle") or [])
+        return f"unit prerequisites form a cycle: {path}" if path else "unit prerequisites form a cycle"
+    if reason == "prerequisite_missing_unit":
+        return (
+            f"unit {problem.get('unit_ordinal')} names missing prerequisite unit "
+            f"{problem.get('prerequisite_ordinal')}"
+        )
+    if reason == "prerequisite_redundant_edge":
+        return (
+            f"unit {problem.get('unit_ordinal')} names prerequisite "
+            f"{problem.get('prerequisite_ordinal')}, which its other prerequisite edges already "
+            "require"
+        )
+    return reason
+
+
 # ── LLM seam ────────────────────────────────────────────────────────────────
 
 
@@ -7782,6 +7841,13 @@ def _enforce_plan_rules_v2(
             "weeks": _weeks_value(plan),
             "reasons": band_reasons,
         }
+    # Upgrade 46: the unit prerequisite edges are a DAG, not "a list of ints". A cycle, an edge to
+    # a unit that does not exist and a transitive edge that is already implied are typed refusals
+    # naming the offending ordinals. This runs before the generic rule violation so the job
+    # reports VALIDATION_FAILED with ``details.reason`` instead of INTERNAL_ERROR with prose.
+    dag_problems = mastery_path.prerequisite_dag_problems(units)
+    if dag_problems:
+        raise PrerequisiteDagRefused(problems=dag_problems, rule_reasons=reasons)
     if reasons:
         raise _RuleViolation(reasons, band=band)
 

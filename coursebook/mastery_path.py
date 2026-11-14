@@ -27,6 +27,11 @@ from __future__ import annotations
 
 from typing import Any, Iterable, Mapping, Sequence
 
+try:  # the declared DAG builder; optional so a host that has not installed it still refuses
+    import networkx as _networkx
+except ImportError:  # pragma: no cover - decided by the host's installed packages
+    _networkx = None
+
 __all__ = [
     "BACKEND_CAPABILITIES",
     "CHECKPOINTS",
@@ -50,6 +55,8 @@ __all__ = [
     "pass_criterion",
     "plan_checkpoints",
     "plan_policy_lines",
+    "prerequisite_dag_problems",
+    "PREREQUISITE_DAG_REASONS",
     "review_obligation",
     "review_outcome",
     "review_sequence",
@@ -352,6 +359,191 @@ def node_problems(node_value: Mapping[str, Any], *,
             f"node claims checkpoint type(s) {fake} that the backend cannot record; "
             "draw only " + ", ".join(sorted(drawable))
         )
+    return problems
+
+
+# ── Unit prerequisite DAG ───────────────────────────────────────────────────
+
+#: The typed ``details.reason`` a unit-edge refusal carries (``docs/UPGRADES-50-2026-11-14.md``
+#: §46). They are subsystem labels on the frozen ``VALIDATION_FAILED`` code, never new
+#: ``cb.errors`` codes — the catalogue is closed (docs/CONTRACTS.md H-130).
+PREREQUISITE_DAG_REASONS: tuple[str, ...] = (
+    "prerequisite_cycle",
+    "prerequisite_missing_unit",
+    "prerequisite_redundant_edge",
+)
+
+
+def _declared_edges(units: Sequence[Mapping[str, Any]]) -> dict[int, list[int]]:
+    """Unit ordinal -> declared prerequisite ordinals, as written in the document.
+
+    This is a reader of the document's own field: it converts nothing it was not given and infers
+    no prerequisite. The plan schema has already refused a non-integer ordinal; a value that still
+    will not convert is kept out of the graph and named by the caller's ordinal rule.
+    """
+    edges: dict[int, list[int]] = {}
+    for unit in units:
+        ordinal = int(unit.get("ordinal", 0) or 0)
+        raw = unit.get("prereq_unit_ordinals", unit.get("prereqs", [])) or []
+        refs: list[int] = []
+        for value in raw:
+            try:
+                refs.append(int(value))
+            except (TypeError, ValueError):
+                continue
+        edges[ordinal] = refs
+    return edges
+
+
+def _graph_for(edges: Mapping[int, list[int]]) -> dict[int, list[int]]:
+    """The edge graph restricted to known ordinals; a dangling ref is not a node."""
+    return {
+        int(ordinal): [ref for ref in refs if ref in edges]
+        for ordinal, refs in edges.items()
+    }
+
+
+def _cycle_path(edges: Mapping[int, list[int]]) -> list[int] | None:
+    """One prerequisite cycle as ``[2, 3, 2]``, or ``None``. Deterministic in ordinal order."""
+    if _networkx is not None:
+        graph = _networkx.DiGraph()
+        graph.add_nodes_from(sorted(edges))
+        for ordinal in sorted(edges):
+            for ref in edges[ordinal]:
+                if ref in edges:
+                    graph.add_edge(ordinal, ref)
+        try:
+            cycle_edges = _networkx.find_cycle(graph, orientation="original")
+        except _networkx.NetworkXNoCycle:
+            return None
+        path = [int(cycle_edges[0][0])]
+        for edge in cycle_edges:  # networkx may include a third element under an orientation
+            path.append(int(edge[1]))
+        return path
+    # Dependency-free fallback: a host without the pin must still refuse a cycle. Same colours and
+    # same visit order as ``generation.find_unit_cycle``, so both backends name the same path.
+    colour: dict[int, int] = {}
+    path: list[int] = []
+
+    def visit(node: int) -> list[int] | None:
+        colour[node] = 1
+        path.append(node)
+        for ref in edges.get(node, ()):
+            ref = int(ref)
+            if colour.get(ref) == 1:
+                return path[path.index(ref):] + [ref]
+            if colour.get(ref) is None and ref in edges:
+                found = visit(ref)
+                if found is not None:
+                    return found
+        path.pop()
+        colour[node] = 2
+        return None
+
+    for node in sorted(edges):
+        if colour.get(node) is None:
+            found = visit(node)
+            if found is not None:
+                return found
+    return None
+
+
+def _has_alternative_path(edges: Mapping[int, list[int]], source: int, target: int) -> bool:
+    """True when ``source`` reaches ``target`` without the direct ``source -> target`` edge."""
+    if _networkx is not None:
+        graph = _networkx.DiGraph()
+        graph.add_nodes_from(sorted(edges))
+        for ordinal in sorted(edges):
+            for ref in edges[ordinal]:
+                if ref in edges:
+                    graph.add_edge(ordinal, ref)
+        if not graph.has_edge(source, target):
+            return False
+        graph.remove_edge(source, target)
+        return bool(_networkx.has_path(graph, source, target))
+    seen: set[int] = set()
+    stack: list[int] = [source]
+    while stack:
+        node = stack.pop()
+        for ref in edges.get(node, ()):
+            if node == source and int(ref) == target:
+                continue  # the edge being tested is not an alternative path to itself
+            if int(ref) == target:
+                return True
+            if ref not in seen:
+                seen.add(ref)
+                stack.append(int(ref))
+    return False
+
+
+def prerequisite_dag_problems(units: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Typed reasons the plan's unit prerequisite edges cannot be sequenced as a DAG.
+
+    ``units`` is the plan document's own list. Each problem names the offending ordinals and
+    carries one of :data:`PREREQUISITE_DAG_REASONS`; an empty list means the edges form a DAG.
+
+    The order is deliberate: a cycle is named first (it is the one property a forward reference
+    rule cannot see: it reports only the forward half), then a dangling ordinal (an edge to a unit
+    that does not exist), then a redundant transitive edge (``3 -> 1`` when ``3 -> 2 -> 1`` already
+    implies it). The last one is a *second* ranking of the same dependency, which is how a plan is
+    ordered by two different stories at once. A cycle short-circuits the rest: once the graph has
+    no topological order, naming individual edges is noise.
+
+    This function never invents an edge and never repairs one. ``networkx`` builds the graph when
+    it is installed; the dependency-free search is the fallback, and both produce identical
+    problems (asserted by ``tests/test_up_prereq_dag.py``).
+    """
+    edges = _declared_edges(units)
+    refined = _graph_for(edges)
+    known = set(edges)
+    problems: list[dict[str, Any]] = []
+
+    for ordinal in sorted(known):
+        if ordinal in refined.get(ordinal, ()):
+            problems.append(
+                {
+                    "reason": "prerequisite_cycle",
+                    "ordinals": [ordinal],
+                    "cycle": [ordinal, ordinal],
+                }
+            )
+    if problems:
+        return problems
+
+    cycle = _cycle_path(refined)
+    if cycle is not None:
+        return [
+            {
+                "reason": "prerequisite_cycle",
+                "ordinals": sorted({int(node) for node in cycle}),
+                "cycle": [int(node) for node in cycle],
+            }
+        ]
+
+    for ordinal in sorted(known):
+        for ref in edges[ordinal]:
+            if ref not in known:
+                problems.append(
+                    {
+                        "reason": "prerequisite_missing_unit",
+                        "ordinals": [ordinal, ref],
+                        "unit_ordinal": ordinal,
+                        "prerequisite_ordinal": ref,
+                    }
+                )
+    for ordinal in sorted(known):
+        for ref in sorted(set(edges[ordinal])):
+            if ref not in known or ref == ordinal:
+                continue
+            if _has_alternative_path(refined, ordinal, ref):
+                problems.append(
+                    {
+                        "reason": "prerequisite_redundant_edge",
+                        "ordinals": [ordinal, ref],
+                        "unit_ordinal": ordinal,
+                        "prerequisite_ordinal": ref,
+                    }
+                )
     return problems
 
 

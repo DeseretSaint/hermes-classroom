@@ -40,6 +40,11 @@ python_dependencies:
   # The range must overlap the host's core `documents` pin (pypdf==6.x) or plugin admission refuses
   # the whole plugin; this was the live enable blocker on 2026-11-07.
   - "pypdf>=4.0,<7"
+  # Upgrade 46: the unit prerequisite DAG at plan validation. 3.7 is the first release whose own
+  # requires-python (>=3.12,!=3.14.1) matches this plugin's declared floor, so the pin starts
+  # there; the plan gate still refuses a cycle without it (the dependency-free fallback), but a
+  # host that installs the pin runs the declared builder.
+  - "networkx>=3.7,<4"
 
 # No requires_env in the skeleton: Coursebook stores no secrets. Every key below has a reader
 # wired in this build (`coursebook/tools.py::configure` <- `ctx.get_config`); a settings field
