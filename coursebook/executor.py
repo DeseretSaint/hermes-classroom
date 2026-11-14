@@ -115,6 +115,65 @@ def _unit_state_checkpoint(state: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+#: The lesson states a learner can open. This mirrors :func:`generation.learner_page`, which
+#: raises :class:`generation.LessonNotAvailable` for anything else: ``validated`` is an
+#: independently checked page, ``model_assessed`` is a readable page carrying its provenance
+#: warning. Every other state is a page the validator parked for repair.
+SERVABLE_LESSON_STATES = frozenset({"validated", "model_assessed"})
+
+
+def _lessons_completion(result: dict[str, Any], media_result: Any) -> tuple[dict[str, Any], str]:
+    """The servable/parked split of a lessons run, and the line an operator reads.
+
+    ``run_lesson_job`` returns every section it stored, including the pages it parked
+    ``needs_review`` (the row is authored work, so a retry must not re-charge for it). Counting
+    those rows as "lessons authored" told a learner six pages existed when none could open. The
+    checkpoint keeps ``lessons`` (rows authored or reused, unchanged meaning for existing readers)
+    and adds the honest split:
+
+    * ``servable`` — pages a learner can open now;
+    * ``parked`` — pages the validator parked, whose next action is the repair;
+    * ``parked_reasons`` — one ``{section_id, reason}`` per parked section, the first recorded
+      reason only, so the checkpoint cannot become a wall of validator prose.
+
+    The message is a split, not a failure: the job stays ``completed`` because the work did
+    complete, and the returned line names the repair as the next step instead of a page open.
+    """
+    lessons = [item for item in (result.get("lessons") or []) if isinstance(item, dict)]
+    total = result.get("sections_total")
+    total = len(lessons) if total is None else int(total)
+    servable = sum(1 for item in lessons if str(item.get("state") or "") in SERVABLE_LESSON_STATES)
+    parked_reasons: list[dict[str, Any]] = []
+    for item in lessons:
+        if str(item.get("state") or "") in SERVABLE_LESSON_STATES:
+            continue
+        reasons = item.get("rejection_reasons") or []
+        reason = (
+            item.get("park_reason")
+            or (reasons[0] if isinstance(reasons, list) and reasons else None)
+            or item.get("warning")
+            or "the validator did not certify this page"
+        )
+        parked_reasons.append({"section_id": item.get("section_id"), "reason": str(reason)})
+    parked = len(parked_reasons)
+    # ``sections_total`` is the run's target count; a result that lists more summaries than its
+    # own total (a reused row for a section the target count missed) is reported as it is, never
+    # forced into the smaller number.
+    total = max(total, servable + parked)
+    checkpoint = {
+        "sections_total": total,
+        "servable": servable,
+        "parked": parked,
+        "parked_reasons": parked_reasons,
+    }
+    noun = "section" if total == 1 else "sections"
+    split = f"{servable} of {total} {noun} servable"
+    if parked:
+        split += f", {parked} parked for repair"
+    generated = int(getattr(media_result, "generated", 0) or 0)
+    return checkpoint, f"{split}; {generated} media artifacts generated"
+
+
 class _Resolvers:
     """Builds stages from a persisted brief. One resolver, dispatched on ``brief.stage``."""
 
@@ -375,14 +434,18 @@ class _Resolvers:
                 )
                 for item in media_result.usage
             ]
+            completion, message = _lessons_completion(result, media_result)
             checkpoint = {
                 "plan_id": result.get("plan_id"),
                 "plan_hash": result.get("plan_hash"),
                 "plan_schema": result.get("plan_schema"),
                 "unit_ordinal": result.get("unit_ordinal"),
                 "next_unit_ordinal": result.get("next_unit_ordinal"),
-                "sections_total": result.get("sections_total"),
+                # ``lessons`` keeps its existing meaning — rows authored or reused, whatever their
+                # state — so a reader that already keys on it is not silently redefined. The
+                # learner-facing truth is the servable/parked split beside it.
                 "lessons": len(result.get("lessons") or []),
+                **completion,
                 "media": media_result.as_checkpoint(),
             }
             # The actual configured ceiling is recorded on the job, not inferred from a default:
@@ -407,10 +470,7 @@ class _Resolvers:
                 artifacts=list(media_result.artifact_ids),
                 usage=media_usage,
                 checkpoint=checkpoint,
-                message=(
-                    f"{len(result.get('lessons') or [])} lessons authored; "
-                    f"{media_result.generated} media artifacts generated"
-                ),
+                message=message,
             )
 
         return run
