@@ -60,6 +60,7 @@ from typing import Any, Callable, Iterable, Mapping, Sequence
 
 from . import artifacts, db
 from . import deadline as deadline_mod
+from . import image_normalise
 
 #: The preview route caps one inline data URL. Larger media keeps its download handle and text
 #: equivalent; a lesson page must never become a multi-megabyte JSON response by accident.
@@ -440,6 +441,20 @@ class HostMedia:
         return parse_review_verdict(raw)
 
     def image(self, prompt: str, *, aspect_ratio: str = "landscape") -> tuple[bytes, str]:
+        """Generate one picture, already normalised for the plate it will sit in.
+
+        The bytes crossing this seam are the bytes that ship: decoded, stripped of metadata,
+        cropped to the role's ratio and downscaled to the figure width floor (item 47). A provider
+        picture this seam cannot normalise raises ``MediaGenerationError``, so the item degrades to
+        its text equivalent — raw provider bytes are never an exception path.
+        """
+        data, mime, _transform = self.image_with_transform(prompt, aspect_ratio=aspect_ratio)
+        return data, mime
+
+    def image_with_transform(
+        self, prompt: str, *, aspect_ratio: str = "landscape"
+    ) -> tuple[bytes, str, dict[str, Any]]:
+        """As :meth:`image`, and additionally the transform record for the artifact's provenance."""
         payload = self._dispatch_json(
             "image_generate", {"prompt": str(prompt), "aspect_ratio": aspect_ratio}
         )
@@ -453,7 +468,17 @@ class HostMedia:
         mime = artifacts.sniff_mime(data)
         if mime not in ("image/png", "image/jpeg", "image/webp", "image/gif"):
             raise MediaGenerationError(f"image_generate returned {mime}, not a raster image")
-        return data, mime
+        try:
+            normalised = image_normalise.normalise_image(
+                data,
+                mime=mime,
+                aspect_ratio=aspect_ratio,
+                target_width_px=MIN_FIGURE_WIDTH_PX,
+                max_bytes=artifacts._MAX_BYTES["visual"],
+            )
+        except image_normalise.ImageNormaliseError as exc:
+            raise MediaGenerationError(f"image_generate returned an unusable picture: {exc}") from exc
+        return normalised.data, normalised.mime, dict(normalised.transform)
 
     def speech(
         self,
@@ -921,11 +946,38 @@ def lesson_illustration_prompt(
     )
 
 
-def producer_for(spec: artifacts.MediaSpec, host: HostMedia | None) -> tuple[Callable[[], bytes], str]:
+def _host_image(
+    host: "HostMedia", prompt: str, aspect_ratio: str
+) -> tuple[bytes, str, dict[str, Any]]:
+    """One provider picture plus its normalisation record.
+
+    A real :class:`HostMedia` normalises inside the seam and returns the record; a duck-typed test
+    double (or an older host object) has only ``image`` and answers with no record, which leaves the
+    provenance key empty instead of claiming a transform nobody performed.
+    """
+    getter = getattr(host, "image_with_transform", None)
+    if callable(getter):
+        data, mime, transform = getter(prompt, aspect_ratio=aspect_ratio)
+        return data, mime, dict(transform or {})
+    data, mime = host.image(prompt, aspect_ratio=aspect_ratio)
+    return data, mime, {}
+
+
+def producer_for(
+    spec: artifacts.MediaSpec,
+    host: HostMedia | None,
+    *,
+    transform_sink: dict[str, Any] | None = None,
+) -> tuple[Callable[[], bytes], str]:
     """Return ``(producer, expected_mime)`` for one validated spec.
 
     A missing host or an unsupported role raises ``MediaUnavailable``; the artifact layer then
     records the complete text fallback. It never fabricates a file.
+
+    ``transform_sink`` receives the normalisation record of the attempt whose bytes actually ship
+    (item 47). It is the artifact's own ``provenance["normalisation"]`` dict, so the record is
+    filled when the producer runs and is serialised with the row at save time; a duck-typed test
+    double has no ``image_with_transform``, so the key stays empty rather than being invented.
     """
     if spec.kind == "visual" and spec.role == "schematic":
         rows = _schematic_rows(spec.facts)
@@ -946,7 +998,9 @@ def producer_for(spec: artifacts.MediaSpec, host: HostMedia | None) -> tuple[Cal
         built = lesson_illustration_prompt(spec)
 
         def _image() -> bytes:
-            data, _mime = host.image(built.prompt, aspect_ratio=built.aspect_ratio)
+            data, _mime, transform = _host_image(host, built.prompt, built.aspect_ratio)
+            if transform_sink is not None:
+                transform_sink.update(transform)
             return data
 
         return _image, "image/png"
@@ -992,7 +1046,10 @@ def revision_request(
 
 
 def reviewer_for(
-    spec: artifacts.MediaSpec, host: "HostMedia | None"
+    spec: artifacts.MediaSpec,
+    host: "HostMedia | None",
+    *,
+    transform_sink: dict[str, Any] | None = None,
 ) -> tuple[Callable[[bytes], dict[str, Any]], Callable[[dict[str, Any]], bytes]] | None:
     """``(review, regenerate)`` for a generated illustration, or ``None`` when it is not gated.
 
@@ -1000,6 +1057,10 @@ def reviewer_for(
     structured facts, and narration is read from its transcript, so neither needs a picture judged.
     A host object without ``review_image`` (an older host, or a duck-typed test double) returns
     ``None`` and the artifact layer records ``unreviewed`` instead of pretending it was approved.
+
+    A rejection's one revision is normalised inside :meth:`HostMedia.image` like the first attempt,
+    and its transform overwrites ``transform_sink`` — so the provenance record always describes the
+    bytes that ship, not the attempt they replaced.
     """
     if spec.kind != "visual" or spec.role != "illustration" or host is None:
         return None
@@ -1024,7 +1085,10 @@ def reviewer_for(
         # appended a sentence would repaint the same defect, and one that dropped the textless
         # block and the negative list would lose the house rule.
         revised = revision_request(spec, review)
-        data, _mime = host.image(revised.prompt, aspect_ratio=revised.aspect_ratio)
+        data, _mime, transform = _host_image(host, revised.prompt, revised.aspect_ratio)
+        if transform_sink is not None:
+            transform_sink.clear()
+            transform_sink.update(transform)
         return data
 
     return _review, _regenerate
@@ -1334,8 +1398,14 @@ def generate_for_lessons(
                 summary.skipped += 1
                 changed = True
                 continue
+            # The normalisation record for this item (item 47). It is created before the producer and
+            # handed to both the producer and the reviewer's regenerate closure, then travels in the
+            # artifact's provenance: ``produce_with_fallback`` shallow-copies the provenance dict, so
+            # the nested ``normalisation`` object filled at produce time is the one serialised with
+            # the row.
+            normalisation: dict[str, Any] = {}
             try:
-                producer, expected_mime = producer_for(spec, host)
+                producer, expected_mime = producer_for(spec, host, transform_sink=normalisation)
             except Exception as exc:  # noqa: BLE001 - an invalid spec is a text-only item
                 item.update(
                     {
@@ -1388,7 +1458,7 @@ def generate_for_lessons(
                 changed = True
                 continue
             started = time.monotonic()
-            gated = reviewer_for(spec, host)
+            gated = reviewer_for(spec, host, transform_sink=normalisation)
             built_prompt = (
                 lesson_illustration_prompt(spec)
                 if spec.kind == "visual" and spec.role == "illustration"
@@ -1412,6 +1482,14 @@ def generate_for_lessons(
                     "aspect_ratio": spec.aspect_ratio,
                     "min_width_px": MIN_FIGURE_WIDTH_PX,
                 }
+            # The transform record describes the bytes this row stores. It is present only for a
+            # host-normalised plate: a duck-typed double proves no transform, so the key stays empty
+            # rather than carrying a claim.
+            sizing: dict[str, Any] = (
+                {"normalisation": normalisation}
+                if spec.kind == "visual" and spec.role == "illustration"
+                else {}
+            )
             outcome = artifacts.produce_with_fallback(
                 store,
                 spec,
@@ -1423,6 +1501,7 @@ def generate_for_lessons(
                     "model": "host-configured",
                     **prompt_record,
                     **geometry,
+                    **sizing,
                     "source_hash": source_fp,
                     # The page's own provenance travels with the bytes: a model-assessed lesson's
                     # media must never read as independently validated evidence.
