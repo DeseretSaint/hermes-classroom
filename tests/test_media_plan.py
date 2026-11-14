@@ -535,22 +535,28 @@ class GeneratedPlanDeclarationTest(unittest.TestCase):
         self.assertIn("at least one visual item with role 'schematic'", request.instructions)
         self.assertIn("step table", request.instructions)
 
-    def test_a_declared_none_wins_over_prose_that_names_a_construct(self) -> None:
-        # The old failure mode: the intent prose names a torque sequence and the policy guessed a
-        # schematic. The plan's declaration is authoritative now.
+    def test_a_declared_none_on_a_procedure_is_disclosed_as_media_floor_unmet(self) -> None:
+        # The old failure mode: the intent prose names a torque sequence, the plan declares "none",
+        # and the policy adopted it — a procedure with nothing to look at and no warning (UP-38).
+        # Research is unavailable here (``search=None``), so the ledger carries no citable asset
+        # to name: the plan is adopted, and the shortfall is recorded as the typed warning that
+        # names the section, instead of the section silently deciding "none".
         row = dict(MATRIX["head_gasket_procedure"])
         row["media_need"] = dict(NONE_NEED)
         row["expect_image"] = ("none", None)
         row["expect_audio"] = ("none", None)
         row["permitted"] = None
-        connection, _result, raw = run_generated_plan(row)
+        connection, result, raw = run_generated_plan(row)
         try:
-            capability = capability_for(row, stored_section(raw))
+            self.assertTrue(
+                any(warning.startswith("media_floor_unmet") for warning in result["warnings"]),
+                result["warnings"],
+            )
+            self.assertIn("sections 1", " ".join(result["warnings"]))
+            with self.assertRaises(policy.MediaFloorUnmet):
+                capability_for(row, stored_section(raw))
         finally:
             connection.close()
-        self.assertTrue(capability.declared)
-        self.assertEqual(capability.image, "none")
-        self.assertIn("declares no visual need", " ".join(capability.reasons))
 
 
 # ── The validator honors the declaration ────────────────────────────────────

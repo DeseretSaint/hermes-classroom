@@ -5131,6 +5131,7 @@ def lesson_capability_plan(
     level: str | None = None,
     subject_domain: str | None = None,
     parent_brief: dict[str, Any] | None = None,
+    enforce_declaration_floor: bool = True,
 ) -> capability_policy.LessonCapabilityPlan:
     """Compute the one capability decision this section is authored under.
 
@@ -5165,6 +5166,10 @@ def lesson_capability_plan(
         # The plan's own declaration. When it is present the policy adopts it (and may reject the
         # declared role); the intent prose is then a description, not the media decision.
         media_need=section.get("media_need"),
+        # The domain floor is a *declaration* rule: the plan and unit stages refuse a section and
+        # can send it back to its author. The lesson stage cannot change a stored declaration, so
+        # it passes False and ships the section with the shortfall in its reason.
+        enforce_declaration_floor=enforce_declaration_floor,
     )
 
 
@@ -6588,6 +6593,14 @@ def _enforce_plan_rules_v1(
                 dials=dials,
                 plan=plan,
             )
+        except capability_policy.MediaFloorUnmet as exc:
+            # The floor is a hard refusal only when the author can satisfy it. With no citable
+            # asset in the ledger the only legal remedy left is a deterministic schematic, which
+            # the plan did not declare; refusing here would buy another pass with the same answer,
+            # so the shortfall is disclosed as `media_floor_unmet` instead (see
+            # `media_floor_warnings`, which the plan document carries).
+            if ledger_has_citable_asset(ledger):
+                reasons.append(f"section {section_ordinal}: {exc}")
         except capability_policy.CapabilityPolicyError as exc:
             reasons.append(f"section {section_ordinal}: {exc}")
 
@@ -8281,6 +8294,8 @@ def enforce_lesson_rules(
             objective=objective,
             locale=locale,
             dials=dials,
+            # The lesson stage scores a stored declaration; it never re-refuses it.
+            enforce_declaration_floor=False,
         )
     # The rubric angle is selected by construct, not by a generic template. The declared
     # evidence target is the authority; the capability policy's advice about the construct is
@@ -10463,6 +10478,8 @@ def build_lesson_request(
         plan=plan,
         level=declared_level,
         subject_domain=declared_domain,
+        # The lesson prompt describes a stored declaration; the declaration gates own the floor.
+        enforce_declaration_floor=False,
     )
     payload = {
         "plan_title": plan.get("title"),
@@ -12552,6 +12569,14 @@ def run_plan_job(
                 "queries": [entry.get("query") for entry in research_run.queries],
             },
             "warnings": _plan_warnings(recipe, research_run, verdict)
+            + media_floor_warnings(
+                sections,
+                recipe=recipe,
+                dials=policy_dials,
+                locale=locale,
+                plan=plan,
+                ledger=research_run.sources,
+            )
             + list(verdict.get("provenance_flags") or [])
             + (
                 [domain_provenance["note"]]
@@ -12847,6 +12872,95 @@ def _approval_provenance(verdict: dict[str, Any]) -> dict[str, Any]:
         "needs_review": outcome != OUTCOME_INDEPENDENT,
         "warning": _provenance_warning(outcome, independence, facts_unverified),
     }
+
+
+#: The typed plan warning for a course whose procedure or discrimination sections declare no visual
+#: while the ledger carries nothing citable. It is a disclosure, not a rejection: a source that was
+#: never fetched cannot be named, so the plan ships text-only for those sections and says so instead
+#: of looping a paid re-author that has no remedy to reach for.
+MEDIA_FLOOR_WARNING = "media_floor_unmet"
+
+
+def ledger_has_citable_asset(ledger: Sequence[SourceRecord]) -> bool:
+    """Whether any fetched source carries quotable prose a section could cite an image from."""
+    return any(source.url and source.excerpt_state == "recorded" for source in ledger)
+
+
+def _section_objective(
+    section: Mapping[str, Any], plan: Mapping[str, Any] | None
+) -> dict[str, Any] | None:
+    """The objective a v1 plan section or a unit-stage section owns, or ``None``."""
+    refs = section.get("objective_refs") or []
+    if len(refs) == 1:
+        ordinal: Any = refs[0]
+    else:
+        ordinal = section.get("primary_objective_ref")
+    if ordinal is None:
+        return None
+    for objective in (plan or {}).get("objectives") or []:
+        if isinstance(objective, dict) and int(objective.get("ordinal", 0)) == int(ordinal):
+            return objective
+    return None
+
+
+def media_floor_unmet_sections(
+    sections: Sequence[Mapping[str, Any]],
+    *,
+    recipe: str,
+    dials: dict[str, Any],
+    locale: str | None,
+    plan: Mapping[str, Any] | None,
+    ledger: Sequence[SourceRecord],
+) -> list[int]:
+    """Section ordinals the domain floor refuses a no-visual declaration for, when uncitable.
+
+    Empty when the ledger carries a citable asset: then the floor is a hard refusal and the author
+    is told to declare the schematic or the cited source, which it can actually do.
+    """
+    if ledger_has_citable_asset(ledger):
+        return []
+    unmet: list[int] = []
+    for section in sections:
+        try:
+            lesson_capability_plan(
+                recipe=recipe,
+                section=dict(section),
+                objective=_section_objective(section, plan),
+                locale=locale,
+                dials=dials,
+                plan=dict(plan) if plan is not None else None,
+            )
+        except capability_policy.MediaFloorUnmet:
+            unmet.append(int(section.get("ordinal", 0)))
+        except capability_policy.CapabilityPolicyError:
+            # Any other policy refusal is the gate's business, not the floor warning's: it is
+            # reported as a plan rejection with its own reason and never mistaken for a shortfall.
+            continue
+    return unmet
+
+
+def media_floor_warnings(
+    sections: Sequence[Mapping[str, Any]],
+    *,
+    recipe: str,
+    dials: dict[str, Any],
+    locale: str | None,
+    plan: Mapping[str, Any] | None,
+    ledger: Sequence[SourceRecord],
+) -> list[str]:
+    """The typed ``media_floor_unmet`` plan warning, naming the sections it applies to."""
+    unmet = sorted(set(media_floor_unmet_sections(
+        sections, recipe=recipe, dials=dials, locale=locale, plan=plan, ledger=ledger
+    )))
+    if not unmet:
+        return []
+    named = ", ".join(str(ordinal) for ordinal in unmet)
+    return [
+        f"{MEDIA_FLOOR_WARNING}: sections {named} declare no visual for a procedure or "
+        "discrimination objective, and the research ledger carries no citable asset to cite one "
+        "from. This course ships text-only for those sections. Next: author a deterministic "
+        "schematic for each, or re-research a source image before export."
+    ]
 
 
 def _plan_warnings(recipe: str, research_run: ResearchRun, verdict: dict[str, Any]) -> list[str]:
@@ -13451,6 +13565,13 @@ def enforce_unit_section_rules(
                     dials=dials,
                     plan=plan,
                 )
+            except capability_policy.MediaFloorUnmet as exc:
+                # Same split as the v1 plan gate: a citable asset makes the floor repairable, so
+                # the batch is refused and the one re-author is told which role to declare. With
+                # nothing citable the unit ships text-only and the shortfall is disclosed by
+                # `media_floor_warnings` on the unit and plan results.
+                if ledger_has_citable_asset(ledger):
+                    reasons.append(f"section {index + 1}: {exc}")
             except capability_policy.CapabilityPolicyError as exc:
                 reasons.append(f"section {index + 1}: {exc}")
         for sid in section.get("source_ids") or []:
@@ -13934,6 +14055,14 @@ def run_unit_sections_job(
             "next_unit_ordinal": _next_unit_ordinal(connection, str(plan_id), requested_unit),
             "usage": usage.summary(),
             "budget": resolved_budget.as_dict(),
+            "warnings": media_floor_warnings(
+                authored,
+                recipe=recipe,
+                dials=dials,
+                locale=locale,
+                plan=plan,
+                ledger=sources,
+            ),
             "rejection_reasons": rejection_reasons if state == "needs_review" else [],
         }
     except CostCeilingExceeded as exc:
@@ -15201,6 +15330,8 @@ def _author_section(
         level=level,
         subject_domain=subject_domain,
         parent_brief=parent_brief,
+        # The section's media was declared and gated upstream; authoring cannot renegotiate it.
+        enforce_declaration_floor=False,
     )
     rubric_profile = rubrics.resolve_profile(capability.rubric_profile, capability.evidence_target)
     lesson: dict[str, Any] | None = None

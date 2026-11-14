@@ -879,7 +879,8 @@
             "unknown_cost": false
           },
           "validation_id": "0000000000000019",
-          "validation_verdict": "pass"
+          "validation_verdict": "pass",
+          "warnings": []
         },
         "unit_ordinal": 1
       }

@@ -466,6 +466,19 @@ class CapabilityPolicyError(ValueError):
     """The policy was called with an input it cannot decide (unknown recipe or target)."""
 
 
+class MediaFloorUnmet(CapabilityPolicyError):
+    """A section declares no visual where the domain floor requires one it can carry.
+
+    Raised only on the generated-plan path, for a section whose objective is a procedure or a
+    discrimination in a domain whose evidence is not symbolic or verbal, when the declaration is
+    ``none`` or an AI illustration. The declaration is refused because the learner has to see the
+    thing; the accepted remedies are always a deterministic schematic or a cited source image,
+    never a generated picture. The caller may downgrade this to a typed ``media_floor_unmet``
+    plan warning when the ledger carries no citable asset — a source that was never fetched
+    cannot be named, and refusing the plan outright would only buy another impossible pass.
+    """
+
+
 @dataclass(frozen=True, slots=True)
 class LessonCapabilityPlan:
     """The immutable capability decision for one lesson section.
@@ -1059,20 +1072,94 @@ def _audio_decision(
     )
 
 
+#: Evidence targets whose lesson cannot be authored as prose alone in a non-symbolic domain: the
+#: learner has to see the step table, or the two things they are asked to tell apart.
+MEDIA_FLOOR_TARGETS: tuple[str, ...] = ("procedure", "discrimination")
+
+
+def image_floor_applies(
+    *, domain: str, recipe: str, evidence_target: str, text: str = ""
+) -> bool:
+    """Whether the domain floor forbids this section from declaring ``image: none``.
+
+    Deliberately narrow (the upgrade's adversarial note): only the two evidence families that need
+    something to look at, only a domain whose evidence is not symbolic or verbal, and not the two
+    recipes whose check is a verification or an observation rather than a taught visual. A language
+    procedure or discrimination is evidenced by the phrase and the contrast, and a symbolic lesson's
+    derivation is refused an AI picture on purpose — forcing one there would be the bug, not the fix.
+
+    A procedure always needs its step table. A **discrimination** needs a picture only when this
+    section's own words name something visible to tell apart: "distinguish the two common thirds by
+    sound" is evidenced by listening, and demanding a schematic there would refuse a genuine prose
+    (or audio) subject — the regression this rule must not be.
+    """
+    if evidence_target not in MEDIA_FLOOR_TARGETS:
+        return False
+    if domain in SYMBOLIC_DOMAINS or domain == "language":
+        return False
+    if recipe in ("one_off", "parent"):
+        return False
+    if evidence_target == "procedure":
+        return True
+    return bool(
+        _SCHEMATIC_VISUAL.search(text)
+        or _SOURCED_VISUAL.search(text)
+        or _PHYSICAL_OBJECT.search(text)
+        or _ILLUSTRATION_VISUAL.search(text)
+    )
+
+
+def _media_floor_message(*, domain: str, evidence_target: str) -> str:
+    """Why the floor refuses, in the terms of the one re-author that has to repair it."""
+    if evidence_target == "procedure":
+        shown = "the step table the procedure is graded against has to be shown"
+    else:
+        shown = "the two things the learner is asked to tell apart have to be shown"
+    return (
+        f"the objective's evidence target is {evidence_target!r} and {domain} is not a symbolic "
+        f"domain, so {shown}. Declare a 'schematic' need naming the construct (a sequence, wiring, "
+        "measurement or labelled-part diagram), or a 'sourced_reference' need naming an image from "
+        "a fetched source. An AI illustration is not a substitute: it is context only and never "
+        "the evidence."
+    )
+
+
 def _declared_image_decision(
-    *, domain: str, recipe: str, need: MediaNeed
+    *,
+    domain: str,
+    recipe: str,
+    evidence_target: str,
+    intent_text: str,
+    need: MediaNeed,
+    enforce_floor: bool = True,
 ) -> tuple[str, str | None, str]:
     """Adopt a declared visual need, or reject a role this lesson cannot carry.
 
     The construct text is the planner's own declaration, not incidental intent prose. It still has
     to name the construct the declared role exists for; the domain rules still decide whether that
-    role is possible at all.
+    role is possible at all. A procedure or discrimination section in a non-symbolic domain also
+    has a floor: it may not declare ``none`` or an illustration-only visual, because then nothing
+    the learner looks at exists.
     """
-    if need.image == "none" or need.image_role is None:
-        return "none", None, "the plan declares no visual need for this section"
-
     role = need.image_role
     text = _normalise_intent(need.construct)
+    # The floor reads what the section itself says: the authored intent plus the declared construct.
+    floor_text = " ".join(part for part in (intent_text, text) if part)
+    if need.image == "none" or role is None:
+        no_visual = "the plan declares no visual need for this section"
+        if image_floor_applies(
+            domain=domain, recipe=recipe, evidence_target=evidence_target, text=floor_text
+        ):
+            if enforce_floor:
+                raise MediaFloorUnmet(
+                    _media_floor_message(domain=domain, evidence_target=evidence_target)
+                )
+            no_visual += (
+                f"; the domain floor required a visual for this {evidence_target!r} objective "
+                "and the declaration gate records that as an unmet media floor"
+            )
+        return "none", None, no_visual
+
     if role == "illustration":
         if need.image == "required":
             raise CapabilityPolicyError(
@@ -1088,6 +1175,17 @@ def _declared_image_decision(
         if recipe == "one_off":
             raise CapabilityPolicyError(
                 "a one-off brief gets no decorative media; a declared illustration is not permitted"
+            )
+        if enforce_floor and image_floor_applies(
+            domain=domain, recipe=recipe, evidence_target=evidence_target, text=floor_text
+        ):
+            # Context art is never the authority: an illustration-only declaration leaves the
+            # procedure with nothing the learner can check the steps against, so the floor refuses
+            # it exactly as it refuses ``none``.
+            raise MediaFloorUnmet(
+                _media_floor_message(domain=domain, evidence_target=evidence_target)
+                + " A declared illustration is context art beside the authority visual, not a "
+                "substitute for it."
             )
         if not _ILLUSTRATION_VISUAL.search(text):
             raise CapabilityPolicyError(
@@ -1242,6 +1340,7 @@ def plan_lesson_capability(
     subject_domain: str | None = None,
     media_need: object = None,
     media_preferences: Mapping[str, str] | None = None,
+    enforce_declaration_floor: bool = True,
 ) -> LessonCapabilityPlan:
     """Map one lesson's declared facts to an immutable capability plan.
 
@@ -1255,6 +1354,12 @@ def plan_lesson_capability(
     *narrow* the decision: a parent who asked for no visuals or no narration withholds that media
     even when the intent names a construct. A parent who asked for diagrams or a script never
     forces media — the authored intent still has to name the construct the media carries.
+
+    ``enforce_declaration_floor`` is the seam between the **declaration** gates (the plan and the
+    unit stage, which can send the section back to its author) and the **lesson** stage, which
+    consumes a stored declaration it cannot change. The lesson stage passes ``False``: it ships the
+    section with the floor's shortfall stated in the reason instead of failing a job that has no
+    remedy. A plan or unit batch passes the default ``True`` and is refused.
 
     Raises :class:`CapabilityPolicyError` for an unknown recipe or evidence target, and for a
     declaration that names a role this lesson cannot carry. It never raises for an ordinary
@@ -1277,7 +1382,12 @@ def plan_lesson_capability(
     need = parse_media_need(media_need) if media_need is not None else None
     if need is not None:
         image, image_role, image_reason = _declared_image_decision(
-            domain=domain, recipe=recipe, need=need
+            domain=domain,
+            recipe=recipe,
+            evidence_target=evidence_target,
+            intent_text=text,
+            need=need,
+            enforce_floor=enforce_declaration_floor,
         )
         audio, audio_role, audio_reason = _declared_audio_decision(
             domain=domain, recipe=recipe, need=need

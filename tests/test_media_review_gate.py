@@ -841,20 +841,41 @@ class PolicyContextArtTest(unittest.TestCase):
         self.assertEqual(policy.permitted_image_roles(withheld), ())
 
     def test_declared_context_art_on_a_procedure_is_accepted_without_authority(self) -> None:
+        # UP-38: a procedure section cannot be authored on an AI illustration alone — the floor
+        # requires the deterministic schematic or a cited source. Context art still rides along
+        # beside that authority visual, with authority none.
         plan = policy.plan_lesson_capability(
             recipe="committed",
             evidence_target="procedure",
-            lesson_intent="Replace the front pads.",
+            lesson_intent="Replace the front pads, using the picture of the bench as context.",
             subject_domain="technical_procedure",
             media_need={
-                "construct": "a picture of the caliper on the bench",
-                "image": {"level": "optional", "role": "illustration"},
+                "construct": "the labelled parts diagram of the caliper, with a picture of the bench",
+                "image": {"level": "required", "role": "schematic"},
                 "audio": {"level": "none", "role": "none"},
             },
         )
-        self.assertEqual((plan.image, plan.image_role), ("optional", "illustration"))
-        self.assertEqual(plan.image_authority, "none")
+        self.assertEqual((plan.image, plan.image_role), ("required", "schematic"))
+        self.assertEqual(plan.image_authority, "deterministic")
+        self.assertTrue(plan.context_illustration)
         self.assertIn("context art with authority none", " ".join(plan.reasons))
+        self.assertEqual(
+            policy.permitted_image_roles(plan), ("schematic", "illustration")
+        )
+
+        # The illustration on its own is not the procedure's visual: it is refused, not adopted.
+        with self.assertRaises(policy.MediaFloorUnmet):
+            policy.plan_lesson_capability(
+                recipe="committed",
+                evidence_target="procedure",
+                lesson_intent="Replace the front pads.",
+                subject_domain="technical_procedure",
+                media_need={
+                    "construct": "a picture of the caliper on the bench",
+                    "image": {"level": "optional", "role": "illustration"},
+                    "audio": {"level": "none", "role": "none"},
+                },
+            )
 
 
 if __name__ == "__main__":

@@ -184,7 +184,19 @@
         "learner_explanation": "Temperature is a time control: too cold means a longer touch and a colder joint.",
         "learner_explanation_short": "Temperature is a time control.",
         "lesson_intent": "Teach the temperature setting for leaded solder.",
-        "media": [],
+        "media": [
+          {
+            "artifact_id": null,
+            "degraded": false,
+            "kind": "visual",
+            "label": null,
+            "mime": null,
+            "purpose": "Show the ordered steps of Set an iron to the temperature a leaded joint needs",
+            "reason": null,
+            "role": "schematic",
+            "text_equivalent": "Set the dial Wait for the display Tin the tip"
+          }
+        ],
         "parent_notes": null,
         "section_title": "Set an iron to the temperature a leaded joint needs",
         "segments": [
@@ -368,7 +380,19 @@
         "learner_explanation": "A part that stands off the board strains its joints every time the board flexes.",
         "learner_explanation_short": "A part that stands off the board strains its joints.",
         "lesson_intent": "Teach lead forming.",
-        "media": [],
+        "media": [
+          {
+            "artifact_id": null,
+            "degraded": false,
+            "kind": "visual",
+            "label": null,
+            "mime": null,
+            "purpose": "Show the ordered steps of Form a lead so the part seats flush",
+            "reason": null,
+            "role": "schematic",
+            "text_equivalent": "Measure the board Bend with pliers Drop the part"
+          }
+        ],
         "parent_notes": null,
         "section_title": "Form a lead so the part seats flush",
         "segments": [
@@ -552,7 +576,19 @@
         "learner_explanation": "Solder fed onto the tip makes a cold joint that looks finished and fails later.",
         "learner_explanation_short": "Solder fed onto the tip makes a cold joint.",
         "lesson_intent": "Teach the heat order.",
-        "media": [],
+        "media": [
+          {
+            "artifact_id": null,
+            "degraded": false,
+            "kind": "visual",
+            "label": null,
+            "mime": null,
+            "purpose": "Show the ordered steps of Heat the pad and lead together before feeding solder",
+            "reason": null,
+            "role": "schematic",
+            "text_equivalent": "Touch pad and lead Wait for heat Feed into the joint"
+          }
+        ],
         "parent_notes": null,
         "section_title": "Heat the pad and lead together before feeding solder",
         "segments": [
@@ -793,7 +829,19 @@
         "learner_explanation": "Pulling the wick while the solder is solid is how pads lift.",
         "learner_explanation_short": "Pulling the wick while the solder is solid lifts pads.",
         "lesson_intent": "Teach bridge removal.",
-        "media": [],
+        "media": [
+          {
+            "artifact_id": null,
+            "degraded": false,
+            "kind": "visual",
+            "label": null,
+            "mime": null,
+            "purpose": "Show the ordered steps of Wick a solder bridge without lifting the pad",
+            "reason": null,
+            "role": "schematic",
+            "text_equivalent": "Add flux Lay the wick Heat until the bridge flows"
+          }
+        ],
         "parent_notes": null,
         "section_title": "Wick a solder bridge without lifting the pad",
         "segments": [
@@ -933,7 +981,19 @@
         "learner_explanation": "Old solder has lost its flux, so adding fresh solder is what makes removal quick.",
         "learner_explanation_short": "Old solder has lost its flux.",
         "lesson_intent": "Teach desoldering a part.",
-        "media": [],
+        "media": [
+          {
+            "artifact_id": null,
+            "degraded": false,
+            "kind": "visual",
+            "label": null,
+            "mime": null,
+            "purpose": "Show the ordered steps of Desolder a two-lead part without overheating it",
+            "reason": null,
+            "role": "schematic",
+            "text_equivalent": "Add fresh solder Alternate the heat Pull gently"
+          }
+        ],
         "parent_notes": null,
         "section_title": "Desolder a two-lead part without overheating it",
         "segments": [
@@ -2016,8 +2076,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10881,
-            "output_tokens": 1919,
+            "input_tokens": 11185,
+            "output_tokens": 2029,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -2376,8 +2436,8 @@
             "calls": 6,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 16515,
-            "output_tokens": 2875,
+            "input_tokens": 16793,
+            "output_tokens": 2983,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -2580,8 +2640,8 @@
             "calls": 6,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 16532,
-            "output_tokens": 2814,
+            "input_tokens": 16841,
+            "output_tokens": 2927,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -2784,8 +2844,8 @@
             "calls": 6,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 14320,
-            "output_tokens": 2947,
+            "input_tokens": 14678,
+            "output_tokens": 3058,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -2940,8 +3000,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 11157,
-            "output_tokens": 1926,
+            "input_tokens": 11455,
+            "output_tokens": 2036,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -3709,13 +3769,14 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 4204,
-            "output_tokens": 551,
+            "input_tokens": 4226,
+            "output_tokens": 574,
             "unknown_calls": 0,
             "unknown_cost": false
           },
           "validation_id": "0000000000000033",
-          "validation_verdict": "pass"
+          "validation_verdict": "pass",
+          "warnings": []
         },
         "unit_ordinal": 1
       },
@@ -3774,7 +3835,8 @@
             "unknown_cost": false
           },
           "validation_id": "000000000000003a",
-          "validation_verdict": "pass"
+          "validation_verdict": "pass",
+          "warnings": []
         },
         "unit_ordinal": 2
       },
@@ -3828,13 +3890,14 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 4324,
-            "output_tokens": 652,
+            "input_tokens": 4342,
+            "output_tokens": 671,
             "unknown_calls": 0,
             "unknown_cost": false
           },
           "validation_id": "0000000000000042",
-          "validation_verdict": "pass"
+          "validation_verdict": "pass",
+          "warnings": []
         },
         "unit_ordinal": 3
       },
@@ -3888,13 +3951,14 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 4332,
-            "output_tokens": 655,
+            "input_tokens": 4355,
+            "output_tokens": 677,
             "unknown_calls": 0,
             "unknown_cost": false
           },
           "validation_id": "000000000000004a",
-          "validation_verdict": "pass"
+          "validation_verdict": "pass",
+          "warnings": []
         },
         "unit_ordinal": 4
       },
@@ -3948,13 +4012,14 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 1891,
-            "output_tokens": 662,
+            "input_tokens": 1912,
+            "output_tokens": 682,
             "unknown_calls": 0,
             "unknown_cost": false
           },
           "validation_id": "0000000000000052",
-          "validation_verdict": "pass"
+          "validation_verdict": "pass",
+          "warnings": []
         },
         "unit_ordinal": 5
       },
@@ -4007,13 +4072,14 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 4217,
-            "output_tokens": 542,
+            "input_tokens": 4238,
+            "output_tokens": 563,
             "unknown_calls": 0,
             "unknown_cost": false
           },
           "validation_id": "0000000000000059",
-          "validation_verdict": "pass"
+          "validation_verdict": "pass",
+          "warnings": []
         },
         "unit_ordinal": 6
       }
