@@ -8,6 +8,8 @@
  *
  * Usage: node audit.mjs [--port 9371] [--write-baseline] [--monitor secondary|main|1344x768+3440+40]
  *                        [--reuse]   (attach to an existing coursebook page instead of opening one)
+ *                        [--fixture <file|url>]  (headless axe-only run against a fixture page; no
+ *                                                 Electron host, no screenshots, no baselines)
  */
 import { chromium } from 'playwright'
 import { PNG } from 'pngjs'
@@ -31,6 +33,7 @@ const PORT = Number(opt('--port', 0))
 const THRESHOLD = Number(opt('--threshold', 0.001))
 const WRITE_BASELINE = args.includes('--write-baseline')
 const REUSE = args.includes('--reuse')
+const FIXTURE = opt('--fixture', null)
 const MONITOR = opt('--monitor', 'secondary')
 // The approved frames are 1344x768. A route narrower than this is the docked pane, not the
 // approved canvas; it must never be reported as a pass.
@@ -107,6 +110,77 @@ async function findCoursebookFrame(browser, timeoutMs) {
     await sleep(300)
   }
   return null
+}
+
+// axe on `[data-cb-route]` never answers the page-level rules — html-has-lang,
+// landmark-one-main, page-has-heading-one live on the document, so scoping to the route reported
+// them clean by never asking. The frame's whole document is the only scope that can answer them.
+async function runAxe(target) {
+  await target.addScriptTag({ path: AXE })
+  return await target.evaluate(async () => {
+    // A blocked or failed script tag does not reject addScriptTag; the page is simply left without
+    // axe. Say that plainly instead of dying on `axe.run is not a function`.
+    if (!window.axe || typeof window.axe.run !== 'function') {
+      throw new Error('axe-core did not load in this document')
+    }
+    const res = await window.axe.run(document, { resultTypes: ['violations'] })
+    return { violations: res.violations.map((v) => ({ id: v.id, impact: v.impact, nodes: v.nodes.length })) }
+  })
+}
+
+function chromiumExecutable() {
+  if (process.env.CB_AUDIT_CHROME) return process.env.CB_AUDIT_CHROME
+  for (const name of ['chromium', 'chromium-browser', 'google-chrome-stable', 'google-chrome']) {
+    try {
+      const found = execSync(`command -v ${name}`, { encoding: 'utf8' }).trim()
+      if (found) return found
+    } catch { /* not on PATH */ }
+  }
+  return null
+}
+
+function reasonText(e) {
+  // Playwright folds the stack into `message`; one sentence is enough for a report line.
+  return String((e && e.message) || e).split('\n')[0].replace(/^page\.evaluate: /, '').replace(/^Error: /, '')
+}
+
+// The plugin only paints inside the Desktop app, so CI needs a page it can serve itself. This runs
+// the same `runAxe` the route loop runs, against a local fixture, and exits red on any violation or
+// on a crashed injection. A crash is never recorded as an empty, green violation list.
+async function auditFixture(target) {
+  const exe = chromiumExecutable()
+  const launched = await chromium.launch({
+    headless: true,
+    ...(exe ? { executablePath: exe } : {}),
+    args: ['--no-sandbox']
+  })
+  try {
+    const page = await launched.newPage()
+    const url = /^[a-z][a-z0-9+.-]*:\/\//i.test(target) ? target : `file://${path.resolve(target)}`
+    await page.goto(url, { waitUntil: 'load' })
+    const failures = []
+    let axe
+    try {
+      axe = await runAxe(page)
+    } catch (e) {
+      // Nothing was measured. Say so and fail; `{ violations: [] }` here reads as a clean page.
+      const reason = reasonText(e)
+      axe = { error: reason }
+      failures.push(`fixture: axe could not run — ${reason}`)
+    }
+    const violations = axe.violations || []
+    for (const v of violations) failures.push(`fixture: axe ${v.id}(${v.impact}, ${v.nodes} node${v.nodes === 1 ? '' : 's'})`)
+    console.log(`fixture ${target}: violations=${violations.length}`)
+    console.log(failures.length ? `FAIL\n${failures.join('\n')}` : 'PASS')
+    return failures.length ? 1 : 0
+  } finally {
+    await launched.close().catch(() => {})
+  }
+}
+
+if (args.includes('--fixture')) {
+  if (!FIXTURE) { console.error('--fixture needs a file path or URL'); process.exit(2) }
+  process.exit(await auditFixture(FIXTURE))
 }
 
 const port = await discoverPort()
@@ -251,17 +325,17 @@ for (const route of ROUTES) {
   await frame.locator('[data-cb-route]').first().screenshot({ path: shotPath, animations: 'disabled' }).catch(() => {})
 
   const fonts = await frame.evaluate(() => ['CB Display', 'CB UI'].map((f) => ({ family: f, loaded: document.fonts.check(`16px "${f}"`) }))).catch(() => [])
-  let axe = { violations: [] }
+  let axe
   try {
-    await frame.addScriptTag({ path: AXE })
-    axe = await frame.evaluate(async () => {
-      const root = document.querySelector('[data-cb-route]') || document.body
-      const res = await window.axe.run(root, { resultTypes: ['violations'] })
-      return { violations: res.violations.map((v) => ({ id: v.id, impact: v.impact, nodes: v.nodes.length })) }
-    })
-  } catch (e) { axe = { violations: [], error: String(e.message || e) } }
+    axe = await runAxe(frame)
+  } catch (e) {
+    // A crashed injection measured nothing. Keep the reason and fail the run; an empty violation
+    // list here would be a green line the operator cannot tell from a clean page.
+    axe = { error: reasonText(e) }
+    report.failures.push(`${route.name}: axe could not run — ${axe.error}`)
+  }
 
-  const serious = axe.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
+  const serious = (axe.violations || []).filter((v) => v.impact === 'serious' || v.impact === 'critical')
   if (!ok) report.failures.push(`${route.name}: route never reached v3-ready`)
   if (serious.length) report.failures.push(`${route.name}: axe ${serious.map((v) => v.id).join(',')}`)
   if (fonts.some((f) => !f.loaded)) report.failures.push(`${route.name}: font fallback ${fonts.filter((f) => !f.loaded).map((f) => f.family).join(',')}`)
