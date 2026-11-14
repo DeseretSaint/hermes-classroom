@@ -192,6 +192,16 @@ class PackIntakeCopyTest(unittest.TestCase):
         self.assertNotIn("could not ask the host whether packs can be imported", probe["text"])
         self.assertFalse(probe["retry"], probe["html"])
 
+    def test_a_malformed_or_empty_answer_is_not_a_capability_answer(self) -> None:
+        """The route promises a boolean. Anything else is "no answer", not "no capability"."""
+        for label, payload in (("no boolean", {"ok": True}), ("empty body", None), ("a page", "<html>502</html>")):
+            with self.subTest(label):
+                data = self.run_dom(responses={"/packs/intake": payload})
+                probe = data["steps"][0]
+                self.assertEqual(probe["status"], "unavailable", probe["text"])
+                self.assertFalse(probe["claimsMissingCapability"], probe["text"])
+                self.assertTrue(probe["retry"], probe["html"])
+
     def test_retry_re_asks_the_host_and_paints_the_answer(self) -> None:
         data = self.run_dom(
             responses={
