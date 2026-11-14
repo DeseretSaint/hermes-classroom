@@ -1887,7 +1887,7 @@ function CoursebookPane() {
     'data-cb-binding-id': (state.binding && state.binding.binding_id) || '',
     'data-cb-scope': cbMode,
     'data-cb-motion': cbMotion.preference,
-    style: { ...cbScopeStyle(cbMode), ...cbHostVars(panePrefs.appearance) },
+    style: { ...cbScopeStyle(cbMode), ...cbHostVars(cbMode) },
     children: [
       jsx(CbLabel, { children: 'Coursebook' }),
       routingUnavailable

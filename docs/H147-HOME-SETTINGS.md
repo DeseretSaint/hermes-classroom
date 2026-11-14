@@ -31,11 +31,14 @@ attribute.
   classroom's override first, else the home default, maps it (`game → field_quest`) and threads it
   through `CourseDetail → TextbookView → SectionPage`, whose initial and re-entered view is that
   choice. Textbook remains the floor when a document cannot render the chosen view.
-- **Host palette.** When Appearance differs from the host theme, `cbHostVars` maps the host
-  variables the SDK rows/buttons/segments read (`--foreground`, `--muted-foreground`,
-  `--ui-text-*`, `--ui-bg-*`, `--border`, `--primary`) onto the scoped `--cb-*` table. Without it
-  a light sheet inside a dark app kept dark host text and went unreadable (see the first light
-  capture, fixed before the committed frames).
+- **Host palette.** `cbHostVars` maps the host variables the SDK rows/buttons/segments read
+  (`--foreground`, `--muted-foreground`, `--ui-text-*`, `--ui-bg-*`, `--border`, `--primary`) onto
+  the scoped `--cb-*` table, and it does so for every appearance: `system` — the default — resolves
+  to the mode the route actually paints (`cbAppliedMode(hostMode, appearance)`), so the remap never
+  depends on the learner naming Light or Dark. Without it a light sheet inside a dark app kept dark
+  host text and went unreadable (see the first light capture, fixed before the committed frames),
+  and the default install kept the host's accent inside an Atlas Lamp page
+  (`tests/test_upgrade_26_host_vars.py`).
 
 ## Live facts
 
