@@ -830,7 +830,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v18",
+                "prompt_version": "lesson-prompt.v19",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000002c",
@@ -876,7 +876,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v18",
+                "prompt_version": "lesson-prompt.v19",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000002f",
@@ -957,7 +957,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 4953,
+            "input_tokens": 5082,
             "output_tokens": 1881,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -986,7 +986,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v18",
+                "prompt_version": "lesson-prompt.v19",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000038",
@@ -1032,7 +1032,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v18",
+                "prompt_version": "lesson-prompt.v19",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000003b",
@@ -1078,7 +1078,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v18",
+                "prompt_version": "lesson-prompt.v19",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000003e",
@@ -1161,7 +1161,7 @@
             "calls": 6,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 7707,
+            "input_tokens": 7902,
             "output_tokens": 2916,
             "unknown_calls": 0,
             "unknown_cost": false
