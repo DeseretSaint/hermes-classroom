@@ -534,10 +534,13 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   overflow: hidden;
 }
 
+/* The fill is ink, not gold: gold against the rule track measured 2.16:1 in light, so the completed
+   length of a 4 px bar was not perceivable. Ink clears the 3:1 non-text floor in both modes (9.25
+   light, 9.82 dark) while the rule track keeps its hairline separation from the card. */
 [data-cb-v3] [data-cb-home-scene-progress] > i {
   display: block;
   height: 100%;
-  background-color: var(--cb3-gold);
+  background-color: var(--cb3-ink);
 }
 
 /* The reference card carries a title and a progress bar, not a second line of 12 px type. The

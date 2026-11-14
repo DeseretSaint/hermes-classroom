@@ -5005,7 +5005,7 @@ function GameHeader({ engagement, status, error, prefs, compact, onRetry }) {
                         position: 'absolute',
                         inset: '0',
                         width: `${Math.round(ratio * 100)}%`,
-                        backgroundColor: cb3Role('gold'),
+                        backgroundColor: cb3Role('ink'),
                         // One authored beat: the fill arrives once; a reduced-motion reader gets
                         // the same state with no travel at all.
                         transition: motion.reduced

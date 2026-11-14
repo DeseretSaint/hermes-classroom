@@ -406,7 +406,7 @@ def build_home(pack: str, contract: dict, type_map: dict) -> dict:
                                 f"card-progress-fill-{index}", "element",
                                 live="[data-cb-home-scene-progress] > i", index=position,
                                 reference=".bar i",
-                                paint=paint(fill="gold", radius="pill"), box={}, z=3,
+                                paint=paint(fill="ink", radius="pill"), box={}, z=3,
                             )],
                         ),
                         text_node(f"card-meta-{index}", "card-meta",

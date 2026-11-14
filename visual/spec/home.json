@@ -35,7 +35,6 @@
     "terracotta": "#b4532f",
     "on-terracotta": "#fffaf1",
     "terracotta-quiet": "#f0d5c1",
-    "gold": "#a1741f",
     "wood": "#a5763f",
     "wood-edge": "#7d5529",
     "focus": "#2a813f"
@@ -769,7 +768,7 @@
                         "reference_selector": ".bar i",
                         "type_role": null,
                         "paint": {
-                          "fill": "gold",
+                          "fill": "ink",
                           "radius": "pill"
                         },
                         "box": {},
@@ -968,7 +967,7 @@
                         "reference_selector": ".bar i",
                         "type_role": null,
                         "paint": {
-                          "fill": "gold",
+                          "fill": "ink",
                           "radius": "pill"
                         },
                         "box": {},
@@ -1167,7 +1166,7 @@
                         "reference_selector": ".bar i",
                         "type_role": null,
                         "paint": {
-                          "fill": "gold",
+                          "fill": "ink",
                           "radius": "pill"
                         },
                         "box": {},
@@ -1366,7 +1365,7 @@
                         "reference_selector": ".bar i",
                         "type_role": null,
                         "paint": {
-                          "fill": "gold",
+                          "fill": "ink",
                           "radius": "pill"
                         },
                         "box": {},
