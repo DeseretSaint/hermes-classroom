@@ -288,6 +288,42 @@ class IntakeTest(SyllabusCase):
         })
         self.assertEqual(error["code"], "SYLLABUS_REJECTED")
 
+    def test_a_docx_whose_rels_member_cannot_be_read_is_refused(self) -> None:
+        """An unreadable ``.rels`` part must refuse the document, not be skipped.
+
+        The rels scan is what keeps an external relationship target out. A member that raises on
+        read used to be ``continue``d, which meant a document whose relationship part could not be
+        read was imported with its relationships unchecked. Now it is a ``bad_docx`` refusal.
+        """
+        import base64
+        import io
+        import zipfile
+
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_STORED) as archive:
+            archive.writestr("[Content_Types].xml", "<Types/>")
+            archive.writestr(
+                "word/document.xml",
+                '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+                "<w:body><w:p><w:r><w:t>CS 101 — Real text</w:t></w:r></w:p></w:body></w:document>",
+            )
+            archive.writestr("word/_rels/document.xml.rels", '<?xml version="1.0"?><Relationships/>')
+        raw = bytearray(buffer.getvalue())
+        # Corrupt the stored bytes of the rels part only. The central directory still lists the
+        # member, so it is read — and its CRC no longer matches, so ZipFile.read() raises.
+        index = raw.index(b"<Relationships/>")
+        raw[index] ^= 0xFF
+
+        error = self.err("syllabus.intake.create", {
+            "file_name": "broken-rels.docx",
+            "mime_hint": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "content_base64": base64.b64encode(bytes(raw)).decode(),
+        })
+        self.assertEqual(error["code"], "SYLLABUS_REJECTED")
+        self.assertEqual(error["details"]["reason"], "bad_docx")
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM syllabi"), 0)
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM syllabus_files"), 0)
+
     def test_encrypted_pdf_and_active_content_are_refused_without_storing(self) -> None:
         encrypted = (FIXTURES / "syllabus-encrypted.pdf").read_bytes()
         error = self.err("syllabus.intake.create", {

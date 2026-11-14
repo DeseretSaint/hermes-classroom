@@ -47,27 +47,44 @@ function bytesLabel(value) {
  */
 function usePackIntake(enabled) {
   const [state, setState] = useState({ status: enabled ? 'loading' : 'off', info: null, error: null })
+  const [ticket, setTicket] = useState(0)
   useEffect(() => {
     let cancelled = false
     if (!enabled || !pluginContext) {
       setState({ status: 'off', info: null, error: null })
       return undefined
     }
+    // A retry re-asks visibly: the surface says it is asking again instead of leaving a stale
+    // answer on screen while the second probe is in flight.
+    setState((previous) => ({ status: 'loading', info: previous.info, error: null }))
     ;(async () => {
       try {
         const response = await rest('/packs/intake')
         if (cancelled) return
-        const available = Boolean(response && (response.can_grant || response.available))
-        setState({ status: available ? 'available' : 'unsupported', info: response || null, error: null })
+        // Only an answer carrying the boolean this route promises is a capability answer. A throw,
+        // a timeout, a 500 or an empty body is a probe that got no answer at all, and it must never
+        // be painted as "this build cannot receive a local pack" — that sentence is reserved for
+        // the host actually saying no.
+        const answered =
+          response &&
+          typeof response === 'object' &&
+          (typeof response.can_grant === 'boolean' || typeof response.available === 'boolean')
+        if (!answered) {
+          setState({ status: 'unavailable', info: response || null, error: null })
+          return
+        }
+        const available = Boolean(response.can_grant || response.available)
+        setState({ status: available ? 'available' : 'unsupported', info: response, error: null })
       } catch (error) {
-        if (!cancelled) setState({ status: 'unsupported', info: null, error })
+        if (!cancelled) setState({ status: 'unavailable', info: null, error })
       }
     })()
     return () => {
       cancelled = true
     }
-  }, [enabled])
-  return state
+  }, [enabled, ticket])
+  const reload = useCallback(() => setTicket((value) => value + 1), [])
+  return { state, reload }
 }
 
 function PackReviewLine({ label, value }) {
@@ -297,6 +314,7 @@ function PackPreview({ preview, existing }) {
 
 function PackImportFlow({ implemented, onCancel, onImported }) {
   const intake = usePackIntake(Boolean(implemented && implemented.has('pack.preview')))
+  const intakeState = intake.state
   const [step, setStep] = useState('choose')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -402,15 +420,42 @@ function PackImportFlow({ implemented, onCancel, onImported }) {
   const parentPack = Boolean(preview && preview.manifest.recipe === 'parent')
 
   let body
-  if (intake.status === 'loading') {
-    body = jsx('div', { className: 'py-8', children: jsx(sdk.Loader, { label: 'Asking the host how packs are granted' }) })
-  } else if (intake.status === 'unsupported') {
-    body = jsx(EmptyState, {
-      title: 'This backend build cannot receive a local pack',
-      description:
-        'A pack is untrusted data, so a filesystem path never travels over the wire. The host must mint a local ' +
-        'file grant and the backend must expose it; this profile’s backend does not, so no picker is shown and ' +
-        'nothing here pretends to import.'
+  if (intakeState.status === 'loading') {
+    body = jsx('div', {
+      className: 'py-8',
+      'data-cb-pack-intake': 'loading',
+      children: jsx(sdk.Loader, { label: 'Asking the host how packs are granted' })
+    })
+  } else if (intakeState.status === 'unavailable') {
+    body = jsxs('div', {
+      className: 'mx-auto flex w-full max-w-xl flex-col gap-3 py-8',
+      'data-cb-pack-intake': 'unavailable',
+      children: [
+        jsx(sdk.ErrorState, {
+          title: 'Coursebook could not check pack import',
+          description:
+            'Coursebook could not ask the host whether packs can be imported. The question got no answer, ' +
+            'so nothing has been imported yet. Try again.',
+          children: jsx(sdk.Button, { variant: 'secondary', onClick: intake.reload, children: 'Try again' })
+        }),
+        intakeState.error
+          ? jsx('div', {
+              className: 'text-center text-xs text-(--ui-text-secondary)',
+              children: describeError(intakeState.error)
+            })
+          : null
+      ]
+    })
+  } else if (intakeState.status === 'unsupported') {
+    body = jsx('div', {
+      'data-cb-pack-intake': 'unsupported',
+      children: jsx(EmptyState, {
+        title: 'This backend build cannot receive a local pack',
+        description:
+          'A pack is untrusted data, so a filesystem path never travels over the wire. The host must mint a local ' +
+          'file grant and the backend must expose it; this profile’s backend does not, so no picker is shown and ' +
+          'nothing here pretends to import.'
+      })
     })
   } else if (step === 'choose') {
     body = jsxs('div', {
@@ -566,6 +611,7 @@ function PackImportFlow({ implemented, onCancel, onImported }) {
 
   return jsxs('div', {
     className: 'flex flex-col gap-3',
+    'data-cb-pack-intake-status': intakeState.status,
     children: [
       jsxs('div', {
         className: 'flex items-center justify-between',

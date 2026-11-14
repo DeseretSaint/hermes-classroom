@@ -233,8 +233,12 @@ def _docx_paragraphs(data: bytes) -> list[tuple[str, str]]:
             continue
         try:
             rels = archive.read(name).decode("utf-8", "replace")
-        except Exception:  # noqa: BLE001
-            continue
+        except Exception as exc:  # noqa: BLE001 - a member we cannot read is a document we cannot vouch for
+            # Skipping this member would skip the external-target refusal below, so a rels part that
+            # cannot be read refuses the document instead of being treated as "no relationship".
+            raise SyllabusRefused(
+                "SYLLABUS_REJECTED", "a DOCX relationship member could not be read.", reason="bad_docx"
+            ) from exc
         if "TargetMode=\"External\"" in rels or "TargetMode='External'" in rels:
             raise SyllabusRefused(
                 "SYLLABUS_REJECTED", "the DOCX has an external relationship target.", reason="external_relationship"
