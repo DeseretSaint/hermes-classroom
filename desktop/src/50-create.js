@@ -279,6 +279,73 @@ function splitComposedGoal(goal) {
   }
 }
 
+/** One sentence of learner text, on one line, with no double space left by a pasted paragraph. */
+function goalLineText(value) {
+  return String(value == null ? '' : value).replace(/\s+/g, ' ').trim()
+}
+
+/**
+ * The goal and the proof, the two sentences a learner is asked to approve.
+ *
+ * Both gates that ask for approval render this block, so the words a person agrees to are the
+ * words the plan was briefed with: `Your trailhead` writes the goal the job will send
+ * (`composePlanGoal(goal, outcome)`), and the plan review writes the goal its job brief carries or
+ * the course stores. `splitComposedGoal` keeps the outcome sentence out of the goal's own line, so
+ * the intent reads as it was written rather than with the pipeline's separator baked into it.
+ *
+ * The paragraphs clamp to two lines in the layout and are never cut in the source: the full
+ * sentence stays in the element (and in its `title`) so "the exact intent is visible at the gate"
+ * is a fact a test can assert, not a claim about a font. `attribute` and `proofAttribute` are the
+ * surface's own markers (`data-cb-create-preview-goal`, `data-cb-plan-goal`); the block is the same
+ * block on both. Nothing is invented: no goal means no block.
+ */
+function CbGoalProof({ goal, attribute, proofAttribute, label }) {
+  const parts = splitComposedGoal(goal)
+  const text = goalLineText(parts.goal)
+  const proof = goalLineText(parts.outcome)
+  if (!text && !proof) return null
+  const clamped = {
+    margin: 0,
+    fontFamily: CB_SANS,
+    lineHeight: 1.45,
+    overflowWrap: 'break-word',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden'
+  }
+  return jsxs('div', {
+    'data-cb-goal-proof': '',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0, maxWidth: '54ch' },
+    children: [
+      jsx('div', {
+        style: {
+          fontFamily: CB_SANS,
+          fontSize: CB_TYPE.caption,
+          fontWeight: 600,
+          letterSpacing: '0.08em',
+          color: 'var(--cb-ink-soft)'
+        },
+        children: label
+      }, 'label'),
+      text
+        ? jsx('p', {
+            [attribute]: '',
+            title: text,
+            style: { ...clamped, fontSize: CB_TYPE.body, color: 'var(--cb-ink)' },
+            children: text
+          }, 'goal')
+        : null,
+      jsx('p', {
+        [proofAttribute]: proof ? 'stated' : 'empty',
+        title: proof ? `Proof: ${proof}` : 'Proof: not stated',
+        style: { ...clamped, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
+        children: proof ? `Proof: ${proof}` : 'Proof: not stated'
+      }, 'proof')
+    ]
+  })
+}
+
 /**
  * CREATE-2/CREATE-3: the starting level is a question on the first screen, not a free-text dial
  * behind "Help me tune it".
@@ -1469,6 +1536,15 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                     },
                     children: displayTitle || 'A course for this goal'
                   }, 'title'),
+                  // The intent itself, in the learner's own words, at the gate where they approve
+                  // it. The name above stays the name: it is clamped to a row and editable, and
+                  // after a change-goal seed it can be stale — the goal never is.
+                  jsx(CbGoalProof, {
+                    goal: composePlanGoal(goal, outcome),
+                    attribute: 'data-cb-create-preview-goal',
+                    proofAttribute: 'data-cb-create-preview-outcome',
+                    label: 'THE GOAL YOU ARE APPROVING'
+                  }, 'goal'),
                   jsx('div', {
                     'aria-hidden': 'true',
                     style: { height: '58px', opacity: 0.8, margin: '0.1rem 0 0.15rem' },
@@ -1500,13 +1576,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                       jsx('span', {
                         'data-cb-create-preview-level': level || 'none',
                         children: levelFact(level)
-                      }, 'level'),
-                      // CREATE-EXPERIENCE item 1: the outcome, in the learner's own words, beside
-                      // the length and the level — the three things the plan will be judged against.
-                      jsx('span', {
-                        'data-cb-create-preview-outcome': outcome.trim() ? 'stated' : 'empty',
-                        children: outcome.trim() ? `Proof: ${outcome.trim()}` : 'Proof: not stated'
-                      }, 'outcome')
+                      }, 'level')
                     ]
                   }, 'facts'),
                   jsxs('p', {

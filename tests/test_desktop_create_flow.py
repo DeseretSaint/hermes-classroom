@@ -783,6 +783,16 @@ if (payload.kind === 'choices') {
   const previewLevel = previewNode ? text(previewNode) : null
   const previewOutcomeNode = document.querySelector('[data-cb-create-preview-outcome]')
   const previewOutcome = previewOutcomeNode ? text(previewOutcomeNode) : null
+  // UP-5: the intent at the gate. The goal paragraph, the name beside it, and the clamp the layout
+  // applies to the paragraph (the sentence itself is never cut in the source).
+  const previewGoalNode = document.querySelector('[data-cb-create-preview-goal]')
+  const previewTitleNode = document.querySelector('[data-cb-create-preview-title]')
+  const previewGoal = {
+    text: previewGoalNode ? text(previewGoalNode) : null,
+    title: previewGoalNode ? previewGoalNode.getAttribute('title') : null,
+    clamp: previewGoalNode ? previewGoalNode.style.webkitLineClamp || null : null,
+    name: previewTitleNode ? text(previewTitleNode) : null
+  }
   const stepAtReview = stepMarker()
   await press(byText('button', 'Create course'), 'Create course')
   await flush(200)
@@ -818,6 +828,7 @@ if (payload.kind === 'choices') {
     afterPick,
     previewLevel,
     previewOutcome,
+    previewGoal,
     outcomeStep,
     stepAfterShape,
     outcomeValue,
@@ -1019,6 +1030,31 @@ class CreateFormInteractionTest(unittest.TestCase):
         # Every existing brief field is exactly what it was.
         self.assertEqual(out["brief"]["scope"], "short")
         self.assertEqual(out["brief"]["level"], "none")
+
+    # ── UP-5: the approval gate shows the intent, not only the name ────────
+    def test_the_review_step_shows_the_goal_and_proof_it_will_send(self) -> None:
+        """The trailhead carries the intent itself, at the width the name cannot.
+
+        The name is derived from the goal and is editable, so a learner has seen the words — but it
+        is clamped to a list-row width and the proof sentence never appears in it. Approval is the
+        one place the exact intent must be readable, so the review step renders the goal the job
+        will send: unclamped in the source, clamped only to two lines in the layout.
+        """
+        out = self.submit("none", outcomeMode="chip", chip=1)
+        chip = out["outcomeStep"]["chips"][1]
+        sent = f"{GOAL}\n\nWhen this course is done I want to be able to: {chip}"
+        # What Create sends is the composed brief; the gate shows its two sentences apart.
+        self.assertEqual(out["brief"]["goal"], sent)
+        self.assertEqual(out["previewGoal"]["text"], GOAL, "the exact goal, not a clamped name")
+        self.assertEqual(out["previewGoal"]["title"], GOAL, "the full sentence stays readable")
+        # Two lines are the layout's ceiling; the sentence is never cut in the source.
+        self.assertEqual(out["previewGoal"]["clamp"], "2")
+        self.assertEqual(out["previewOutcome"], f"Proof: {chip}")
+        # The title stays the name: it is the goal's first clause, clamped to 64 characters.
+        self.assertGreater(len(GOAL), 64, "the goal must outrun the title clamp to prove the point")
+        self.assertNotEqual(out["previewGoal"]["name"], GOAL)
+        self.assertTrue(out["previewGoal"]["name"].endswith("…"), out["previewGoal"]["name"])
+        self.assertNotIn(chip, out["previewGoal"]["name"])
 
     def test_the_outcome_is_whatever_the_learner_leaves_in_the_field(self) -> None:
         typed = "  Replace the front pads, in my driveway.  "
