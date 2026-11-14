@@ -1,0 +1,76 @@
+{
+  "db_sha256_after": "4c3423fcad0543b0baac7f0fea2fd5b6de4c92befe4c6412caca5c0976126c12",
+  "db_sha256_before": "4c3423fcad0543b0baac7f0fea2fd5b6de4c92befe4c6412caca5c0976126c12",
+  "db_unchanged": true,
+  "home": "/home/deseretsaint/.hermes/h187-course/home",
+  "kind": "served_lesson_pages",
+  "pages": [
+    {
+      "block_found": true,
+      "block_media_entry": {
+        "artifact_id": "art_adf2e015a0694641a409bb54e9a6a746",
+        "degraded": false,
+        "kind": "audio",
+        "label": "Narration — the transcript is the authoritative text; this is not pronunciation assessment.",
+        "purpose": "Hear こんにちは said clearly",
+        "reason": null,
+        "role": "narration",
+        "text_equivalent": "こんにちは (konnichiwa) — the standard daytime greeting, hello / good afternoon."
+      },
+      "document_state": "complete",
+      "lesson_id": "gen_lang_1",
+      "page_artifacts_entry": {
+        "artifact_id": "art_adf2e015a0694641a409bb54e9a6a746",
+        "bytes": 41088,
+        "content_hash": "sha256:208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c",
+        "kind": "audio",
+        "mime": "audio/mpeg"
+      },
+      "page_bytes": 4677,
+      "page_file": "gen_lang_1.page.json",
+      "page_references_artifact": true,
+      "page_sha256": "3deaea22e01cd20b0d22a8deea915206d979f800cb6cea7d36ed15d66d07307c",
+      "provenance": {
+        "check_enabled": true,
+        "facts_unverified": false,
+        "independent": false,
+        "outcome": "model_assessed",
+        "warning": "model assessed, not independently validated: treat this page as a proposal."
+      }
+    },
+    {
+      "block_found": true,
+      "block_media_entry": {
+        "artifact_id": "art_d7dc7afd153d4736abc4d2e0560a8376",
+        "degraded": false,
+        "kind": "visual",
+        "label": "Illustration — generated for context only. It is not a measurement, procedure, technical reference, or safety authority.",
+        "purpose": "See the bench layout before starting",
+        "reason": null,
+        "role": "illustration",
+        "text_equivalent": "A workshop bench: the bicycle wheel is clamped upright in the stand and the torque wrench lies beside it."
+      },
+      "document_state": "complete",
+      "lesson_id": "gen_tech_2",
+      "page_artifacts_entry": {
+        "artifact_id": "art_d7dc7afd153d4736abc4d2e0560a8376",
+        "bytes": 598928,
+        "content_hash": "sha256:a206b3493098e7616c77575cc5a4b252ee36da43b58df14d03183fbc91573d6c",
+        "kind": "visual",
+        "mime": "image/png"
+      },
+      "page_bytes": 4422,
+      "page_file": "gen_tech_2.page.json",
+      "page_references_artifact": true,
+      "page_sha256": "3f7d686807e187c6f779de87401ab7986c00467ba5583e776de79f34c3453581",
+      "provenance": {
+        "check_enabled": true,
+        "facts_unverified": false,
+        "independent": false,
+        "outcome": "model_assessed",
+        "warning": "model assessed, not independently validated: treat this page as a proposal."
+      }
+    }
+  ],
+  "reader": "cb.rpc lesson.page (product read path)"
+}

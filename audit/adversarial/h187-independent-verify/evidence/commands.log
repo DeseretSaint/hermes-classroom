@@ -1,0 +1,49 @@
+# Sentinel H-187 independent verification — raw command transcript
+# ran: 2026-11-08T14:23:56-07:00  host: DeseretDesktop  user: deseretsaint
+
+$ git rev-parse HEAD
+127cce1290b33af4f2cd7ffa1bd7ccd0e87d1359
+
+$ sha256sum <both stored objects>
+208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c  /home/deseretsaint/.hermes/h187-course/home/plugin-data/coursebook/artifacts/objects/20/208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c
+a206b3493098e7616c77575cc5a4b252ee36da43b58df14d03183fbc91573d6c  /home/deseretsaint/.hermes/h187-course/home/plugin-data/coursebook/artifacts/objects/a2/a206b3493098e7616c77575cc5a4b252ee36da43b58df14d03183fbc91573d6c
+
+$ stat -c "%s %n" <both objects>
+41088 /home/deseretsaint/.hermes/h187-course/home/plugin-data/coursebook/artifacts/objects/20/208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c
+598928 /home/deseretsaint/.hermes/h187-course/home/plugin-data/coursebook/artifacts/objects/a2/a206b3493098e7616c77575cc5a4b252ee36da43b58df14d03183fbc91573d6c
+
+$ file <audio>
+/home/deseretsaint/.hermes/h187-course/home/plugin-data/coursebook/artifacts/objects/20/208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c: MPEG ADTS, layer III, v2, 128 kbps, 24 kHz, Monaural
+$ file <image>
+/home/deseretsaint/.hermes/h187-course/home/plugin-data/coursebook/artifacts/objects/a2/a206b3493098e7616c77575cc5a4b252ee36da43b58df14d03183fbc91573d6c: PNG image data, 1024 x 576, 8-bit/color RGB, non-interlaced
+$ od -An -tx1 -N16 <audio>
+ ff f3 c4 c4 00 5a 8c 39 b8 01 5a c0 00 3b 56 0e
+$ od -An -tx1 -N16 <image>
+ 89 50 4e 47 0d 0a 1a 0a 00 00 00 0d 49 48 44 52
+
+$ ffprobe -v error -show_entries stream=codec_name,codec_type,sample_rate,channels,duration -show_entries format=format_name,duration,size -of default=noprint_wrappers=1 <audio>
+codec_name=mp3
+codec_type=audio
+sample_rate=24000
+channels=1
+duration=2.568000
+format_name=mp3
+duration=2.568000
+size=41088
+
+$ ffmpeg -i <audio> -af volumedetect -f null /dev/null
+  Duration: 00:00:02.57, start: 0.000000, bitrate: 128 kb/s
+[Parsed_volumedetect_0 @ 0x7f0214003c80] mean_volume: -20.6 dB
+[Parsed_volumedetect_0 @ 0x7f0214003c80] max_volume: -4.7 dB
+
+$ identify -format "mean=%[fx:mean] stddev=%[fx:standard_deviation] colors=%k\n" <image>
+mean=0.871759 stddev=0.263453 colors=50658
+
+$ sqlite3 data.db "select id,kind,bytes,mime,content_hash,ref_count from artifacts;"
+                 id                    kind   bytes      mime                               content_hash                            ref_count
+------------------------------------  ------  ------  ----------  ----------------------------------------------------------------  ---------
+art_d7dc7afd153d4736abc4d2e0560a8376  visual  598928  image/png   a206b3493098e7616c77575cc5a4b252ee36da43b58df14d03183fbc91573d6c          1
+art_adf2e015a0694641a409bb54e9a6a746  audio    41088  audio/mpeg  208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c          1
+
+$ sha256sum data.db (after all probes)
+4c3423fcad0543b0baac7f0fea2fd5b6de4c92befe4c6412caca5c0976126c12  /home/deseretsaint/.hermes/h187-course/home/plugin-data/coursebook/data.db

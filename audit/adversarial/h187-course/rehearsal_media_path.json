@@ -1,0 +1,105 @@
+{
+  "kind": "rehearsal",
+  "fake_bytes": true,
+  "not_evidence": "synthetic PNG/MP3 bytes; the prepared store is untouched",
+  "rehearsal_home": "/home/deseretsaint/.hermes/profiles/quill/cache/scratch/h187-media-rehearsal-opbv44ay/home",
+  "summary": {
+    "generated": 3,
+    "reused": 0,
+    "degraded": 0,
+    "skipped": 0,
+    "artifact_ids": [
+      "art_380c339f3a4145b497e213656ca88aba",
+      "art_19aea3a5a71845a288f5c7b2be82197f",
+      "art_f3cc20bd9f13463d99f1e2c38c0a69ba"
+    ]
+  },
+  "provider_calls": {
+    "image": [
+      "An editorial illustration of a bicycle wheel clamped upright in a workshop stand, a torque wrench laid beside it on the bench; no text labels, no measurement claims."
+    ],
+    "speech": [
+      {
+        "text": "こんにちは",
+        "voice": "default",
+        "language": "ja-JP"
+      }
+    ]
+  },
+  "served": [
+    {
+      "lesson_id": "gen_lang_1",
+      "artifacts": [
+        {
+          "artifact_id": "art_f3cc20bd9f13463d99f1e2c38c0a69ba",
+          "kind": "audio",
+          "mime": "audio/mpeg",
+          "bytes": 68,
+          "content_hash": "sha256:66a7f8771c90c9ea16b62a8f4ecd84f500dc30617674505385e4b2143475519a"
+        }
+      ],
+      "placed": [
+        {
+          "block_id": "blk_280128ee1e4e4ded9d13",
+          "kind": "audio",
+          "artifact_id": "art_f3cc20bd9f13463d99f1e2c38c0a69ba",
+          "mime": null
+        }
+      ]
+    },
+    {
+      "lesson_id": "gen_tech_1",
+      "artifacts": [
+        {
+          "artifact_id": "art_380c339f3a4145b497e213656ca88aba",
+          "kind": "visual",
+          "mime": "image/svg+xml",
+          "bytes": 1369,
+          "content_hash": "sha256:5fbb7e8cd2feee8bd2ca4a40e2d51e1f024ae49273a46b82083c3c1ca9119cc2"
+        },
+        {
+          "artifact_id": "art_19aea3a5a71845a288f5c7b2be82197f",
+          "kind": "visual",
+          "mime": "image/png",
+          "bytes": 80,
+          "content_hash": "sha256:224b272e54b4a8d61ad101fe517216e84f872298ed779f8da21f4faab736f794"
+        }
+      ],
+      "placed": [
+        {
+          "block_id": "blk_8c780aa7b2cfb51d39aa",
+          "kind": "visual",
+          "artifact_id": "art_380c339f3a4145b497e213656ca88aba",
+          "mime": null
+        }
+      ]
+    },
+    {
+      "lesson_id": "gen_tech_2",
+      "artifacts": [
+        {
+          "artifact_id": "art_380c339f3a4145b497e213656ca88aba",
+          "kind": "visual",
+          "mime": "image/svg+xml",
+          "bytes": 1369,
+          "content_hash": "sha256:5fbb7e8cd2feee8bd2ca4a40e2d51e1f024ae49273a46b82083c3c1ca9119cc2"
+        },
+        {
+          "artifact_id": "art_19aea3a5a71845a288f5c7b2be82197f",
+          "kind": "visual",
+          "mime": "image/png",
+          "bytes": 80,
+          "content_hash": "sha256:224b272e54b4a8d61ad101fe517216e84f872298ed779f8da21f4faab736f794"
+        }
+      ],
+      "placed": [
+        {
+          "block_id": "blk_aecba1e56d346fc8e07b",
+          "kind": "visual",
+          "artifact_id": "art_19aea3a5a71845a288f5c7b2be82197f",
+          "mime": null
+        }
+      ]
+    }
+  ]
+}

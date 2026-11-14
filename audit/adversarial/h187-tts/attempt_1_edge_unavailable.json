@@ -1,0 +1,63 @@
+{
+  "_note": "Verbatim stdout of capture attempt 1 (2026-11-08T21:13:27Z) on the prepared store BEFORE host tts config was present in that home. The run itself is real; this file was reconstructed from that run's console output because capture_result.json was later replaced by the successful retry.",
+    "kind": "capture",
+    "captured_at": "2026-11-08T21:13:27Z",
+    "branch": "wt/t_ce380228",
+    "commit": "127cce1290b33af4f2cd7ffa1bd7ccd0e87d1359",
+    "hermes_home": "/home/deseretsaint/.hermes/h187-course/home",
+    "db_path": "/home/deseretsaint/.hermes/h187-course/home/plugin-data/coursebook/data.db",
+    "host_tool": "text_to_speech (tools.registry dispatch, tts toolset)",
+    "attempted": true,
+    "succeeded": false,
+    "seam_bound": true,
+    "artifacts_before": 0,
+    "summary": {
+      "generated": 0,
+      "reused": 0,
+      "degraded": 1,
+      "skipped": 0,
+      "artifact_ids": []
+    },
+    "dispatch_calls": [
+      {
+        "tool": "text_to_speech",
+        "args": {
+          "output_path": "/home/deseretsaint/.hermes/h187-course/home/plugin-data/coursebook/media-tmp/coursebook-tts-qy0nqftt.mp3",
+          "instructions": "Read this lesson material clearly and naturally for a learner. Language: ja-JP."
+        },
+        "success": false,
+        "provider": null,
+        "error": "TTS chunk 1 failed (edge): TTS generation failed (edge): No audio was received. Please verify that your parameters are correct."
+      }
+    ],
+    "lesson_state": "model_assessed",
+    "lesson_media": [
+      {
+        "degraded": true,
+        "kind": "audio",
+        "label": "Narration \u2014 the transcript is the authoritative text; this is not pronunciation assessment.",
+        "language": "ja-JP",
+        "purpose": "Hear \u3053\u3093\u306b\u3061\u306f said clearly",
+        "reason": "media generation failed (MediaGenerationError); delivered as text",
+        "role": "narration",
+        "spec": "A clear, unhurried pronunciation of the Japanese daytime greeting \u3053\u3093\u306b\u3061\u306f (konnichiwa) by a standard-Japanese voice, one item only.",
+        "text_equivalent": "\u3053\u3093\u306b\u3061\u306f (konnichiwa) \u2014 the standard daytime greeting, hello / good afternoon.",
+        "transcript": "\u3053\u3093\u306b\u3061\u306f",
+        "voice": "default"
+      }
+    ],
+    "artifact_row": null,
+    "error": "no artifact attached; media caller degraded to text (see dispatch_calls/lesson_media)",
+    "serve_ok": false,
+    "serve_error": {
+      "code": "NOT_IMPLEMENTED",
+      "category": "internal",
+      "message": "lesson.page is frozen in cb.rpc but has no handler in this build.",
+      "retryable": false
+    },
+    "served_artifacts": [],
+    "served_blocks": [],
+    "target_block": null,
+    "served_page_references_artifact": false,
+    "provenance": null
+}

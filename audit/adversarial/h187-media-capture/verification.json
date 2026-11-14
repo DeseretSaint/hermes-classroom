@@ -1,0 +1,80 @@
+{
+  "task": "t_b0e4b0e8",
+  "verified_at": "2026-11-08T21:15:02Z",
+  "db_path": "/home/deseretsaint/.hermes/h187-course/home/plugin-data/coursebook/data.db",
+  "db_sha256": "4c3423fcad0543b0baac7f0fea2fd5b6de4c92befe4c6412caca5c0976126c12",
+  "artifacts_total": 2,
+  "artifact": {
+    "artifact_id": "art_d7dc7afd153d4736abc4d2e0560a8376",
+    "course_id": "crs_53a1191816354c44acec268a03d6dba0",
+    "kind": "visual",
+    "mime": "image/png",
+    "path": "/home/deseretsaint/.hermes/h187-course/home/plugin-data/coursebook/artifacts/objects/a2/a206b3493098e7616c77575cc5a4b252ee36da43b58df14d03183fbc91573d6c",
+    "bytes_row": 598928,
+    "bytes_on_disk": 598928,
+    "content_hash_row": "a206b3493098e7616c77575cc5a4b252ee36da43b58df14d03183fbc91573d6c",
+    "sha256_on_disk": "a206b3493098e7616c77575cc5a4b252ee36da43b58df14d03183fbc91573d6c",
+    "png_magic": true,
+    "sniffed_mime": "image/png",
+    "inside_artifact_store": true
+  },
+  "lesson_media_item": {
+    "artifact_id": "art_d7dc7afd153d4736abc4d2e0560a8376",
+    "content_hash": "sha256:a206b3493098e7616c77575cc5a4b252ee36da43b58df14d03183fbc91573d6c",
+    "degraded": false,
+    "kind": "visual",
+    "label": "Illustration — generated for context only. It is not a measurement, procedure, technical reference, or safety authority.",
+    "mime": "image/png",
+    "purpose": "See the bench layout before starting",
+    "reason": null,
+    "role": "illustration",
+    "spec": "An editorial illustration of a bicycle wheel clamped upright in a workshop stand, a torque wrench laid beside it on the bench; no text labels, no measurement claims.",
+    "technical": false,
+    "text_equivalent": "A workshop bench: the bicycle wheel is clamped upright in the stand and the torque wrench lies beside it."
+  },
+  "served_page": {
+    "rpc_ok": true,
+    "rpc_error": null,
+    "document_state": "complete",
+    "block_media": {
+      "kind": "visual",
+      "role": "illustration",
+      "artifact_id": "art_d7dc7afd153d4736abc4d2e0560a8376",
+      "purpose": "See the bench layout before starting",
+      "text_equivalent": "A workshop bench: the bicycle wheel is clamped upright in the stand and the torque wrench lies beside it.",
+      "label": "Illustration — generated for context only. It is not a measurement, procedure, technical reference, or safety authority.",
+      "degraded": false,
+      "reason": null
+    },
+    "page_artifacts_count": 1,
+    "page_artifact_ids": [
+      "art_d7dc7afd153d4736abc4d2e0560a8376"
+    ]
+  },
+  "preview_route": {
+    "ok": true,
+    "error": null,
+    "mime": "image/png",
+    "bytes": 598928,
+    "label": "Illustration — generated for context only. It is not a measurement, procedure, technical reference, or safety authority.",
+    "lesson_state": "model_assessed",
+    "independent": false,
+    "data_url_prefix": "data:image/png;base64,iVBORw0K",
+    "data_url_bytes": 798594
+  },
+  "checks": {
+    "artifact_row_exists": true,
+    "size_matches_row": true,
+    "hash_matches_row": true,
+    "png_magic_ok": true,
+    "sniffed_mime_is_png": true,
+    "stored_inside_profile_artifact_store": true,
+    "lesson_media_has_artifact_id": true,
+    "lesson_media_not_degraded": true,
+    "served_block_references_artifact": true,
+    "served_block_not_degraded": true,
+    "preview_route_serves_png": true,
+    "evidence_copy_matches": true
+  },
+  "status": "succeeded"
+}

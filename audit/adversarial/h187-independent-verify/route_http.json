@@ -1,0 +1,62 @@
+{
+  "kind": "http_route_probe",
+  "verifier": "sentinel",
+  "checks_total": 9,
+  "checks_passed": 9,
+  "failures": [],
+  "status": "PASS",
+  "checks": [
+    {
+      "id": "art_adf2e015:http_200",
+      "ok": true,
+      "detail": 200
+    },
+    {
+      "id": "art_adf2e015:http_body_ok",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "art_adf2e015:http_data_url_mime",
+      "ok": true,
+      "detail": "data:audio/mpeg;base64,//PExABajDm4AVrAA"
+    },
+    {
+      "id": "art_adf2e015:http_sha256_matches_record",
+      "ok": true,
+      "detail": "208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c"
+    },
+    {
+      "id": "art_d7dc7afd:http_200",
+      "ok": true,
+      "detail": 200
+    },
+    {
+      "id": "art_d7dc7afd:http_body_ok",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "art_d7dc7afd:http_data_url_mime",
+      "ok": true,
+      "detail": "data:image/png;base64,iVBORw0KGgoAAAANSU"
+    },
+    {
+      "id": "art_d7dc7afd:http_sha256_matches_record",
+      "ok": true,
+      "detail": "a206b3493098e7616c77575cc5a4b252ee36da43b58df14d03183fbc91573d6c"
+    },
+    {
+      "id": "missing:refused_as_data",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "body": {
+          "ok": false,
+          "code": "NOT_FOUND",
+          "message": "artifact not found"
+        }
+      }
+    }
+  ]
+}

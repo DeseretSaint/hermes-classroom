@@ -1,0 +1,129 @@
+{
+  "task": "t_b0e4b0e8",
+  "generated_at": "2026-11-08T21:14:17Z",
+  "hermes_home": "/home/deseretsaint/.hermes/h187-course/home",
+  "coursebook_source": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b0e4b0e8",
+  "target": {
+    "course_id": "crs_53a1191816354c44acec268a03d6dba0",
+    "enrollment_id": "enr_5906d9d5f01a420cba6d2d202db8da53",
+    "objective_id": "obj_75056df1acb84e4ea637b30421c5cca9",
+    "lesson_id": "gen_tech_2",
+    "attach_block_id": "blk_aecba1e56d346fc8e07b",
+    "media_index_in_block": 0,
+    "expected_mime": "image/png"
+  },
+  "provider": {
+    "tool": "image_generate",
+    "selection_provider": null,
+    "selection_model": null,
+    "resolved_model": "fal-ai/flux-2/klein/9b",
+    "endpoint": "fal-ai/flux-2/klein/9b",
+    "gateway": "managed fal-queue",
+    "backend_available": true
+  },
+  "store": {
+    "db_path": "/home/deseretsaint/.hermes/h187-course/home/plugin-data/coursebook/data.db",
+    "artifacts_before": 0
+  },
+  "generation": {
+    "summary": {
+      "generated": 1,
+      "reused": 0,
+      "degraded": 0,
+      "skipped": 0,
+      "artifact_ids": [
+        "art_d7dc7afd153d4736abc4d2e0560a8376"
+      ]
+    },
+    "usage": [
+      {
+        "provider": "image_generate",
+        "model": "host-configured",
+        "tokens": {},
+        "duration_ms": 4725
+      }
+    ]
+  },
+  "served_page": {
+    "rpc_ok": true,
+    "rpc_error": null,
+    "document_state": "complete",
+    "attach_block_id": "blk_aecba1e56d346fc8e07b",
+    "attach_block_found": true,
+    "media_index_in_block": 0,
+    "media_child": {
+      "kind": "visual",
+      "role": "illustration",
+      "artifact_id": "art_d7dc7afd153d4736abc4d2e0560a8376",
+      "purpose": "See the bench layout before starting",
+      "text_equivalent": "A workshop bench: the bicycle wheel is clamped upright in the stand and the torque wrench lies beside it.",
+      "label": "Illustration — generated for context only. It is not a measurement, procedure, technical reference, or safety authority.",
+      "degraded": false,
+      "reason": null
+    },
+    "page_artifacts_count": 1,
+    "page_artifacts_note": "lesson.page returns a course-scoped artifacts[]; attachment is identified from the block's media.artifact_id"
+  },
+  "artifact": {
+    "artifact_id": "art_d7dc7afd153d4736abc4d2e0560a8376",
+    "store_path": "/home/deseretsaint/.hermes/h187-course/home/plugin-data/coursebook/artifacts/objects/a2/a206b3493098e7616c77575cc5a4b252ee36da43b58df14d03183fbc91573d6c",
+    "declared_mime": "image/png",
+    "kind": "visual",
+    "bytes_row": 598928,
+    "bytes_on_disk": 598928,
+    "content_hash_row": "a206b3493098e7616c77575cc5a4b252ee36da43b58df14d03183fbc91573d6c",
+    "sha256_on_disk": "a206b3493098e7616c77575cc5a4b252ee36da43b58df14d03183fbc91573d6c",
+    "magic_check": "PNG signature",
+    "sniffed_mime": "image/png",
+    "provenance": {
+      "generator": "host.image_generate",
+      "independent": false,
+      "label": "Illustration — generated for context only. It is not a measurement, procedure, technical reference, or safety authority.",
+      "language": null,
+      "lesson_id": "gen_tech_2",
+      "lesson_state": "model_assessed",
+      "model": "host-configured",
+      "notes": "generated for lesson gen_tech_2",
+      "permission": null,
+      "policy": "media-policy/1",
+      "prompt_hash": "af94dd62ad6bf9a952249cc0feb6b9d55606a8daa7b781b4152d0db6ba7c8060",
+      "role": "illustration",
+      "source_hash": "7f88fdf9be0814802b3b84e5bc1c3bf9b26ac113e6cdd03d451429ca3397beda",
+      "source_ids": [],
+      "spec_hash": "32cd36a7c3ea6eda10b7573d2a5ff2edb3ca92729af1e4b234ebac7754ac239a",
+      "text_equivalent": "A workshop bench: the bicycle wheel is clamped upright in the stand and the torque wrench lies beside it.",
+      "voice": null
+    },
+    "evidence_copy": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b0e4b0e8/audit/adversarial/h187-media-capture/a206b3493098e7616c77575cc5a4b252ee36da43b58df14d03183fbc91573d6c.png",
+    "evidence_copy_sha256": "a206b3493098e7616c77575cc5a4b252ee36da43b58df14d03183fbc91573d6c",
+    "evidence_copy_matches": true
+  },
+  "verification": {
+    "size_matches_row": true,
+    "hash_matches_row": true,
+    "png_magic_ok": true,
+    "sniffed_mime_matches_declared": true,
+    "page_references_artifact": true,
+    "page_media_mime": null,
+    "page_media_degraded": false,
+    "page_media_artifact_id": "art_d7dc7afd153d4736abc4d2e0560a8376"
+  },
+  "dispatch_log": [
+    {
+      "tool": "image_generate",
+      "args": {
+        "prompt": "An editorial illustration of a bicycle wheel clamped upright in a workshop stand, a torque wrench laid beside it on the bench; no text labels, no measurement claims.",
+        "aspect_ratio": "landscape"
+      },
+      "raw_type": "str",
+      "payload": {
+        "success": true,
+        "image": "https://v3b.fal.media/files/b/0ab1b09d/bc5lwTpA6wF_C749_5qMS_iXJN1sv6.png",
+        "modality": "text",
+        "upscaled": false
+      },
+      "at": "2026-11-08T21:14:17Z"
+    }
+  ],
+  "status": "succeeded"
+}

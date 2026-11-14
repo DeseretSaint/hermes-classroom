@@ -1,0 +1,239 @@
+{
+  "kind": "audio_degradation_probe",
+  "verifier": "sentinel",
+  "home": "/home/deseretsaint/.hermes/h187-course-verify/home",
+  "removed_cached_object": "/home/deseretsaint/.hermes/h187-course-verify/home/plugin-data/coursebook/artifacts/objects/20/208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c",
+  "artifacts_before": 1,
+  "summary": {
+    "generated": 0,
+    "reused": 0,
+    "degraded": 1,
+    "skipped": 0,
+    "artifact_ids": []
+  },
+  "dispatch_calls": [
+    {
+      "tool": "text_to_speech",
+      "keys": [
+        "instructions",
+        "output_path",
+        "text"
+      ]
+    }
+  ],
+  "stored_item": {
+    "degraded": true,
+    "kind": "audio",
+    "label": "Narration — the transcript is the authoritative text; this is not pronunciation assessment.",
+    "language": "ja-JP",
+    "purpose": "Hear こんにちは said clearly",
+    "reason": "media generation failed (MediaGenerationError); delivered as text",
+    "role": "narration",
+    "spec": "A clear, unhurried pronunciation of the Japanese daytime greeting こんにちは (konnichiwa) by a standard-Japanese voice, one item only.",
+    "text_equivalent": "こんにちは (konnichiwa) — the standard daytime greeting, hello / good afternoon.",
+    "transcript": "こんにちは",
+    "voice": "default"
+  },
+  "artifacts_after": 1,
+  "served_block_media": [
+    {
+      "kind": "audio",
+      "role": "narration",
+      "artifact_id": null,
+      "purpose": "Hear こんにちは said clearly",
+      "text_equivalent": "こんにちは (konnichiwa) — the standard daytime greeting, hello / good afternoon.",
+      "label": "Narration — the transcript is the authoritative text; this is not pronunciation assessment.",
+      "degraded": true,
+      "reason": "media generation failed (MediaGenerationError); delivered as text"
+    }
+  ],
+  "unbound_served_block_media": [
+    {
+      "kind": "audio",
+      "role": "narration",
+      "artifact_id": null,
+      "purpose": "Hear こんにちは said clearly",
+      "text_equivalent": "こんにちは (konnichiwa) — the standard daytime greeting, hello / good afternoon.",
+      "label": null,
+      "degraded": true,
+      "reason": "not generated yet; this task declares the requirement and does not produce bytes"
+    }
+  ],
+  "checks_total": 25,
+  "checks_passed": 25,
+  "failures": [],
+  "status": "PASS",
+  "checks": [
+    {
+      "id": "arrange.authored_item_exists",
+      "ok": true,
+      "detail": [
+        {
+          "degraded": true,
+          "kind": "audio",
+          "language": "ja-JP",
+          "purpose": "Hear こんにちは said clearly",
+          "reason": "not generated yet; this task declares the requirement and does not produce bytes",
+          "role": "narration",
+          "spec": "A clear, unhurried pronunciation of the Japanese daytime greeting こんにちは (konnichiwa) by a standard-Japanese voice, one item only.",
+          "text_equivalent": "こんにちは (konnichiwa) — the standard daytime greeting, hello / good afternoon.",
+          "transcript": "こんにちは",
+          "voice": "default"
+        }
+      ]
+    },
+    {
+      "id": "seam.bound",
+      "ok": true,
+      "detail": true
+    },
+    {
+      "id": "generate.no_artifact",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "id": "generate.generated_zero",
+      "ok": true,
+      "detail": 0
+    },
+    {
+      "id": "generate.degraded_one",
+      "ok": true,
+      "detail": 1
+    },
+    {
+      "id": "generate.provider_was_asked",
+      "ok": true,
+      "detail": [
+        {
+          "tool": "text_to_speech",
+          "keys": [
+            "instructions",
+            "output_path",
+            "text"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stored.no_artifact_id",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "stored.no_content_hash",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "stored.no_mime",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "stored.degraded_true",
+      "ok": true,
+      "detail": true
+    },
+    {
+      "id": "stored.reason_present",
+      "ok": true,
+      "detail": "media generation failed (MediaGenerationError); delivered as text"
+    },
+    {
+      "id": "stored.reason_says_text",
+      "ok": true,
+      "detail": "media generation failed (MediaGenerationError); delivered as text"
+    },
+    {
+      "id": "stored.text_equivalent_kept",
+      "ok": true,
+      "detail": "こんにちは (konnichiwa) — the standard daytime greeting, hello / good afternoon."
+    },
+    {
+      "id": "store.no_new_row",
+      "ok": true,
+      "detail": {
+        "before": 1,
+        "after": 1
+      }
+    },
+    {
+      "id": "serve.ok",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "serve.target_block_present",
+      "ok": true,
+      "detail": [
+        "blk_aa982b8bf828f6e0703f",
+        "blk_3115f5ee701125cfd813",
+        "blk_280128ee1e4e4ded9d13",
+        "blk_12e8203c343b9d1ac9c9",
+        "blk_457e33eaf0ebe29c6c8f"
+      ]
+    },
+    {
+      "id": "serve.block_has_one_media_child",
+      "ok": true,
+      "detail": 1
+    },
+    {
+      "id": "serve.no_artifact_id",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "serve.degraded_true",
+      "ok": true,
+      "detail": true
+    },
+    {
+      "id": "serve.reason_present",
+      "ok": true,
+      "detail": "media generation failed (MediaGenerationError); delivered as text"
+    },
+    {
+      "id": "serve.text_equivalent_present",
+      "ok": true,
+      "detail": "こんにちは (konnichiwa) — the standard daytime greeting, hello / good afternoon."
+    },
+    {
+      "id": "serve.no_audio_artifact_advertised",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "id": "seam.unbound_without_dispatch_tool",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "unbound.skipped",
+      "ok": true,
+      "detail": {
+        "generated": 0,
+        "reused": 0,
+        "degraded": 0,
+        "skipped": 1,
+        "artifact_ids": []
+      }
+    },
+    {
+      "id": "unbound.served_still_honest",
+      "ok": true,
+      "detail": {
+        "kind": "audio",
+        "role": "narration",
+        "artifact_id": null,
+        "purpose": "Hear こんにちは said clearly",
+        "text_equivalent": "こんにちは (konnichiwa) — the standard daytime greeting, hello / good afternoon.",
+        "label": null,
+        "degraded": true,
+        "reason": "not generated yet; this task declares the requirement and does not produce bytes"
+      }
+    }
+  ]
+}

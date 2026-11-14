@@ -1,0 +1,53 @@
+{
+  "task": "t_ac36aad4",
+  "head": "dbf23e407c7eb014efbb21156e3342039d3fea55",
+  "media_bytes_generated": 0,
+  "prepared_store": "/home/deseretsaint/.hermes/h187-course/home",
+  "files": [
+    {
+      "path": "audit/adversarial/h187-course/STATUS.md",
+      "bytes": 9453,
+      "sha256": "16888e9051ab37ba349588908dd51abcbcdb0b8e4582d6a1d2c614dc7ef207af"
+    },
+    {
+      "path": "audit/adversarial/h187-course/build_course.py",
+      "bytes": 29294,
+      "sha256": "19b86ce6b5547987e49571be2d6f4805b1bf33576bf0d9a6305cec598a324200"
+    },
+    {
+      "path": "audit/adversarial/h187-course/verify_course.py",
+      "bytes": 9483,
+      "sha256": "ab270c342dd6bb3876271bc275f96b55307c1971ba52c13438d5b7891fd71f5d"
+    },
+    {
+      "path": "audit/adversarial/h187-course/rehearse_media_path.py",
+      "bytes": 3818,
+      "sha256": "ee69a1833224df7c9c8e29e50b8123d59eea37435e1dea205fba5f0933a37e64"
+    },
+    {
+      "path": "audit/adversarial/h187-course/downstream_targets.py",
+      "bytes": 2378,
+      "sha256": "89ba9db800b9380b4ae8d2c361b9e0c1baefc9b6d21868a30cbdbff18d034599"
+    },
+    {
+      "path": "audit/adversarial/h187-course/course_facts.json",
+      "bytes": 16255,
+      "sha256": "26da4d52b4f1a098881fc072b8c1d7747f1effd919594348efe536baf7afc673"
+    },
+    {
+      "path": "audit/adversarial/h187-course/verification.json",
+      "bytes": 15287,
+      "sha256": "9666c87f32628dc96b7f4c3abf4dd6ea71d60f1610a182401badd1db20f5f051"
+    },
+    {
+      "path": "audit/adversarial/h187-course/rehearsal_media_path.json",
+      "bytes": 3081,
+      "sha256": "96f1ffb27dcde1044020f7669e32481c5462784ed0d35f4e10763ad810dbe7e2"
+    },
+    {
+      "path": "audit/adversarial/h187-course/downstream_media_targets.json",
+      "bytes": 4216,
+      "sha256": "132b482580ef880e1c8cb9a87922298258374163b354950a62fa3f153cc51b40"
+    }
+  ]
+}

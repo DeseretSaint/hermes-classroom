@@ -1,0 +1,193 @@
+{
+  "kind": "ui_degradation_render_probe",
+  "verifier": "sentinel",
+  "plugin_sha256": "6aeca2214aed058aec08688fdd12eeb73003c18fa0bc8f9b122564ec1fbf6d4f",
+  "good_served_page_state": "complete",
+  "degraded_served_block_media": null,
+  "checks_total": 31,
+  "checks_passed": 31,
+  "failures": [],
+  "status": "PASS",
+  "checks": [
+    {
+      "id": "good.block_media_present",
+      "ok": true,
+      "detail": "data-cb-block-media marker"
+    },
+    {
+      "id": "good.audio_element_rendered",
+      "ok": true,
+      "detail": 1
+    },
+    {
+      "id": "good.audio_has_controls",
+      "ok": true,
+      "detail": "controls attribute present"
+    },
+    {
+      "id": "good.audio_src_is_real_mpeg",
+      "ok": true,
+      "detail": "data:audio/mpeg;base64 src"
+    },
+    {
+      "id": "good.audio_aria_label",
+      "ok": true,
+      "detail": "aria-label carries the phrase"
+    },
+    {
+      "id": "good.no_degraded_message",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "good.no_degraded_notice",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "good.text_equivalent_visible",
+      "ok": true,
+      "detail": "text equivalent is the visible caption beside the player"
+    },
+    {
+      "id": "good.media_route_was_called",
+      "ok": true,
+      "detail": [
+        "/runtime?profile=",
+        "/runtime?profile=",
+        "/media/art_adf2e015a0694641a409bb54e9a6a746"
+      ]
+    },
+    {
+      "id": "good.preview_served_bytes",
+      "ok": true,
+      "detail": 41088
+    },
+    {
+      "id": "good_image.block_media_present",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "good_image.img_rendered",
+      "ok": true,
+      "detail": 1
+    },
+    {
+      "id": "good_image.img_src_is_real_png",
+      "ok": true,
+      "detail": "data:image/png;base64 src"
+    },
+    {
+      "id": "good_image.img_has_alt",
+      "ok": true,
+      "detail": "alt attribute present"
+    },
+    {
+      "id": "good_image.no_degraded_notice",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "good_image.media_route_called",
+      "ok": true,
+      "detail": [
+        "/runtime?profile=",
+        "/runtime?profile=",
+        "/media/art_d7dc7afd153d4736abc4d2e0560a8376"
+      ]
+    },
+    {
+      "id": "degraded.block_media_text_only",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "degraded.no_audio_element",
+      "ok": true,
+      "detail": 0
+    },
+    {
+      "id": "degraded.no_controls_attribute",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "degraded.no_data_url",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "degraded.no_media_route_call",
+      "ok": true,
+      "detail": [
+        "/runtime?profile="
+      ]
+    },
+    {
+      "id": "degraded.honest_text_only_message",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "degraded.reason_rendered",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "degraded.reason_names_generation_failure",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "degraded.text_equivalent_rendered",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "degraded.no_claim_of_playback",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "missing_bytes.no_audio_element",
+      "ok": true,
+      "detail": 0
+    },
+    {
+      "id": "missing_bytes.no_data_url",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "missing_bytes.route_was_attempted",
+      "ok": true,
+      "detail": [
+        "/runtime?profile=",
+        "/runtime?profile=",
+        "/media/art_adf2e015a0694641a409bb54e9a6a746"
+      ]
+    },
+    {
+      "id": "missing_bytes.honest_fallback",
+      "ok": true,
+      "detail": [
+        "Greet shop staff with こんにちは and say it aloudLesson viewGameGuidedTextbookField QuestThis lesson has no Field Quest version.Bike-shop JapaneseSection 1 · TextbookNot startedSay or write itThis section has no lesson chat yet. Start one and send the first message to begin.Start a fresh runThe greeting in kana and romajiExampleこんにちは (konnichiwa) is the standard daytime greeting in Japanese. It is written こ・ん・に・ち・は; in this fixed greeting the final は is pronounced wa. Say it evenly: ko-n-ni-chi-wa.Save to notebookWhen to say itExplainSay it when you enter a shop or meet someone during the day. It opens the interaction; it is neither a request nor a farewell.Save to notebookSay it backPracticePlay the pronunciation reference and repeat こんにちは three times, matching the rhythm ko-n-ni-chi-wa. The recording is the model; your own saying is the practice, and this page does not assess pronunciation.artifact not foundArtifact detailsこんにちは (konnichiwa) — the standard daytime greeting, hello / good afternoon.Narration — the transcript is the authoritative text; this is not pronunciation assessment.Save to notebookSave audioA staff member looks up as you enter the shop. What do you say?ExampleChoose the daytime greeting rather than a request or a farewell"
+      ]
+    },
+    {
+      "id": "missing_bytes.text_equivalent_still_visible",
+      "ok": true,
+      "detail": null
+    }
+  ],
+  "good_html_sha256": "a5ea34553cc91cac9c5851f34ae7be932998052273805f0d462966647e1fb3f4",
+  "image_html_sha256": "aad9c6b2e7f27359fb3fc1f6143f606b18b21057cb165c2e36c1732951a87a09",
+  "degraded_html_sha256": "d0afda3df14aec49ecb912ffc0ddd27e2e1e163f15c54b2baeb55086b454546f",
+  "rendered_html": {
+    "good_audio": "audit/adversarial/h187-independent-verify/evidence/rendered_good_audio.html",
+    "good_image": "audit/adversarial/h187-independent-verify/evidence/rendered_good_image.html",
+    "degraded_audio": "audit/adversarial/h187-independent-verify/evidence/rendered_degraded_audio.html",
+    "missing_bytes": "audit/adversarial/h187-independent-verify/evidence/rendered_missing_bytes.html"
+  }
+}

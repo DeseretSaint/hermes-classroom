@@ -1,0 +1,146 @@
+{
+  "kind": "verification",
+  "verified_at": "2026-11-08T21:16:05Z",
+  "hermes_home": "/home/deseretsaint/.hermes/h187-course/home/plugin-data",
+  "db_path": "/home/deseretsaint/.hermes/h187-course/home/plugin-data/coursebook/data.db",
+  "db_sha256": "4c3423fcad0543b0baac7f0fea2fd5b6de4c92befe4c6412caca5c0976126c12",
+  "lesson_state": "model_assessed",
+  "lesson_count": 3,
+  "artifact_row_count": 2,
+  "media_items": [
+    {
+      "artifact_id": "art_adf2e015a0694641a409bb54e9a6a746",
+      "content_hash": "sha256:208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c",
+      "degraded": false,
+      "kind": "audio",
+      "label": "Narration — the transcript is the authoritative text; this is not pronunciation assessment.",
+      "language": "ja-JP",
+      "mime": "audio/mpeg",
+      "purpose": "Hear こんにちは said clearly",
+      "reason": null,
+      "role": "narration",
+      "spec": "A clear, unhurried pronunciation of the Japanese daytime greeting こんにちは (konnichiwa) by a standard-Japanese voice, one item only.",
+      "text_equivalent": "こんにちは (konnichiwa) — the standard daytime greeting, hello / good afternoon.",
+      "transcript": "こんにちは",
+      "voice": "default"
+    }
+  ],
+  "artifact_id": "art_adf2e015a0694641a409bb54e9a6a746",
+  "db_row": {
+    "id": "art_adf2e015a0694641a409bb54e9a6a746",
+    "course_id": "crs_c330330a969646cfb0735f9f3644c107",
+    "kind": "audio",
+    "content_hash": "208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c",
+    "path": "/home/deseretsaint/.hermes/h187-course/home/plugin-data/coursebook/artifacts/objects/20/208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c",
+    "bytes": 41088,
+    "mime": "audio/mpeg",
+    "provenance_json": "{\"generator\": \"host.text_to_speech\", \"independent\": false, \"label\": \"Narration — the transcript is the authoritative text; this is not pronunciation assessment.\", \"language\": \"ja-JP\", \"lesson_id\": \"gen_lang_1\", \"lesson_state\": \"model_assessed\", \"model\": \"host-configured\", \"notes\": \"generated for lesson gen_lang_1 / job h187-tts-capture\", \"permission\": null, \"policy\": \"media-policy/1\", \"prompt_hash\": \"a1f848990a2c92c8fde611d65a05b5cd7cc6aaf7422bd5ac368aee48a7cb6562\", \"role\": \"narration\", \"source_hash\": \"b8dae91c9e27b6a7251f05e72321c43991f26b869e5ed3afc4df27a2f51619cc\", \"source_ids\": [], \"spec_hash\": \"ace1d3ca0d2366205525b1b49bedb30bc9f81197c7ad887d4ed69c411e35414b\", \"text_equivalent\": \"こんにちは (konnichiwa) — the standard daytime greeting, hello / good afternoon.\", \"voice\": \"default\"}",
+    "ref_count": 1,
+    "created_at": "2026-11-08T21:14:22Z"
+  },
+  "stored_path": "/home/deseretsaint/.hermes/h187-course/home/plugin-data/coursebook/artifacts/objects/20/208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c",
+  "stored_exists": true,
+  "size_bytes": 41088,
+  "sha256": "208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c",
+  "db_bytes": 41088,
+  "db_content_hash": "208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c",
+  "hash_matches_db": true,
+  "size_matches_db": true,
+  "declared_mime": "audio/mpeg",
+  "sniffed_mime": "audio/mpeg",
+  "first16_hex": "fff3c4c4005a8c39b8015ac0003b560e",
+  "id3_header": false,
+  "mpeg_frame_sync": true,
+  "provenance": {
+    "generator": "host.text_to_speech",
+    "independent": false,
+    "label": "Narration — the transcript is the authoritative text; this is not pronunciation assessment.",
+    "language": "ja-JP",
+    "lesson_id": "gen_lang_1",
+    "lesson_state": "model_assessed",
+    "model": "host-configured",
+    "notes": "generated for lesson gen_lang_1 / job h187-tts-capture",
+    "permission": null,
+    "policy": "media-policy/1",
+    "prompt_hash": "a1f848990a2c92c8fde611d65a05b5cd7cc6aaf7422bd5ac368aee48a7cb6562",
+    "role": "narration",
+    "source_hash": "b8dae91c9e27b6a7251f05e72321c43991f26b869e5ed3afc4df27a2f51619cc",
+    "source_ids": [],
+    "spec_hash": "ace1d3ca0d2366205525b1b49bedb30bc9f81197c7ad887d4ed69c411e35414b",
+    "text_equivalent": "こんにちは (konnichiwa) — the standard daytime greeting, hello / good afternoon.",
+    "voice": "default"
+  },
+  "evidence_copy": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_ce380228/audit/adversarial/h187-tts/artifact/gen_lang_1-narration.mp3",
+  "evidence_copy_size": 41088,
+  "evidence_copy_sha256": "208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c",
+  "ffprobe": {
+    "exit": 0,
+    "codec_name": "mp3",
+    "codec_type": "audio",
+    "sample_rate": "24000",
+    "channels": 1,
+    "duration_s": "2.568000",
+    "format_name": "mp3",
+    "bit_rate": "128000"
+  },
+  "ok": true,
+  "serve": {
+    "ok": true,
+    "error": null,
+    "response_keys": [
+      "artifacts",
+      "attempts",
+      "checks",
+      "course",
+      "document",
+      "enrollment_id",
+      "notebook_entries",
+      "provenance",
+      "revision",
+      "runtime",
+      "section",
+      "segments",
+      "sources",
+      "state"
+    ],
+    "provenance": {
+      "outcome": "model_assessed",
+      "independent": false,
+      "facts_unverified": false,
+      "check_enabled": true,
+      "warning": "model assessed, not independently validated: treat this page as a proposal."
+    },
+    "artifacts": [
+      {
+        "artifact_id": "art_adf2e015a0694641a409bb54e9a6a746",
+        "kind": "audio",
+        "mime": "audio/mpeg",
+        "bytes": 41088,
+        "content_hash": "sha256:208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c"
+      }
+    ],
+    "target_block": {
+      "id": "blk_280128ee1e4e4ded9d13",
+      "role": "practice",
+      "headline": "Say it back",
+      "short": "Play the reference, then repeat こんにちは three times at the same rhythm.",
+      "deep": "Play the pronunciation reference and repeat こんにちは three times, matching the rhythm ko-n-ni-chi-wa. The recording is the model; your own saying is the practice, and this page does not assess pronunciation.",
+      "check_id": null,
+      "media": [
+        {
+          "kind": "audio",
+          "role": "narration",
+          "artifact_id": "art_adf2e015a0694641a409bb54e9a6a746",
+          "purpose": "Hear こんにちは said clearly",
+          "text_equivalent": "こんにちは (konnichiwa) — the standard daytime greeting, hello / good afternoon.",
+          "label": "Narration — the transcript is the authoritative text; this is not pronunciation assessment.",
+          "degraded": false,
+          "reason": null
+        }
+      ],
+      "source_ids": []
+    },
+    "page_references_artifact": true,
+    "block_media_mime": null
+  }
+}
