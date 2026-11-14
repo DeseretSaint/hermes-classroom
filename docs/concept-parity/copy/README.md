@@ -2,6 +2,14 @@
 
 Card: **CP-031**. Scope: CP-021, CP-022, CP-023, CP-024, CP-025a, CP-025b. Docs only.
 
+**Inventory revision:** the complete sweep and every cited line are re-derived from `origin/master`
+at **`e6fe4f7119ad97d85eee2406890e0ea1a72fb2af`** (CP-031c-R, card `t_54a44039`, re-sweeping
+CP-031c's `5d2b303e` sweep and keeping CP-031b-R's `t_adc9bdee` substance). Docs only; no product
+string changed. The swept revision is pinned on **content**: `00-header.js` `ab62cbd7`, `30-home.js`
+`14fda088`, `90-course.js` `2cafd20b`, `95-studio.js` `20e07391`, `97-world.js` `00d46dcf`. A master
+that moves without touching those five blobs is harmless; one that moves a blob fails the gate by
+name, so the next author re-sweeps rather than rotating citations.
+
 This directory answers one question per screen: **for every string that screen is told to render,
 where does the words come from, and has that source got a row in the copy deck?**
 It does not change product copy. `docs/concept-parity/COPY.md` is owned by CP-001; every proposal
@@ -44,7 +52,7 @@ All machine-checked, reproducible from the docs tree:
    CP-005 forward fields the deck already allowlists (`library_item.subject_label`,
    `sections_done`, `sections_total`, `is_new`).
 3. **Destination labels match.** `nav.home`/`nav.courses`/`nav.workshop`/`nav.parent` equal
-   `DESTINATIONS` in `desktop/src/00-header.js:129-136`, including `Parent Studio`.
+   `DESTINATIONS` in `desktop/src/00-header.js:187-194`, including `Parent Studio`.
 4. **Row-level gaps are what remain.** The deck and the spec agree with each other because they
    were written together; they do not cover every string a card body tells a maker to paint.
    That is the entire GAPS list.
@@ -58,23 +66,40 @@ All machine-checked, reproducible from the docs tree:
    the real `` `field:path` `` cell form, asserts at least 50 resolved source cells so it cannot go
    vacuous, and rejects a fabricated `field:` row; `tests/test_cp_spec.py` follows an array's
    local-`$ref` `items` so `course.outline.objectives[].title` (the C3/M5 node label) resolves.
-6. **The full sweep is gated too (CP-031b).** `TestCp031bSweep` asserts that all five
-   `CP-031-sweep-*.md` files exist, that each one cites its in-scope source file with `file:line`,
-   that no cited line is past the end of that file, that every table row carries all four columns,
-   that the studio sweep keeps at least 400 rows and the world sweep at least 60, and that
-   `GAPS.md` marks `GAP-30` **closed** and defines `GAP-31`–`GAP-42`. A sweep that is silently
-   truncated, or a GAP-30 that quietly reopens, fails the gate. Round 3 tightened it again: the
-   audit goes through the inventory **rows** (a citation in a section heading or a prose note no
-   longer counts as a row), a row citing `a-b` covers both ends, and a mutation that deletes a row
-   or points it at a neighbouring line is now caught rather than absorbed by a region heading.
-   Round 4 added the last class of defect this sweep kept producing: a "belongs to another
-   inventory" note is a coverage claim and is now asserted against the file it names — the Game
-   sweep had displaced the Home defaults line and the `DESK_STATE_WORD` map onto `CP-022-home.md`,
-   which carries neither (`GAP-41`, `GAP-42`). It also asserts that the Homework sweep covers the
-   whole `NotebookView` (`90-course.js:735-1133`), because the card's `880-1000` slice drops the
-   list's own actions, edit form and only dialog.
-   The gate binds the lines earlier review rounds proved were dropped; it does not prove every row
-   true — that rests on the sweep and on review.
+6. **The full sweep is gated too (CP-031b-R and CP-031c, united).** `TestCp031bSweep` is the
+   substance gate CP-031b-R landed: all five `CP-031-sweep-*.md` files exist, each cites its
+   in-scope source file with `file:line`, no cited line is past the end of that file, every table
+   row carries all four columns and the per-file floor holds, `GAPS.md` marks `GAP-30` **closed**
+   and defines `GAP-31`–`GAP-42`, `GAP-38`–`GAP-42` are defined and referenced by the sweeps that
+   own them, the round-two findings keep a row at the line that renders them, the
+   consequence family is split per rendering, the two learner-completion wordings are not merged
+   into one row, the Game sweep accounts for the `ChildSafeLine` block, and the Homework sweep
+   covers the whole `NotebookView` — the card's `880-1000` slice drops the list's own actions,
+   edit form and only dialog. Round 3 tightened it: the audit goes through the inventory **rows**
+   (a citation in a section heading or a prose note no longer counts), a row citing `a-b` covers
+   both ends, and a mutation that deletes a row or points it at a neighbouring line is caught
+   rather than absorbed by a region heading. Round 4 added the last class of defect this sweep kept
+   producing: a "belongs to another inventory" note is a coverage claim and is asserted against the
+   file it names — the Game sweep had displaced the Home defaults line and the `DESK_STATE_WORD`
+   map onto `CP-022-home.md`, which carries neither (`GAP-41`, `GAP-42`).
+7. **The sweep is string-anchored, not line-anchored (CP-031c).** `TestCp031cSweep` re-derives the
+   population from each of the five segment files at test time: it lexes every single-quoted,
+   double-quoted and template literal outside comments and regexes, keeps the multi-word
+   user-facing ones, and fails with the **missing set** if any literal has no inventory row. It
+   checks the other direction too — every row must cite a `file:line` that actually carries the
+   row's own words — and it fails if a sweep file disappears, if a declared row count disagrees
+   with the table, if `GAP-30` reopens, if any sweep says a block "belongs to" / "stays with"
+   `CP-022-home.md` without that file carrying the strings, or if a swept segment blob changes
+   under the recorded sha. `REQUIRED_ROWS` is keyed on `(file, exact string)`: the test locates
+   the literal in the file at test time instead of trusting a line number, so a re-authored file
+   fails loudly rather than rotating the citations. Six named mutation probes prove the gate can
+   fail: a deleted row, a retargeted citation, a deleted sweep file, a truncated table, a reopened
+   `GAP-30`, and a `CP-022` hand-off are each rejected.
+
+   **Scope of the completeness claim.** The extraction gate covers multi-word user-facing literals.
+   Single-word controls (e.g. `Cancel`) are outside that definition; the ones that carry state are
+   named in `GAPS.md`. CSS class lists, lengths, colours, identifiers, paths and code fragments are
+   excluded by the named classes in the test file, not by a screen-swallowing regex.
 
 ## Result
 
@@ -107,9 +132,18 @@ Studio surfaces has no deck row. Those two cards cannot start until CP-001 gains
   records that the sweep is incomplete; neither file is a licence to author the whole section.
 - `CP-031-sweep-parent-studio.md`, `CP-031-sweep-world.md`, `CP-031-sweep-game.md`,
   `CP-031-sweep-homework.md`, `CP-031-sweep-chrome.md` — the **complete** literal sweep (CP-031b,
-  card `t_adc9bdee`) of `95-studio.js`, `97-world.js`, `30-home.js` (the Game block, `4834-5215`),
-  `90-course.js` (the
-  notebook, `735-1133`) and `00-header.js`. Every row carries `string | source file:line | state | proposed id`. These are
-  the files `hw.*` / `game.*` / `world.*` / `studio.*` must be authored from; `GAP-30` is closed.
+  card `t_adc9bdee`; re-derived whole-file by CP-031c, card `t_0458a135`; re-swept at `e6fe4f71`
+  by CP-031c-R, card `t_54a44039`) of the whole of `95-studio.js`, `97-world.js`, `30-home.js`,
+  `90-course.js` and `00-header.js`. Every row carries
+  `string | source file:line | state | proposed id`. These are the files
+  `hw.*` / `game.*` / `world.*` / `studio.*` must be authored from; `GAP-30` is closed.
+
+  | file | source | rows |
+  |---|---|---|
+  | `CP-031-sweep-chrome.md` | `desktop/src/00-header.js` | 51 |
+  | `CP-031-sweep-homework.md` | `desktop/src/90-course.js` | 331 |
+  | `CP-031-sweep-game.md` | `desktop/src/30-home.js` | 215 |
+  | `CP-031-sweep-parent-studio.md` | `desktop/src/95-studio.js` | 642 |
+  | `CP-031-sweep-world.md` | `desktop/src/97-world.js` | 92 |
 - `GAPS.md` — every gap as a proposed deck row, with the source form, the cap, and the card that
   needs it. Proposals only.
