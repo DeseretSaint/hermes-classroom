@@ -686,6 +686,7 @@ def pre_turn(
                 next_action=str(result.get("next_action", "continue")),
                 evidence_class=str(result.get("evidence_class", "cold")),
                 objective_id=objective_id,
+                feedback=result.get("feedback"),
             )
         },
         classification=classification,
@@ -738,11 +739,17 @@ _PUBLIC_VERDICT = {
 
 
 def continuation_prompt(*, verdict: str, next_action: str, evidence_class: str = "cold",
-                        objective_id: str | None = None) -> str:
+                        objective_id: str | None = None,
+                        feedback: dict[str, Any] | None = None) -> str:
     """Render the transition-specific continuation prompt.
 
     Contains the committed public verdict and the permitted next action only. No reference answer,
     no rubric internals, no provider text (``PREBUILD_SPEC.md`` §8).
+
+    ``feedback`` is the check's authored miss block (upgrade 13): the rule the check tests, the
+    learner's own answer and one next action. It is authored with the check — never generated at
+    grading time — so the teaching turn is told which rule was missed without the tutor being
+    invited to invent a diagnosis.
     """
     label = _PUBLIC_VERDICT.get(verdict, "not graded")
     lines = [f"Coursebook result: {label}."]
@@ -762,6 +769,17 @@ def continuation_prompt(*, verdict: str, next_action: str, evidence_class: str =
         lines.append("That counted as independent evidence for this objective.")
     elif evidence_class == "override":
         lines.append("Access was granted by an override. This is not mastery and is labelled as such.")
+    elif feedback:
+        rule = str(feedback.get("rule") or "").strip()
+        wrote = str(feedback.get("answer") or "").strip()
+        if rule:
+            lines.append(f"The rule this task needs: {rule}")
+        if wrote:
+            lines.append(f'The learner answered: "{wrote}". It does not meet that rule yet.')
+        lines.append(
+            "Name the rule that was missed and one way to tell it apart on the next try. Do not "
+            "state the answer, and do not count this answer as evidence."
+        )
     action = {
         "complete_objective": "Teach the wrap-up for this objective, then move to the next section.",
         "complete_course": "Teach the course wrap-up.",

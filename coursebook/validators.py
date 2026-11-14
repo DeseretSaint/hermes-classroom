@@ -47,6 +47,19 @@ _QUOTES = {
 _FRACTION = re.compile(r"^([+-]?\d+)\s*/\s*(\d+)$")
 _NUMBER = re.compile(r"^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$")
 
+#: The one next action an authored miss may name. A wrong answer never grants access, so
+#: ``complete_objective`` / ``complete_course`` are not offered here: a miss that told the tutor to
+#: wrap up would end the objective on an answer that did not meet it.
+MISS_NEXT_ACTIONS = ("retry_attempt", "explain", "select_alternative")
+
+#: Longest authored rule the pane will print. One sentence a learner can act on.
+MISS_RULE_MAX_CHARS = 240
+
+#: Shortest accepted answer a rule is scanned against. A key like ``b`` or ``2`` is a token, not a
+#: phrase, and a legitimate rule may name a number of steps; only a key long enough to be an answer
+#: phrase is a leak when it appears in the rule (the same floor the page's leak gate uses).
+_MISS_LEAK_FLOOR = 4
+
 #: unit -> (dimension, factor to the dimension's base unit)
 _UNITS: dict[str, tuple[str, Decimal]] = {
     "mm": ("length", Decimal("0.001")),
@@ -72,11 +85,20 @@ _UNITS: dict[str, tuple[str, Decimal]] = {
 
 @dataclass(frozen=True)
 class Outcome:
-    """One graded criterion. ``observed`` is learner-facing and must never contain a key."""
+    """One graded criterion. ``observed`` is learner-facing and must never contain a key.
+
+    ``rule`` and ``next_action`` are the authored miss block (upgrade 13): the rule the check tests
+    and the one action the learner may take next. Both are empty on a pass and empty when the check
+    authored no rule, so a reference without one behaves exactly as it did before. ``answer`` is
+    the learner's own answer as *evidence*, not a diagnosis, so it is filled on a pass too.
+    """
 
     criterion_id: str
     met: bool
     observed: str
+    rule: str = ""
+    next_action: str = ""
+    answer: str = ""
 
 
 def normalize_text(value: str) -> str:
@@ -194,6 +216,109 @@ def reference_kind(reference: dict[str, Any] | None) -> str:
     return kind
 
 
+def _accepted_answers_of(reference: dict[str, Any]) -> list[str]:
+    """Every authored accepted form a rule must not restate, as plain strings."""
+    forms: list[str] = []
+    answers = reference.get("answers")
+    if isinstance(answers, list):
+        for item in answers:
+            if isinstance(item, str):
+                forms.append(item)
+            elif isinstance(item, list):
+                forms.extend(str(entry) for entry in item if isinstance(entry, str))
+    value = reference.get("value")
+    if isinstance(value, str):
+        forms.append(value)
+    return forms
+
+
+def _seal_feedback(reference: dict[str, Any]) -> dict[str, Any]:
+    """Validate an authored miss block, and refuse the two mistakes that would teach the error.
+
+    * a rule that restates an accepted answer converts the retry into a copy task, which is exactly
+      what the old design avoided by withholding the criteria;
+    * a rule whose ``next_action`` grants access turns a wrong answer into a pass.
+
+    Returns a copy, so the stored reference never shares a dict with the caller.
+    """
+    feedback = reference.get("feedback")
+    if not isinstance(feedback, dict):
+        raise ReferenceSpecError("a feedback block is an object")
+    unknown = set(feedback) - {"rule", "next_action", "groups"}
+    if unknown:
+        raise ReferenceSpecError(f"a feedback block names unknown fields: {sorted(unknown)}")
+    rule = feedback.get("rule")
+    if not isinstance(rule, str) or not rule.strip():
+        raise ReferenceSpecError("a feedback block names the rule the check tests")
+    rule = rule.strip()
+    if len(rule) > MISS_RULE_MAX_CHARS:
+        raise ReferenceSpecError(f"an authored rule is at most {MISS_RULE_MAX_CHARS} characters")
+    next_action = feedback.get("next_action") or MISS_NEXT_ACTIONS[0]
+    if next_action not in MISS_NEXT_ACTIONS:
+        raise ReferenceSpecError(
+            "an authored miss may name only " + ", ".join(MISS_NEXT_ACTIONS)
+            + "; a wrong answer never grants access"
+        )
+    sealed: dict[str, Any] = {"rule": rule, "next_action": str(next_action)}
+    if "groups" in feedback:
+        # A rule per accepted-answer group was designed for selection checks and then withdrawn:
+        # a *wrong* answer is no evidence of which accepted form the learner was aiming at, so the
+        # group would be picked by a guess, and a guessed diagnosis can teach the error — exactly
+        # what the old design avoided by withholding the criteria. One rule for the whole check is
+        # the only rule a miss can honestly name, so a per-group block is refused rather than
+        # stored and silently ignored.
+        raise ReferenceSpecError(
+            "a miss names one rule for the whole check; a wrong answer says nothing about which "
+            "accepted form the learner aimed at, so a per-group rule would be a guess"
+        )
+    scanned = normalize_text(rule)
+    if not scanned:
+        raise ReferenceSpecError("an authored rule carries readable text")
+    leaked = [
+        form for form in _accepted_answers_of(reference)
+        if len(normalize_text(form)) >= _MISS_LEAK_FLOOR and normalize_text(form) in scanned
+    ]
+    if leaked:
+        raise ReferenceSpecError(
+            "an authored rule restates an accepted answer, so a learner who reads it can copy the "
+            "graded response; name the rule, not the answer"
+        )
+    return sealed
+
+
+def authored_miss(reference: dict[str, Any], answer: dict[str, Any], kind: str) -> dict[str, Any] | None:
+    """The authored rule a miss on this answer should name, or ``None`` when none is authored.
+
+    One rule per check, and it applies to every wrong answer on that check: a rule says what has to
+    hold for the answer to be right, in terms the learner can act on, and that holds whichever
+    accepted form they were reaching for. There is deliberately no per-group variant — a wrong
+    answer is no evidence of which accepted form the learner aimed at, so choosing a group would be
+    a guess, and :func:`_seal_feedback` refuses one for that reason.
+
+    ``answer`` and ``kind`` are taken so callers do not have to know this shape (and so a future
+    rule can be conditioned on the lane), and neither changes the result. Nothing here is
+    generated: an unauthored rule stays absent rather than guessed.
+    """
+    feedback = reference.get("feedback")
+    if not isinstance(feedback, dict):
+        return None
+    rule = str(feedback.get("rule") or "").strip()
+    if not rule:
+        return None
+    return {
+        "rule": rule,
+        "next_action": str(feedback.get("next_action") or MISS_NEXT_ACTIONS[0]),
+    }
+
+
+def learner_answer_evidence(answer: dict[str, Any]) -> str:
+    """The learner's own answer, as the pane and the tutor may quote it back."""
+    selection = answer.get("selection")
+    if isinstance(selection, list) and selection:
+        return "; ".join(str(item) for item in selection)[:300]
+    return str(answer.get("text") or "")[:300]
+
+
 def seal_reference(spec: dict[str, Any] | None) -> dict[str, Any]:
     """The only sanctioned constructor for a stored reference.
 
@@ -258,6 +383,12 @@ def seal_reference(spec: dict[str, Any] | None) -> dict[str, Any]:
             or not (3 <= low <= high <= 5)
         ):
             raise ReferenceSpecError("a conversation reference declares a 3 to 5 learner-turn range")
+    if "feedback" in reference:
+        if kind not in CLOSED_KINDS:
+            # An open or conversational lane has no deterministic miss to name: a model-written
+            # diagnosis can be wrong and teach the error, so it is not admitted here.
+            raise ReferenceSpecError(f"a {kind} reference authors no miss feedback")
+        reference["feedback"] = _seal_feedback(reference)
     return reference
 
 
@@ -331,7 +462,15 @@ def grade_reference(reference: dict[str, Any], answer: dict[str, Any], *, criter
             met, observed = grade_selection(reference, [str(item) for item in selection])
     else:
         raise ValueError(f"reference kind {kind!r} is not closed-form")
-    return Outcome(criterion_id=criterion_id, met=met, observed=observed[:500])
+    miss = None if met else authored_miss(reference, answer, str(kind))
+    return Outcome(
+        criterion_id=criterion_id,
+        met=met,
+        observed=observed[:500],
+        rule=str((miss or {}).get("rule") or "")[:MISS_RULE_MAX_CHARS],
+        next_action=str((miss or {}).get("next_action") or ""),
+        answer=learner_answer_evidence(answer),
+    )
 
 
 def verdict_for(outcomes: list[Outcome], pass_rule: str = "all") -> str:

@@ -63,6 +63,11 @@ CONTRACT_FILES: dict[str, str] = {
     # every job item's `$ref` moves from jobs/v5#/job to jobs/v6#/job. No method, request or
     # response field is retyped; `probes/derive_rpc_v29_up36_activity.py` composes over the same
     # v29 rather than deriving a second one.
+    # Upgrade 13 (t_1fa8ec72): v29 also carries one optional `feedback` object on the
+    # `attempt.submit` response (the authored rule a non-pass missed, the learner's own answer and
+    # one next action), plus the same three optional facts on each criteria row so a replayed
+    # attempt rebuilds them from the stored row. A check that authored no rule keeps its exact v28
+    # shape. `probes/derive_rpc_v29_up13_feedback.py` composes over the same v29.
     "cb.rpc": "rpc.v29.json",
     # E2E L1: v15 is additive over v14 — one column, `checks.revisit INTEGER NOT NULL DEFAULT 0`.
     # No row is rewritten; every check written before v15 reads as an ordinary (non-revisit) check.
@@ -124,12 +129,10 @@ CONTRACT_VERSION_FILES: dict[str, dict[int, str]] = {
     # is a clone of the newest closed authored check; it never moves the objective again and never
     # pays XP twice. v27 stays readable so a client that pinned the drawn-label wire can still
     # validate.
-    # UP-14: v29 is additive over v28 — the authored hint ladder on `check_stimulus`, the
-    # `check.get.assistance` read, and `lesson.assist`'s optional `rung` request/response.
-    # UP-6: v29 also carries `outline_plan.time_estimate`, the plan's own stored schedule
-    # estimate (weeks and the author's declared context), or null when none is stored.
     # UP-18: v29 also carries `review_item.interval_reason`, the learner's own explanation of the
     # date the scheduler chose. Optional; an item with no attempt record behind it omits it.
+    # Upgrade 13: v29 also carries one optional `feedback` block on the `attempt.submit` response
+    # and the same optional facts on each criteria row.
     # v28 stays readable so a client that pinned the composed revisit/completion wire can still
     # validate.
     "cb.rpc": {22: "rpc.v22.json", 23: "rpc.v23.json", 24: "rpc.v24.json", 25: "rpc.v25.json",

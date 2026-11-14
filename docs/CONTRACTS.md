@@ -3019,6 +3019,49 @@ optionality and type and proves a v28-shaped item still validates;
 `tests/test_upgrade_review_interval.py` proves a hinted pass keeps the ladder's floor while a cold
 first-try pass earns the next rung, that a miss or a shown answer returns on the short beat, and
 that the reason is the learner's words rather than the pipeline's.
+## v29 delta (Upgrade 13) — a miss names the rule, and the teaching turn is told it
+
+`cb.rpc` v29 is v28 with **one additive amendment**, in one method.
+
+Before v29, `attempt.submit` returned one deterministic grader sentence per criterion
+("does not match an accepted answer", "outside tolerance by 0.5") and the continuation prompt the
+teaching chat receives carried the verdict, the next action, the evidence class and an objective id
+— never the criteria. Neither the pane nor the tutor could say which rule was missed.
+
+| Record | Optional key | What it is, exactly |
+|---|---|---|
+| `attempt.submit` response | `feedback` | `{rule, next_action, observed?, answer?}` — the authored rule the check tests, the one action the miss permits, the grader's own sentence as detail, and the learner's own answer. |
+| `attempt.submit` response → `criteria[]` | `rule`, `next_action`, `answer` | The same facts on the unmet criterion, so a replayed or re-read attempt rebuilds the block from the row it was stored on rather than re-grading. |
+
+The block is **authored with the check**, never generated at grading time: it lives on the check's
+stored `reference_json.feedback` (sealed by `validators.seal_reference`). One rule covers the whole
+check. A per-accepted-answer-group rule was designed and then withdrawn: `accepted_alternatives`
+groups are variant forms of one accepted answer, and a wrong answer says nothing about which form
+the learner was reaching for, so selecting a group would be a guess — and a guessed diagnosis can
+teach the error. The seal refuses a `groups` block outright rather than storing one nothing reads.
+Two authoring mistakes are refused at seal time rather than printed to a learner:
+
+- a rule that **restates an accepted answer** turns a retry into a copying task, which is exactly why
+  the pre-v29 design withheld the criteria;
+- a rule whose `next_action` is not one of `retry_attempt`, `explain` or `select_alternative`. A miss
+  never names a pass action, because a wrong answer does not grant access.
+
+A response from a check that authored no rule **omits** `feedback` and keeps its exact v28 shape and
+bytes, and a `needs_retry` names no rule at all — the grader that could not finish does not know
+which rule was missed, so it says nothing. No method, required key, error code, job kind, answer
+kind, verdict, evidence class or vocabulary value moves. `rpc.v28.json` stays byte-identical on disk
+(sha256 `6d09c8d8f5d246e4f6b684ec0ee0bd3f42068f6fe27fee673744b1b61335d35a`) and `x-supersedes` names
+`.../rpc/v28`. The wire echoes (`contract_version` on both response envelopes and `health.get`) move
+together to 29. `rpc.v29.json` is derived from the frozen v28 document by
+`probes/derive_rpc_v29.py` (which composes this card's delta from the sibling `probes/derive_rpc_v29_up13_feedback.py`), not hand-copied.
+
+Regression guard: `tests/test_contracts.py::V29AmendmentTest` pins the additive property set, the
+optionality, the frozen v28 document and that the shipped v29 is byte-identical to its derivation;
+`tests/test_upgrade_miss_feedback.py` proves a `not_yet` result carries the authored rule and the
+learner's answer, that `pre_turn`'s context names the rule, that a leaky rule is refused at seal time
+and dropped by the authoring path, and that a check with no authored rule is unchanged.
+
+
 ## v29 delta (Upgrade 36) — a repair attempt is readable while it happens
 
 A lesson section that a deterministic rule or the independent validator refuses is re-authored up

@@ -165,6 +165,11 @@ V28_L1_RESPONSE_FIELDS: dict[str, tuple[str, ...]] = {
     "progression.challenge_out": ("revisit",),
 }
 
+#: Upgrade 13 / cb.rpc v29: the three optional facts an unmet ``criteria`` row may carry, so a
+#: replayed attempt rebuilds the authored miss block from the row it was stored on. None is
+#: required and no other payload moves.
+V29_FEEDBACK_CRITERION_FIELDS: tuple[str, ...] = ("rule", "next_action", "answer")
+
 
 def _sibling_v28_document() -> dict | None:
     """The E2E L1 branch's own v28 derivation, when that script is present on this tree.
@@ -189,6 +194,26 @@ def _sibling_v28_document() -> dict | None:
     return document if isinstance(document, dict) else None
 
 
+def _without_v29_feedback_fields(payload: dict, method: str) -> dict:
+    """Undo upgrade 13's additive miss block for a carried-over comparison.
+
+    v29 added one optional ``feedback`` object to the ``attempt.submit`` response and the same
+    three optional facts to each criteria row, so a non-pass can name the authored rule it missed.
+    Nothing is required and no other payload moves, which is why one helper serves every version.
+    """
+    carried = json.loads(json.dumps(payload))
+    if method != "attempt.submit":
+        return carried
+    properties = (carried.get("response") or {}).get("properties") or {}
+    properties.pop("feedback", None)
+    criteria = properties.get("criteria")
+    if isinstance(criteria, dict):
+        items = criteria.get("items") or {}
+        for field in V29_FEEDBACK_CRITERION_FIELDS:
+            (items.get("properties") or {}).pop(field, None)
+    return carried
+
+
 def _without_v28_repair_fields(payload: dict, method: str) -> dict:
     """Undo E2E L4/L5's additive lesson fields for a carried-over comparison.
 
@@ -198,7 +223,7 @@ def _without_v28_repair_fields(payload: dict, method: str) -> dict:
     amendment's inline additions (see ``V28_L1_RESPONSE_FIELDS``) are undone here too, so one
     helper serves the union document.
     """
-    carried = json.loads(json.dumps(payload))
+    carried = _without_v29_feedback_fields(json.loads(json.dumps(payload)), method)
     if method == "lesson.page":
         response = carried.get("response", {})
         section = response.get("properties", {}).get("section")
@@ -305,7 +330,7 @@ def _normalise_refresh_refs(payload: dict) -> dict:
 
 
 def _carried_payload(payload: dict, method: str) -> dict:
-    carried = json.loads(json.dumps(payload))
+    carried = _without_v29_feedback_fields(json.loads(json.dumps(payload)), method)
     for field in V8_ADDED_METHOD_FIELDS.get(method, ()):
         carried["response"]["properties"].pop(field, None)
         required = carried["response"].get("required") or []
@@ -4190,6 +4215,7 @@ class V17AmendmentTest(unittest.TestCase):
 
     def test_the_wire_echo_moved_to_the_current_version(self) -> None:
         current = contracts.contract("cb.rpc")
+        version = contracts.WIRE_CONTRACT_VERSION
         echoes = _wire_echoes(current)
         self.assertEqual(len(echoes), 4, echoes)
         for path, value in echoes:
@@ -5425,7 +5451,9 @@ class V29NextStepKindTest(unittest.TestCase):
         sibling_keys = {"check.get": {"assistance"}, "lesson.assist": {"rung"}}
         for method, schema in before.items():
             with self.subTest(method=method):
-                carried = _normalise_refresh_refs(json.loads(json.dumps(after[method])))
+                carried = _without_v29_feedback_fields(
+                    _normalise_refresh_refs(json.loads(json.dumps(after[method]))), method
+                )
                 if method == "health.get":
                     carried["response"]["properties"]["contract_version"]["const"] = 28
                 for key in sibling_keys.get(method, set()):
@@ -5505,6 +5533,157 @@ class V29NextStepKindTest(unittest.TestCase):
             "rpc.v29.json",
             "write_lesson",
             "Write the lesson for",
+            FROZEN_RPC_SHA256["rpc.v28.json"].split(":", 1)[1],
+        ):
+            self.assertIn(needle, text, f"CONTRACTS.md is missing {needle!r}")
+
+
+class V29Up13FeedbackTest(unittest.TestCase):
+    """Upgrade 13: cb.rpc v29 is v28 plus the authored miss block on ``attempt.submit``.
+
+    v28 stays byte-identical history. The block is optional everywhere, so a response from a check
+    that authored no rule is a valid v29 response and keeps its exact v28 shape.
+    """
+
+    def test_v29_is_v28_with_no_method_added(self) -> None:
+        v28 = _document("rpc.v28.json")
+        current = contracts.contract("cb.rpc")
+        self.assertEqual(current["$defs"]["method"]["enum"], v28["$defs"]["method"]["enum"])
+        self.assertEqual(current["x-supersedes"], v28["$id"])
+        self.assertEqual(current["x-contract-version"], 29)
+        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 29)
+
+    def test_only_attempt_submit_gains_the_miss_block(self) -> None:
+        v28 = _document("rpc.v28.json")
+        current = contracts.contract("cb.rpc")
+        before = v28["$defs"]["methods"]["properties"]
+        after = current["$defs"]["methods"]["properties"]
+        self.assertEqual(set(after), set(before), "v29 added or removed a method payload")
+        # The composed v29 also carries UP-14's ladder on two method payloads and UP-36's
+        # cross-document job reference refresh; carry both sibling deltas before comparing.
+        sibling_keys = {"check.get": {"assistance"}, "lesson.assist": {"rung"}}
+        for method, schema in before.items():
+            with self.subTest(method=method):
+                carried = _without_v29_feedback_fields(
+                    _normalise_refresh_refs(json.loads(json.dumps(after[method]))), method
+                )
+                if method == "health.get":
+                    carried["response"]["properties"]["contract_version"]["const"] = 28
+                for key in sibling_keys.get(method, set()):
+                    carried["response"]["properties"].pop(key, None)
+                    request = carried.get("request")
+                    if isinstance(request, dict) and "properties" in request:
+                        request["properties"].pop(key, None)
+                self.assertEqual(
+                    carried,
+                    _normalise_refresh_refs(json.loads(json.dumps(schema))),
+                    f"{method} moved",
+                )
+        response = after["attempt.submit"]["response"]
+        self.assertEqual(
+            set(response["properties"]) - set(before["attempt.submit"]["response"]["properties"]),
+            {"feedback"},
+        )
+        self.assertEqual(
+            set(response["properties"]["criteria"]["items"]["properties"])
+            - set(before["attempt.submit"]["response"]["properties"]["criteria"]["items"]["properties"]),
+            set(V29_FEEDBACK_CRITERION_FIELDS),
+        )
+        # Optional: no new required entry on either record.
+        self.assertEqual(
+            response["required"], before["attempt.submit"]["response"]["required"]
+        )
+        self.assertEqual(
+            response["properties"]["criteria"]["items"]["required"],
+            before["attempt.submit"]["response"]["properties"]["criteria"]["items"]["required"],
+        )
+
+    def test_a_response_without_the_block_is_still_a_valid_v29_response(self) -> None:
+        contracts.validate_response_payload(
+            "attempt.submit",
+            {
+                "attempt_id": "att_00000000000000000000000000000001",
+                "verdict": "not_yet",
+                "evidence_class": "cold",
+                "criteria": [
+                    {"id": "c1", "observed": "outside tolerance by 1.5", "met": False}
+                ],
+                "next_action": "retry_attempt",
+                "revision": 4,
+            },
+        )
+        contracts.validate_response_payload(
+            "attempt.submit",
+            {
+                "attempt_id": "att_00000000000000000000000000000001",
+                "verdict": "not_yet",
+                "evidence_class": "cold",
+                "criteria": [
+                    {
+                        "id": "c1",
+                        "observed": "outside tolerance by 1.5",
+                        "met": False,
+                        "rule": "Read the scale to one decimal place before you compare.",
+                        "next_action": "retry_attempt",
+                        "answer": "41.2",
+                    }
+                ],
+                "next_action": "retry_attempt",
+                "revision": 4,
+                "feedback": {
+                    "rule": "Read the scale to one decimal place before you compare.",
+                    "observed": "outside tolerance by 1.5",
+                    "answer": "41.2",
+                    "next_action": "explain",
+                },
+            },
+        )
+
+    def test_a_miss_cannot_name_a_pass_action(self) -> None:
+        feedback = contracts.method_schema("attempt.submit")["response"]["properties"]["feedback"]
+        self.assertEqual(
+            set(feedback["properties"]["next_action"]["enum"]),
+            {"retry_attempt", "explain", "select_alternative"},
+        )
+        with self.assertRaises(contracts.ContractError):
+            contracts.validate_response_payload(
+                "attempt.submit",
+                {
+                    "attempt_id": "att_00000000000000000000000000000001",
+                    "verdict": "not_yet",
+                    "evidence_class": "cold",
+                    "criteria": [],
+                    "next_action": "retry_attempt",
+                    "revision": 4,
+                    "feedback": {"rule": "A rule.", "next_action": "complete_objective"},
+                },
+            )
+
+    def test_the_v29_file_is_the_derived_delta_not_a_hand_copy(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "derive_rpc_v29_up13", contracts.CONTRACT_DIR.parent / "probes" / "derive_rpc_v29.py"
+        )
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        derived = module.serialise(module.derive(_document("rpc.v28.json")))
+        shipped = (contracts.CONTRACT_DIR / "rpc.v29.json").read_text(encoding="utf-8")
+        self.assertEqual(shipped, derived, "rpc.v29.json drifted from its derivation")
+
+    def test_v29_moves_no_error_code_job_table_or_vocabulary(self) -> None:
+        self.assertEqual(contracts.contract_version("cb.errors"), 4)
+        self.assertEqual(contracts.contract_version("cb.jobs"), 6)
+        self.assertEqual(contracts.contract_version("cb.db"), 15)
+        self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
+        self.assertEqual(contracts.audit_contracts(), [])
+
+    def test_docs_publish_the_v29_delta(self) -> None:
+        text = (contracts.CONTRACT_DIR.parent / "docs" / "CONTRACTS.md").read_text(encoding="utf-8")
+        for needle in (
+            "v29 delta (Upgrade 13)",
+            "rpc.v29.json",
+            "select_alternative",
+            "reference_json.feedback",
             FROZEN_RPC_SHA256["rpc.v28.json"].split(":", 1)[1],
         ):
             self.assertIn(needle, text, f"CONTRACTS.md is missing {needle!r}")
@@ -5731,10 +5910,11 @@ class V29Upgrade36RefreshTest(unittest.TestCase):
             return normalised
 
         # One contract version carries every additive change shipped together, so the merged v29 is
-        # the composition of this card (a reference refresh) and the wave's other deltas. Only two
+        # the composition of this card (a reference refresh) and the wave's other deltas. Only three
         # method payloads are retyped inline by a sibling (UP-14's `check.get.assistance` and
-        # `lesson.assist`'s optional `rung`); every other method payload must be carried exactly.
-        sibling_retyped = {"check.get", "lesson.assist"}
+        # `lesson.assist`'s optional `rung`, upgrade 13's `attempt.submit` miss block); every other
+        # method payload must be carried exactly.
+        sibling_retyped = {"check.get", "lesson.assist", "attempt.submit"}
         for method, schema in v28["$defs"]["methods"]["properties"].items():
             if method in sibling_retyped:
                 continue

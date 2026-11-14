@@ -3866,6 +3866,21 @@ LESSON_SCHEMA: dict[str, Any] = {
                     },
                 },
                 "reference_answer": {"type": "string", "minLength": 1, "maxLength": 600},
+                # Upgrade 13: the rule this check tests, authored with the check so a miss can name
+                # it. One rule for the whole check: a per-group variant was withdrawn because a
+                # wrong answer is no evidence of which accepted form the learner aimed at.
+                "feedback": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["rule"],
+                    "properties": {
+                        "rule": {"type": "string", "minLength": 8, "maxLength": 240},
+                        "next_action": {
+                            "type": "string",
+                            "enum": ["retry_attempt", "explain", "select_alternative"],
+                        },
+                    },
+                },
                 "assistance_policy": {
                     "type": "object",
                     "additionalProperties": False,
@@ -6356,6 +6371,20 @@ def _lesson_instructions(
         "the shift', not 'Introduction', 'Overview', 'Key points' or 'Summary'). A heading that "
         "would fit any lesson is refused.",
         "Include exactly one check.",
+        # Upgrade 13: a miss must be able to name the rule. The block is required only by the
+        # authoring instructions (the schema key stays optional so an older stored check still
+        # reads), sealed against the accepted answers, and never generated at grading time.
+        "Every check names the rule it tests in check.feedback.rule: one sentence (at most 240 "
+        "characters) that says what has to hold for the answer to be right, in words a learner "
+        "can act on — e.g. 'Read the scale to one decimal place before comparing.' A rule that "
+        "restates the reference answer or an accepted answer is refused, because a learner who "
+        "reads it can copy the graded response and the retry becomes a copying task, so name the "
+        "rule, never the answer. One rule covers the whole check: do not write a separate rule per "
+        "accepted answer or per accepted-answer group, because a wrong answer says nothing about "
+        "which of them the learner was reaching for, so a per-group rule is refused as a guess. "
+        "check.feedback.next_action, when present, is 'retry_attempt', 'explain' or "
+        "'select_alternative' — never an action that grants access, because a wrong answer does "
+        "not.",
         "Every segment, the worked example and the learner explanation also carries a 'short'. Each "
         "short is the same material cut down for a one-block-at-a-time view: keep only what the "
         "learner needs at that step, drop steps, asides and repetition, stay under 600 characters, "
@@ -16085,6 +16114,44 @@ def _accepted_forms(check: dict[str, Any]) -> list[str]:
     return forms
 
 
+def _authored_feedback(check: dict[str, Any]) -> dict[str, Any] | None:
+    """The check's authored miss block, sealed, or ``None`` when it cannot be shipped.
+
+    Upgrade 13: a check names the rule it tests, so a miss can say which rule was missed instead of
+    printing ``does not match an accepted answer``. The block is sealed by
+    ``validators.seal_reference`` like every other part of the reference: a rule that restates an
+    accepted answer, or a miss that names a pass action, is refused there.
+
+    One rule per check, not one per accepted-answer group: ``accepted_alternatives`` groups are
+    variant forms of *one* accepted answer (kana beside romaji), and a wrong answer is no evidence
+    of which form the learner aimed at, so a per-group rule would be a guess. The seal refuses one
+    outright, which is why this path never stores a ``groups`` key.
+
+    A rule that fails the seal is **dropped, not repaired**. Repairing it would print a rule the
+    author did not write, and a leaky rule turns the retry into a copy task — the exact regression
+    this upgrade's adversarial note names. A check without a rule still grades deterministically;
+    it just says nothing it does not know.
+    """
+    authored = check.get("feedback")
+    if not isinstance(authored, dict) or not authored:
+        return None
+    if str(check.get("kind") or "quiz") == "observation":
+        return None
+    if str((check.get("stimulus") or {}).get("format") or "text") == "verification":
+        return None
+    try:
+        # Sealed against the check's real accepted forms, so the leak guard is the real one: a rule
+        # that restates the answer this check keys is refused here.
+        validators.seal_reference({
+            "kind": "exact",
+            "answers": _accepted_forms(check) or ["unused"],
+            "feedback": authored,
+        })
+    except validators.ReferenceSpecError:
+        return None
+    return dict(authored)
+
+
 def _reference_payload(check: dict[str, Any]) -> dict[str, Any]:
     """Build the stored reference with an explicit grading lane.
 
@@ -16108,9 +16175,11 @@ def _reference_payload(check: dict[str, Any]) -> dict[str, Any]:
     stimulus_format = str((check.get("stimulus") or {}).get("format") or "text")
     if kind == "observation" or stimulus_format == "verification":
         return validators.seal_reference({"kind": "rubric_only", **legacy})
-    return validators.seal_reference(
-        {"kind": "exact", "answers": _accepted_forms(check), **legacy}
-    )
+    reference = {"kind": "exact", "answers": _accepted_forms(check), **legacy}
+    feedback = _authored_feedback(check)
+    if feedback is not None:
+        reference["feedback"] = feedback
+    return validators.seal_reference(reference)
 
 
 def _plan_has_practice(connection, plan_id: str) -> bool:
