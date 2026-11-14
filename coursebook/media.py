@@ -71,6 +71,11 @@ MAX_PREVIEW_BYTES = 4 * 1024 * 1024
 MAX_MEDIA_PER_LESSON = 4
 MAX_MEDIA_PER_JOB = 12
 
+#: The learner-facing reason for a figure the host could not even attempt. It names the missing
+#: host capability, not a failed generation: on a bare development profile nothing was tried, so
+#: "generation failed" would be a false account of what happened.
+UNHOSTED_MEDIA_REASON = "no media provider is bound in this host"
+
 #: Lesson states whose page may generate media. ``validated`` is an independent pass;
 #: ``model_assessed`` is a readable page that only the author's own model assessed, so its media is
 #: content, never evidence, and the page-level provenance warning travels with it. ``needs_review``
@@ -1261,18 +1266,21 @@ def _flag_sourced_reference(
 def _flag_unhosted_sourced_references(
     connection: Any, lesson_ids: Sequence[str], *, now: datetime | None = None
 ) -> MediaGenerationSummary:
-    """Flag cited references when no media provider is bound.
+    """Record every media item no host could attempt, including cited references.
 
-    A host without ``dispatch_tool`` cannot produce an illustration or a narration, and skipping
-    those is the old-host and bare-test behaviour. A cited reference is different: it never needed
-    a provider, so a required one is still recorded as ``media_incomplete`` rather than shipping
-    as an ordinary text-only lesson.
+    A host without ``dispatch_tool`` cannot produce an illustration or a narration. Leaving those
+    items with ``degraded: false`` and no reason made an unattempted figure indistinguishable from
+    a lesson authored without media, so every item that carries no artifact and no named degraded
+    state now keeps its text equivalent and records :data:`UNHOSTED_MEDIA_REASON`. The learner
+    reads that this host cannot draw figures, never that generation failed.
+
+    A cited reference is still different: it never needed a provider, so a required one is
+    recorded as ``media_incomplete`` (and an optional one as ``degraded``) with a reason naming the
+    source it lacks, rather than the host-capability reason.
     """
     summary = MediaGenerationSummary(artifact_ids=[], usage=[])
     for row in _lesson_rows(connection, lesson_ids):
-        if str(row.get("state")) not in MEDIA_ELIGIBLE_LESSON_STATES:
-            summary.skipped += 1
-            continue
+        eligible = str(row.get("state")) in MEDIA_ELIGIBLE_LESSON_STATES
         try:
             items = json.loads(row.get("media_json") or "[]")
         except (TypeError, ValueError):
@@ -1280,24 +1288,48 @@ def _flag_unhosted_sourced_references(
         if not isinstance(items, list) or not items:
             summary.skipped += 1
             continue
-        flagged = False
+        changed = False
+        degraded = 0
         for item in items:
             if not isinstance(item, dict) or item.get("artifact_id"):
                 continue
-            if str(item.get("role") or "") != "sourced_technical":
+            role = str(item.get("role") or "")
+            if role == "sourced_technical":
+                try:
+                    spec = _media_spec(item)
+                    artifacts.assert_media_ok(spec)
+                except Exception as exc:  # noqa: BLE001 - an invalid spec is a text-only item
+                    _flag_invalid_spec(item, row, exc, summary)
+                else:
+                    _flag_sourced_reference(item, spec, row, summary)
+                changed = True
                 continue
-            try:
-                spec = _media_spec(item)
-                artifacts.assert_media_ok(spec)
-            except Exception as exc:  # noqa: BLE001 - an invalid spec is a text-only item
-                _flag_invalid_spec(item, row, exc, summary)
-                flagged = True
+            if str(item.get("media_status") or "") in (
+                artifacts.MEDIA_STATE_DEGRADED,
+                artifacts.MEDIA_STATE_INCOMPLETE,
+            ):
                 continue
-            _flag_sourced_reference(item, spec, row, summary)
-            flagged = True
-        if not flagged:
+            item.update(
+                {
+                    # The text equivalent is what the learner gets, so the renderer's fallback
+                    # flag is true; the named state and the reason say why there is no figure.
+                    "degraded": True,
+                    "media_status": artifacts.MEDIA_STATE_DEGRADED,
+                    "reason": UNHOSTED_MEDIA_REASON,
+                    "missing": None,
+                }
+            )
+            degraded += 1
+            changed = True
+        if not changed:
             summary.skipped += 1
             continue
+        if eligible:
+            summary.degraded += degraded
+        else:
+            # A page a learner cannot open still gets the honest record, but the run counts the
+            # lesson as skipped rather than claiming a served item was degraded.
+            summary.skipped += 1
         with db.transaction() as write:
             write.execute(
                 "UPDATE gen_lessons SET media_json = ?, updated_at = ? WHERE id = ?",
