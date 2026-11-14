@@ -4531,6 +4531,9 @@ def _stimulus_view(stored: Any) -> dict[str, Any]:
         "learner_instructions": str(instructions)[:400] if isinstance(instructions, str) else None,
         "items": items,
         "practice": _practice_view(stored.get("practice")),
+        # UP-14: the authored assistance policy reaches the pane. Rung labels only; a rung's text
+        # is returned by the recorded `lesson.assist` press that reveals it.
+        "assistance_policy": _assistance_policy_view(stored.get("assistance_policy")),
     }
 
 
@@ -4547,6 +4550,115 @@ def _practice_view(stored: Any) -> dict[str, Any] | None:
         return practice.visible_view(stored)
     except Exception:  # noqa: BLE001 - an unreadable declaration projects as absent, never as a key
         return None
+
+
+#: The authored assistance ladder (UP-14). Order is reveal order: a nudge may still need a later
+#: cold pass on a fresh item, a cue narrows the search, and the worked step is the strongest help.
+HINT_RUNG_KINDS: tuple[str, ...] = ("nudge", "cue", "worked_step")
+HINT_RUNG_LABELS: dict[str, str] = {
+    "nudge": "Nudge",
+    "cue": "Cue",
+    "worked_step": "Worked step",
+}
+HINT_RUNG_TEXT_LIMIT = 400
+HINT_LADDER_LIMIT = 3
+
+
+def _hint_ladder(stored: Any) -> list[dict[str, str]]:
+    """The authored ladder, validated on read: order preserved, text bounded, unknown dropped.
+
+    A malformed rung is dropped rather than replaced. The ladder is author coaching, not an answer
+    key, but an unrecognised stored key still never reaches the pane through a projection.
+    """
+    if not isinstance(stored, dict):
+        return []
+    policy = stored.get("assistance_policy")
+    if not isinstance(policy, Mapping):
+        return []
+    raw = policy.get("ladder")
+    if not isinstance(raw, list):
+        return []
+    rungs: list[dict[str, str]] = []
+    for item in raw[:HINT_LADDER_LIMIT]:
+        if not isinstance(item, Mapping):
+            continue
+        kind = item.get("kind")
+        text = item.get("text")
+        if kind not in HINT_RUNG_KINDS or not isinstance(text, str) or not text.strip():
+            continue
+        rungs.append(
+            {
+                "kind": str(kind),
+                "label": HINT_RUNG_LABELS[str(kind)],
+                "text": text.strip()[:HINT_RUNG_TEXT_LIMIT],
+            }
+        )
+    return rungs
+
+
+def _assistance_policy_view(stored: Any) -> dict[str, Any] | None:
+    """The authored policy as the pane may read it: the gate and the rung labels, never rung text.
+
+    A rung is revealed by a recorded ``lesson.assist`` press, so ``check.get`` carries what the
+    pane needs to offer one rung at a time without serving the ladder as a block of prose.
+    """
+    if not isinstance(stored, Mapping):
+        return None
+    hint = stored.get("hint")
+    hint = hint if hint in ("available", "after_attempt", "none") else "none"
+    marks = stored.get("answer_marks_evidence_class")
+    marks = marks if marks in ("answer_shown", "hinted", "none") else "hinted"
+    ladder = _hint_ladder({"assistance_policy": stored})
+    return {
+        "hint": hint,
+        "answer_marks_evidence_class": marks,
+        "ladder": [{"kind": rung["kind"], "label": rung["label"]} for rung in ladder],
+    }
+
+
+def _unconsumed_assists(connection, enrollment_id: str, objective_id: str) -> int:
+    """Assist events recorded for this objective that no committed attempt has consumed yet.
+
+    The count is the ladder cursor: each recorded press adds one event, and ``attempt.submit``
+    links them to the attempt it contaminated. A fresh attempt therefore starts the ladder over,
+    which is what "a later cold pass on a fresh item" requires.
+    """
+    row = _row(
+        connection,
+        "SELECT COUNT(*) AS n FROM evidence WHERE enrollment_id = ? AND objective_id = ?"
+        " AND attempt_id IS NULL AND kind IN ('hint_request', 'answer_shown')",
+        (enrollment_id, objective_id),
+    )
+    return int(row["n"] if row else 0)
+
+
+def _assistance_view(stored: Any, attempt_count: int, used: int) -> dict[str, Any]:
+    """The check's authored assistance as of this read: gate, rungs, cursor and next rung.
+
+    ``policy`` is the authored gate, defaulting to ``none`` when no policy was authored: the honest
+    reading of an undeclared hint is that there is none. ``available`` says whether the gate is open
+    for this attempt (``after_attempt`` needs one committed answer). ``next_rung`` is the only rung
+    the pane may ask for, so a press cannot skip to the answer by naming a later index.
+    """
+    policy = stored.get("assistance_policy") if isinstance(stored, Mapping) else None
+    hint = "none"
+    if isinstance(policy, Mapping):
+        declared = policy.get("hint")
+        if declared in ("available", "after_attempt", "none"):
+            hint = declared
+    ladder = _hint_ladder(stored)
+    available = hint == "available" or (hint == "after_attempt" and int(attempt_count) > 0)
+    used = max(0, min(int(used), len(ladder)))
+    next_rung = used if available and ladder and used < len(ladder) else None
+    return {
+        "policy": hint,
+        "available": bool(available),
+        "rungs": [{"kind": rung["kind"], "label": rung["label"]} for rung in ladder],
+        "used": used,
+        "next_rung": next_rung,
+        "total": len(ladder),
+    }
+
 
 
 @_handler("course.outline")
@@ -4794,6 +4906,8 @@ def check_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, d
                 (enrollment_id, check["id"]),
             )["n"]
         )
+        stimulus_stored = _json_load(check["stimulus_json"], {})
+        used_rungs = _unconsumed_assists(connection, enrollment_id, objective["id"])
     return 0, {
         "check_id": check["id"],
         "objective_id": objective["id"],
@@ -4801,8 +4915,11 @@ def check_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, d
         "evidence_target": check["evidence_target"],
         "state": check["state"],
         "audit_state": check["audit_state"],
-        "stimulus": _stimulus_view(_json_load(check["stimulus_json"], {})),
+        "stimulus": _stimulus_view(stimulus_stored),
         "attempt_count": attempt_count,
+        # UP-14: the gate, the authored rungs and which one the next recorded press reveals. A
+        # v28 client that ignores this key still sees the v28 shape.
+        "assistance": _assistance_view(stimulus_stored, attempt_count, used_rungs),
         "revisit": bool(check["revisit"]),
     }
 
@@ -4824,6 +4941,14 @@ def lesson_assist(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[in
     enrollment_id = payload["enrollment_id"]
     objective_id = payload["objective_id"]
     kind = payload["kind"]
+    requested_rung = payload.get("rung")
+    if requested_rung is not None and (
+        isinstance(requested_rung, bool) or not isinstance(requested_rung, int)
+    ):
+        raise RpcError.of(
+            "VALIDATION_FAILED", "a hint rung must be a whole number.",
+            field="rung", reason="invalid_hint_rung",
+        )
     evidence_class = evidence.ASSIST_CLASSES[kind]
     with db.transaction() as connection:
         replay = _idempotent_lookup(connection, key, method, payload_hash)
@@ -4838,7 +4963,7 @@ def lesson_assist(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[in
         _objective_in_plan(connection, objective_id, plan["id"])
         open_check = _row(
             connection,
-            "SELECT id FROM checks WHERE objective_id = ? AND state = 'open'"
+            "SELECT * FROM checks WHERE objective_id = ? AND state = 'open'"
             " ORDER BY version DESC LIMIT 1",
             (objective_id,),
         )
@@ -4846,6 +4971,82 @@ def lesson_assist(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[in
             raise RpcError.of(
                 "VALIDATION_FAILED", "there is no open check to assist.", reason="no_open_check"
             )
+        # UP-14: the ladder is server-ordered. A press names the rung `check.get` reported as
+        # next; any other index would let a client skip straight to the worked step, and an
+        # authored `none` policy must not quietly accept a binary hint either.
+        stimulus_stored = _json_load(open_check["stimulus_json"], {})
+        authored_policy = isinstance(stimulus_stored.get("assistance_policy"), Mapping)
+        assistance = _assistance_view(
+            stimulus_stored,
+            _attempt_rows_before(connection, enrollment["id"], str(open_check["id"])),
+            _unconsumed_assists(connection, enrollment["id"], str(objective_id)),
+        )
+        ladder = _hint_ladder(stimulus_stored)
+        revealed: dict[str, Any] | None = None
+        if authored_policy and kind == "hint_request":
+            if assistance["policy"] == "none":
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    "this check authored no hint.", reason="hint_policy_none",
+                )
+            if not assistance["available"]:
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    "the hint opens after the first attempt on this check.",
+                    reason="hint_not_available",
+                )
+            # A laddered check is revealed one rung at a time; the binary hint would skip the
+            # authored order, so a client that knows the check has a ladder must name the rung.
+            if ladder and requested_rung is None:
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    "this check reveals its hint one rung at a time.",
+                    reason="hint_rung_required",
+                )
+        if requested_rung is not None:
+            if not authored_policy or assistance["policy"] == "none":
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    "this check authored no hint.", reason="hint_policy_none",
+                )
+            if not ladder:
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    "this check authored no hint ladder.", reason="no_hint_ladder",
+                )
+            if not assistance["available"]:
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    "the hint opens after the first attempt on this check.",
+                    reason="hint_not_available",
+                )
+            expected_rung = assistance["next_rung"]
+            if expected_rung is None:
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    "every authored hint rung has been used for this attempt.",
+                    reason="no_hint_rung_remaining",
+                )
+            if int(requested_rung) != int(expected_rung):
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    "hints reveal one rung at a time, in the authored order.",
+                    field="rung", reason="hint_rung_out_of_order",
+                    expected_rung=int(expected_rung),
+                )
+            rung = ladder[int(requested_rung)]
+            last = int(requested_rung) == len(ladder) - 1
+            # The strongest authored rung carries the existing full penalty; every earlier rung
+            # records the existing `hinted` class. No new evidence class enters the vocabulary.
+            kind = "answer_shown" if last else "hint_request"
+            evidence_class = evidence.ASSIST_CLASSES[kind]
+            revealed = {
+                "index": int(requested_rung),
+                "kind": rung["kind"],
+                "label": rung["label"],
+                "text": rung["text"],
+                "last": last,
+            }
         _binding_refusal(connection, enrollment["id"], str(objective_id))
         to_revision = _bump_enrollment(connection, enrollment_id, expected)
         event_id = evidence.record_assist(
@@ -4861,6 +5062,7 @@ def lesson_assist(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[in
             "kind": kind,
             "evidence_class": evidence_class,
             "revision": to_revision,
+            "rung": revealed,
         }
         _remember(
             connection, key, method, payload_hash, envelope.get("operation_id", ""), to_revision, result
