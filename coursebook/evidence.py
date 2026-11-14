@@ -203,11 +203,44 @@ def layer2(connection, enrollment_id: str, *, objective_id: str | None = None) -
     return {"enrollment_id": enrollment_id, "objective_id": objective_id, "objectives": items}
 
 
+def _practice_only_objective_ids(connection, enrollment_id: str) -> set[str]:
+    """The objectives whose only possible evidence is a self-report (see ``domain``).
+
+    Reads the same predicate the progress count filters on — the target list lives in
+    ``generation.SELF_REPORT_ONLY_TARGETS`` and a declared verified lane (a hidden conversation
+    practice) takes an objective out of it — so the recommendation below cannot ask for evidence
+    that this build is incapable of recording.
+    """
+
+    from . import domain
+
+    practice_sql, params = domain._practice_only_objective_sql("o")
+    if not params:
+        return set()
+    enrollment = connection.execute(
+        "SELECT course_id FROM enrollments WHERE id = ?", (enrollment_id,)
+    ).fetchone()
+    if enrollment is None:
+        return set()
+    rows = connection.execute(
+        "SELECT o.id AS id FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
+        " WHERE pl.course_id = ? AND pl.state = 'approved' AND" + practice_sql,
+        (enrollment["course_id"], *params),
+    ).fetchall()
+    return {str(row["id"]) for row in rows}
+
+
 def layer3(connection, enrollment_id: str, *, cap: int = 3) -> dict[str, Any]:
     """Short, revisable recommendations derived from L2. Not a persona; not a diagnosis."""
     l2 = layer2(connection, enrollment_id)
+    practice_only = _practice_only_objective_ids(connection, enrollment_id)
     recommendations: list[dict[str, Any]] = []
-    unproven = [o for o in l2["objectives"] if not o["independent"]]
+    # A practice-only objective can never hold independent evidence, so asking for it is the same
+    # permanent shortfall the progress count no longer reports. Its practice is still in L1.
+    unproven = [
+        o for o in l2["objectives"]
+        if not o["independent"] and str(o["objective_id"]) not in practice_only
+    ]
     if unproven:
         recommendations.append({
             "kind": "needs_independent_evidence",
@@ -227,12 +260,23 @@ def layer3(connection, enrollment_id: str, *, cap: int = 3) -> dict[str, Any]:
             "basis": "layer2.attempt_classes has hinted and no cold",
         })
     if not recommendations:
-        recommendations.append({
-            "kind": "on_track",
-            "text": "Every objective has at least one cold independent result. Keep the review queue honest.",
-            "objective_ids": [],
-            "basis": "layer2.independent == true for all objectives",
-        })
+        if practice_only:
+            recommendations.append({
+                "kind": "on_track",
+                "text": (
+                    "Every section that can hold independent evidence has a cold result. "
+                    f"{len(practice_only)} practice section(s) are recorded and not counted as evidence."
+                ),
+                "objective_ids": [],
+                "basis": "no evidence-bearing objective is unproven; practice-only objectives excluded",
+            })
+        else:
+            recommendations.append({
+                "kind": "on_track",
+                "text": "Every objective has at least one cold independent result. Keep the review queue honest.",
+                "objective_ids": [],
+                "basis": "layer2.independent == true for all objectives",
+            })
     return {
         "enrollment_id": enrollment_id,
         "recommendations": recommendations[: max(0, int(cap))],

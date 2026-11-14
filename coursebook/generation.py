@@ -572,6 +572,36 @@ CHECK_KIND_BY_TARGET: dict[str, tuple[str, ...]] = {
     "transfer": ("verification", "observation"),
 }
 
+#: Evidence targets whose authored check reports on the learner instead of measuring them.
+#:
+#: ``procedure``: a performance is authored as a checklist (kind ``verification``) or, in a parent
+#: course, as an observation. Both are provider-free membership lanes — ``grading.grade_confirmation``
+#: stamps ``evidence_class = "self_reported"`` and ``domain._commit_attempt`` writes a layer-2 row
+#: only for a ``cold`` pass — so neither can ever reach ``independent_evidence``. The two things
+#: that could honestly verify the act are both unavailable here: a quiz about a performance is
+#: refused (rule 5b — it measures talk, not the act) and the recorded-take medium with a configured
+#: assessor is not implemented.
+#:
+#: ``production``: authored the same way (a tick-list or an observation) unless the check declares a
+#: **conversation practice** — the one production lane in this build that grades a performance
+#: provider-free from the stored transcript and can reach layer 2 (``docs/CONVERSATION-PRACTICE.md``).
+#: A production check without one, or one whose practice showed its targets, is a self-report too.
+#:
+#: An objective on these targets is therefore counted as **practice**, not as progress, unless a
+#: verified lane is declared with its check (see ``domain._practice_only_objective_sql``). The
+#: lesson still teaches the act and the tick-list still records the learner's own report as
+#: layer-1 evidence; the objective stops being a permanently-unfinished section in
+#: ``sections_done`` / ``sections_total``. Adding a verified lane for procedure means removing it
+#: from this tuple in the same change; ``tests/test_upgrade_production_progress.py`` fails if the
+#: count and this decision drift apart.
+SELF_REPORT_ONLY_TARGETS: tuple[str, ...] = ("production", "procedure")
+
+
+def is_self_report_only_target(target: str | None) -> bool:
+    """True when this target's authored check reports on the learner instead of measuring them."""
+
+    return str(target or "").strip().lower() in SELF_REPORT_ONLY_TARGETS
+
 # A course size implies a default authoring recipe. ``one_off`` is the exception: it is the
 # single-lesson shape and is only legal under scope "single". When a caller pairs it with a
 # larger size the pair is rewritten to the size's default instead of being refused, because a
