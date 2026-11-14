@@ -22,13 +22,14 @@ from __future__ import annotations
 import base64
 import binascii
 import hashlib
+import io
 import json
 import re
 import unicodedata
 import uuid
 import zipfile
 from datetime import datetime, timezone
-from typing import Any, Iterable
+from typing import Any, Iterable, Sequence
 from xml.etree import ElementTree
 
 from . import api, db, job_service
@@ -167,6 +168,105 @@ def _pdf_module() -> Any | None:
         return pypdf
     except Exception:  # noqa: BLE001 - absence is a typed refusal, not a crash
         return None
+
+
+def _pdfplumber_module() -> Any | None:
+    """``pdfplumber`` for table/word geometry. Optional: absence falls back to pypdf page text."""
+    try:  # optional declared dependency
+        import pdfplumber  # type: ignore
+
+        return pdfplumber
+    except Exception:  # noqa: BLE001 - absence degrades the extraction, it does not refuse the file
+        return None
+
+
+def _inside(word: dict[str, Any], bbox: Sequence[float]) -> bool:
+    """Whether a word's centre sits inside a table's ``(x0, top, x1, bottom)`` box."""
+    x0, top, x1, bottom = bbox
+    centre_x = (float(word["x0"]) + float(word["x1"])) / 2
+    centre_y = (float(word["top"]) + float(word["bottom"])) / 2
+    return x0 <= centre_x <= x1 and top <= centre_y <= bottom
+
+
+def _pdf_page_blocks(page: Any, index: int) -> list[dict[str, Any]]:
+    """Blocks for one PDF page, table rows kept as rows.
+
+    A weekly schedule is a grid. ``pypdf``'s flat ``extract_text`` returns its cells in content
+    order, so "Week 3" and "Chapter 4" arrive as unrelated lines and the parse cannot say which
+    reading belongs to which week. ``pdfplumber`` gives each row's cells together with the row's
+    box, so a row becomes one tab-separated block, and prose outside every table keeps its line
+    structure. Blocks are ordered by their position on the page, not by extraction order.
+    """
+    blocks: list[dict[str, Any]] = []
+    tables = page.find_tables()
+    occupied = [table.bbox for table in tables]
+    for table_index, table in enumerate(tables, start=1):
+        row_objects = list(getattr(table, "rows", []) or [])
+        for row_index, cells_row in enumerate(table.extract() or []):
+            cells = [_norm_space(str(cell or "")) for cell in (cells_row or [])]
+            if len([cell for cell in cells if cell]) < 2:
+                continue
+            row_box = row_objects[row_index].bbox if row_index < len(row_objects) else table.bbox
+            blocks.append({
+                "kind": "table_row",
+                "label": f"Page {index} · table {table_index}",
+                "page": index,
+                "line_start": None,
+                "line_end": None,
+                "text": "\t".join(cells).strip(),
+                "_order": (float(row_box[1]), float(row_box[0])),
+            })
+    lines: dict[float, list[dict[str, Any]]] = {}
+    for word in page.extract_words() or []:
+        if any(_inside(word, bbox) for bbox in occupied):
+            continue
+        lines.setdefault(round(float(word["top"]), 0), []).append(word)
+    for top in sorted(lines):
+        text = " ".join(str(word["text"]) for word in sorted(lines[top], key=lambda item: float(item["x0"])))
+        if not text.strip():
+            continue
+        blocks.append({
+            "kind": "page",
+            "label": f"Page {index}",
+            "page": index,
+            "line_start": None,
+            "line_end": None,
+            "text": text,
+            "_order": (float(top), 0.0),
+        })
+    blocks.sort(key=lambda block: block["_order"])
+    for block in blocks:
+        block.pop("_order", None)
+    return blocks
+
+
+def _pdf_geometry_blocks(data: bytes) -> list[dict[str, Any]] | None:
+    """Anchor blocks from ``pdfplumber`` geometry, or ``None`` when it is absent or cannot read.
+
+    Absence is not a refusal: the file still parses through ``_pdf_pages``' pypdf text, which is
+    what shipped before this path existed. A page cap still applies, and a cap hit is the same
+    typed refusal as before rather than a silent fallback.
+    """
+    module = _pdfplumber_module()
+    if module is None:
+        return None
+    try:
+        with module.open(io.BytesIO(data)) as pdf:
+            if len(pdf.pages) > MAX_PDF_PAGES:
+                raise SyllabusRefused(
+                    "SYLLABUS_REJECTED",
+                    f"the PDF has {len(pdf.pages)} pages; the cap is {MAX_PDF_PAGES}.",
+                    reason="too_many_pages",
+                    pages=len(pdf.pages),
+                )
+            blocks: list[dict[str, Any]] = []
+            for index, page in enumerate(pdf.pages, start=1):
+                blocks.extend(_pdf_page_blocks(page, index))
+    except SyllabusRefused:
+        raise
+    except Exception:  # noqa: BLE001 - a geometry failure degrades to the flat text path
+        return None
+    return [block for block in blocks if block["text"].strip()] or None
 
 
 def _pdf_pages(data: bytes) -> list[str]:
@@ -360,6 +460,12 @@ def _validate_intake(payload: dict[str, Any]) -> dict[str, Any]:
 def extract_blocks(source_kind: str, raw: bytes) -> list[dict[str, Any]]:
     """Extract anchor blocks. Extraction never interprets and never follows a link."""
     if source_kind == "pdf":
+        # Geometry first: a schedule printed as a table stays a table, so a row's cells keep their
+        # relationship. pypdf's flat page text is the fallback when pdfplumber is not installed or
+        # cannot read this file, which is exactly the behaviour that shipped before.
+        geometry_blocks = _pdf_geometry_blocks(raw)
+        if geometry_blocks is not None:
+            return geometry_blocks
         return [
             {"kind": "page", "label": f"Page {index}", "page": index, "line_start": None, "line_end": None,
              "text": text}
@@ -682,7 +788,10 @@ def _week_heading(text: str) -> tuple[int, str, str] | None:
     if not match:
         return None
     label = f"{match.group(1).title()} {match.group(2)}"
-    topic = match.group(3).strip()
+    # A table row keeps its cells tab-separated (``syllabus._pdf_page_blocks``): the first cell is
+    # the week, the next one is its topic, and any further cells (readings, assessments) stay on the
+    # row for the reading and assessment readers rather than being glued onto the topic.
+    topic = match.group(3).strip().split("\t")[0].strip()
     return int(match.group(2)), label, topic
 
 
@@ -720,7 +829,15 @@ def _assessment_item(assessment: dict[str, Any]) -> dict[str, Any]:
 
 def _assessments_in(block: dict[str, Any], week_ordinal: int | None) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
+    # A table row arrives with its cells tab-separated; analyse each cell on its own so a row's
+    # "Quiz 1 (5%)" cell is the assessment title instead of the whole row being swallowed as one.
+    lines: list[str] = []
     for line in block["text"].splitlines():
+        if "\t" in line:
+            lines.extend(cell.strip() for cell in line.split("\t"))
+        else:
+            lines.append(line)
+    for line in lines:
         stripped = line.strip()
         if len(stripped) < 5 or stripped.startswith("#"):
             continue
