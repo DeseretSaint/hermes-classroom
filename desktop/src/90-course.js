@@ -4200,7 +4200,7 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
     })
   } else if (view === 'plan') {
     body = jsx(LearnerPlanView, {
-      course: { course_id: row.course_id, enrollment_id: row.enrollment_id, title: row.title },
+      course: { course_id: row.course_id, enrollment_id: row.enrollment_id, title: row.title, goal: row.goal },
       revision,
       onRevision: setRevision,
       implemented,

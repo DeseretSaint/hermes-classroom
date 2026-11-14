@@ -271,7 +271,7 @@ const approvedBook = {
     sections: []
   }
 }
-const render = async (book) => {
+const render = async (book, extra = {}) => {
   await act(async () => {
     root.render(
       React.createElement(mod.StudioPlanView, {
@@ -297,7 +297,8 @@ const render = async (book) => {
         syllabusGate: null,
         review: null,
         onOpenReview: () => {},
-        onDirtyChange: () => {}
+        onDirtyChange: () => {},
+        ...extra
       })
     )
   })
@@ -331,6 +332,31 @@ out.after.primaryLabels = primaries().map(text)
 await render(approvedBook)
 out.approved.askForChange = Boolean(byText('Ask for a change'))
 out.approved.adjust = Boolean(byText('Adjust this plan'))
+
+// UP-5: the plan header restates the goal. The learner route finds the plan job by enrolment and
+// hands this panel its brief; that brief is the exact goal the planner ran, composed with the
+// learner's proof sentence. The header must show both, without folding one into the other and
+// without dropping the version line it already carried.
+const GOAL_TEXT = 'Order at a counter without switching to English, and ask for the bill politely.'
+const PROOF_TEXT = 'Hold a two-minute order with the shopkeeper.'
+const headerJob = {
+  job_id: 'job_0123456789abcdef',
+  kind: 'plan',
+  state: 'completed',
+  brief: {
+    stage: 'plan',
+    goal: `${GOAL_TEXT}\n\nWhen this course is done I want to be able to: ${PROOF_TEXT}`
+  }
+}
+await render(draftBook, { planJob: headerJob })
+const goalNode = container.querySelector('[data-cb-plan-goal]')
+const proofNode = container.querySelector('[data-cb-plan-proof]')
+out.header = {
+  goal: goalNode ? goalNode.textContent.trim() : null,
+  proof: proofNode ? text(proofNode) : null,
+  clamp: goalNode ? goalNode.style.webkitLineClamp || null : null,
+  text: text(container)
+}
 
 // The clock really ticks: mount the wait panel with a running job and read the clock twice.
 await act(async () => {
@@ -550,6 +576,27 @@ class LearnerPlanAdjust(unittest.TestCase):
         approved = self.out["approved"]
         self.assertTrue(approved["askForChange"], "an approved learner plan must offer Ask for a change")
         self.assertFalse(approved["adjust"], "an approved plan is changed by a new version, not edited in place")
+
+    def test_the_plan_header_restates_the_goal(self) -> None:
+        """The gate names the version; it must also name the intent that version serves.
+
+        `Plan draft · v1` plus a truncated hash told a learner which bytes they were approving and
+        never what those bytes were for. The plan job's brief is the goal the planner actually ran
+        (composed with the learner's own proof sentence), so the header restates both, exactly.
+        """
+        header = self.out["header"]
+        goal = "Order at a counter without switching to English, and ask for the bill politely."
+        proof = "Hold a two-minute order with the shopkeeper."
+        self.assertEqual(header["goal"], goal, "the exact goal, not a paraphrase")
+        self.assertIn(goal, header["text"], "the goal is readable on the approval gate")
+        # The proof travels inside the brief; the header names it as the proof, not as the goal.
+        self.assertEqual(header["proof"], f"Proof: {proof}")
+        # Two lines are the layout's ceiling; the sentence is never cut in the source.
+        self.assertEqual(header["clamp"], "2")
+        # The header keeps what it already said: the state and the version digest are not replaced
+        # by the intent.
+        self.assertIn("plan sha256:plan", header["text"])
+        self.assertIn("Plan draft · v1", header["text"])
 
     def test_the_elapsed_clock_ticks_while_the_job_runs(self) -> None:
         tick = self.out["tick"]

@@ -5750,6 +5750,16 @@ function StudioPlanView({
     (plan && plan.validation) ||
     null
   const approvable = Boolean(planValidation && planValidation.approvable === true)
+  // The goal this version exists to serve, in the order the screen can actually know it: the brief
+  // the plan job ran (what the planner received), the stored briefing, the plan's own goal, or the
+  // course row. The header and the refusal copy read this one value, so a learner approving a plan
+  // and a learner reading why it was refused are never shown two different intents.
+  const planGoalText =
+    (planRun && planRun.brief && planRun.brief.goal) ||
+    (brief && brief.brief && brief.brief.goal) ||
+    (plan && plan.goal) ||
+    (course && course.goal) ||
+    null
   const rejection = planRejectView({
     job: planRun,
     plan,
@@ -5758,11 +5768,7 @@ function StudioPlanView({
     surface,
     // A surface that cannot open the create form is never offered "Change the goal".
     canChangeGoal: typeof onChangeGoal === 'function',
-    goal:
-      (planRun && planRun.brief && planRun.brief.goal) ||
-      (brief && brief.brief && brief.brief.goal) ||
-      (plan && plan.goal) ||
-      null,
+    goal: planGoalText,
     title: (course && course.title) || (brief && brief.brief && brief.brief.title) || null
   })
   const shownRejection = rejectionHandled ? null : rejection
@@ -6228,6 +6234,16 @@ function StudioPlanView({
           })
         ]
       }),
+
+      // The intent the plan serves, at the gate where it is approved. The header above keeps the
+      // name and the version; this block is the goal itself, in the words the job was briefed with
+      // (or the words the course stores), plus the proof the learner said would show it is done.
+      jsx(CbGoalProof, {
+        goal: planGoalText,
+        attribute: 'data-cb-plan-goal',
+        proofAttribute: 'data-cb-plan-proof',
+        label: 'THE GOAL YOU ARE APPROVING'
+      }, 'goal'),
 
       shownRejection
         ? jsx(PlanRejectPanel, {
