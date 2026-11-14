@@ -10,6 +10,7 @@ the metric contract and the evidence are in `docs/concept-parity/CP-TEXT-GATE.md
 | `scene.units.json` | The runs the gate measures in the shipped scene: object selector, run selectors (`""` = the object's own text) and whether the object centres its type. |
 | `overhanging.html` | The deliberate defect: two rotated boards, one with a centred label inside it (`#board-pass`, the control) and one whose label is wider and taller than the board (`#board-fail`). No `overflow: hidden`, so the pixels show the spill. |
 | `overhanging.units.json` | Units for that fixture, in the same schema as `scene.units.json`. |
+| `legibility-exceptions.json` | The five runs the LEG-01 audit still lists under the 11 px cap floor, one entry per run: the widths, why the object cannot absorb an 11 px cap, and the probe's measured clip px. `tests/test_desktop_home_legibility_pins.py` requires its run ids to equal the audit's `summary.runs_under_cap_floor` exactly, so a new under-floor run cannot pass by quoting an old exception. |
 
 Unit schema:
 

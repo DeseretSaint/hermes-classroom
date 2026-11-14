@@ -1,0 +1,79 @@
+{
+  "schema": "coursebook.legibility-exceptions/1",
+  "audit": "docs/concept-parity/text-legibility-2026-11.json",
+  "floor_cap_px": 11.0,
+  "rule": "one entry per run the audit lists under the 11 px cap floor. The run ids here must equal the audit's summary.runs_under_cap_floor exactly and every number must be the audit's own measured value, so a new under-floor run cannot pass by quoting an old exception and an exception cannot outlive the defect it describes.",
+  "measured_against": "05cd1c06 (merge of wt/t_741c08dd @ ba0eeb21; the LEG-01 fix itself is 6c1e66d1), module f750d8d4bf6da33a7c7abcb30ac1902a973dca11d5af99270ff603610a893710, probe probes/legibility-2026-11/",
+  "exceptions": [
+    {
+      "run_id": "tag-lettering#4",
+      "widths": [1344, 1200],
+      "measured_cap_px": {
+        "1344": 9.8,
+        "1200": 8.75
+      },
+      "needed_font_px": 15.71,
+      "measured_clip_px": {
+        "1344": 0,
+        "1200": 0
+      },
+      "why_it_cannot_absorb_an_11px_cap": "The pinned 74x74 box paints a tilted luggage tag whose light kraft face is a ~58x29 px strip on a -35.5 deg axis; an 11 px cap needs a 16.67 px step, a 53.3 x 36.7 px block, which leaves the face in any orientation. Turning the run onto the face (-30 deg) fixed the contrast (5.271:1 / 5.918:1, 0 of 67 / 41 glyph-core pixels under 3.0:1); the cap is the exception. Nothing clips at the lift size (0 px), the words simply leave the face."
+    },
+    {
+      "run_id": "card-1-lettering#5",
+      "widths": [1344, 1200],
+      "measured_cap_px": {
+        "1344": 9.24,
+        "1200": 8.25
+      },
+      "needed_font_px": 16.67,
+      "measured_clip_px": {
+        "1344": 6,
+        "1200": 6
+      },
+      "why_it_cannot_absorb_an_11px_cap": "Two-line title in a G2-pinned 118x140 board with a 75 px cover: at the 16.67 px step the title block grows 39.19 -> 46.66 px and its ARTICLE clips 6 px of height at both widths (probe-measured). 16.67 px already sits between the body (16) and lead (20) token steps, so no step clears 11 px without clipping."
+    },
+    {
+      "run_id": "card-2-lettering#7",
+      "widths": [1344, 1200],
+      "measured_cap_px": {
+        "1344": 9.24,
+        "1200": 8.25
+      },
+      "needed_font_px": 16.67,
+      "measured_clip_px": {
+        "1344": 6,
+        "1200": 6
+      },
+      "why_it_cannot_absorb_an_11px_cap": "Two-line title in a G2-pinned 118x140 board with a 75 px cover: at the 16.67 px step the title block grows 39.19 -> 46.66 px and its ARTICLE clips 6 px of height at both widths (probe-measured). 16.67 px already sits between the body (16) and lead (20) token steps, so no step clears 11 px without clipping."
+    },
+    {
+      "run_id": "card-3-lettering#8",
+      "widths": [1344, 1200],
+      "measured_cap_px": {
+        "1344": 9.24,
+        "1200": 8.25
+      },
+      "needed_font_px": 16.67,
+      "measured_clip_px": {
+        "1344": 0,
+        "1200": 0
+      },
+      "why_it_cannot_absorb_an_11px_cap": "Single-line title that would absorb the 16.67 px step on its own (nothing clips, 0 px), but it shares one title rule with card-1 and card-2, which clip 6 px at that step; splitting the shelf into two title sizes by title length was rejected. The exception is carried so the shared rule is not silently raised."
+    },
+    {
+      "run_id": "card-4-lettering#10",
+      "widths": [1344, 1200],
+      "measured_cap_px": {
+        "1344": 9.24,
+        "1200": 8.25
+      },
+      "needed_font_px": 16.67,
+      "measured_clip_px": {
+        "1344": 0,
+        "1200": 0
+      },
+      "why_it_cannot_absorb_an_11px_cap": "Single-line title that would absorb the 16.67 px step on its own (nothing clips, 0 px), but it shares one title rule with card-1 and card-2, which clip 6 px at that step; splitting the shelf into two title sizes by title length was rejected. The exception is carried so the shared rule is not silently raised."
+    }
+  ]
+}
