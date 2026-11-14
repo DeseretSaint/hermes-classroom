@@ -603,6 +603,7 @@ class StructuredCheckItemsSeamTest(RenderCase):
                 "served_keys": sorted(stimulus),
                 "items_served": stimulus.get("items"),
                 "expected_served_keys": [
+                    "assistance_policy",
                     "choices",
                     "format",
                     "items",
@@ -615,7 +616,15 @@ class StructuredCheckItemsSeamTest(RenderCase):
         )
         self.assertEqual(
             sorted(stimulus),
-            ["choices", "format", "items", "learner_instructions", "practice", "prompt"],
+            [
+                "assistance_policy",
+                "choices",
+                "format",
+                "items",
+                "learner_instructions",
+                "practice",
+                "prompt",
+            ],
         )
         self.assertEqual(stimulus["items"], self.structured_items())
         self.assertNotIn("reference_answer", stimulus)
