@@ -158,3 +158,25 @@ Verdicts are the command result on `e5b9686`; the verdict cell names what could 
    the mounted route on the release commit. Gate 7 (demo shots) counts only verified rows.
 6. The status vocabulary is enforced by `tests/test_acceptance_evidence.py`; adding a status
    requires updating that test in the same commit and re-running the suite.
+
+## E. The transfer evidence lane (UP-11 / INT-red 1, 2026-11-14)
+
+`transfer` is not measured by a quiz. A transfer objective asks the learner to apply the capability
+to a case the lesson did not work, and choosing among supplied options is recognition; the
+2026-11-11 exemption that allowed it was deleted in both gates (`enforce_lesson_rules` and plan rule
+5b), and `docs/UPGRADES-50-2026-11-14.md` §11 records the adjudication and names the losing
+decision.
+
+The lane a transfer objective is authored and graded in, so the rule does not dead-end authoring:
+
+- **Self-study.** `kind: "verification"` with `stimulus.format: "verification"` — a checklist of
+  the learner's own recorded attempt, at least one `{id, label}` item. It routes through
+  `grading.grade_confirmation` (provider-free, no model, no `needs_retry`) and records
+  `evidence_class: self_reported`. It counts as practice, never independent evidence.
+- **Parent course.** `kind: "observation"` — the parent observes and records the attempt; the
+  evidence is `parent_reported`, the same practice limit.
+
+Neither lane may present supplied options; a `verification` whose stimulus is a `selection` is
+refused by name. Reaching independent evidence from a performance is item 22's problem, not this
+rule's, and this rule must not be reopened to buy progress with an option pick.
+

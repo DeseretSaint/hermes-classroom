@@ -259,8 +259,12 @@ Deterministic plan rules, replacing the current `enforce_plan_rules` body:
 3. Every unit has 2 to 6 objectives for full, 1 to 6 for short, exactly 1 for single.
 4. Every objective is named by exactly one owner section; a review section never owns an
    objective; every review ref is a lower objective ordinal.
-5. Every objective appears in the check plan; no check entry names an objective twice; the
-   check kind is permitted by the recipe.
+5. Every objective appears in the check plan; no check entry names an objective twice; the check
+   kind follows the objective's **evidence target** (`CHECK_KIND_BY_TARGET`), not the recipe — the
+   one-off's verification and the parent course's observation are the only recipe-owned kinds. No
+   family is exempt (UP-11, 2026-11-14: the `transfer`-quiz exemption was deleted, so a transfer
+   check is a recorded attempt or an observation and may never present supplied options; the
+   losing decision is named in `docs/UPGRADES-50-2026-11-14.md` §11).
 6. Prerequisite edges point backwards, are unique and are not self references.
 7. `target_lessons` equals the number of owner plus review sections authored for the unit; a unit
    with zero owner sections is refused.
