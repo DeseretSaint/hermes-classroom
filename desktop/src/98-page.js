@@ -543,7 +543,7 @@ function CoursebookPage() {
       'data-cb-scope': cbMode,
       'data-cb-motion': cbMotion.preference
     },
-    style: { ...cbScopeStyle(cbMode), ...cbHostVars(homePrefs.appearance) },
+    style: { ...cbScopeStyle(cbMode), ...cbHostVars(cbMode) },
     children: [
       // Every top-level child carries a key: `children` is an array, and React warns on an
       // unkeyed element in any list — including a props array — on the console only.

@@ -383,14 +383,24 @@ function cbAppliedMode(hostMode, appearance) {
 }
 
 /**
- * When the learner picks an appearance that differs from the host theme, the SDK controls inside
- * Coursebook (buttons, rows, switches) would keep the host's own text/background variables and go
- * unreadable on the plugin's palette. These are the host variables those controls consume, mapped
- * onto the scoped `--cb-*` table so one surface has one palette. `system` changes nothing.
+ * The host variables the SDK controls inside Coursebook (buttons, inputs, textareas, menus) read
+ * for their chrome. Left alone they paint in the host's own palette — its accent, not only its
+ * text — inside an Atlas Lamp page, so they are mapped onto the scoped `--cb-*` table and one
+ * surface has one palette.
+ *
+ * `system` is not a third palette. The caller passes the mode the route actually paints
+ * (`cbAppliedMode(hostMode, appearance)`), not the raw preference, so the map is emitted however
+ * the learner expressed it. Returning `{}` for `system` — the default — is what let host chrome
+ * survive on the route; a missing or unknown mode is the light default `cbScopeStyle` falls back
+ * to, and never a reason to hand the surface back to the host.
  */
-function cbHostVars(appearance) {
-  if (appearance !== 'light' && appearance !== 'dark') return {}
+function cbHostVars(mode) {
+  const applied = mode === 'dark' ? 'dark' : 'light'
   return {
+    // Native widgets behind the SDK controls (select popups, date pickers, scrollbars) follow
+    // `color-scheme`; naming the same painted mode keeps this map self-consistent for a surface
+    // that composes only the map.
+    colorScheme: applied,
     '--background': 'var(--cb-paper)',
     '--foreground': 'var(--cb-ink)',
     '--card': 'var(--cb-paper-raised)',
@@ -46271,7 +46281,7 @@ function CoursebookPage() {
       'data-cb-scope': cbMode,
       'data-cb-motion': cbMotion.preference
     },
-    style: { ...cbScopeStyle(cbMode), ...cbHostVars(homePrefs.appearance) },
+    style: { ...cbScopeStyle(cbMode), ...cbHostVars(cbMode) },
     children: [
       // Every top-level child carries a key: `children` is an array, and React warns on an
       // unkeyed element in any list — including a props array — on the console only.
@@ -48287,7 +48297,7 @@ function CoursebookPane() {
     'data-cb-binding-id': (state.binding && state.binding.binding_id) || '',
     'data-cb-scope': cbMode,
     'data-cb-motion': cbMotion.preference,
-    style: { ...cbScopeStyle(cbMode), ...cbHostVars(panePrefs.appearance) },
+    style: { ...cbScopeStyle(cbMode), ...cbHostVars(cbMode) },
     children: [
       jsx(CbLabel, { children: 'Coursebook' }),
       routingUnavailable
