@@ -1725,6 +1725,14 @@ def lesson_cost_budget(section_count: int, *, brief_budget_usd: Any = None) -> C
 #: How many authoring attempts a plan job may spend (``run_plan_job``'s ``for attempt in (1, 2)``).
 PLAN_ATTEMPTS = 2
 
+#: How many times one validation pass is re-run inside the same attempt when its provider call
+#: failed in the transport class (a timeout or a provider exception). A pass that times out once
+#: used to fail the whole review even though every other pass answered — the job paid research and
+#: a fresh authoring cycle for a single slow slot. The retry is the same request (same schema, same
+#: prompt version) with its own bounded deadline and its own usage row; a second failure still
+#: fails the stage, so this buys a transient blip, never an endless resample.
+VALIDATION_PASS_RETRIES = 1
+
 #: Objective cap for an unscoped (pre-blueprint v1) plan, from the v1 prompt's own band. The v1
 #: document has no units, so it contributes no unit claim labels.
 V1_OBJECTIVE_CAP = 8
@@ -1769,20 +1777,28 @@ def plan_calls(pass_count: int) -> tuple[int, int]:
     """``(minimum_calls, worst_legal_calls)`` for a plan job with ``pass_count`` passes.
 
     Per attempt the pipeline legally makes one generation, one ``.cut`` re-ask on that answer
-    (``_stage_answer_with_repair``), one call per validation pass and one ``.cut``/shape re-ask
-    per pass (``_validation_answer_with_repair``)::
+    (``_stage_answer_with_repair``), one call per validation pass, one ``.cut``/shape re-ask per
+    pass (``_validation_answer_with_repair``) and one more call for a pass whose provider call
+    failed in the transport class (``VALIDATION_PASS_RETRIES``)::
 
-        1 + TRUNCATION_REPAIR_CALLS * (1 + passes)
+        1 + passes
+
+    is the minimum, and the worst legal path is::
+
+        (1 + TRUNCATION_REPAIR_CALLS) * (1 + passes * (1 + VALIDATION_PASS_RETRIES))
 
     and a job may spend :data:`PLAN_ATTEMPTS` attempts (a deterministic rule violation or a
-    grounded validator rejection starts attempt 2), so the worst legal path is
-    ``PLAN_ATTEMPTS x (1 + passes) x (1 + TRUNCATION_REPAIR_CALLS)``. The minimum is the same
-    shape without either repair. A ceiling below the worst legal path would abort a run behaving
-    exactly as designed — the CP-015e defect, one stage up.
+    grounded validator rejection starts attempt 2), so the worst legal total is
+    ``PLAN_ATTEMPTS`` times that. A ceiling below the worst legal path would abort a run behaving
+    exactly as designed — the CP-015e defect, one stage up. In particular a retry that is not
+    counted here turns a recovered pass into ``POLICY_VIOLATION`` at call
+    ``1 + passes + 1``, which is a worse failure than the timeout it repairs.
     """
     passes = max(1, int(pass_count))
     per_attempt_min = 1 + passes
-    per_attempt_max = per_attempt_min + TRUNCATION_REPAIR_CALLS * (1 + passes)
+    per_attempt_max = (1 + TRUNCATION_REPAIR_CALLS) * (
+        1 + passes * (1 + VALIDATION_PASS_RETRIES)
+    )
     return PLAN_ATTEMPTS * per_attempt_min, PLAN_ATTEMPTS * per_attempt_max
 
 
@@ -4304,26 +4320,112 @@ def merge_validation_reports(
     }
 
 
+def _mark_validation_pass(
+    exc: BaseException, pass_index: int | None, pass_total: int
+) -> None:
+    """Attach which pass failed, for the caller's record. Never alters the failure itself."""
+    try:
+        exc.validation_pass_index = pass_index  # type: ignore[attr-defined]
+        exc.validation_pass_total = pass_total  # type: ignore[attr-defined]
+    except Exception:  # noqa: BLE001 - a frozen exception must not change the failure
+        pass
+
+
+def _retryable_validation_failure(exc: BaseException) -> bool:
+    """Whether a failed validation pass earns one more call inside the same attempt.
+
+    Only the *transport* class is retried — the provider timed out or raised. Two exclusions:
+
+    * a cut at the **job attempt's** deadline (``ProviderTimeout(job_deadline=True)``) is not a
+      slow pass, it is an exhausted attempt; a retry would be guaranteed to fail and would spend a
+      call to learn nothing;
+    * ``ModelOutputInvalid`` and ``GenerationRejected`` mean the provider answered and the answer
+      broke the frozen contract. Re-running the same prompt is a blind resample, not a repair, and
+      the contract already classes that as a non-retryable ``VALIDATION_FAILED`` (H-191).
+    """
+    if isinstance(exc, ProviderTimeout):
+        return not bool(getattr(exc, "job_deadline", False))
+    return isinstance(exc, ProviderFailure)
+
+
+def _validation_retry_entry(
+    pass_index: int,
+    pass_total: int,
+    failure: BaseException,
+    *,
+    answered: bool,
+    response: "LLMResponse | None" = None,
+) -> dict[str, Any]:
+    """One durable statement that a pass needed its single in-attempt retry.
+
+    It names which pass, why the first call was lost and what the retry cost. The recorded entry
+    is a fact about the review, never a claim that the pass was first-time clean.
+    """
+    original: dict[str, Any] = {
+        "error": type(failure).__name__,
+        "message": str(failure)[:400],
+    }
+    for name in ("purpose", "deadline_s", "duration_ms", "job_deadline"):
+        value = getattr(failure, name, None)
+        if value is not None:
+            original[name] = value
+    entry: dict[str, Any] = {
+        "pass_index": int(pass_index),
+        "pass_total": int(pass_total),
+        "outcome": "answered" if answered else "failed",
+        "failed_attempt": original,
+        "attempts": 2,
+    }
+    if response is not None:
+        entry["retry"] = {
+            "provider": response.provider,
+            "model": response.model,
+            "input_tokens": response.input_tokens,
+            "output_tokens": response.output_tokens,
+            "cost_usd": response.cost_usd,
+        }
+    return entry
+
+
 def _run_validation_passes(
-    llm: "LLM", requests: Sequence[LLMRequest], usage: "_Usage"
+    llm: "LLM",
+    requests: Sequence[LLMRequest],
+    usage: "_Usage",
+    *,
+    retries: list[dict[str, Any]] | None = None,
 ) -> list["LLMResponse"]:
     """Run the validator's passes together, each with its own deadline and its own schema.
 
-    A pass that times out or fails fails the *whole* validation: a partial criteria set is never
-    merged and never recorded as a review, so a lost pass is ``needs_retry``, never a pass. Every
-    pass is submitted before the first result is awaited, which is what keeps the aggregate wall
-    time at the slowest pass instead of the sum.
+    A pass that fails after its single retry fails the *whole* validation: a partial criteria set
+    is never merged and never recorded as a review, so a lost pass is ``needs_retry``, never a
+    pass. Every pass is submitted before the first result is awaited, which is what keeps the
+    aggregate wall time at the slowest pass instead of the sum.
+
+    A pass whose provider call failed in the transport class is re-run **once, in this attempt**:
+    the same request object (same schema, same prompt version, same declared purpose) with its own
+    fresh bounded deadline and its own usage row. Thirteen answered passes are no longer discarded
+    because the fourteenth timed out; only a retry that also fails ends the stage. Each retry is
+    appended to ``retries`` (when supplied) so the merged validation record can say which pass
+    needed one — an entry is a disclosure, never a silent substitution for a first-time answer.
     """
+    retries = retries if retries is not None else []
     if len(requests) <= 1:
         try:
             return [_call_llm(llm, request, usage) for request in requests]
         except BaseException as exc:  # noqa: BLE001 - the same typed failure, plus its pass index
+            _mark_validation_pass(exc, 0, len(requests))
+            if not _retryable_validation_failure(exc):
+                raise
             try:
-                exc.validation_pass_index = 0  # type: ignore[attr-defined]
-                exc.validation_pass_total = len(requests)  # type: ignore[attr-defined]
-            except Exception:  # noqa: BLE001
-                pass
-            raise
+                response = _call_llm(llm, requests[0], usage)
+            except BaseException as retry_exc:  # noqa: BLE001 - the stage fails on the retry
+                _mark_validation_pass(retry_exc, 0, len(requests))
+                retries.append(_validation_retry_entry(0, len(requests), exc, answered=False))
+                raise retry_exc
+            retries.append(
+                _validation_retry_entry(0, len(requests), exc, answered=True, response=response)
+            )
+            return [response]
     from concurrent.futures import ThreadPoolExecutor
 
     # Reserve every pass's slot before any of them starts: five threads that each check the call
@@ -4346,23 +4448,40 @@ def _run_validation_passes(
         responses: list[LLMResponse | None] = [None] * len(requests)
         first_error: BaseException | None = None
         first_error_index: int | None = None
+        errors: dict[int, BaseException] = {}
         for index, future in enumerate(futures):
             try:
                 responses[index] = future.result()
             except BaseException as exc:  # noqa: BLE001 - re-raised after every pass is settled
+                errors[index] = exc
                 if first_error is None:
                     first_error = exc
                     first_error_index = index
     if first_error is not None:
-        # CP-015g/D1: the caller records the failed pass before the job fails, so the raised error
-        # carries which pass it was. The exception is still the same typed failure; the two
-        # attributes are bookkeeping for the record, not a new contract.
-        try:
-            first_error.validation_pass_index = first_error_index  # type: ignore[attr-defined]
-            first_error.validation_pass_total = len(requests)  # type: ignore[attr-defined]
-        except Exception:  # noqa: BLE001 - a frozen exception must not change the failure
-            pass
-        raise first_error
+        if not _retryable_validation_failure(first_error):
+            # CP-015g/D1: the caller records the failed pass before the job fails, so the raised
+            # error carries which pass it was. The exception is still the same typed failure; the
+            # two attributes are bookkeeping for the record, not a new contract.
+            _mark_validation_pass(first_error, first_error_index, len(requests))
+            raise first_error
+        # One retry per failed pass, in pass order, each on the caller's thread (which carries the
+        # tick's contextvars scope). A retry is a real provider call: ``_call_llm`` records its own
+        # usage row and enforces the same declared deadline.
+        for index in [i for i, response in enumerate(responses) if response is None]:
+            cause = errors.get(index) or first_error
+            try:
+                responses[index] = _call_llm(llm, requests[index], usage)
+            except BaseException as retry_exc:  # noqa: BLE001 - the stage fails on the retry
+                _mark_validation_pass(retry_exc, index, len(requests))
+                retries.append(
+                    _validation_retry_entry(index, len(requests), cause, answered=False)
+                )
+                raise retry_exc
+            retries.append(
+                _validation_retry_entry(
+                    index, len(requests), cause, answered=True, response=responses[index]
+                )
+            )
     assert all(response is not None for response in responses)
     return [response for response in responses if response is not None]
 
@@ -10867,6 +10986,10 @@ _GENERATION_DDL: tuple[str, ...] = (
         parse_outcome TEXT NOT NULL DEFAULT 'parsed',
         repair_attempted INTEGER NOT NULL DEFAULT 0,
         failure_json TEXT,
+        -- One JSON entry per validation pass that lost its provider call and was re-run once
+        -- inside the same attempt. ``[]`` is the first-time-clean review; an entry names the pass,
+        -- the transport failure and what the retry answered.
+        pass_retries TEXT NOT NULL DEFAULT '[]',
         UNIQUE(subject_kind, subject_id, subject_hash, validator_prompt_version, attempt_index, pass_index)
     )
     """,
@@ -10985,6 +11108,7 @@ def ensure_schema(connection: sqlite3.Connection) -> None:
             ("independence", "TEXT"),
             ("facts_unverified", "INTEGER"),
             ("outcome", "TEXT"),
+            ("pass_retries", "TEXT NOT NULL DEFAULT '[]'"),
         ):
             if column not in validation_columns:
                 connection.execute(f"ALTER TABLE gen_validation_records ADD COLUMN {column} {ddl}")
@@ -11021,6 +11145,7 @@ def ensure_schema(connection: sqlite3.Connection) -> None:
                 " parse_outcome TEXT NOT NULL DEFAULT 'parsed',"
                 " repair_attempted INTEGER NOT NULL DEFAULT 0,"
                 " failure_json TEXT,"
+                " pass_retries TEXT NOT NULL DEFAULT '[]',"
                 " UNIQUE(subject_kind, subject_id, subject_hash, validator_prompt_version,"
                 " attempt_index, pass_index))"
             )
@@ -11030,12 +11155,12 @@ def ensure_schema(connection: sqlite3.Connection) -> None:
                 " generator_provider, validator_provider, independence, facts_unverified, outcome,"
                 " verdict, criteria_json, rejections_json, generator_prompt_sha256,"
                 " validator_prompt_sha256, created_at, pass_index, pass_total, attempt_index,"
-                " parse_outcome, repair_attempted, failure_json)"
+                " parse_outcome, repair_attempted, failure_json, pass_retries)"
                 " SELECT id, subject_kind, subject_id, subject_hash,"
                 " generator_prompt_version, validator_prompt_version, validator_model, generator_model,"
                 " generator_provider, validator_provider, independence, facts_unverified, outcome,"
                 " verdict, criteria_json, rejections_json, generator_prompt_sha256,"
-                " validator_prompt_sha256, created_at, -1, NULL, 1, 'parsed', 0, NULL"
+                " validator_prompt_sha256, created_at, -1, NULL, 1, 'parsed', 0, NULL, '[]'"
                 " FROM gen_validation_records"
             )
             connection.execute("DROP TABLE gen_validation_records")
@@ -11674,6 +11799,7 @@ def _record_validation(
     verdict: dict[str, Any],
     now: datetime | None,
     attempt_index: int = 1,
+    pass_retries: Sequence[Mapping[str, Any]] | None = None,
 ) -> str:
     validation_id = _new_id()
     generator = model_identity(generation_response)
@@ -11685,8 +11811,9 @@ def _record_validation(
             "generator_prompt_version, validator_prompt_version, validator_model, generator_model, "
             "generator_provider, validator_provider, independence, facts_unverified, outcome, verdict, "
             "criteria_json, rejections_json, generator_prompt_sha256, validator_prompt_sha256, created_at, "
-            "pass_index, pass_total, attempt_index, parse_outcome, repair_attempted, failure_json) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "pass_index, pass_total, attempt_index, parse_outcome, repair_attempted, failure_json, "
+            "pass_retries) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 validation_id,
                 subject_kind,
@@ -11732,6 +11859,9 @@ def _record_validation(
                 "parsed",
                 1 if int(getattr(response, "shape_repair_attempts", 0) or 0) else 0,
                 None,
+                # The pass retries this review needed. Empty is the first-time-clean shape; an
+                # entry says which pass lost its first call and what the retry answered.
+                _json([dict(entry) for entry in (pass_retries or [])]),
             ),
         )
         row = connection.execute(
@@ -11891,6 +12021,10 @@ def validation_record(connection: sqlite3.Connection, validation_id: str | None)
         "waived_unknown": rejections.get("waived_unknown") or [],
         # H-191: a re-asked answer is stored and read back as re-asked.
         "shape_violations": int(rejections.get("shape_violations") or 0),
+        # Each validation pass that lost its first provider call and was re-run once in the same
+        # attempt. Read back as a list so a caller can see a recovered review instead of a
+        # first-time-clean claim.
+        "pass_retries": _load_json(row.get("pass_retries"), []) or [],
         "warning": _provenance_warning(outcome, independence, bool(row.get("facts_unverified"))),
     }
 
@@ -12214,6 +12348,11 @@ def run_plan_job(
         # W2-2: the draft attempt 2 repairs. It is the plan the rules or the validator refused,
         # carried into the next request so the parts that already passed are not authored twice.
         previous_draft: dict[str, Any] | None = None
+        # Which validation passes lost their provider call and answered on the single in-attempt
+        # retry (``_run_validation_passes``). Declared before the attempt loop so the
+        # deterministic-rule break on attempt 2 still has the empty list to record; reset below
+        # when an attempt actually validates, because a later review is a different review.
+        pass_retries: list[dict[str, Any]] = []
 
         for attempt in (1, 2):
             # Each attempt starts clean: a stale validation from the previous candidate must never
@@ -12324,6 +12463,9 @@ def run_plan_job(
                 assert_separate_pass(plan_request, validation_request)
             validation_started = time.monotonic()
             assert plan_request is not None
+            # A second authoring attempt is a different review, and the merged record names its
+            # own attempt, so the retry list starts clean for this review.
+            pass_retries = []
 
             def record_plan_attempt(pass_index: int, failure: ModelOutputInvalid, resp: Any, outcome: str) -> None:
                 # CP-015g/D1: every failed validation attempt is recorded before the job fails.
@@ -12349,7 +12491,9 @@ def run_plan_job(
                 )
 
             try:
-                validation_responses = _run_validation_passes(validator, validation_requests, usage)
+                validation_responses = _run_validation_passes(
+                    validator, validation_requests, usage, retries=pass_retries
+                )
             except ModelOutputInvalid as exc:
                 # The host's schema gate threw the answer away before this module could read it,
                 # and its own single re-ask did not fix it. Record the attempt (identity unknown:
@@ -12716,6 +12860,7 @@ def run_plan_job(
                     verdict=verdict,
                     now=now,
                     attempt_index=int(attempt),
+                    pass_retries=pass_retries,
                 )
             result["validation_id"] = validation_id
             result["plan_version"] = version

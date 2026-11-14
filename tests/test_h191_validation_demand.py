@@ -237,13 +237,15 @@ class MultiPassAggregationTest(unittest.TestCase):
         with mock.patch.object(gen, "VALIDATION_CRITERIA_PASSES", self.PAIRS):
             return build_requests()
 
-    def test_the_passes_run_together_and_one_loss_fails_the_whole_validation(self) -> None:
+    def test_the_passes_run_together_and_one_unrecovered_loss_fails_the_whole_validation(self) -> None:
         requests = self.build_pair_requests()
         self.assertEqual(len(requests), len(self.PAIRS))
 
         def slow_then_fail(request):
             time.sleep(0.2)
             if request is requests[2]:
+                # The pass is lost on its first call *and* on its single in-attempt retry: this
+                # is the bounded-retry case, where the stage still fails the whole validation.
                 raise gen.ProviderTimeout("pass lost", purpose=request.purpose, deadline_s=180.0)
             report = report_for_request(request)
             return gen.LLMResponse(
@@ -265,14 +267,21 @@ class MultiPassAggregationTest(unittest.TestCase):
             return slow_then_fail(request)
 
         usage = gen._Usage(gen.CostBudget(max_calls=32, max_cost_usd=None))
+        retries: list[dict] = []
         started = time.monotonic()
         with self.assertRaises(gen.ProviderTimeout):
-            gen._run_validation_passes(llm, requests, usage)
+            gen._run_validation_passes(llm, requests, usage, retries=retries)
         elapsed = time.monotonic() - started
-        self.assertEqual(len(seen), len(requests), "every pass is submitted, none skipped")
-        # Five 0.2 s passes run together: sequential would be 1.0 s.
+        self.assertEqual(
+            len(seen),
+            len(requests) + 1,
+            "every pass is submitted, plus one retry for the lost pass",
+        )
+        # Five 0.2 s passes run together: sequential would be 1.0 s. The single retry is later
+        # and sequential, so the bound is one pass's worth of extra wall time, not a second round.
         self.assertLess(elapsed, 0.8)
         self.assertEqual(len(usage.calls), len(requests) - 1)  # the lost pass recorded no call
+        self.assertEqual([entry["outcome"] for entry in retries], ["failed"])
 
     def test_the_call_ceiling_is_reserved_across_threads(self) -> None:
         requests = self.build_pair_requests()
