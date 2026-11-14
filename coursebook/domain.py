@@ -35,6 +35,7 @@ from . import (
     api,
     artifacts,
     bindings,
+    challenge as challenge_path,
     db,
     evidence,
     generation,
@@ -1656,7 +1657,15 @@ def check_open(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, 
 
 @_handler("progression.challenge_out")
 def progression_challenge_out(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
-    """A challenge-out check is a *different* audited item, never a replay of one already seen."""
+    """A challenge-out check is a *different* audited item, never a replay of one already seen.
+
+    An authored objective answers this from ``check_spec.variants``. A generated objective stores
+    its one authored check in ``checks``, so the variant is derived from that check by
+    :mod:`coursebook.challenge` — a new case of the same evidence target, proved by the backend
+    rather than invented by it. When no new case can be proved the command refuses with
+    ``no_varied_challenge_available``; it never re-serves the answered stimulus, because a replay
+    is review and ``check.open`` already offers that as "review this item".
+    """
     db.ensure_schema()
     expected = _require_revision(envelope)
     method = "progression.challenge_out"
@@ -1673,11 +1682,18 @@ def progression_challenge_out(payload: dict[str, Any], envelope: dict[str, Any])
         objective = _objective_in_plan(connection, payload["objective_id"], plan["id"])
         spec = _check_spec(objective)
         revisit_source = None
+        used = {
+            row["stimulus_json"]
+            for row in connection.execute(
+                "SELECT stimulus_json FROM checks WHERE objective_id = ?", (objective["id"],)
+            )
+        }
         if spec is None:
             # E2E L1: a generated objective stores its real check in `checks`, not as a
-            # `check_spec`. A challenge against it is the authored item served again as a review,
-            # never a fabricated variant — and `no_varied_challenge_available` would strand a
-            # learner whose course has exactly one authored check.
+            # `check_spec`. A challenge against it must still be a different item: the variant is
+            # derived from the answered check by `coursebook.challenge` and its answer is proved by
+            # the backend. When no new case can be proved the command refuses — re-serving the
+            # answered stimulus is review, and `check.open` already offers that under that label.
             revisit_source = _newest_closed_check(connection, objective["id"])
             if revisit_source is None:
                 raise RpcError.of(
@@ -1685,6 +1701,29 @@ def progression_challenge_out(payload: dict[str, Any], envelope: dict[str, Any])
                     reason="objective_not_checkable",
                 )
             spec = _authored_check_spec(revisit_source)
+            _, reference, rubric = _spec_content(spec)
+            derived = None
+            if str(revisit_source["audit_state"]) == "passed":
+                for attempt in range(1, 9):
+                    candidate = challenge_path.variant_of(
+                        _json_load(revisit_source["stimulus_json"], {}),
+                        _json_load(revisit_source["reference_json"], {}),
+                        attempt=attempt,
+                    )
+                    if candidate is None:
+                        break
+                    if _json_dump(candidate["stimulus"]) not in used:
+                        derived = candidate
+                        break
+            if derived is None:
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    "no unused, audited variant of this check exists; a replay would not be a challenge.",
+                    reason="no_varied_challenge_available",
+                    objective_id=objective["id"],
+                )
+            stimulus = derived["stimulus"]
+            reference = derived["reference"]
             to_revision = _bump_enrollment(connection, enrollment["id"], expected)
             current = _row(
                 connection,
@@ -1696,7 +1735,6 @@ def progression_challenge_out(payload: dict[str, Any], envelope: dict[str, Any])
                 "UPDATE checks SET state = 'superseded' WHERE objective_id = ? AND state = 'open'",
                 (objective["id"],),
             )
-            _, reference, rubric = _spec_content(spec)
             try:
                 validators.reference_kind(reference)
             except validators.ReferenceSpecError:
@@ -1707,7 +1745,7 @@ def progression_challenge_out(payload: dict[str, Any], envelope: dict[str, Any])
                     objective_id=objective["id"],
                 )
             check_id = _insert_check(
-                connection, objective, spec, _spec_content(spec)[0], reference, rubric, version,
+                connection, objective, spec, stimulus, reference, rubric, version,
                 revisit=True,
                 audit_state=str(spec.get("audit_state") or "passed"),
             )
@@ -1721,12 +1759,6 @@ def progression_challenge_out(payload: dict[str, Any], envelope: dict[str, Any])
             _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""),
                       to_revision, result)
             return to_revision, result
-        used = {
-            row["stimulus_json"]
-            for row in connection.execute(
-                "SELECT stimulus_json FROM checks WHERE objective_id = ?", (objective["id"],)
-            )
-        }
         variant = None
         for candidate in spec.get("variants") or []:
             if not isinstance(candidate, dict):

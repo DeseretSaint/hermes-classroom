@@ -3326,7 +3326,10 @@ const CB3_CLASSROOM_COPY = Object.freeze({
   challengeTitle: 'Field Challenge',
   challengeStart: 'Try it yourself',
   // E2E L1: a check served as a revisit is review of a completed section, not a first attempt.
+  // Upgrade 16: the aside names what is actually behind the action, so a return of the item the
+  // learner already answered is never called a challenge.
   checkRevisit: 'Review',
+  checkRevisitTitle: 'Review this item',
   // The aside's action is the door to the check already on this page: it focuses the visible check
   // card and never starts a second question or advances the section. A section with no check
   // renders no action at all, so these rows have no "opening"/"unavailable" states to name.
@@ -4863,7 +4866,7 @@ function ClassroomV3({
     children: [
       game && check && checkCard
         ? jsx(ChallengeCard, {
-            title: CB3_CLASSROOM_COPY.challengeTitle,
+            title: check && check.revisit ? CB3_CLASSROOM_COPY.checkRevisitTitle : CB3_CLASSROOM_COPY.challengeTitle,
             // A section with no check renders no control: there is nothing on this page for the
             // action to open, and inventing a question here would be a second check.
             recordNote: engagement ? classroomCopy(CB3_CLASSROOM_COPY.gameXp, { n: Number(engagement.xp_total) || 0 }) : null,

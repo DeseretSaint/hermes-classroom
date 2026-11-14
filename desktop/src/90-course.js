@@ -1501,7 +1501,16 @@ function PlanView({ row, review, notebooks, outline, page, implemented, onOpenSe
         { expectedRevision: row.revision }
       )
       if (!response.ok) {
-        setChallengeError(`${response.error.code}: ${describeError(response.error)}`)
+        const reason =
+          response.error && response.error.details ? response.error.details.reason : null
+        // Upgrade 16: a generated objective with no provable new case refuses instead of replaying
+        // the answered item. Say what the learner can do, in their words — never the reason code,
+        // and never the word "challenge" for a return of the same item.
+        setChallengeError(
+          reason === 'no_varied_challenge_available'
+            ? 'No different item is ready for this objective yet. Open the section to review this item.'
+            : describeError(response.error)
+        )
         return
       }
       setChallengeError(null)
