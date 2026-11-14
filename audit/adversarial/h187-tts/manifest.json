@@ -1,0 +1,69 @@
+{
+  "kind": "manifest",
+  "built_at": "2026-11-08T21:16:05Z",
+  "branch": "wt/t_ce380228",
+  "files": [
+    {
+      "path": "EVIDENCE.md",
+      "bytes": 5643,
+      "sha256": "658c727ea7e2c98da737f39394a851a9ed1d4076ac98a7317060017835762c45"
+    },
+    {
+      "path": "artifact/gen_lang_1-narration.mp3",
+      "bytes": 41088,
+      "sha256": "208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c"
+    },
+    {
+      "path": "attempt_1_edge_unavailable.json",
+      "bytes": 2832,
+      "sha256": "3ad681656a0d747bd7b5d9cf51e03a16e50919b3ab27add0b0386f5cf4fab08d"
+    },
+    {
+      "path": "capture_result.json",
+      "bytes": 5794,
+      "sha256": "d138cb6dddc4f66536d1eec9a72da9cbef47cfb55671118bc64f0e6d574389b3"
+    },
+    {
+      "path": "capture_tts.py",
+      "bytes": 10705,
+      "sha256": "5084438f5390720c2b19821969437130782804f1b9a8e9d7293d03f23c368bc2"
+    },
+    {
+      "path": "make_manifest.py",
+      "bytes": 1658,
+      "sha256": "57326b13cc6485bcf6946a6b4634a784e5ca90fb339daa3185020d7d41093bb9"
+    },
+    {
+      "path": "probe_host_tts.py",
+      "bytes": 2424,
+      "sha256": "67b3d13083de8d6be5c3a378907625e8b8e4c24e5ef5d785ff19cd255ed8b994"
+    },
+    {
+      "path": "reset_attempt.py",
+      "bytes": 1713,
+      "sha256": "ca8a8555ed8d0465b6c469fabea7b8bf20368eb026d0002b69f3d956a0450f03"
+    },
+    {
+      "path": "served_lesson_page.json",
+      "bytes": 5032,
+      "sha256": "05fcc21c5b8c56b82dc53a14334d3fe6caf84bb67801f347c7c3872a3060df6b"
+    },
+    {
+      "path": "verification.json",
+      "bytes": 6704,
+      "sha256": "3c3580a1f2d2ba7215939ae5f6a51b0a3ffab3ea4d5bc97cb15b3bc418ae405a"
+    },
+    {
+      "path": "verify_artifact.py",
+      "bytes": 6848,
+      "sha256": "985ce98d912f164a2f31011c7721aaae922eb6b2fe09270c3689d4e2688b06ec"
+    }
+  ],
+  "store_artifact": {
+    "path": "/home/deseretsaint/.hermes/h187-course/home/plugin-data/coursebook/artifacts/objects/20/208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c",
+    "exists": true,
+    "bytes": 41088,
+    "sha256": "208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c"
+  },
+  "store_db_sha256": "4c3423fcad0543b0baac7f0fea2fd5b6de4c92befe4c6412caca5c0976126c12"
+}

@@ -1,0 +1,119 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "art_d7dc7afd153d4736abc4d2e0560a8376",
+      "bytes": 598928,
+      "content_hash": "sha256:a206b3493098e7616c77575cc5a4b252ee36da43b58df14d03183fbc91573d6c",
+      "kind": "visual",
+      "mime": "image/png"
+    }
+  ],
+  "attempts": [],
+  "checks": [],
+  "course": {
+    "course_id": "crs_53a1191816354c44acec268a03d6dba0",
+    "title": "Workshop procedure: torque a wheel in a cross pattern"
+  },
+  "document": {
+    "blocks": [
+      {
+        "check_id": null,
+        "deep": "The wheel is clamped upright in the stand. The torque wrench lies on the bench beside it, within reach and not on the floor.",
+        "headline": "The bench, described",
+        "id": "blk_aecba1e56d346fc8e07b",
+        "media": [
+          {
+            "artifact_id": "art_d7dc7afd153d4736abc4d2e0560a8376",
+            "degraded": false,
+            "kind": "visual",
+            "label": "Illustration — generated for context only. It is not a measurement, procedure, technical reference, or safety authority.",
+            "purpose": "See the bench layout before starting",
+            "reason": null,
+            "role": "illustration",
+            "text_equivalent": "A workshop bench: the bicycle wheel is clamped upright in the stand and the torque wrench lies beside it."
+          }
+        ],
+        "role": "example",
+        "short": "Wheel clamped in the stand; torque wrench on the bench beside it.",
+        "source_ids": []
+      },
+      {
+        "check_id": null,
+        "deep": "A clamped wheel stays still while both hands work, and a wrench within reach is not left on the floor where it can be kicked or lost.",
+        "headline": "Why the layout matters",
+        "id": "blk_a432cc4a8f7f9f4a814a",
+        "media": [],
+        "role": "explain",
+        "short": "A clamped wheel stays still; a wrench in reach is not left on the floor.",
+        "source_ids": []
+      },
+      {
+        "check_id": null,
+        "deep": "Look at the illustration, then at your own bench: is the wheel clamped, and is the wrench beside it? Name anything that is not in place before you start.",
+        "headline": "Check your own bench",
+        "id": "blk_0b4754e4808fb55bc5f8",
+        "media": [],
+        "role": "practice",
+        "short": "Compare your bench to the illustration and name anything out of place.",
+        "source_ids": []
+      },
+      {
+        "check_id": null,
+        "deep": "Look at the bench, not the floor\nFind the tool within reach of the clamped wheel\nAnswer: on the bench beside the clamped wheel",
+        "headline": "Where should the torque wrench be before you start?",
+        "id": "blk_a44a02a820825e63a05d",
+        "media": [],
+        "role": "example",
+        "short": "On the bench beside the clamped wheel.",
+        "source_ids": []
+      },
+      {
+        "check_id": null,
+        "deep": "The illustration is context, not evidence: it shows the layout the procedure assumes. It carries no measurements and no torque values.",
+        "headline": "Recap",
+        "id": "blk_d1f037b540397af5fe2e",
+        "media": [],
+        "role": "recap",
+        "short": "The illustration shows layout only: wheel clamped, wrench beside it.",
+        "source_ids": []
+      }
+    ],
+    "check_id": null,
+    "content_hash": "sha256:580af74ae14220e6a27a2c7e9271e740aefb2ddebf8f6003e07fa50c9d563750",
+    "document_id": "doc_580af74ae14220e6a27a",
+    "objective_id": null,
+    "schema_version": 1,
+    "section_title": "Before you start: the bench layout",
+    "source_ids": [],
+    "state": "complete",
+    "view_note": null,
+    "views": {
+      "field_notes": true,
+      "field_quest": false,
+      "guided": true,
+      "textbook": true
+    }
+  },
+  "enrollment_id": "enr_5906d9d5f01a420cba6d2d202db8da53",
+  "notebook_entries": [],
+  "provenance": {
+    "check_enabled": true,
+    "facts_unverified": false,
+    "independent": false,
+    "outcome": "model_assessed",
+    "warning": "model assessed, not independently validated: treat this page as a proposal."
+  },
+  "revision": 1,
+  "runtime": null,
+  "section": {
+    "evidence_target": "comprehension",
+    "last_opened_at": null,
+    "objective_id": "obj_75056df1acb84e4ea637b30421c5cca9",
+    "ordinal": 2,
+    "state": "not_started",
+    "title": "Recognise the workshop bench layout before starting"
+  },
+  "segments": [],
+  "sources": [],
+  "state": "not_started"
+}

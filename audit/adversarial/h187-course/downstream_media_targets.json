@@ -1,0 +1,114 @@
+{
+  "note": "Requirements only. No artifact row exists; generate the bytes, then re-read lesson.page and take the artifact_id from the block's media child.",
+  "artifacts_in_store": 0,
+  "db_path": "/home/deseretsaint/.hermes/h187-course/home/plugin-data/coursebook/data.db",
+  "db_sha256": "703980dcc7f0413b4cb9655e93d1a06374c4050f7b3675d94aaa5ead6620ca3d",
+  "targets": [
+    {
+      "hermes_home": "/home/deseretsaint/.hermes/h187-course/home",
+      "course_id": "crs_c330330a969646cfb0735f9f3644c107",
+      "enrollment_id": "enr_22c18bf3305a4b0ca769b8219e0036dd",
+      "objective_id": "obj_903c89f63e4940d7a8220082e4d68429",
+      "lesson_id": "gen_lang_1",
+      "lesson_page_call": {
+        "enrollment_id": "enr_22c18bf3305a4b0ca769b8219e0036dd",
+        "objective_id": "obj_903c89f63e4940d7a8220082e4d68429"
+      },
+      "media_kind": "audio",
+      "media_role": "narration",
+      "producer": "host.text_to_speech",
+      "expected_mime": "audio/mpeg",
+      "mime_rule": {
+        "declared": "audio/mpeg",
+        "magic": [
+          "ID3",
+          "MPEG frame sync 0xFF 0xEx/0xFx"
+        ],
+        "kind": "audio",
+        "max_bytes": 67108864
+      },
+      "spec_fingerprint": "ace1d3ca0d2366205525b1b49bedb30bc9f81197c7ad887d4ed69c411e35414b",
+      "attach_to": {
+        "block_id": "blk_280128ee1e4e4ded9d13",
+        "block_role": "practice",
+        "media_index_in_block": 0
+      },
+      "current_store_state": {
+        "artifact_id": null,
+        "mime": null,
+        "degraded": true,
+        "reason": "not generated yet; this task declares the requirement and does not produce bytes"
+      }
+    },
+    {
+      "hermes_home": "/home/deseretsaint/.hermes/h187-course/home",
+      "course_id": "crs_53a1191816354c44acec268a03d6dba0",
+      "enrollment_id": "enr_5906d9d5f01a420cba6d2d202db8da53",
+      "objective_id": "obj_f57dc61989524ad99bb7fc66346e36b6",
+      "lesson_id": "gen_tech_1",
+      "lesson_page_call": {
+        "enrollment_id": "enr_5906d9d5f01a420cba6d2d202db8da53",
+        "objective_id": "obj_f57dc61989524ad99bb7fc66346e36b6"
+      },
+      "media_kind": "visual",
+      "media_role": "schematic",
+      "producer": "deterministic_schematic",
+      "expected_mime": "image/svg+xml",
+      "mime_rule": {
+        "declared": "image/svg+xml",
+        "magic": [
+          "<svg (sanitized allowlist subset; scripts, foreignObject, external hrefs removed/rejected)"
+        ],
+        "kind": "visual",
+        "max_bytes": 8388608
+      },
+      "spec_fingerprint": "79c020c26912e1a7f937a3fff4da1f7e42951ff3fb2acc03180b34bcf68c7eed",
+      "attach_to": {
+        "block_id": "blk_8c780aa7b2cfb51d39aa",
+        "block_role": "example",
+        "media_index_in_block": 0
+      },
+      "current_store_state": {
+        "artifact_id": null,
+        "mime": null,
+        "degraded": true,
+        "reason": "not generated yet; this task declares the requirement and does not produce bytes"
+      }
+    },
+    {
+      "hermes_home": "/home/deseretsaint/.hermes/h187-course/home",
+      "course_id": "crs_53a1191816354c44acec268a03d6dba0",
+      "enrollment_id": "enr_5906d9d5f01a420cba6d2d202db8da53",
+      "objective_id": "obj_75056df1acb84e4ea637b30421c5cca9",
+      "lesson_id": "gen_tech_2",
+      "lesson_page_call": {
+        "enrollment_id": "enr_5906d9d5f01a420cba6d2d202db8da53",
+        "objective_id": "obj_75056df1acb84e4ea637b30421c5cca9"
+      },
+      "media_kind": "visual",
+      "media_role": "illustration",
+      "producer": "host.image_generate",
+      "expected_mime": "image/png",
+      "mime_rule": {
+        "declared": "image/png",
+        "magic": [
+          "89 50 4E 47 0D 0A 1A 0A"
+        ],
+        "kind": "visual",
+        "max_bytes": 8388608
+      },
+      "spec_fingerprint": "32cd36a7c3ea6eda10b7573d2a5ff2edb3ca92729af1e4b234ebac7754ac239a",
+      "attach_to": {
+        "block_id": "blk_aecba1e56d346fc8e07b",
+        "block_role": "example",
+        "media_index_in_block": 0
+      },
+      "current_store_state": {
+        "artifact_id": null,
+        "mime": null,
+        "degraded": true,
+        "reason": "not generated yet; this task declares the requirement and does not produce bytes"
+      }
+    }
+  ]
+}

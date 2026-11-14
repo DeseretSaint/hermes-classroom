@@ -1,0 +1,121 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "art_adf2e015a0694641a409bb54e9a6a746",
+      "bytes": 41088,
+      "content_hash": "sha256:208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c",
+      "kind": "audio",
+      "mime": "audio/mpeg"
+    }
+  ],
+  "attempts": [],
+  "checks": [],
+  "course": {
+    "course_id": "crs_c330330a969646cfb0735f9f3644c107",
+    "title": "Bike-shop Japanese: greet and say it aloud"
+  },
+  "document": {
+    "blocks": [
+      {
+        "check_id": null,
+        "deep": "こんにちは (konnichiwa) is the standard daytime greeting in Japanese. It is written こ・ん・に・ち・は; in this fixed greeting the final は is pronounced wa. Say it evenly: ko-n-ni-chi-wa.",
+        "headline": "The greeting in kana and romaji",
+        "id": "blk_aa982b8bf828f6e0703f",
+        "media": [],
+        "role": "example",
+        "short": "こんにちは (konnichiwa) is the daytime greeting; the final は is pronounced wa here.",
+        "source_ids": []
+      },
+      {
+        "check_id": null,
+        "deep": "Say it when you enter a shop or meet someone during the day. It opens the interaction; it is neither a request nor a farewell.",
+        "headline": "When to say it",
+        "id": "blk_3115f5ee701125cfd813",
+        "media": [],
+        "role": "explain",
+        "short": "Use it on entering or meeting someone in the daytime: it opens the interaction.",
+        "source_ids": []
+      },
+      {
+        "check_id": null,
+        "deep": "Play the pronunciation reference and repeat こんにちは three times, matching the rhythm ko-n-ni-chi-wa. The recording is the model; your own saying is the practice, and this page does not assess pronunciation.",
+        "headline": "Say it back",
+        "id": "blk_280128ee1e4e4ded9d13",
+        "media": [
+          {
+            "artifact_id": "art_adf2e015a0694641a409bb54e9a6a746",
+            "degraded": false,
+            "kind": "audio",
+            "label": "Narration — the transcript is the authoritative text; this is not pronunciation assessment.",
+            "purpose": "Hear こんにちは said clearly",
+            "reason": null,
+            "role": "narration",
+            "text_equivalent": "こんにちは (konnichiwa) — the standard daytime greeting, hello / good afternoon."
+          }
+        ],
+        "role": "practice",
+        "short": "Play the reference, then repeat こんにちは three times at the same rhythm.",
+        "source_ids": []
+      },
+      {
+        "check_id": null,
+        "deep": "Choose the daytime greeting rather than a request or a farewell\nForm the five sounds ko-n-ni-chi-wa\nSay it once, clearly, as you enter\nAnswer: こんにちは (konnichiwa)",
+        "headline": "A staff member looks up as you enter the shop. What do you say?",
+        "id": "blk_12e8203c343b9d1ac9c9",
+        "media": [],
+        "role": "example",
+        "short": "Enter, then say konnichiwa once, clearly.",
+        "source_ids": []
+      },
+      {
+        "check_id": null,
+        "deep": "こんにちは (konnichiwa) is the standard daytime greeting. The final は in this fixed greeting is pronounced wa. Romaji is a scaffold while you learn the sounds, not a second answer.",
+        "headline": "Recap",
+        "id": "blk_457e33eaf0ebe29c6c8f",
+        "media": [],
+        "role": "recap",
+        "short": "こんにちは is the daytime greeting; は sounds as wa here.",
+        "source_ids": []
+      }
+    ],
+    "check_id": null,
+    "content_hash": "sha256:072f15335091dd1f3163e3a18c520ea5f19c61f39d8dfa59e6872d7374aa3165",
+    "direction": "ltr",
+    "document_id": "doc_072f15335091dd1f3163",
+    "lang": "ja",
+    "objective_id": null,
+    "schema_version": 1,
+    "section_title": "Greet the staff with こんにちは",
+    "source_ids": [],
+    "state": "complete",
+    "view_note": null,
+    "views": {
+      "field_notes": true,
+      "field_quest": false,
+      "guided": true,
+      "textbook": true
+    }
+  },
+  "enrollment_id": "enr_22c18bf3305a4b0ca769b8219e0036dd",
+  "notebook_entries": [],
+  "provenance": {
+    "check_enabled": true,
+    "facts_unverified": false,
+    "independent": false,
+    "outcome": "model_assessed",
+    "warning": "model assessed, not independently validated: treat this page as a proposal."
+  },
+  "revision": 1,
+  "runtime": null,
+  "section": {
+    "evidence_target": "production",
+    "last_opened_at": null,
+    "objective_id": "obj_903c89f63e4940d7a8220082e4d68429",
+    "ordinal": 1,
+    "state": "not_started",
+    "title": "Greet shop staff with こんにちは and say it aloud"
+  },
+  "segments": [],
+  "sources": [],
+  "state": "not_started"
+}

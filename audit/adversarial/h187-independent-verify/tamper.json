@@ -1,0 +1,67 @@
+{
+  "kind": "tamper_probe",
+  "verifier": "sentinel",
+  "home": "/home/deseretsaint/.hermes/h187-course-tamper/home",
+  "checks_total": 8,
+  "checks_passed": 8,
+  "failures": [],
+  "status": "PASS",
+  "checks": [
+    {
+      "id": "T1.audio_baseline_ok",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "T1.image_baseline_ok",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "T2.tampered_audio_refused",
+      "ok": true,
+      "detail": {
+        "ok": false,
+        "code": "INTERNAL_ERROR",
+        "message": "artifact hash does not match its record"
+      }
+    },
+    {
+      "id": "T2b.restored_audio_ok",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "T3.missing_image_refused",
+      "ok": true,
+      "detail": {
+        "ok": false,
+        "code": "NOT_FOUND",
+        "message": "artifact file is missing on disk"
+      }
+    },
+    {
+      "id": "T4.symlink_outside_refused",
+      "ok": true,
+      "detail": {
+        "ok": false,
+        "code": "NOT_FOUND",
+        "message": "artifact file is outside this profile's artifact store"
+      }
+    },
+    {
+      "id": "T5.html_declared_png_refused",
+      "ok": true,
+      "detail": {
+        "ok": false,
+        "code": "UNSAFE_MEDIA",
+        "message": "artifact bytes are not the declared, render-safe media type"
+      }
+    },
+    {
+      "id": "T5b.refusal_is_mime_or_safety",
+      "ok": true,
+      "detail": "UNSAFE_MEDIA"
+    }
+  ]
+}

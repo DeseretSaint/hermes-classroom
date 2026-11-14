@@ -1,0 +1,151 @@
+{
+  "kind": "capture",
+  "captured_at": "2026-11-08T21:14:20Z",
+  "branch": "wt/t_ce380228",
+  "commit": "127cce1290b33af4f2cd7ffa1bd7ccd0e87d1359",
+  "hermes_home": "/home/deseretsaint/.hermes/h187-course/home",
+  "db_path": "/home/deseretsaint/.hermes/h187-course/home/plugin-data/coursebook/data.db",
+  "host_tool": "text_to_speech (tools.registry dispatch, tts toolset)",
+  "attempted": true,
+  "succeeded": true,
+  "seam_bound": true,
+  "artifacts_before": 0,
+  "summary": {
+    "generated": 1,
+    "reused": 0,
+    "degraded": 0,
+    "skipped": 0,
+    "artifact_ids": [
+      "art_adf2e015a0694641a409bb54e9a6a746"
+    ]
+  },
+  "dispatch_calls": [
+    {
+      "tool": "text_to_speech",
+      "args": {
+        "output_path": "/home/deseretsaint/.hermes/h187-course/home/plugin-data/coursebook/media-tmp/coursebook-tts-4w5bgfmc.mp3",
+        "instructions": "Read this lesson material clearly and naturally for a learner. Language: ja-JP."
+      },
+      "success": true,
+      "provider": "openai",
+      "error": null
+    }
+  ],
+  "lesson_state": "model_assessed",
+  "lesson_media": [
+    {
+      "artifact_id": "art_adf2e015a0694641a409bb54e9a6a746",
+      "content_hash": "sha256:208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c",
+      "degraded": false,
+      "kind": "audio",
+      "label": "Narration — the transcript is the authoritative text; this is not pronunciation assessment.",
+      "language": "ja-JP",
+      "mime": "audio/mpeg",
+      "purpose": "Hear こんにちは said clearly",
+      "reason": null,
+      "role": "narration",
+      "spec": "A clear, unhurried pronunciation of the Japanese daytime greeting こんにちは (konnichiwa) by a standard-Japanese voice, one item only.",
+      "text_equivalent": "こんにちは (konnichiwa) — the standard daytime greeting, hello / good afternoon.",
+      "transcript": "こんにちは",
+      "voice": "default"
+    }
+  ],
+  "artifact_row": {
+    "id": "art_adf2e015a0694641a409bb54e9a6a746",
+    "course_id": "crs_c330330a969646cfb0735f9f3644c107",
+    "kind": "audio",
+    "content_hash": "208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c",
+    "path": "/home/deseretsaint/.hermes/h187-course/home/plugin-data/coursebook/artifacts/objects/20/208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c",
+    "bytes": 41088,
+    "mime": "audio/mpeg",
+    "provenance_json": "{\"generator\": \"host.text_to_speech\", \"independent\": false, \"label\": \"Narration — the transcript is the authoritative text; this is not pronunciation assessment.\", \"language\": \"ja-JP\", \"lesson_id\": \"gen_lang_1\", \"lesson_state\": \"model_assessed\", \"model\": \"host-configured\", \"notes\": \"generated for lesson gen_lang_1 / job h187-tts-capture\", \"permission\": null, \"policy\": \"media-policy/1\", \"prompt_hash\": \"a1f848990a2c92c8fde611d65a05b5cd7cc6aaf7422bd5ac368aee48a7cb6562\", \"role\": \"narration\", \"source_hash\": \"b8dae91c9e27b6a7251f05e72321c43991f26b869e5ed3afc4df27a2f51619cc\", \"source_ids\": [], \"spec_hash\": \"ace1d3ca0d2366205525b1b49bedb30bc9f81197c7ad887d4ed69c411e35414b\", \"text_equivalent\": \"こんにちは (konnichiwa) — the standard daytime greeting, hello / good afternoon.\", \"voice\": \"default\"}",
+    "ref_count": 1,
+    "created_at": "2026-11-08T21:14:22Z"
+  },
+  "stored_path": "/home/deseretsaint/.hermes/h187-course/home/plugin-data/coursebook/artifacts/objects/20/208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c",
+  "stored_exists": true,
+  "size_bytes": 41088,
+  "sha256": "208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c",
+  "db_content_hash_matches": true,
+  "declared_mime": "audio/mpeg",
+  "sniffed_mime": "audio/mpeg",
+  "first16_hex": "fff3c4c4005a8c39b8015ac0003b560e",
+  "id3_header": false,
+  "mpeg_frame_sync": true,
+  "evidence_copy": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_ce380228/audit/adversarial/h187-tts/artifact/gen_lang_1-narration.bin",
+  "evidence_copy_size": 41088,
+  "evidence_copy_sha256": "208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c",
+  "evidence_copy_identical": true,
+  "ffprobe": {
+    "exit": 0,
+    "codec_name": "mp3",
+    "codec_type": "audio",
+    "sample_rate": "24000",
+    "channels": 1,
+    "duration": "2.568000",
+    "format_name": "mp3"
+  },
+  "serve_ok": true,
+  "serve_error": null,
+  "served_artifacts": [
+    {
+      "artifact_id": "art_adf2e015a0694641a409bb54e9a6a746",
+      "kind": "audio",
+      "mime": "audio/mpeg",
+      "bytes": 41088,
+      "content_hash": "sha256:208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c"
+    }
+  ],
+  "served_blocks": [
+    {
+      "block_id": "blk_aa982b8bf828f6e0703f",
+      "role": "example",
+      "media": []
+    },
+    {
+      "block_id": "blk_3115f5ee701125cfd813",
+      "role": "explain",
+      "media": []
+    },
+    {
+      "block_id": "blk_280128ee1e4e4ded9d13",
+      "role": "practice",
+      "media": [
+        {
+          "kind": "audio",
+          "role": "narration",
+          "artifact_id": "art_adf2e015a0694641a409bb54e9a6a746",
+          "mime": null,
+          "degraded": false,
+          "reason": null
+        }
+      ]
+    },
+    {
+      "block_id": "blk_12e8203c343b9d1ac9c9",
+      "role": "example",
+      "media": []
+    },
+    {
+      "block_id": "blk_457e33eaf0ebe29c6c8f",
+      "role": "recap",
+      "media": []
+    }
+  ],
+  "target_block": {
+    "block_id": "blk_280128ee1e4e4ded9d13",
+    "role": "practice",
+    "media": [
+      {
+        "kind": "audio",
+        "role": "narration",
+        "artifact_id": "art_adf2e015a0694641a409bb54e9a6a746",
+        "mime": null,
+        "degraded": false,
+        "reason": null
+      }
+    ]
+  },
+  "served_page_references_artifact": true,
+  "provenance": null
+}

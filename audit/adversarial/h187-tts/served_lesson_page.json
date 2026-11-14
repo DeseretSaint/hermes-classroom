@@ -1,0 +1,127 @@
+{
+  "ok": true,
+  "contract_version": 18,
+  "operation_id": "h187-tts-verify-page",
+  "revision": 1,
+  "result": {
+    "enrollment_id": "enr_22c18bf3305a4b0ca769b8219e0036dd",
+    "course": {
+      "course_id": "crs_c330330a969646cfb0735f9f3644c107",
+      "title": "Bike-shop Japanese: greet and say it aloud"
+    },
+    "section": {
+      "objective_id": "obj_903c89f63e4940d7a8220082e4d68429",
+      "title": "Greet shop staff with こんにちは and say it aloud",
+      "ordinal": 1,
+      "state": "not_started",
+      "evidence_target": "production",
+      "last_opened_at": null
+    },
+    "runtime": null,
+    "segments": [],
+    "document": {
+      "schema_version": 1,
+      "document_id": "doc_072f15335091dd1f3163",
+      "content_hash": "sha256:072f15335091dd1f3163e3a18c520ea5f19c61f39d8dfa59e6872d7374aa3165",
+      "section_title": "Greet the staff with こんにちは",
+      "objective_id": null,
+      "state": "complete",
+      "view_note": null,
+      "views": {
+        "textbook": true,
+        "guided": true,
+        "field_quest": false,
+        "field_notes": true
+      },
+      "blocks": [
+        {
+          "id": "blk_aa982b8bf828f6e0703f",
+          "role": "example",
+          "headline": "The greeting in kana and romaji",
+          "short": "こんにちは (konnichiwa) is the daytime greeting; the final は is pronounced wa here.",
+          "deep": "こんにちは (konnichiwa) is the standard daytime greeting in Japanese. It is written こ・ん・に・ち・は; in this fixed greeting the final は is pronounced wa. Say it evenly: ko-n-ni-chi-wa.",
+          "check_id": null,
+          "media": [],
+          "source_ids": []
+        },
+        {
+          "id": "blk_3115f5ee701125cfd813",
+          "role": "explain",
+          "headline": "When to say it",
+          "short": "Use it on entering or meeting someone in the daytime: it opens the interaction.",
+          "deep": "Say it when you enter a shop or meet someone during the day. It opens the interaction; it is neither a request nor a farewell.",
+          "check_id": null,
+          "media": [],
+          "source_ids": []
+        },
+        {
+          "id": "blk_280128ee1e4e4ded9d13",
+          "role": "practice",
+          "headline": "Say it back",
+          "short": "Play the reference, then repeat こんにちは three times at the same rhythm.",
+          "deep": "Play the pronunciation reference and repeat こんにちは three times, matching the rhythm ko-n-ni-chi-wa. The recording is the model; your own saying is the practice, and this page does not assess pronunciation.",
+          "check_id": null,
+          "media": [
+            {
+              "kind": "audio",
+              "role": "narration",
+              "artifact_id": "art_adf2e015a0694641a409bb54e9a6a746",
+              "purpose": "Hear こんにちは said clearly",
+              "text_equivalent": "こんにちは (konnichiwa) — the standard daytime greeting, hello / good afternoon.",
+              "label": "Narration — the transcript is the authoritative text; this is not pronunciation assessment.",
+              "degraded": false,
+              "reason": null
+            }
+          ],
+          "source_ids": []
+        },
+        {
+          "id": "blk_12e8203c343b9d1ac9c9",
+          "role": "example",
+          "headline": "A staff member looks up as you enter the shop. What do you say?",
+          "short": "Enter, then say konnichiwa once, clearly.",
+          "deep": "Choose the daytime greeting rather than a request or a farewell\nForm the five sounds ko-n-ni-chi-wa\nSay it once, clearly, as you enter\nAnswer: こんにちは (konnichiwa)",
+          "check_id": null,
+          "media": [],
+          "source_ids": []
+        },
+        {
+          "id": "blk_457e33eaf0ebe29c6c8f",
+          "role": "recap",
+          "headline": "Recap",
+          "short": "こんにちは is the daytime greeting; は sounds as wa here.",
+          "deep": "こんにちは (konnichiwa) is the standard daytime greeting. The final は in this fixed greeting is pronounced wa. Romaji is a scaffold while you learn the sounds, not a second answer.",
+          "check_id": null,
+          "media": [],
+          "source_ids": []
+        }
+      ],
+      "check_id": null,
+      "source_ids": [],
+      "lang": "ja",
+      "direction": "ltr"
+    },
+    "sources": [],
+    "artifacts": [
+      {
+        "artifact_id": "art_adf2e015a0694641a409bb54e9a6a746",
+        "kind": "audio",
+        "mime": "audio/mpeg",
+        "bytes": 41088,
+        "content_hash": "sha256:208bb60d6b56b0e734550e849755a3ec6d86d4a726b6293d399989b240648d3c"
+      }
+    ],
+    "checks": [],
+    "notebook_entries": [],
+    "attempts": [],
+    "state": "not_started",
+    "provenance": {
+      "outcome": "model_assessed",
+      "independent": false,
+      "facts_unverified": false,
+      "check_enabled": true,
+      "warning": "model assessed, not independently validated: treat this page as a proposal."
+    },
+    "revision": 1
+  }
+}
