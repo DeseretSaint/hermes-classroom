@@ -79,13 +79,21 @@ class KernelCase(unittest.TestCase):
         self.home = tempfile.mkdtemp(prefix="coursebook-kernel-")
         self._previous_home = os.environ.get("HERMES_HOME")
         os.environ["HERMES_HOME"] = self.home
+        # Registered *first* in setUp, so it runs *last* of all cleanups: a test that snapshots
+        # ``os.environ`` wholesale (``mock.patch.dict``) restores that snapshot after ``tearDown``,
+        # which would put the temp home back into the environment and leak this database into every
+        # later test in the same process. Restoring here keeps the profile path the suite inherited.
+        self.addCleanup(self._restore_home)
         db.migrate()
 
-    def tearDown(self) -> None:
+    def _restore_home(self) -> None:
         if self._previous_home is None:
             os.environ.pop("HERMES_HOME", None)
         else:
             os.environ["HERMES_HOME"] = self._previous_home
+
+    def tearDown(self) -> None:
+        self._restore_home()
         shutil.rmtree(self.home, ignore_errors=True)
 
     # ── dispatch helpers ────────────────────────────────────────────────
