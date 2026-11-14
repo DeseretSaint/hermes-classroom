@@ -87,10 +87,10 @@ _UNITS: dict[str, tuple[str, Decimal]] = {
 class Outcome:
     """One graded criterion. ``observed`` is learner-facing and must never contain a key.
 
-    ``rule``, ``next_action`` and ``answer`` are the authored miss block (upgrade 13): the rule the
-    check tests, the one action the learner may take next, and the learner's own answer as
-    evidence. They are empty on a pass and empty when the check authored no rule, so a reference
-    without one behaves exactly as it did before.
+    ``rule`` and ``next_action`` are the authored miss block (upgrade 13): the rule the check tests
+    and the one action the learner may take next. Both are empty on a pass and empty when the check
+    authored no rule, so a reference without one behaves exactly as it did before. ``answer`` is
+    the learner's own answer as *evidence*, not a diagnosis, so it is filled on a pass too.
     """
 
     criterion_id: str
@@ -260,29 +260,17 @@ def _seal_feedback(reference: dict[str, Any]) -> dict[str, Any]:
             + "; a wrong answer never grants access"
         )
     sealed: dict[str, Any] = {"rule": rule, "next_action": str(next_action)}
-    groups = feedback.get("groups") or []
-    if not isinstance(groups, list) or len(groups) > 10:
-        raise ReferenceSpecError("a feedback block declares at most ten per-group rules")
-    sealed_groups: list[dict[str, Any]] = []
-    for group in groups:
-        if not isinstance(group, dict) or set(group) - {"answers", "rule"}:
-            raise ReferenceSpecError("a per-group rule names answers and one rule")
-        answers = group.get("answers")
-        if (
-            not isinstance(answers, list)
-            or not answers
-            or not all(isinstance(item, str) and item.strip() for item in answers)
-        ):
-            raise ReferenceSpecError("a per-group rule names the accepted answers of its group")
-        group_rule = group.get("rule")
-        if not isinstance(group_rule, str) or not group_rule.strip():
-            raise ReferenceSpecError("a per-group rule names the rule for its group")
-        group_rule = group_rule.strip()
-        if len(group_rule) > MISS_RULE_MAX_CHARS:
-            raise ReferenceSpecError(f"an authored rule is at most {MISS_RULE_MAX_CHARS} characters")
-        sealed_groups.append({"answers": [str(item) for item in answers], "rule": group_rule})
-    if sealed_groups:
-        sealed["groups"] = sealed_groups
+    if "groups" in feedback:
+        # A rule per accepted-answer group was designed for selection checks and then withdrawn:
+        # a *wrong* answer is no evidence of which accepted form the learner was aiming at, so the
+        # group would be picked by a guess, and a guessed diagnosis can teach the error — exactly
+        # what the old design avoided by withholding the criteria. One rule for the whole check is
+        # the only rule a miss can honestly name, so a per-group block is refused rather than
+        # stored and silently ignored.
+        raise ReferenceSpecError(
+            "a miss names one rule for the whole check; a wrong answer says nothing about which "
+            "accepted form the learner aimed at, so a per-group rule would be a guess"
+        )
     scanned = normalize_text(rule)
     if not scanned:
         raise ReferenceSpecError("an authored rule carries readable text")
@@ -301,31 +289,26 @@ def _seal_feedback(reference: dict[str, Any]) -> dict[str, Any]:
 def authored_miss(reference: dict[str, Any], answer: dict[str, Any], kind: str) -> dict[str, Any] | None:
     """The authored rule a miss on this answer should name, or ``None`` when none is authored.
 
-    Selection checks may author one rule per accepted-answer group; the group whose accepted
-    combination shares the most picks with the learner's selection names the miss. Exact and
-    numeric checks have one accepted-answer group (their answer list), so their single rule applies.
-    Nothing here is generated: an unauthored rule stays absent rather than guessed.
+    One rule per check, and it applies to every wrong answer on that check: a rule says what has to
+    hold for the answer to be right, in terms the learner can act on, and that holds whichever
+    accepted form they were reaching for. There is deliberately no per-group variant — a wrong
+    answer is no evidence of which accepted form the learner aimed at, so choosing a group would be
+    a guess, and :func:`_seal_feedback` refuses one for that reason.
+
+    ``answer`` and ``kind`` are taken so callers do not have to know this shape (and so a future
+    rule can be conditioned on the lane), and neither changes the result. Nothing here is
+    generated: an unauthored rule stays absent rather than guessed.
     """
     feedback = reference.get("feedback")
     if not isinstance(feedback, dict):
         return None
     rule = str(feedback.get("rule") or "").strip()
-    next_action = str(feedback.get("next_action") or MISS_NEXT_ACTIONS[0])
-    groups = feedback.get("groups") or []
-    if kind == "selection" and groups:
-        picked = {normalize_text(str(item)) for item in (answer.get("selection") or [])}
-        best: dict[str, Any] | None = None
-        best_overlap = 0
-        for group in groups:
-            accepted = {normalize_text(str(item)) for item in group.get("answers") or []}
-            overlap = len(picked & accepted)
-            if overlap > best_overlap:
-                best, best_overlap = group, overlap
-        if best is not None:
-            rule = str(best.get("rule") or rule).strip()
     if not rule:
         return None
-    return {"rule": rule, "next_action": next_action}
+    return {
+        "rule": rule,
+        "next_action": str(feedback.get("next_action") or MISS_NEXT_ACTIONS[0]),
+    }
 
 
 def learner_answer_evidence(answer: dict[str, Any]) -> str:

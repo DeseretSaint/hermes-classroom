@@ -3555,7 +3555,8 @@ LESSON_SCHEMA: dict[str, Any] = {
                 },
                 "reference_answer": {"type": "string", "minLength": 1, "maxLength": 600},
                 # Upgrade 13: the rule this check tests, authored with the check so a miss can name
-                # it. One rule per accepted-answer group is optional (a selection check's groups).
+                # it. One rule for the whole check: a per-group variant was withdrawn because a
+                # wrong answer is no evidence of which accepted form the learner aimed at.
                 "feedback": {
                     "type": "object",
                     "additionalProperties": False,
@@ -3565,24 +3566,6 @@ LESSON_SCHEMA: dict[str, Any] = {
                         "next_action": {
                             "type": "string",
                             "enum": ["retry_attempt", "explain", "select_alternative"],
-                        },
-                        "groups": {
-                            "type": "array",
-                            "maxItems": 10,
-                            "items": {
-                                "type": "object",
-                                "additionalProperties": False,
-                                "required": ["answers", "rule"],
-                                "properties": {
-                                    "answers": {
-                                        "type": "array",
-                                        "minItems": 1,
-                                        "maxItems": 10,
-                                        "items": {"type": "string", "minLength": 1, "maxLength": 300},
-                                    },
-                                    "rule": {"type": "string", "minLength": 8, "maxLength": 240},
-                                },
-                            },
                         },
                     },
                 },
@@ -5955,8 +5938,9 @@ def _lesson_instructions(
         "can act on — e.g. 'Read the scale to one decimal place before comparing.' A rule that "
         "restates the reference answer or an accepted answer is refused, because a learner who "
         "reads it can copy the graded response and the retry becomes a copying task, so name the "
-        "rule, never the answer. When the check has more than one accepted-answer group (a "
-        "selection check), check.feedback.groups may name one rule per group as {answers, rule}. "
+        "rule, never the answer. One rule covers the whole check: do not write a separate rule per "
+        "accepted answer or per accepted-answer group, because a wrong answer says nothing about "
+        "which of them the learner was reaching for, so a per-group rule is refused as a guess. "
         "check.feedback.next_action, when present, is 'retry_attempt', 'explain' or "
         "'select_alternative' — never an action that grants access, because a wrong answer does "
         "not.",
@@ -14348,11 +14332,15 @@ def _accepted_forms(check: dict[str, Any]) -> list[str]:
 def _authored_feedback(check: dict[str, Any]) -> dict[str, Any] | None:
     """The check's authored miss block, sealed, or ``None`` when it cannot be shipped.
 
-    Upgrade 13: a check names the rule it tests, and optionally one rule per accepted-answer group,
-    so a miss can say which rule was missed instead of printing ``does not match an accepted
-    answer``. The block is sealed by ``validators.seal_reference`` like every other part of the
-    reference: a rule that restates an accepted answer, or a miss that names a pass action, is
-    refused there.
+    Upgrade 13: a check names the rule it tests, so a miss can say which rule was missed instead of
+    printing ``does not match an accepted answer``. The block is sealed by
+    ``validators.seal_reference`` like every other part of the reference: a rule that restates an
+    accepted answer, or a miss that names a pass action, is refused there.
+
+    One rule per check, not one per accepted-answer group: ``accepted_alternatives`` groups are
+    variant forms of *one* accepted answer (kana beside romaji), and a wrong answer is no evidence
+    of which form the learner aimed at, so a per-group rule would be a guess. The seal refuses one
+    outright, which is why this path never stores a ``groups`` key.
 
     A rule that fails the seal is **dropped, not repaired**. Repairing it would print a rule the
     author did not write, and a leaky rule turns the retry into a copy task — the exact regression

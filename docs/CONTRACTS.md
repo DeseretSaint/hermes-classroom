@@ -2929,9 +2929,12 @@ teaching chat receives carried the verdict, the next action, the evidence class 
 | `attempt.submit` response → `criteria[]` | `rule`, `next_action`, `answer` | The same facts on the unmet criterion, so a replayed or re-read attempt rebuilds the block from the row it was stored on rather than re-grading. |
 
 The block is **authored with the check**, never generated at grading time: it lives on the check's
-stored `reference_json.feedback` (sealed by `validators.seal_reference`), and a selection check may
-carry one rule per accepted-answer group under `feedback.groups`. Two authoring mistakes are refused
-at seal time rather than printed to a learner:
+stored `reference_json.feedback` (sealed by `validators.seal_reference`). One rule covers the whole
+check. A per-accepted-answer-group rule was designed and then withdrawn: `accepted_alternatives`
+groups are variant forms of one accepted answer, and a wrong answer says nothing about which form
+the learner was reaching for, so selecting a group would be a guess — and a guessed diagnosis can
+teach the error. The seal refuses a `groups` block outright rather than storing one nothing reads.
+Two authoring mistakes are refused at seal time rather than printed to a learner:
 
 - a rule that **restates an accepted answer** turns a retry into a copying task, which is exactly why
   the pre-v29 design withheld the criteria;
