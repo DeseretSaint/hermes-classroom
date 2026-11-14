@@ -11,7 +11,6 @@ A reference it cannot read raises ``ValueError``. ``domain.practice_end`` persis
 
 from __future__ import annotations
 
-import re
 from typing import Any
 
 from . import grading, practice, validators
@@ -36,34 +35,11 @@ def _learner_text(turns: Any) -> list[str]:
 
 
 def _clause_matches(clause: dict[str, Any], text: str) -> bool:
-    kind = clause.get("type")
-    value = str(clause.get("value") or "")
-    if kind == "exact":
-        return validators.normalize_text(value) in validators.normalize_text(text)
-    if kind == "regex":
-        return re.search(value, text, re.IGNORECASE) is not None
-    raise ValueError(f"a match clause declares an unknown type {kind!r}")
+    return practice.clause_matches(clause, text)
 
 
 def _reference_targets(reference: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
-    targets = reference.get("targets")
-    if not isinstance(targets, list) or not targets:
-        raise ValueError("a conversation reference declares no targets")
-    resolved: dict[str, list[dict[str, Any]]] = {}
-    for target in targets:
-        if not isinstance(target, dict):
-            raise ValueError("each conversation target is an object")
-        target_id = target.get("id")
-        clauses = target.get("match")
-        if not isinstance(target_id, str) or not isinstance(clauses, list) or not clauses:
-            raise ValueError("each conversation target names an id and its match clauses")
-        for clause in clauses:
-            if not isinstance(clause, dict):
-                raise ValueError("a match clause is an object")
-            if clause.get("type") not in ("exact", "regex"):
-                raise ValueError(f"unknown match clause type {clause.get('type')!r}")
-        resolved[target_id] = clauses
-    return resolved
+    return practice.reference_targets(reference)
 
 
 def grade_transcript(
