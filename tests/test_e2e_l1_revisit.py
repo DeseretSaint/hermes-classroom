@@ -10,7 +10,9 @@ These cases run the real commands against a real migrated database:
 
 * a closed generated check is cloned by ``check.open`` as a revisit: a new revision, the same
   stimulus/reference/rubric, ``revisit: true``;
-* ``progression.challenge_out`` reaches the same clone for a generated objective;
+* ``progression.challenge_out`` reaches a generated objective as a *different* case of the same
+  target (upgrade 16), or refuses with ``no_varied_challenge_available`` when no new case can be
+  proved — never by re-serving the answered stimulus;
 * the revisit pass is recorded (an attempt and a layer-1 evidence row) but never moves
   ``objectives.state`` again, never writes a second independent-evidence row and never pays XP;
 * ``check.get`` and ``lesson.page`` name the revisit so the lesson page and the desk can label it
@@ -207,8 +209,12 @@ class CheckOpenRevisitTest(GeneratedRevisitCase):
         self.assertIs(challenge["revisit"], True)
         self.assertEqual(challenge["check_version"], 2)
         row = self.rows("SELECT * FROM checks WHERE id = ?", (challenge["check_id"],))[0]
-        self.assertEqual(json.loads(row["stimulus_json"]), GENERATED_STIMULUS)
+        # Upgrade 16: the revisit is a *different* case of the same target, never the answered
+        # stimulus re-served. `revisit` still marks the return as review, not new evidence.
+        served = json.loads(row["stimulus_json"])
+        self.assertNotEqual(served, GENERATED_STIMULUS)
         self.assertEqual(int(row["revisit"]), 1)
+        self.assertEqual(row["objective_id"], lesson["objective_id"])
 
     def test_reads_name_the_revisit(self) -> None:
         lesson = self.generated_course()
