@@ -302,7 +302,7 @@ Budget is per stage, not per course:
 
 | stage | provider calls, worst case | reason |
 |---|---:|---|
-| blueprint (`plan`) | 2 × (1 + passes) × 2 | one generate, one `.cut` re-ask, one validate per validation pass and one re-ask per pass, two attempts (`plan_calls`); a 40-objective/12-unit plan is 14 passes, so 60 |
+| blueprint (`plan`) | 2 × (1 + 2 × passes) × 2 | one generate, one `.cut` re-ask, one validate per validation pass, one re-ask per pass and one retry for a pass whose call was lost in the transport class, two attempts (`plan_calls`); a 40-objective/12-unit plan is 14 passes, so 116 |
 | unit sections (`unit_sections`, one unit) | 6 | one generate, one validate and one truncation re-ask, two attempts (CP-015e) |
 | unit lessons (`lessons`, one unit) | 12 per section: one generate, one validate and two truncation re-asks, three attempts | CP-015g gave an item-level fix hint a second retry; W2-2 counted the lesson's own re-ask |
 

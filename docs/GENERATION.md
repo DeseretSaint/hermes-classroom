@@ -192,6 +192,22 @@ the author-model fallback — passes `task="cb_validate"`; authoring calls do no
 `coursebook_status` reports `output_bound.registered: false` rather than implying a cap. This is
 a host-documented seam, not a private import; no host patch is required.
 
+**A lost validation pass is retried once in the same attempt (UP-34).** `_run_validation_passes`
+settles every pass before it reads a result, and it used to raise the first failure — so one
+timed-out pass discarded every answered pass, and the plan job failed `HOST_UNAVAILABLE` even
+though the plan itself was fine. A pass whose failure is in the transport class
+(`ProviderTimeout` that is not a job-deadline cut, or `ProviderFailure`) is now re-run once,
+synchronously, inside the same attempt: the same request object (same schema, same prompt
+version, same purpose) with its own fresh bounded deadline and its own usage row. Only a retry
+that also fails ends the stage; a retry that answers lands in the merged review. Every retried
+pass is recorded in `gen_validation_records.pass_retries` (read back as
+`validation.pass_retries`) with its pass index, the lost call's error and the retry's provider,
+model and tokens — a recovered review is never presented as first-time clean. A schema-gate
+rejection (`ModelOutputInvalid`) is not retried: the provider answered, so that stays the
+non-retryable `VALIDATION_FAILED`. `plan_calls` counts the retry in the ceiling
+(`(1 + repair) x (1 + 2 x passes)` per attempt) so the extra call cannot abort a run behaving as
+designed — the CP-015e failure one stage up.
+
 **Provenance is what the provider reported (H-195).** `generation_provenance(response, request)`
 records `{provider, model, known, prompt_version, pipeline_version}` on the plan document
 (`generation`), on the plan job result, on `approval_provenance.generator`, on
