@@ -34,10 +34,11 @@ The visual building is **kit-first and generation-optional**:
 
 | surface | reference | kit and assets | acceptance |
 |---|---|---|---|
-| Home (global and course) | `docs/concept-parity/refs/home.png` | field-atlas hero, four display covers, paper/grain, wood planks, shelf, fox clock pose, tag, clock | one Home writer; covers are display plates; header band present; 1344x768 |
+| Home (global) | `docs/concept-parity/refs/home.png` | field-atlas hero, four display covers, paper/grain, wood planks, shelf, fox clock pose, tag, clock | one Home writer; covers are display plates; header band present; 1344x768 |
 | Discover / Workshop | `docs/concept-parity/refs/discover.png` | field-atlas banner, eight collectible display plates, fox point pose, badges | banner and cards are painted plates, not typographic plates |
 | Classroom lesson | `docs/concept-parity/refs/classroom.png` | field-atlas lesson scene, section plates, stamp stepper, challenge card, fox read pose | lesson scene is a display plate; fallback is the section plate, never flat text |
-| Course home | `docs/concept-parity/refs/map.png` | course-map base, trail, buildings, shelf, fox | map and shelf are plates; no plain course card list |
+| Course home | `docs/concept-parity/refs/map.png` | course-map base, trail, buildings, shelf, fox point pose | `CourseHomeV3` (`data-cb-course-home-v3`), the course detail's `overview` view, and nothing else: map and shelf are plates; no plain course card list. A frame of the desk is not this surface |
+| Course desk (GM-002) | `docs/concept-parity/refs/home.png` | desk grammar: Continue plate, path, paper and ink; no display plate by design | `FieldDesk` (`data-cb-course-home`), the selected course's trailhead. Its card is about hierarchy and copy, not illustration, so it holds no display role and is captured as its own `course-desk` cell |
 | Design System | `docs/concept-parity/refs/system.png` | card anatomy, badges, palette, pose map, materials, object kit | specimen sheet is the source of truth |
 | Parent Studio | system-derived | same kit, no parity frame | composed from the system, not scored as a reference frame |
 | Game mode | `docs/GM-CONCEPT-PARITY-RUBRIC.md` | approved world kit, XP chip, challenge card, lesson scene | world approved; no fake XP outside Game |
@@ -197,7 +198,7 @@ scripts/vq-capture.sh
 #   --state <dir>        disposable rig (default ~/.hermes/coursebook-test-vq006)
 #   --out <dir>          capture output (default docs/visual-review/vq-006)
 #   --widths "1344 1049 900 460"
-#   --destinations "home discover course-home classroom world-studio design-system"
+#   --destinations "home discover course-home course-desk classroom world-studio design-system"
 #   --game-course crs_…  the user-created Game course to capture
 #   --reuse              drive an already-running rig instead of building one
 #   --allow-no-game      report a missing Game course instead of stopping before capture
@@ -213,8 +214,12 @@ What it does, in order:
    import path (`scripts/vq-library.py` → `scripts/seed-demo-course.py`), then reads `world.read` for
    every library item and requires one course whose stored `presentation_mode` is `game` with an
    approved world. It does not create a Game course and never photographs a Textbook course as Game;
-3. captures Home, Discover, Classroom, Course home, World Studio and the Design System at the
-   1344x768 window and the 1049, 900 and 460 route widths, one PNG and one JSON cell per cell;
+3. captures Home, Discover, Course home, the course desk, Classroom, World Studio and the Design
+   System at the 1344x768 window and the 1049, 900 and 460 route widths, one PNG and one JSON cell
+   per cell. Course home and the course desk are two surfaces on the same route destination, so
+   each cell names which one it photographed: `course-home` must mount `CourseHomeV3`
+   (`data-cb-course-home-v3`) inside the course detail's `overview`, and `course-desk` must mount
+   `FieldDesk` (`data-cb-course-home`). A frame of one is refused as the other;
 4. writes `manifest.json`, `MANIFEST.md` and `contact-sheet.png` beside the frames, and prints the
    absolute output directory and a short manifest;
 5. exits non-zero when a cell fails.
@@ -226,7 +231,12 @@ The judge is `scripts/vq-manifest.py`; the camera is `scripts/vq-capture.mjs`. A
   load, or the installed plugin has no such surface (the Design System on a build that never mounted
   one, for example);
 - a required display role is missing: four Home display covers, eight Discover collectibles, a
-  Classroom lesson scene, a Course-map plate, a World plate, a Design System specimen;
+  Classroom lesson scene, the **course-map plate**, a World plate, a Design System specimen. A role
+  that names one specific plate is matched by that plate's identity — the authored
+  `data-cb3-scene-artifact` id (`course-map`) or the bundled kit role (`kit.hero.course-map`) — not
+  by the generic inventory `kind`, because every scene plate reports the same kind. Any other scene
+  plate, lesson room or cover on the surface is refused with its identity named, so the kit's
+  `home-hero` cannot green the role while VQ-007 has not shipped the map;
 - an image is a placeholder (incomplete, no natural size, empty `currentSrc`, a known blank name);
 - an image is below 2x its rendered size;
 - an image is a data URI unless it is a hashed bundled brand asset from
