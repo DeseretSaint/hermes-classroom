@@ -548,7 +548,7 @@ family or collapses to a badge plus two claims, so the rows are stated in the ha
 | `studio.gate.export` | Export the approved files | deck | 28 | `95-studio.js:7419` · gate primary |
 | `studio.gate.minima` | The pack minima reported these problems: | deck | 44 | `95-studio.js:7432` · minima refusal |
 | `studio.gate.files` | Exported files | deck | 16 | `95-studio.js:7446` · artifact list heading |
-| `studio.gate.export_line` | Export {kind} · {when} · content hash {hash} | deck | 96 | `95-studio.js:7449` · artifact row, computed |
+| `studio.gate.export_line` | Export {export_id} · {when} · content hash {hash} | deck | 96 | `95-studio.js:7449` · artifact row, computed |
 | `studio.gate.pack_note` | The pack carries parent guide, learner pages and answer guide. Narration stays an audio role, so an authored text script is not exported as a narration file: it is the Audio & visuals tab and part of the parent guide. | deck | 240 | `95-studio.js:7465` · pack note |
 | `studio.gate.privacy_note` | Exported files never include attempts, notebook notes, reflections, transcripts or provider settings. | deck | 110 | `95-studio.js:7467` · privacy note |
 | `studio.gate.download.pdf` | Download PDF | deck | 16 | `95-studio.js:7499` · download action |

@@ -1661,7 +1661,13 @@ class TestCp001gDeckFamilies(unittest.TestCase):
         self.assertEqual(rows.get("game.state.unknown"), "State not recorded")
 
     def test_every_new_row_cites_the_file_and_line_it_words(self):
-        """The card requires a source citation per row; a family without one is unmaintainable."""
+        """The card requires a source citation per row, and the citation must land inside the file.
+
+        Shape alone is not enough: ``95-studio.js:99999`` has the shape of a citation and proves
+        nothing, so each ``file.js:line`` is resolved against ``desktop/src`` and its line number
+        must be within that file's length. Word-occurrence is checked by ``TestCp031cSweep``; this
+        one is the cheap structural floor for every family CP-001g authored.
+        """
         family_prefixes = tuple(p for prefixes in self.FAMILIES.values() for p in prefixes)
         failures: list[str] = []
         checked = 0
@@ -1669,8 +1675,18 @@ class TestCp001gDeckFamilies(unittest.TestCase):
             if not any(ident == p or ident.startswith(p) for p in family_prefixes):
                 continue
             checked += 1
-            if not re.search(r"`[\w.-]+\.js:\d+", where):
+            citations = re.findall(r"`([\w.-]+\.js):(\d+)", where)
+            if not citations:
                 failures.append(f"{ident}: no `file.js:line` citation in the Where cell")
+                continue
+            for name, number in citations:
+                source = ROOT / "desktop" / "src" / name
+                if not source.exists():
+                    failures.append(f"{ident}: cites `{name}`, which is not in desktop/src")
+                    continue
+                length = len(read(source).splitlines())
+                if int(number) > length:
+                    failures.append(f"{ident}: `{name}:{number}` is past the file's {length} lines")
         self.assertGreaterEqual(checked, 140, "the family gate went vacuous")
         self.assertEqual(failures, [], "\n".join(failures))
 

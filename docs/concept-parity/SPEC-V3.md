@@ -646,7 +646,7 @@ v2 keeps the v2 spec, so that row is not one of S9's six v3 rows and S9 paints n
 
 ### 5.6 Sweep surfaces (CP-001g)
 
-The five scored screens above are measured against the concept frames. These seven families were
+The five scored screens above are measured against the concept frames. These eight families were
 authored later, from the complete shipped-string sweep in `docs/concept-parity/copy/CP-031-sweep-*.md`,
 because the deck ended at the design-system lab and every visible string on the Homework, Game,
 World Studio and Parent Studio surfaces had no row. Each id below is a `COPY.md` row; each row's
@@ -659,7 +659,7 @@ Two arithmetic rules are stated here because the deck cannot name them as a `com
   `maxCalls x cost_per_call_usd`, read from the last lessons job's recorded preflight and divided by
   its `section_count`. When no such record exists the row is `studio.regen.no_estimate` instead; the
   surface never prints a zero.
-- `studio.gate.export_line` fills `{kind}`, `{when}` and `{hash}` from the export record the backend
+- `studio.gate.export_line` fills `{export_id}`, `{when}` and `{hash}` from the export record the backend
   returned, and `studio.gate.approved_line` fills `{when}` and `{note}` from the approval record.
   Neither is arithmetic.
 
@@ -855,7 +855,7 @@ Two arithmetic rules are stated here because the deck cannot name them as a `com
 | `studio.gate.export` | Export the approved files |
 | `studio.gate.minima` | The pack minima reported these problems: |
 | `studio.gate.files` | Exported files |
-| `studio.gate.export_line` | Export {kind} · {when} · content hash {hash} |
+| `studio.gate.export_line` | Export {export_id} · {when} · content hash {hash} |
 | `studio.gate.pack_note` | The pack carries parent guide, learner pages and answer guide. Narration stays an audio role, so an authored text script is not exported as a narration file: it is the Audio & visuals tab and part of the parent guide. |
 | `studio.gate.privacy_note` | Exported files never include attempts, notebook notes, reflections, transcripts or provider settings. |
 | `studio.gate.download.pdf` | Download PDF |

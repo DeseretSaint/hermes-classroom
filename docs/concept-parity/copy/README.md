@@ -149,6 +149,7 @@ found without a gap (`GAP-31`–`GAP-42`) — not the surfaces they belong to.
   CP-001g (`t_4d6d5b56`) rowed by hand the state words the extractor drops — `Started`, `Stamped`,
   `Planned`, `Skipped`, `Expired`, `Plan` and `clipped` — because a single-token word is exactly the
   family member that can vanish between sweeps. Those are the only count changes: 1331 rows became
-  1340, and each row names the deck id it feeds.
+  1338 (+7: chrome 51→52, game 215→216, parent-studio 642→647), and each row names the deck id it
+  feeds.
 - `GAPS.md` — every gap as a proposed deck row, with the source form, the cap, and the card that
   needs it. Proposals only.
