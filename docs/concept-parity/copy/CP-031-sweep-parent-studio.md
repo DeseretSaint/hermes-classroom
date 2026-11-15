@@ -1,10 +1,16 @@
 # CP-031c — Parent Studio shipped-string sweep
 
-Card: **CP-031c** (`t_0458a135`), re-swept by **CP-031c-R** (`t_54a44039`) at `a11bc0e4`. Docs only; no product string changed.
+Card: **CP-031c** (`t_0458a135`), re-swept by **CP-031c-R** (`t_54a44039`) at `a11bc0e4` and re-derived by **CP-031d** (`t_d20f3f5e`) at `14fb14f3`. Docs only; no product string changed.
 
-**Revision swept:** `origin/master` at **`a11bc0e4bdf55683ea3c1660f8031d0f5a5f3ef6`** (95-studio.js, 7934 lines, whole file).
+**Revision swept:** `origin/master` at **`14fb14f3e8c5306f973bf98ba270140ca98f0ac5`** (95-studio.js, 7934 lines, whole file).
 **Rows:** 647 inventory rows; 647 distinct literals. Every row cites the line(s)
 that carry its words in this revision.
+
+**CP-031d re-derivation (`t_d20f3f5e`):** between `a11bc0e4` and `14fb14f3`, `95-studio.js` moved
+exactly once — `54eca355` replaced the template `plan ${row.kind}` at 4666 with the literal
+`plan change` — and no other user-facing literal in the file changed. The literal count and the
+647-row total are unchanged; the row below already carries the new literal at the same line
+(`95-studio.js:4666`), re-derived by the same lexer, not by eye.
 
 **Surface:** the Parent Studio detail page: homework sheets, plan validation, the fine-tune editor, the
 approval banner and the lesson-set export gate.

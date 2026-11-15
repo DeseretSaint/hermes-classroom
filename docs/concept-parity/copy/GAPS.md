@@ -8,22 +8,24 @@ Each entry names: what the card body or spec asks for, why no row covers it, the
 the card that needs it. Rows marked **decision** are not mine to word — they need the owner
 (`atlas`) or the deck owner (`CP-001`).
 
-**Inventory revision (CP-031c-R, card `t_54a44039`):** every sweep row and every line citation in
-this file is re-derived from `origin/master` at **`a11bc0e4bdf55683ea3c1660f8031d0f5a5f3ef6`**. The
-line numbers below are that revision's. The gate in `tests/test_cp_copy_inventory.py` keys its
+**Inventory revision (CP-031d, card `t_d20f3f5e`, re-deriving CP-031c-R `t_54a44039`):** every
+sweep row and every line citation in this file is re-derived from `origin/master` at
+**`14fb14f3e8c5306f973bf98ba270140ca98f0ac5`**. The line numbers below are that revision's. The gate
+in `tests/test_cp_copy_inventory.py` keys its
 required rows on `(file, exact string)`, so a required row is located in the shipped file at test
 time instead of being trusted to a stored line number; it also re-extracts the literal population
 from the five segment files, so a re-authored file fails the gate instead of quietly rotating the
 citations.
 
 The swept revision is pinned on **content**, not only on a commit id: `00-header.js` `ab62cbd7`,
-`30-home.js` `14fda088`, `90-course.js` `2cafd20b`, `95-studio.js` `20e07391`, `97-world.js`
+`30-home.js` `9877b940`, `90-course.js` `a47e7fe2`, `95-studio.js` `77d8b2ec`, `97-world.js`
 `00d46dcf`. `test_the_swept_sha_still_describes_master` compares each of those five blobs at the
 swept sha and at `origin/master`: master moving without touching them is harmless, and master
 moving one of them fails the gate naming the file, so the next author re-sweeps rather than
-rotating citations. CP-031c swept the same five files at `5d2b303e`; that sweep is the row set this
-one re-derives, and the two literals that revision re-worded are listed at the end of
-`CP-031-sweep-parent-studio.md`.
+rotating citations. CP-031c swept the same five files at `5d2b303e`; CP-031c-R re-derived that
+row set at `a11bc0e4`; CP-031d re-derived it again at `14fb14f3`, where `95-studio.js` had moved
+by exactly one literal (`plan change`, `95-studio.js:4666`) and no row total changed. The two
+literals CP-031c re-worded are listed at the end of `CP-031-sweep-parent-studio.md`.
 
 Proposed ids follow the existing `<surface>.<part>` convention. Caps follow the deck's column.
 A `source` cell is written in the deck's own grammar — `deck`, `field:`, `computed:`, `pack:`,
@@ -420,14 +422,15 @@ source. A stored NULL reads as Textbook (`world.read` response description, `con
 `CP-025a-homework-game.md` and `CP-025b-studio.md` cite the visible strings of the v2 surfaces they
 replace, but a literal-by-literal sweep was outstanding. **CP-031b (`t_adc9bdee`) performed it**;
 **CP-031c (`t_0458a135`) re-derived it whole-file at `5d2b303e`, and CP-031c-R (`t_54a44039`)
-re-swept and re-anchored it at `a11bc0e4`.** The complete inventories are:
+re-swept and re-anchored it at `a11bc0e4`, and CP-031d (`t_d20f3f5e`) re-derived it at
+`14fb14f3`.** The complete inventories are:
 
 | file | in-scope source | rows |
 |---|---|---|
-| `CP-031-sweep-chrome.md` | `desktop/src/00-header.js` (all 1214 lines; rail, route title, learner vocabulary, create form, settings sheet, tutor path, shell errors) | 51 |
+| `CP-031-sweep-chrome.md` | `desktop/src/00-header.js` (all 1214 lines; rail, route title, learner vocabulary, create form, settings sheet, tutor path, shell errors) | 52 |
 | `CP-031-sweep-homework.md` | `desktop/src/90-course.js` (all 5496 lines; the whole `NotebookView` plus the classroom, textbook, quiz, plan, evidence and export surfaces) | 331 |
-| `CP-031-sweep-game.md` | `desktop/src/30-home.js` (all 5215 lines; Home shelf, the defaults line, `ChildSafeLine`, the Game band, its play layer and the field journal) | 215 |
-| `CP-031-sweep-parent-studio.md` | `desktop/src/95-studio.js` (all 7934 lines; Parent Studio, the plan shape and outline repair, the fine-tune block, the take-home pack and the homework surface hosted in the same file; §3.1 rows the Home twin of `ChildSafeLine` in `30-home.js`) | 642 |
+| `CP-031-sweep-game.md` | `desktop/src/30-home.js` (all 5215 lines; Home shelf, the defaults line, `ChildSafeLine`, the Game band, its play layer and the field journal) | 216 |
+| `CP-031-sweep-parent-studio.md` | `desktop/src/95-studio.js` (all 7934 lines; Parent Studio, the plan shape and outline repair, the fine-tune block, the take-home pack and the homework surface hosted in the same file; §3.1 rows the Home twin of `ChildSafeLine` in `30-home.js`) | 647 |
 | `CP-031-sweep-world.md` | `desktop/src/97-world.js` (all 1135 lines) | 92 |
 
 Each sweep is generated from a literal lexer and covers the **whole** file, not a slice. The
