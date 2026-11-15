@@ -33,6 +33,7 @@ import re
 import warnings as warnings_module
 from pathlib import Path
 from typing import Any, Iterable, Mapping
+from urllib.parse import urlsplit
 
 from . import segments
 from . import rubrics
@@ -381,8 +382,37 @@ def require_minimum_version(manifest: Mapping[str, Any], current_version: str) -
 # ── Policy minima ───────────────────────────────────────────────────────────
 
 
+#: The only URI schemes a pack source URL may carry. A source URL is displayed as a link and may
+#: be fetched later by ``source.revalidate``, so the pack boundary cannot admit a scheme whose
+#: meaning is "run this" (``javascript:``), "read this local file" (``file:``), "decode this payload"
+#: (``data:``/``blob:``) or a relative reference that resolves against whatever page renders it.
+SOURCE_URL_SCHEMES: frozenset[str] = frozenset({"http", "https"})
+
+#: Raw whitespace and control characters are never legal in a URI and are how a smuggled scheme
+#: survives a naive ``startswith("http")`` check.
+_URL_FORBIDDEN = re.compile(r"[\x00-\x20\x7f]")
+
+
+def is_http_url(value: Any) -> bool:
+    """True only for an absolute ``http``/``https`` URL with a host and no whitespace.
+
+    Mirrors ``coursebook.research._is_http_url`` (the research ledger's rule) but is strict about
+    the bytes: a source URL is untrusted pack data, so scheme case, surrounding whitespace, control
+    characters, a missing host and every other scheme are refused rather than normalised.
+    """
+    if not isinstance(value, str) or not value or value != value.strip():
+        return False
+    if _URL_FORBIDDEN.search(value):
+        return False
+    try:
+        parsed = urlsplit(value)
+    except ValueError:
+        return False
+    return parsed.scheme.lower() in SOURCE_URL_SCHEMES and bool(parsed.hostname)
+
+
 def validate_minima(manifest: Mapping[str, Any]) -> None:
-    """Checks the schema cannot express: a teachable pack, not merely a legal document."""
+    """Checks the schema cannot express: a teachable, safely linkable pack, not a legal document."""
     problems = _minima_problems(manifest)
     if problems:
         raise PackRejected("pack does not meet the teaching minima: " + "; ".join(problems))
@@ -451,8 +481,18 @@ def _minima_problems(manifest: Mapping[str, Any]) -> list[str]:
         if sid in source_ids:
             problems.append(f"duplicate source_id {sid!r}")
         source_ids.add(sid)
-        if not source.get("url") and not source.get("publisher"):
-            problems.append(f"source {sid!r} has neither a URL nor a publisher")
+        url = source.get("url")
+        if not url:
+            if not source.get("publisher"):
+                problems.append(f"source {sid!r} has neither a URL nor a publisher")
+        elif not is_http_url(url):
+            # A pack is untrusted data and its source URL becomes a link on the review screen and in
+            # the Sources tab. Only http(s) is a citation; every other scheme is refused here, before
+            # preview or import can return or store it.
+            problems.append(
+                f"source {sid!r} URL {url!r} is not an absolute http(s) URL: a pack source URL must "
+                "use the http or https scheme and name a host"
+            )
 
     all_paths = [str(entry["path"]) for entry in manifest["files"]]
     if len(set(all_paths)) != len(all_paths):
