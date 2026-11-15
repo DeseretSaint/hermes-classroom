@@ -8,6 +8,16 @@ Status key: `[x]` verified on the commit named in the row, `[ ]` open, `[~]` par
 another owner. A gate is not `[x]` because code exists; it is `[x]` because a command ran against
 this commit and passed.
 
+**Current record (2026-11-15).** `docs/release-evidence.json` now describes the merged trunk
+`2dec360f` plus the docs-truth gate commit `b9895039`: measured commit `b9895039…`,
+`desktop/plugin.js` sha256 `ca575b3a…5b0` (rebuilt from `desktop/src` by
+`python3 scripts/build_plugin.py`, and the module `scripts/check-audit-pin.py` names), `cb.rpc` v29
+with 93 declared methods and 93 handlers, `cb.db` v15, the suite count below, and an M4 block
+re-derived from the committed audit (62 frames, 15/15 claims PASS, 2,172 text nodes, 320 AX
+controls, 158 full-motion animated nodes). The `42fcd0f5` and `b9f4a19` paragraphs below are
+previous records; where they quote their own numbers they are labelled with the commit they
+describe.
+
 Release tree: **`42fcd0f5`** — the tree this submission's catalog entry pins, measured 2026-11-11 at
 the 14:05 MST freeze. `desktop/plugin.js` there is `71d940ce0398220fe1d25d1ec39b1e4bdfbc2a1c257eb7eb42292c628ac4d4b8`
 (`python3 scripts/build_plugin.py --check` reports the match against `desktop/src`), `node --check
@@ -27,8 +37,14 @@ as this tree's numbers. Every current-tree number in this file is re-derived on 
 checked by `python3 scripts/check-docs-truth.py`; what was measured, and what is branch-only, is
 `docs/RELEASE-EVIDENCE.md`.
 
-The tree carries `cb.rpc` v28 (93 declared methods, 93 handlers) and `cb.db` v15 (schema v15,
-migrations `0001`-`0015`): v28 is one additive amendment over v27, composed from two E2E lanes — a
+The tree carries `cb.rpc` v29 (93 declared methods, 93 handlers) and `cb.db` v15 (schema v15,
+migrations `0001`-`0015`): v29 composes six additive amendments over v28 and adds no method — the
+`cb.jobs` v6 `retry` on `job.activity`, `attempt.submit`'s optional `feedback` rule, `review_item`'s
+optional `interval_reason`, the required `pronunciation_assessment` `measure` / `caveat` / `gated` /
+`min_word_confidence` fields, `outline_plan`'s optional `exclusions` and `time_estimate`, and the
+authored hint ladder (`assistance_policy` on `check_stimulus`, `assistance` on `check.get`, an
+optional `rung` on `lesson.assist`) — and `contracts/rpc.v28.json` stays byte-identical history.
+v28 is one additive amendment over v27, composed from two E2E lanes — a
 passed generated section reopens as a revisit, a clone of the newest closed authored check at the
 next version, served when the objective has no hand-written `check_spec` (`revisit` on `check.open`,
 `check.get` and `progression.challenge_out`, recorded as an attempt and its layer-1 evidence row but
@@ -62,8 +78,13 @@ in migration `0012_fine_tune_revisions`, v13 adds GM-001's Game Mode storage —
 `courses.presentation_mode` plus eight play/homework/tutor tables — in migration
 `0013_game_mode_contracts`, and v14 removes exactly one unique key from `takehome_packs` in
 `0014_takehome_pack_revision_scope`, rebuilding that table in place with rows and indexes preserved,
-additive only. The suite is `Ran 4577 tests in 1524s … OK (skipped=12)` on `master` `7e7a54fe`
-(module `94104fbd…`), the tree the `tests` block of `docs/release-evidence.json` names (2026-11-12): the
+additive only. The suite is `Ran 5120 tests in 1179.248s … OK (skipped=19)`, exit 0, on the record's measured
+commit `b9895039` (trunk `2dec360f` plus the docs-truth gate commit, module `ca575b3a…`), the tree
+the `tests` block of `docs/release-evidence.json` names (2026-11-15); the 19 skips are the suite's
+own declared skips (`OK (skipped=19)`), not a partial run. The previous record was
+`Ran 4577 tests in 1524s … OK (skipped=12)` on `master` `7e7a54fe`
+(module `94104fbd…`), the tree the `tests` block of `docs/release-evidence.json` named until this
+re-measurement (2026-11-12): the
 E2E wave was merged over `bb0feb6f` (master's S5/S6 and G6) — E2E L4/L5 `54b789a4`, the composed `cb.rpc`
 v28 that carries E2E L1 `131179ac`, and U3b's `sections_total` `67abe18f` — and the cb.db v15 pins were
 re-derived on the union, and E2E U2 `2fe0dd15` then merged over it (the answer disclosure asks before it
@@ -331,9 +352,9 @@ holds the demo back. No recording happens without DeseretSaint's approval.
 | Public listing not authorised | The source repository is public (gate 10 met by measurement 2026-11-10), but a catalog merge, a tag and an announcement are publication under the operator gate, and none of them is authorised | DeseretSaint |
 | No release tag | Atlas's operator gate forbids publishing a release or tag until DeseretSaint signs off in chat | Atlas, DeseretSaint |
 
-Verified, so they are not blockers: 93/93 `cb.rpc` v28 methods mounted with no
-contract problems, schema v15 from migrations `0001`-`0015`, 4577 tests on `master` `7e7a54fe`
-(2747 on the release tree `b9f4a19`), pack round-trip and export
+Verified, so they are not blockers: 93/93 `cb.rpc` v29 methods mounted with no
+contract problems, schema v15 from migrations `0001`-`0015`, 5120 tests on the record's measured
+commit `b9895039` (2747 on the older release tree `b9f4a19`, 4577 on `master` `7e7a54fe`), pack round-trip and export
 hash matching, eight `parent.*` methods, the replan carry with the Parent Studio plan guard, and the
 full replan → lessons → export loop on contest row 9 at `29bede7` (export `exp_2e068c56`, content
 hash `sha256:ccf69462…e5a5` matching the approved hash, `export.ready: true`). The UI halves beyond
@@ -346,8 +367,10 @@ resolved for the recording.
 | --- | --- |
 | Repository | `https://github.com/DeseretSaint/hermes-classroom` (public; `master` is pushed and clones anonymously) |
 | Release branch | `master` (pushed to `origin/master`; tags, catalog PR and publication remain operator-gated) |
-| Release candidate commit | `b9f4a197e42e4f033298d94608fcb5b63640b094` — frozen master: the H-210-R2 merge over `df052ea` (the live pack round trip that closed gate 4 plus its capture); the diff from `df052ea` is `docs/` and `audit/` only, and `desktop/plugin.js` is still `cd862140…c516` |
-| Measured on that commit | suite `Ran 2747 tests in 410.301s … OK (skipped=1)`; `cb.rpc` v20 / 73 methods / 73 handlers; `cb.db` v12; `desktop/plugin.js` sha256 `cd862140…c516`; M4 62 frames, 15/15 claims PASS (audit measured on `ab6dc7e`, plugin pin unchanged, not regenerated) |
+| Record's measured commit | `b9895039` — trunk `2dec360f` plus the docs-truth gate commit (`scripts/check-docs-truth.py` reads `WIRE_CONTRACT_VERSION`, with its tests; no product, contract or Desktop file moves) |
+| Measured on that commit | suite `Ran 5120 tests in 1179.248s … OK (skipped=19)`, exit 0; `cb.rpc` v29 / 93 declared methods / 93 handlers; `cb.db` v15; `desktop/plugin.js` sha256 `ca575b3a…5b0`; M4 62 frames, 15/15 claims PASS, 2,172 text nodes / 320 AX controls / 158 full-motion animated nodes, summed from the committed audit the module pins |
+| Release candidate commit (previous record) | `b9f4a197e42e4f033298d94608fcb5b63640b094` — frozen master: the H-210-R2 merge over `df052ea` (the live pack round trip that closed gate 4 plus its capture); the diff from `df052ea` is `docs/` and `audit/` only, and `desktop/plugin.js` is still `cd862140…c516` |
+| Measured on that commit (previous record) | suite `Ran 2747 tests in 410.301s … OK (skipped=1)`; `cb.rpc` v20 / 73 methods / 73 handlers; `cb.db` v12; `desktop/plugin.js` sha256 `cd862140…c516`; M4 62 frames, 15/15 claims PASS (audit measured on `ab6dc7e`, plugin pin unchanged, not regenerated) |
 | Tag | none. Publication gate closed; a tag is forbidden until sign-off |
 | Demo | none. `docs/DEMO.md` is the script; gate 7 unmet |
 | Verification evidence | `docs/RELEASE-EVIDENCE.md`, `docs/CB017-RELEASE-VERIFICATION.md`, `docs/REVIEW_CB017-FINAL.md` (§2, §10), `docs/REVIEW_CB017-row9-ui.json`, `docs/cb017-shots/` |

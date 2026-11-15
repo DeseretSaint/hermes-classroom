@@ -6,9 +6,11 @@ Status: independent gate for the product-line claims in `docs/VISUAL_MEDIA_PLAN.
 regenerated for **CP-049** on `wt/cp-049-m4-pin` (branch from master `19fec67`), after `d4d37e2`
 changed the shipped type stacks and `879fdb2` added the guard for that wiring. It is pinned to the
 module master ships: `desktop/plugin.js` sha256
-`4087908c1881df93bf0f7e71bbac65c2511aee3f115271f6b3f846091c9d03b7` (that was the shipping module
-on 2026-11-10; the committed audit has since been re-pinned for the trunk module `e87a2e01…`, and the
-Reproducibility section records each re-pin with the numbers it measured).
+`ca575b3af0e2cdf14ad5547dab57bbb37a6baea45e11c50ef690f5a4143055b0` (the module at trunk
+`2dec360f`, rebuilt from `desktop/src` by `python3 scripts/build_plugin.py`;
+`scripts/check-audit-pin.py` reports the match). Earlier pins — `4087908c` (2026-11-10), then the
+trunk modules `e87a2e01`, `9015b84c`, `28bc081c`, `52dac9ed` and `d6d85566` — are history, and the
+Reproducibility section records each re-pin with the numbers it measured.
 
 The recapture moved **no pixels and no measurement**. All 62 committed PNGs hash byte-identically
 before and after the run, and a structural diff of `audit.json` shows exactly three changed values —
@@ -129,6 +131,18 @@ reproduced every measurement: comparing that audit with the `9015b84c` one shows
 motion, 62 frames and 15/15 claims PASS carry forward. This is the pin the committed
 `audit/visual/m4-visual/audit.json` now names.
 
+**Re-pin at `ca575b3a` (trunk `2dec360f`, 2026-11-15).** The module trunk ships hashes to
+`ca575b3af0e2cdf14ad5547dab57bbb37a6baea45e11c50ef690f5a4143055b0`. The committed
+`audit/visual/m4-visual/audit.json` names it — `python3 scripts/check-audit-pin.py` reports
+`audit matches desktop/plugin.js (ca575b3af0e2)` — and its per-frame sums are the M4 numbers
+`docs/release-evidence.json` now carries: 62 frames, 15/15 claims PASS, **2,172** text nodes over
+the 56 non-forced frames, **320** AX controls over the 32 frames with an accessibility tree, 0
+unnamed, **158** animated nodes in full motion against **0** in the four reduced-motion frames,
+worst authored contrast 5.93:1, 0 clipped, 0 overflow (`generated_at:
+2026-11-15T04:04:23.035Z`). It is the same measurement every re-pin since `d6d85566` carries, and
+`scripts/m4v-repro-check.py` has still not been run at this pin, so this is one committed
+generation, not a two-run pair.
+
 The zero-pixel result is a property of this gate's mount, not a claim that `d4d37e2` changed nothing:
 the v3 `--cb3-font-*` variables are set by `CbV3Scope` on the route root, and this harness mounts the
 six lesson surfaces under a v2 `data-cb-scope` root. The frames therefore keep the OS serif/sans
@@ -219,8 +233,9 @@ audio players, text-only, media-unavailable.
 
 ## Verdicts
 
-The claim table below is the release-tree audit at `cd862140` (`b9f4a19`). The trunk audit at
-`e87a2e01` keeps every verdict PASS and re-measures 2,172 text nodes, 320 AX controls and 158
+The claim table below is the release-tree audit at `cd862140` (`b9f4a19`), kept as history with the
+text-node and AX counts it measured. The audit this record now pins is the shipped module
+`ca575b3a`: it keeps every verdict PASS and measures 2,172 text nodes, 320 AX controls and 158
 full-motion animated nodes; the Reproducibility section records that re-pin.
 
 | Claim | Verdict | Evidence (in `audit/visual/m4-visual/audit.json`) |
