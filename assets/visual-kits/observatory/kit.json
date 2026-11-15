@@ -281,11 +281,11 @@
         "role": "material",
         "path": "assets/material/vignette-night.webp",
         "size": [
-          96,
-          96
+          2688,
+          1428
         ],
-        "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
-        "bytes": 152,
+        "sha256": "39e90d7e05e1ffa7cb2c401852827d3de077eecd7c16324326914f644de8cbca",
+        "bytes": 9588,
         "textless": true,
         "source": "curated_kit",
         "shared_kernel": true,

@@ -281,11 +281,11 @@
         "role": "material",
         "path": "assets/material/vignette-parchment.webp",
         "size": [
-          96,
-          96
+          2688,
+          1428
         ],
-        "sha256": "7ecca423831eb4ee7a5e2bab77d138fb89d743d35fb1e26c999880dc44ef7cd6",
-        "bytes": 594,
+        "sha256": "84b460a871f36c996c0469c073af72481173c5cf394eee64fcc7542190aa6995",
+        "bytes": 24532,
         "textless": true,
         "source": "curated_kit",
         "shared_kernel": true,

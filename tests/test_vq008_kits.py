@@ -128,6 +128,22 @@ class KitJudge(unittest.TestCase):
         self.assertIn("cover ratio natural_vs_shipped", out.stdout)
         KIT.write_text(self.original)
 
+    def test_stale_kernel_pin_fails(self):
+        # The kernel claims are content-addressed against plates this card does not own, so they go
+        # stale whenever the kernel moves (VQ-006 re-authored the vignette to 2688x1428). A re-pin is
+        # only worth anything if the judge still refuses a wrong one.
+        kit = json.loads(self.original)
+        row = [r for r in kit["kernel"]["assets"]
+               if r["path"] == "assets/material/vignette-parchment.webp"][0]
+        row["sha256"] = "0" * 64
+        row["size"] = [96, 96]
+        KIT.write_text(json.dumps(kit))
+        out = self._check()
+        self.assertEqual(out.returncode, 1, out.stdout)
+        self.assertIn("kernel assets/material/vignette-parchment.webp sha256 is stale", out.stdout)
+        self.assertIn("kernel assets/material/vignette-parchment.webp size is stale", out.stdout)
+        KIT.write_text(self.original)
+
     def test_placeholder_name_fails(self):
         kit = json.loads(self.original)
         kit["roles"]["section"][0]["path"] = "section/placeholder.png"
@@ -319,6 +335,70 @@ class FieldAtlasJudge(unittest.TestCase):
         def mutate(kit):
             kit["roles"]["fox"][0]["id"] = kit["roles"]["hero"][0]["id"]
         self._mutate_and_check(mutate, "declared twice")
+
+
+    def test_row_without_a_source_fails(self):
+        # The exemption above only relaxes *which* source word is acceptable; a row with no source
+        # at all is still a broken claim and must be refused.
+        def mutate(kit):
+            kit["roles"]["home_ground"][0]["source"] = ""
+        self._mutate_and_check(mutate, "row declares no source")
+
+
+class LoaderVocabulary(unittest.TestCase):
+    """The judge's role vocabulary must be the one trunk's readers actually mount.
+
+    `home_ground` joined `field_atlas@3` when the owner-approved Home ground became a kit role, and
+    the Home stage backdrop is painted from it (`desktop/plugin.js` role
+    `kit.home_ground.home-ground`, asserted by
+    `test_desktop_home_scene_geometry.test_the_stage_backdrop_is_the_home_ground_plate`). The judge
+    kept a copy of the VQ-004 branch's display-only tuple and refused the manifest the product
+    ships. Rather than trust either list, this test derives the vocabulary from the consumer: the
+    roles `build_cb_assets.py` emits and the roles the shipped kit manifest records.
+    """
+
+    @staticmethod
+    def _judge():
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location("vq008_kits", SCRIPT)
+        if spec is None or spec.loader is None:
+            raise AssertionError(f"cannot load the judge from {SCRIPT}")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+    @staticmethod
+    def _build_full_roles() -> tuple[str, ...]:
+        """`KIT_FULL_ROLES` from the builder's own source, read without importing PIL/venv code."""
+        import ast
+
+        tree = ast.parse((ROOT / "scripts" / "build_cb_assets.py").read_text(encoding="utf-8"))
+        for node in tree.body:
+            if isinstance(node, ast.Assign) and getattr(node.targets[0], "id", "") == "KIT_FULL_ROLES":
+                return tuple(role for role, _quality in ast.literal_eval(node.value))
+        raise AssertionError("build_cb_assets.py declares no KIT_FULL_ROLES")
+
+    def test_the_vocabulary_covers_every_role_the_build_mounts(self):
+        roles = set(self._judge().KIT_ROLES)
+        built = set(self._build_full_roles())
+        self.assertIn("home_ground", built,
+                      "the builder no longer mounts the Home ground; re-decide the vocabulary")
+        self.assertLessEqual(built, roles, f"{built - roles} is mounted by the build but refused "
+                                           f"by the judge")
+
+    def test_the_vocabulary_covers_every_shipped_kit_role(self):
+        manifest = json.loads((ROOT / "assets" / "kit" / "manifest.json").read_text(encoding="utf-8"))
+        shipped = {str(row.get("kit_role") or "") for row in manifest} - {""}
+        self.assertIn("home_ground", shipped,
+                      "the shipped manifest records no home_ground plate")
+        self.assertLessEqual(shipped, set(self._judge().KIT_ROLES),
+                             f"{shipped - set(self._judge().KIT_ROLES)} ships but the judge refuses it")
+
+    def test_the_home_stage_backdrop_names_the_role(self):
+        # The surface, not a comment: the desktop plugin resolves the ground under this role name.
+        plugin = (ROOT / "desktop" / "plugin.js").read_text(encoding="utf-8")
+        self.assertIn('"role": "kit.home_ground.home-ground"', plugin)
 
 
 if __name__ == "__main__":

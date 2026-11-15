@@ -121,14 +121,27 @@ MANIFEST_SHAPE = {
 
 PLATE_SIZES = {"hero": (1344, 768), "section": (1344, 768), "lesson_scene": (1344, 768)}
 
-#: The role vocabulary a display-kit loader accepts (`coursebook/visual_kits.KIT_ROLES` on the
-#: VQ-004 branch). A kit may not invent a role name: a loader refuses an unknown one rather than
-#: guessing what to mount. Shared-kernel rows are references, not roles — see `kernel.assets`.
-KIT_ROLES = ("hero", "cover", "section", "lesson_scene", "collectible", "object", "fox")
+#: The role vocabulary a display-kit loader accepts. It is the union of the two readers that mount a
+#: kit on trunk, not a remembered list:
+#:
+#:   * `scripts/build_cb_assets.py` — `KIT_FULL_ROLES` (hero, home_ground, lesson_scene) plus the
+#:     six `cover` rows and its `kit_role` column read from `assets/kit/manifest.json`. `home_ground`
+#:     is there because the Home *stage backdrop* is that plate
+#:     (`desktop/plugin.js` role `kit.home_ground.home-ground`,
+#:     `tests/test_desktop_home_scene_geometry.py::test_the_stage_backdrop_is_the_home_ground_plate`);
+#:     it became a kit role on trunk when `field_atlas@3` adopted the owner-approved Home ground.
+#:   * `coursebook/visual_kits.KIT_ROLES` on the VQ-004 branch — the display-only vocabulary
+#:     (hero, cover, section, lesson_scene, collectible, object, fox), *without* home_ground because
+#:     that branch predates the ground joining the kit.
+#:
+#: A kit may not invent a role name: a reader refuses an unknown one rather than guessing what to
+#: mount. Shared-kernel rows are references, not roles — see `kernel.assets`.
+KIT_ROLES = ("hero", "cover", "section", "lesson_scene", "collectible", "object", "fox",
+             "home_ground")
 
 #: Roles whose rows must be a kit-local PNG a loader can open and hash. The kernel rows are the
 #: only rows allowed to point outside the kit, and they are not roles.
-KIT_LOCAL_ROLES = ("hero", "cover", "section", "lesson_scene", "collectible")
+KIT_LOCAL_ROLES = ("hero", "cover", "section", "lesson_scene", "collectible", "home_ground")
 
 TEMPER = "magick -modulate 105,75,100, applied to the provider raw before any crop or resize"
 LIFT = "magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)"
@@ -1355,7 +1368,8 @@ def check_resolution(grammar: str, kit: dict) -> None:
                      f"{round(frame[0] / ref, 4)}")
 
 
-def check_role_rows(grammar: str, kit: dict, *, verify_bytes: bool) -> None:
+def check_role_rows(grammar: str, kit: dict, *, verify_bytes: bool,
+                    require_curated_source: bool = True) -> None:
     """The loader's role rules, applied to every kit including `field_atlas`.
 
     A display-kit loader refuses an unknown role name and a repeated asset id (`kit_unknown_role`,
@@ -1363,6 +1377,15 @@ def check_role_rows(grammar: str, kit: dict, *, verify_bytes: bool) -> None:
     manifests the product refuses, so this runs on both branches. `verify_bytes` re-derives the
     hash and pixel size of each row (the field_atlas branch has no per-plate check of its own; the
     seven call this before `check_plate`, which does the deeper reads).
+
+    `require_curated_source` is the seven-kit manifest shape's own rule (`source=curated_kit`). It
+    is not the display-kit loader's: the loader reads id/role/path/size/sha256/textless and never
+    the provenance word. `field_atlas`'s owner-approved `home_ground` row records
+    `source: "derived"` because the adopted Home ground *is* a byte-identical copy of the textless
+    1344 plate, and that is a true statement about the file. Making the approved kit relabel itself
+    `curated_kit` would buy a green run with a false provenance claim, so the exemption is written
+    here instead: a row must always declare a usable source, and only the seven must declare
+    exactly `curated_kit`.
     """
     root = kit_dir(grammar).resolve()
     seen: dict[str, str] = {}
@@ -1385,7 +1408,9 @@ def check_role_rows(grammar: str, kit: dict, *, verify_bytes: bool) -> None:
                 fail(f"{where}: row declares role {row.get('role')!r}")
             if row.get("textless") is not True:
                 fail(f"{where}: row does not record textless=true")
-            if row.get("source") != "curated_kit":
+            if not str(row.get("source") or "").strip():
+                fail(f"{where}: row declares no source")
+            elif require_curated_source and row.get("source") != "curated_kit":
                 fail(f"{where}: row does not record source=curated_kit")
             rel = str(row.get("path") or "")
             if not rel or Path(rel).is_absolute():
@@ -1617,10 +1642,12 @@ def check_kit(grammar: str) -> int:
         # VQ-002's approved kit has its own shape (six covers for three shelf courses, kernel bytes
         # copied in as roles, no section). Its shape stays exempt; its *loader contract* does not:
         # a display-kit loader only sees `roles`, so the vocabulary, the duplicate-id rule and the
-        # per-row path/hash/size claims are checked here exactly as on the seven.
+        # per-row path/hash/size claims are checked here exactly as on the seven. Its provenance
+        # words are not: `home_ground` truthfully records `source: "derived"`, so the seven's
+        # `source=curated_kit` manifest-shape rule is not applied to it.
         if kit.get("grammar") != grammar:
             fail(f"{grammar}: kit.json grammar is {kit.get('grammar')!r}")
-        check_role_rows(grammar, kit, verify_bytes=True)
+        check_role_rows(grammar, kit, verify_bytes=True, require_curated_source=False)
         check_text_absence(grammar)
         return 0 if not FAILS else 1
 
