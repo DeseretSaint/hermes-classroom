@@ -806,7 +806,7 @@ not invent it here.
 | Export is blocked. The backend’s reason: {…}. | `95-studio.js:4645` | default | `GAP-33` |
 | Export is blocked and the backend returned no reason string. | `95-studio.js:4646` | error | `GAP-33` |
 | No fine-tune change is waiting for review. | `95-studio.js:4652` | empty | `GAP-33` |
-| plan {…} | `95-studio.js:4666` | default | `GAP-33` |
+| plan change | `95-studio.js:4666` | default | `GAP-33` |
 | Changed: {…} | `95-studio.js:4684` | default | `GAP-33` |
 | Now: {…} | `95-studio.js:4689` | default | `GAP-33` |
 | Before: {…} | `95-studio.js:4693` | default | `GAP-33` |

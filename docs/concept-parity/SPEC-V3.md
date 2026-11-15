@@ -1048,10 +1048,12 @@ is its own card.
    verbatim, not paraphrased, and they carry no parentheses, so the fallback row's
    `Export is blocked ({reason}).` never prints beside a curated reason. None of the four carries a
    brace, so they add nothing to this table.
-3. **Deck and build differ in exactly one place until `t_e8ad3cd7` lands:** `COPY.md`'s
-   `studio.review.order` row says `plan change`, while the build at `f9be4126` still prints
-   `plan ${row.kind}`. The deck row's Where cell states that difference, so nobody reads the deck as
-   a description of the current ship.
+3. **Deck and build agree — `t_e8ad3cd7` landed the surface half.** `COPY.md`'s
+   `studio.review.order` row says `plan change`, and the badge at `95-studio.js:4666` prints that
+   literal, so the plan-revision enum (`reorder`, `objective_edit`, `undo`) travels only in the
+   payload and the row's `data-cb-review-plan-revision` / `data-cb-review-state` attributes and is
+   never shown. Nothing else in the row changed: the sibling `lesson page` badge, the chip and the
+   `Changed:` / `Now:` / `Before:` lines render as before.
 
 ---
 
