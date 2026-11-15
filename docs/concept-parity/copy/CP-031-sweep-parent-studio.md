@@ -3,7 +3,7 @@
 Card: **CP-031c** (`t_0458a135`), re-swept by **CP-031c-R** (`t_54a44039`) at `a11bc0e4`. Docs only; no product string changed.
 
 **Revision swept:** `origin/master` at **`a11bc0e4bdf55683ea3c1660f8031d0f5a5f3ef6`** (95-studio.js, 7934 lines, whole file).
-**Rows:** 642 inventory rows; 642 distinct literals. Every row cites the line(s)
+**Rows:** 647 inventory rows; 647 distinct literals. Every row cites the line(s)
 that carry its words in this revision.
 
 **Surface:** the Parent Studio detail page: homework sheets, plan validation, the fine-tune editor, the
@@ -372,8 +372,16 @@ The state column is classified from the literal's own wording (`error`, `empty`,
 
 | string | source file:line | state | proposed copy id (GAP-nn) |
 |---|---|---|---|
-| Done — you recorded it | `95-studio.js:1852` | default | `GAP-31` |
-| Done — a parent recorded it | `95-studio.js:1853` | default | `GAP-31` |
+| Planned | `95-studio.js:1851` | default | `GAP-31` → `hw.state.proposed` |
+| Done — you recorded it | `95-studio.js:1852` | default | `GAP-31` → `hw.state.self_reported_done` |
+| Done — a parent recorded it | `95-studio.js:1853` | default | `GAP-31` → `hw.state.parent_reported_done` |
+| Skipped | `95-studio.js:1854` | default | `GAP-31` → `hw.state.skipped` |
+| Expired | `95-studio.js:1855` | default | `GAP-31` → `hw.state.expired` |
+
+`Planned`, `Skipped` and `Expired` are single tokens, so the extraction gate never asked for them;
+they are rowed by hand under `GAP-31` so the state map is complete by name. The map's sixth contract
+value, `assigned`, **has no shipped word** — `GAP-31` leaves that row to the owner, and CP-001g does
+not invent it here.
 
 ### CB_HOMEWORK_KIND_WORD (`95-studio.js` from line 1858)
 
@@ -973,16 +981,18 @@ The state column is classified from the literal's own wording (`error`, `empty`,
 | Nothing generated for this tab yet | `95-studio.js:7198` | empty | `GAP-28` |
 | This course asked for no narration, or no lesson has been generated yet. | `95-studio.js:7201` | default | `GAP-28` |
 | The plan must be approved and its lessons generated before this tab has text. | `95-studio.js:7202` | default | `GAP-28` |
+| clipped | `95-studio.js:7223` | default | `GAP-35` → `studio.tab.clipped` |
 | sha256 {…} | `95-studio.js:7231` | default | `GAP-35` |
-| · the served text was clipped at the tab limit | `95-studio.js:7231` | default | `GAP-35` |
+| · the served text was clipped at the tab limit | `95-studio.js:7231` | default | `GAP-35` → `studio.tab.clipped_note` |
 
 ### StudioExportPanel (`95-studio.js` from line 7244)
 
 | string | source file:line | state | proposed copy id (GAP-nn) |
 |---|---|---|---|
 | The course was updated elsewhere; press Approve this lesson set again. | `95-studio.js:7284` | default | `GAP-34` |
-| Export gate | `95-studio.js:7326` | default | `GAP-34` |
-| Lesson set approval | `95-studio.js:7332` | default | `GAP-34` |
+| Export gate | `95-studio.js:7326` | default | `GAP-34` → `studio.gate.title` |
+| Plan | `95-studio.js:7331` | default | `GAP-34` → `studio.gate.row.plan` |
+| Lesson set approval | `95-studio.js:7332` | default | `GAP-34` → `studio.gate.row.approval` |
 | Approved content hash | `95-studio.js:7334` | default | `GAP-34` |
 | Current content hash | `95-studio.js:7338` | default | `GAP-34` |
 | Final approval | `95-studio.js:7343` | default | `GAP-34` |

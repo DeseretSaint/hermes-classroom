@@ -3,7 +3,7 @@
 Card: **CP-031c** (`t_0458a135`), re-swept by **CP-031c-R** (`t_54a44039`) at `a11bc0e4`. Docs only; no product string changed.
 
 **Revision swept:** `origin/master` at **`a11bc0e4bdf55683ea3c1660f8031d0f5a5f3ef6`** (30-home.js, 5215 lines, whole file).
-**Rows:** 215 inventory rows; 215 distinct literals. Every row cites the line(s)
+**Rows:** 216 inventory rows; 216 distinct literals. Every row cites the line(s)
 that carry its words in this revision.
 
 **Surface:** the Home shelf and defaults line, the Game band, the play layer and the field journal.
@@ -420,7 +420,11 @@ is the gap that owns them.
 |---|---|---|---|
 | Field journal | `30-home.js:5090`; `30-home.js:5109` | default | `GAP-24` |
 | {…} of {…} sections stamped by recorded evidence. | `30-home.js:5119` | default | `GAP-24` |
+| Stamped | `30-home.js:5192` | default | `GAP-42` → `game.journal.stamped` |
 | No section is stamped yet. A stamp appears when evidence is recorded, never for opening a page. | `30-home.js:5120` | empty | `GAP-24` |
+
+`Stamped` is the journal's earned word and is a single token, so the extractor never asked for a
+row: it is rowed by hand under `GAP-42` so the card's earned state cannot vanish with a restyle.
 
 
 **Offline and overflow evidence:** Home has an offline state (`CB_HOME_V3_COPY.offlineTitle` /

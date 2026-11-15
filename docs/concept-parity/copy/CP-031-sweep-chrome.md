@@ -3,7 +3,7 @@
 Card: **CP-031c** (`t_0458a135`), re-swept by **CP-031c-R** (`t_54a44039`) at `a11bc0e4`. Docs only; no product string changed.
 
 **Revision swept:** `origin/master` at **`a11bc0e4bdf55683ea3c1660f8031d0f5a5f3ef6`** (00-header.js, 1214 lines, whole file).
-**Rows:** 51 inventory rows; 51 distinct literals. Every row cites the line(s)
+**Rows:** 52 inventory rows; 52 distinct literals. Every row cites the line(s)
 that carry its words in this revision.
 
 **Surface:** the rail, route title, learner vocabulary, create form, settings sheet, tutor path and the
@@ -33,19 +33,25 @@ The state column is classified from the literal's own wording (`error`, `empty`,
 
 | string | source file:line | state | proposed copy id (GAP-nn) |
 |---|---|---|---|
-| Independent evidence | `00-header.js:60` | default | `GAP-42` |
-| Not started | `00-header.js:65` | default | `GAP-42` |
-| Delayed evidence | `00-header.js:68` | default | `GAP-42` |
-| Review due | `00-header.js:69` | default | `GAP-42` |
-| Could not be written | `00-header.js:73` | error | `GAP-42` |
-| Moved on without a grade | `00-header.js:74` | default | `GAP-42` |
+| Independent evidence | `00-header.js:60` | default | `GAP-42` → `game.state.independent_evidence` |
+| Not started | `00-header.js:65` | default | `GAP-42` → `game.state.not_started` |
+| Started | `00-header.js:66` | default | `GAP-42` → `game.state.introduced` |
+| Delayed evidence | `00-header.js:68` | default | `GAP-42` → `game.state.delayed_evidence` |
+| Review due | `00-header.js:69` | default | `GAP-42` → `game.state.review_due` |
+| Could not be written | `00-header.js:73` | error | `GAP-42` → `game.state.needs_review` |
+| Moved on without a grade | `00-header.js:74` | default | `GAP-42` → `game.state.overridden` |
 | No check yet | `00-header.js:77` | empty | `GAP-42` |
 | Check open | `00-header.js:78` | default | `GAP-42` |
 | Check closed | `00-header.js:79` | default | `GAP-42` |
 | Check replaced | `00-header.js:80` | default | `GAP-42` |
 | {…} {…} of {…} | `00-header.js:92` | default | `GAP-42` |
-| State not recorded | `00-header.js:98` | default | `GAP-42` |
+| State not recorded | `00-header.js:98` | default | `GAP-42` → `game.state.unknown` |
 | Check state not recorded | `00-header.js:102` | default | `GAP-42` |
+
+`Started` had no row at all before CP-001g: the extractor drops single-token literals, so the only
+one of the seven state words that never gained a sweep row was the one that says a section has been
+introduced. It is rowed here by hand (`GAP-42`) so the family is complete by name, not only by
+extraction.
 
 ### RECIPE_COPY (`00-header.js` from line 120)
 
