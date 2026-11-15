@@ -1,0 +1,57 @@
+[
+  {
+    "asset": "lab-bench",
+    "role": "hero",
+    "raw": "lab-bench.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab2128c/TE7SMskgb_FbpALi-1OuN_Rw2E2v27.png",
+    "attempt": 1,
+    "verdict": "accepted",
+    "reference": null,
+    "prompt_delta": "the plain cylinder's phrase changed to 'no markings at all' so the negative is unambiguous",
+    "vision": "warm tiled wall, shelf of plain glassware, bench with beakers and flasks of amber and field-green liquid, a blank notebook, goggles, a plain wash bottle",
+    "residual": "the liquids are coloured amber and green by design; no graduation, label or hazard mark appears on any vessel"
+  },
+  {
+    "asset": "glassware-3x2",
+    "role": "cover",
+    "raw": "glassware-3x2.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab212aa/g1MEoPT3kOEjEvWFloeB3_s4HyeldU.png",
+    "attempt": 2,
+    "verdict": "accepted",
+    "reference": null,
+    "prompt_delta": "attempt 2 adds 'no markings, no scratches, no specular highlights shaped like letters or digits on the glass'",
+    "vision": "plain glassware across the bench, a plain shelf, blank notebook and cloth, no lettering on any vessel",
+    "residual": "the glass stays transparent with warm reflections; no graduation, label or hazard mark"
+  },
+  {
+    "asset": "glassware-3x2",
+    "role": "cover",
+    "raw": "rejected/glassware-a.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab2128c/OvPbHvl5EE96CMkSgpe3e_CQmsjocJ.png",
+    "attempt": 1,
+    "verdict": "rejected",
+    "reason": "the 4:5 centre crop makes the textless detector read '1uU' and 'Ir' off glass reflections at 61% confidence, so the textless claim could not be defended"
+  },
+  {
+    "asset": "glassware-shelf",
+    "role": "section",
+    "raw": "glassware-shelf.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab2128b/Xdhm_MJvDoPxLEcMm14X7_ANWt7M7A.png",
+    "attempt": 1,
+    "verdict": "accepted",
+    "reference": null,
+    "vision": "shelf of beakers, flasks, a funnel and amber jars with blank lids, goggles and cloth below",
+    "residual": "the jars are plain; no label, no hazard diamond, no graduation"
+  },
+  {
+    "asset": "bench-lesson",
+    "role": "lesson_scene",
+    "raw": "bench-lesson.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab2128b/sEIKG2DRSPMCuQtUsctDR_3522ZGET.png",
+    "attempt": 1,
+    "verdict": "accepted",
+    "reference": null,
+    "vision": "lab bench with an open blank notebook, a rack of plain tubes, a beaker, a wash bottle and goggles lying flat, stool below",
+    "residual": "the notebook has two blank pages; nothing on the bench states a dose, a procedure or a hazard"
+  }
+]

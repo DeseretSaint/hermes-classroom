@@ -1,0 +1,911 @@
+{
+  "grammar": "kitchen_table",
+  "kit_id": "kitchen_table@1",
+  "label": "Kitchen table",
+  "version": 1,
+  "status": "built_for_owner_review",
+  "art_bible": "docs/concept-parity/ART-BIBLE.md",
+  "lane": "display_plate",
+  "prompt_version": "vq008-kit-prompt-v1",
+  "palette": {
+    "warm paper": "#f7f1e4 (canvas)",
+    "dark brown ink": "#3a2318 (ink)",
+    "ochre": "#7b4b0a (wood)",
+    "lamp": "#e8a93a (gold)",
+    "field green": "#2f6047 (forest)"
+  },
+  "palette_tokens": [
+    "warm paper",
+    "dark brown ink",
+    "ochre",
+    "lamp",
+    "field green"
+  ],
+  "medium": "a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; ingredients and crockery painted as flat masses",
+  "composition": "a warm overhead table with ingredients along the lower edge and an empty board across the top for the headline",
+  "motifs": [
+    "work surface",
+    "ingredients",
+    "recipe card stand",
+    "linen",
+    "ceramic bowl"
+  ],
+  "subject_cues": [
+    "flour dust",
+    "wooden spoon",
+    "hob rings",
+    "herb bundle"
+  ],
+  "illustration_role": "orientation only; a generated dish is never a tested recipe",
+  "cannot_do": "imply a generated dish is a tested recipe",
+  "provider_free": true,
+  "manifest_shape": {
+    "based_on": "field_atlas@2",
+    "loader_contract": "roles[] holds only kit-local display plates: id/role/path/size/sha256/textless=true/source=curated_kit, every path relative and inside the kit directory, PNG. `resolution[role].source` names the 2x sibling a full-bleed plate is encoded from. Shared-kernel rows are references, not roles: they live in kernel.assets with their repo-relative path and sha256 and must be resolved through kernel.assets, never mounted as a kit-local plate.",
+    "generation_log": "the generation.json sidecar beside this manifest, pinned by sha256 here rather than inlined",
+    "divergences": [
+      "a `section` role is VQ-008's own; field_atlas@2 has none, and the section ships no 2x sibling",
+      "covers are two aspects of one generic display cover, not per-course covers",
+      "generation_log is a pinned sidecar, not an inlined list",
+      "field_atlas@2 copies its kernel bytes into the kit and lists them as roles; these kits keep one shared kernel and declare it as references in kernel.assets, so roles stay kit-local plates"
+    ]
+  },
+  "ocr_policy": {
+    "tool": "tesseract default page segmentation on the shipped plate",
+    "fail_rule": "a token of >= 3 alphanumeric characters at confidence >= 60",
+    "calibration": "real UI strings on refs/home.png and refs/classroom.png score 74-95; painted line art on these plates scores 12-52",
+    "limitation": "OCR is a cheap backstop, not the textless control. Recall measured this round on the shipped lab_bench hero with Liberation Sans Bold burned in: 120 pt 'TORQUE 45 Nm' and 'CAUTION' return no readable token at default page segmentation or at psm 6/11/12; 72 pt returns only isolated one-character fragments ('7' at 82.3, '4' at 59.4); 48 pt and 32 pt return nothing. A legible 120 pt line scoring zero shows recall does not rise with type size, and an independent 72 pt probe recovered one three-character fragment at 90.9, so a clean OCR run is not evidence that a plate is textless. The primary control is the recorded per-plate vision pass: every accepted row in generation.json must carry a vision and a residual verdict, and --check refuses an accepted row without either and a kit whose hero, 3:2 cover, section or lesson scene has no accepted row behind it. Painted pseudo-lettering is the same case with less contrast.",
+    "calibrated_on": [
+      "docs/concept-parity/refs/home.png",
+      "docs/concept-parity/refs/classroom.png"
+    ]
+  },
+  "reference": {
+    "path": "docs/concept-parity/refs/home.png",
+    "note": "the reference mockup(s) the accepted plates were generated against; mockups, not a source of course titles",
+    "other": [
+      {
+        "path": "docs/concept-parity/refs/classroom.png",
+        "sha256": "ee0c1a664a7317aef2daafc0cfb6ae86464d2f9d9c04ca9dd5ee6016d93695c5"
+      }
+    ],
+    "sha256": "fd75bed31cd773ab50a5b5ad62daa46566d50b1b7f3ed1582a52915a14f3ffe3"
+  },
+  "specimens": {
+    "contact_sheet": {
+      "path": "docs/visual-review/vq-008/kitchen_table-contact-sheet.png",
+      "size": [
+        1260,
+        2810
+      ],
+      "sha256": "3869e12542cc59103bd1bba80b2a6c633ff6bb0b8e350c077f31598ffc30219c",
+      "bytes": 5942446,
+      "note": "rebuilt by `python3 scripts/vq008-kits.py --contact docs/visual-review/vq-008`; every shipped plate, the shared kernel rows and this grammar's art direction"
+    }
+  },
+  "supersedes": null,
+  "generation_log": {
+    "path": "generation.json",
+    "rows": 4,
+    "bytes": 2368,
+    "sha256": "3c12f037736147654ef398c2585d32f0fa64373274cd5305f05ea0d9e27a004b",
+    "note": "the attempt log is a sidecar pinned here by hash; every rejected attempt is kept"
+  },
+  "kernel": {
+    "kit_id": "coursebook-kernel@1",
+    "note": "shared objects, frames, badges, materials and fox poses are referenced from one kernel; a kit does not copy new bytes for them. These rows are references, not kit-local plates: resolve each through this block, never mount it as a role.",
+    "groups": {
+      "frame": [
+        "assets/masters/objects/medallion-rim.svg",
+        "assets/masters/objects/stamp-rim.svg"
+      ],
+      "badge": [
+        "assets/masters/objects/tag.svg",
+        "assets/masters/objects/ticket.svg"
+      ],
+      "object": [
+        "assets/objects/clock.webp",
+        "assets/objects/passport-tray.webp",
+        "assets/objects/shelf-plank.webp"
+      ],
+      "material": [
+        "assets/material/grain-paper.webp",
+        "assets/material/vignette-parchment.webp",
+        "assets/material/wood-plank.webp"
+      ],
+      "fox": [
+        "assets/fox/fox-read-256.webp",
+        "assets/fox/fox-point-256.webp",
+        "assets/fox/fox-clock-256.webp",
+        "assets/fox/fox-think-256.webp",
+        "assets/fox/fox-cheer-256.webp",
+        "assets/fox/fox-wave-256.webp",
+        "assets/fox/fox-sleep-256.webp"
+      ]
+    },
+    "assets": [
+      {
+        "id": "medallion-rim",
+        "role": "frame",
+        "path": "assets/masters/objects/medallion-rim.svg",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "203a388f72105572bc6bd77310f2625561ce9aa59c59cea867e521767d76886c",
+        "bytes": 346,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "stamp-rim",
+        "role": "frame",
+        "path": "assets/masters/objects/stamp-rim.svg",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "1def3c1a51893732243b65d4ca0e927ee49daec3a4dd012b579fd0ce13849ef8",
+        "bytes": 413,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "tag",
+        "role": "badge",
+        "path": "assets/masters/objects/tag.svg",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "a2d0b16e01fc8e6c829c9ba2e2020e7248b5a54714d42fc191a91dad53a40650",
+        "bytes": 416,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "ticket",
+        "role": "badge",
+        "path": "assets/masters/objects/ticket.svg",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "7f5a658ef5d90b265e4940544b3cf569ea9349a36a4479795eb1f8b1f4365c35",
+        "bytes": 437,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "clock",
+        "role": "object",
+        "path": "assets/objects/clock.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "24c5f6e97127b301073ca378d20c63b8d25cf3849ea8800052614ad1ee1fa079",
+        "bytes": 26566,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "passport-tray",
+        "role": "object",
+        "path": "assets/objects/passport-tray.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "0b1233e392733e009c300b76224dab184d2eb010a8e20bf100c7bddf17478928",
+        "bytes": 10884,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "shelf-plank",
+        "role": "object",
+        "path": "assets/objects/shelf-plank.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "0acd9168165664fb4a5f860c13fbd900ec7d62f33b36a3738d22e44ea6bb2d4f",
+        "bytes": 17780,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "grain-paper",
+        "role": "material",
+        "path": "assets/material/grain-paper.webp",
+        "size": [
+          96,
+          96
+        ],
+        "sha256": "0058897dc5aca76a52a6d2230c8b13832cafdfeddd2613312a284910db4821f4",
+        "bytes": 820,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "vignette-parchment",
+        "role": "material",
+        "path": "assets/material/vignette-parchment.webp",
+        "size": [
+          96,
+          96
+        ],
+        "sha256": "7ecca423831eb4ee7a5e2bab77d138fb89d743d35fb1e26c999880dc44ef7cd6",
+        "bytes": 594,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "wood-plank",
+        "role": "material",
+        "path": "assets/material/wood-plank.webp",
+        "size": [
+          96,
+          96
+        ],
+        "sha256": "b6cfc60039ab0783bb8d9b79323486e29362b8e1a5f2f6806690f446982c291d",
+        "bytes": 1228,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "fox-read-256",
+        "role": "fox",
+        "path": "assets/fox/fox-read-256.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "db1a98a24285a8ca5067124764e9498cab85f20ced28f1158a7f916c45d8d0b4",
+        "bytes": 14774,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "fox-point-256",
+        "role": "fox",
+        "path": "assets/fox/fox-point-256.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "7c021980c39533b8cb4c1db5de38b4fe0fc1edfaddeae58a87bc74551a95d4f4",
+        "bytes": 11422,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "fox-clock-256",
+        "role": "fox",
+        "path": "assets/fox/fox-clock-256.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "f931ca1f921654150f9b4d7a02dfff2476f5d810873cfe5ba07a3b36efeb8245",
+        "bytes": 12748,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "fox-think-256",
+        "role": "fox",
+        "path": "assets/fox/fox-think-256.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "e8be6eea4edafa106d777bd104205d11e0cd92268562fc48145b636146606d2b",
+        "bytes": 10344,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "fox-cheer-256",
+        "role": "fox",
+        "path": "assets/fox/fox-cheer-256.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "142a04d34df2c0c4e3a3787f696e159a0a00756801dd9e2e3f292e9686d42f82",
+        "bytes": 13506,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "fox-wave-256",
+        "role": "fox",
+        "path": "assets/fox/fox-wave-256.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "85b531ea4711c484246c624a7c32317e59452d9e47bcf01869ff66110990f5f4",
+        "bytes": 12174,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "fox-sleep-256",
+        "role": "fox",
+        "path": "assets/fox/fox-sleep-256.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "ce669e8395217a41c6b97c373c9ae5f947acf54f09e1a056854a779f9b4247e6",
+        "bytes": 10518,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      }
+    ]
+  },
+  "roles": {
+    "hero": [
+      {
+        "id": "kitchen-table",
+        "role": "hero",
+        "path": "hero/kitchen-table.png",
+        "size": [
+          1344,
+          768
+        ],
+        "sha256": "b43b6773573670c19ea18bb824bdbf20fc1f986e34f54ed0723a6418553e445e",
+        "bytes": 1334047,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
+          "reference_image": "docs/concept-parity/refs/home.png",
+          "media_url": "https://v3b.fal.media/files/b/0ab21261/R4yPWa4HEnkrdS63CZ3M3_Iz9zECba.png",
+          "raw_path": ".vq-raw/vq008/kitchen_table/kitchen-table.raw.png",
+          "raw_sha256": "6ac3f601148a0c20cc58463d8bce1200e4f71af5f8da0fb33b4330bbc205087f",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: a warm kitchen table seen from above at a slight angle, laid out for cooking. BACKGROUND: the far edge of the table, a plain tiled splashback and a low shelf of cream crockery, a window at the top left onto a soft sunlit garden, all paler in the distance. MIDGROUND: the table with a wide empty ochre wooden board across the top, a deep cream mixing bowl, a stoneware jug, a linen cloth and a small herb bundle. FOREGROUND: the lower edge of the table crowded with ingredients: two whole oranges, a bunch of spring onions, a bowl of flour with a well in it, a wooden spoon, and a plain ceramic jar.\n\nComposition: a warm overhead table with ingredients along the lower edge and an empty board across the top for the headline.\n\nGrammar motifs: work surface, ingredients, recipe card stand, linen, ceramic bowl.\n\nThe upper third of the frame is a quiet field reserved for a headline typeset later: a plain painted surface with a couple of faint broad brush marks, low contrast, no small detail, reaching the top edge of the frame, still painted environment and not bare parchment.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, lamp, field green. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No recipe card text, no measuring marks, no cup or gram markings, no numbers, no timer face, no temperature dial, no procedure. Nothing in the plate implies a tested recipe or a food-safety instruction.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": "palette line extended with: \"All metal is warm brass or copper, never steel, never chrome, never grey.\"",
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#D0C2AE",
+            "black_minima": 0.08314,
+            "cool_share": 0.0,
+            "neutral_share": 0.02919,
+            "quiet_field": {
+              "x": 800,
+              "y": 100,
+              "w": 544,
+              "h": 220,
+              "note": "the flattest band this plate actually offers in the upper 45%, chosen by the better of its measured contrast against contract ink and against cream paper",
+              "contrast_p5_on_cream": 7.16,
+              "best_contrast": 7.16,
+              "type_tone": "cream",
+              "percentile_5": 80,
+              "percentile_25": 144,
+              "median": 187,
+              "contrast_p5": 2.21,
+              "contrast_median": 9.3,
+              "detail_energy": 0.0158
+            }
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "overhead warm table, wide blank ochre board across the top, mixing bowl, jug, jar, oranges, spring onions, flour bowl, herb bundle, shelf of cream crockery",
+            "residual": "the far shelf carries plain cream cups and a lidded jar with no lettering; the top band holds the window and shelf rather than bare wall, so the measured quiet band sits lower"
+          },
+          "derivation": "raw 2688x1536 resized to the required 1344x768; the 2688x1536 sibling beside it is that frame kept un-resized",
+          "source_frame": {
+            "path": "hero/kitchen-table@2x.png",
+            "size": [
+              2688,
+              1536
+            ],
+            "scale": 2.0,
+            "provider_frame": [
+              2688,
+              1536
+            ],
+            "native_2x": true,
+            "note": "the provider returned a 2x frame; the 2688x1536 file beside the plate is that frame carried through the print-safety lift"
+          }
+        }
+      }
+    ],
+    "cover": [
+      {
+        "id": "tabletop-3x2",
+        "role": "cover",
+        "path": "cover/tabletop-3x2.png",
+        "size": [
+          1200,
+          800
+        ],
+        "sha256": "2de31222288f1a2416231599b860ea842841a76883d0798889188fbbb975f8dd",
+        "bytes": 1177281,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
+          "reference_image": "docs/concept-parity/refs/home.png",
+          "media_url": "https://v3b.fal.media/files/b/0ab21262/BHdGQ-RAXsLKyppzcMkHX_31iW8fQx.png",
+          "raw_path": ".vq-raw/vq008/kitchen_table/tabletop-3x2.raw.png",
+          "raw_sha256": "98453b943229cfa733b90767358f9c21b5a448c51051de9b747e289754ccd04f",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: the kitchen table seen from above, tighter, subject held in the middle half of the frame so a narrow vertical crop still holds it. BACKGROUND: the table edge, a tiled splashback and a copper pan hanging on a rail. MIDGROUND: a cream bowl of flour, a wooden spoon, a folded linen cloth and three whole eggs in a small dish. FOREGROUND: the table running off the bottom and side edges, a scattering of flour dust and a plain jar.\n\nComposition: a warm overhead table with ingredients along the lower edge and an empty board across the top for the headline.\n\nGrammar motifs: work surface, ingredients, recipe card stand, linen, ceramic bowl.\n\nThe headline band and the middle half of the frame stay quiet enough for a title typeset later: no small detail in the centre, no busy pattern behind the middle.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, lamp, field green. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No recipe card text, no measuring marks, no cup or gram markings, no numbers, no timer face, no temperature dial, no procedure. Nothing in the plate implies a tested recipe or a food-safety instruction.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": "palette line extended with the warm-metal sentence",
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#EBE3D6",
+            "black_minima": 0.06413,
+            "cool_share": 0.0,
+            "neutral_share": 0.05207
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "board with two bowls of flour, a jug of milk, eggs, oranges, herbs, a knife and a folded cloth; every vessel plain",
+            "residual": "none observed on the plate itself; the wall behind is pale and plain"
+          },
+          "derivation": "raw 2688x1536 centre crop 2304x1536, resized to 1200x800; the 4:5 is a 1228x1536 centre crop of the same frame, not a second generation",
+          "source_frame": {
+            "path": null,
+            "size": [
+              2304,
+              1536
+            ],
+            "scale": 3.84,
+            "ratios": {
+              "shipped_vs_render": 2.0,
+              "natural_vs_shipped": 1.92,
+              "natural_vs_render": 3.84
+            },
+            "note": "the shipped 1200x800 plate is exactly 2x the 600x400 render; the 2304x1536 natural crop is 1.92x the shipped plate and 3.84x the render"
+          },
+          "crop_4x5": {
+            "size": [
+              1228,
+              1536
+            ],
+            "frame": [
+              2688,
+              1536
+            ],
+            "note": "centre crop of the same provider frame, resized to 640x800 (2x of a 320x400 render)"
+          }
+        }
+      },
+      {
+        "id": "tabletop-4x5",
+        "role": "cover",
+        "path": "cover/tabletop-4x5.png",
+        "size": [
+          640,
+          800
+        ],
+        "sha256": "d93c142994655f389db7b94f7f3e4212d4a192c7b92a90f90c74951e9c02547b",
+        "bytes": 640237,
+        "textless": true,
+        "source": "curated_kit",
+        "derived_from": "tabletop-3x2",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
+          "reference_image": "docs/concept-parity/refs/home.png",
+          "media_url": "https://v3b.fal.media/files/b/0ab21262/BHdGQ-RAXsLKyppzcMkHX_31iW8fQx.png",
+          "raw_path": ".vq-raw/vq008/kitchen_table/tabletop-3x2.raw.png",
+          "raw_sha256": "98453b943229cfa733b90767358f9c21b5a448c51051de9b747e289754ccd04f",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: the kitchen table seen from above, tighter, subject held in the middle half of the frame so a narrow vertical crop still holds it. BACKGROUND: the table edge, a tiled splashback and a copper pan hanging on a rail. MIDGROUND: a cream bowl of flour, a wooden spoon, a folded linen cloth and three whole eggs in a small dish. FOREGROUND: the table running off the bottom and side edges, a scattering of flour dust and a plain jar.\n\nComposition: a warm overhead table with ingredients along the lower edge and an empty board across the top for the headline.\n\nGrammar motifs: work surface, ingredients, recipe card stand, linen, ceramic bowl.\n\nThe headline band and the middle half of the frame stay quiet enough for a title typeset later: no small detail in the centre, no busy pattern behind the middle.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, lamp, field green. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No recipe card text, no measuring marks, no cup or gram markings, no numbers, no timer face, no temperature dial, no procedure. Nothing in the plate implies a tested recipe or a food-safety instruction.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": "palette line extended with the warm-metal sentence",
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#ECE5D9",
+            "black_minima": 0.06885
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "board with two bowls of flour, a jug of milk, eggs, oranges, herbs, a knife and a folded cloth; every vessel plain",
+            "residual": "none observed on the plate itself; the wall behind is pale and plain"
+          },
+          "derivation": "centre crop of the tabletop-3x2 natural 2688x1536 frame to 1228x1536 (4:5), resized to 640x800; derived from the same generation, not a second attempt",
+          "crop_4x5": {
+            "size": [
+              1228,
+              1536
+            ],
+            "frame": [
+              2688,
+              1536
+            ],
+            "note": "centre crop of the same provider frame, resized to 640x800 (2x of a 320x400 render)"
+          },
+          "source_frame": {
+            "path": null,
+            "referent": "tabletop-3x2",
+            "frame": [
+              2688,
+              1536
+            ],
+            "crop": [
+              1228,
+              1536
+            ],
+            "size": [
+              1228,
+              1536
+            ],
+            "shipped": [
+              640,
+              800
+            ],
+            "scale_vs_render": 3.8375,
+            "note": "the 1228x1536 centre crop of the 2688x1536 provider frame, resized to the shipped 640x800 (2x of a 320x400 render)"
+          }
+        }
+      }
+    ],
+    "section": [
+      {
+        "id": "ingredient-board",
+        "role": "section",
+        "path": "section/ingredient-board.png",
+        "size": [
+          1344,
+          768
+        ],
+        "sha256": "6eedd1007af9f1c1ec25d17ee96368399bd45469a3058a6449c9d08b89779cf5",
+        "bytes": 1317124,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
+          "reference_image": "docs/concept-parity/refs/classroom.png",
+          "media_url": "https://v3b.fal.media/files/b/0ab21263/7vLmTqrN8qojaNdISiN1d_jATN8yz7.png",
+          "raw_path": ".vq-raw/vq008/kitchen_table/ingredient-board.raw.png",
+          "raw_sha256": "4717e032a650139f8a8ee6bf06289ce47bc2b940c20a7cda88267180d59954f4",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: an ingredient board laid out across the lower frame, seen from above. BACKGROUND: the table surface and the base of a cream tiled wall, a linen cloth folded at the top. MIDGROUND: an ochre board with a knife, a wooden spoon, a bowl of flour, a jug of milk and a bundle of herbs tied with twine. FOREGROUND: the board edge running off the bottom edge, loose flour dust and two oranges.\n\nComposition: a warm overhead table with ingredients along the lower edge and an empty board across the top for the headline.\n\nGrammar motifs: work surface, ingredients, recipe card stand, linen, ceramic bowl.\n\nThe upper third of the frame is a quiet field reserved for a section title typeset later: low contrast, no small detail.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, lamp, field green. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No recipe card text, no measuring marks, no cup or gram markings, no numbers, no timer face, no temperature dial, no procedure. Nothing in the plate implies a tested recipe or a food-safety instruction.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": "palette line extended with the warm-metal sentence",
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#CCBCA9",
+            "black_minima": 0.05877,
+            "cool_share": 0.0,
+            "neutral_share": 0.03399
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "open cupboard doors, tiled splashback, copper pan on a rail, bowl of flour with a spoon, eggs, jar, folded linen, flour dust",
+            "residual": "the cupboard doors show panelled joinery but no marking"
+          }
+        }
+      }
+    ],
+    "lesson_scene": [
+      {
+        "id": "mixing-lesson",
+        "role": "lesson_scene",
+        "path": "lesson-scene/mixing-lesson.png",
+        "size": [
+          1344,
+          768
+        ],
+        "sha256": "cea10d2f39f44a5b4f4eabf262de43bdde66dae8c4ecb882ac42370646e47ab5",
+        "bytes": 1219987,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
+          "reference_image": "docs/concept-parity/refs/classroom.png",
+          "media_url": "https://v3b.fal.media/files/b/0ab21265/pmrb9lfVyoQQASopFk1Z9_S4CY67Hh.png",
+          "raw_path": ".vq-raw/vq008/kitchen_table/mixing-lesson.raw.png",
+          "raw_sha256": "99628c58401c72994e8258630e25801eddd129adc859fff374ea7bd8b908006f",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: a kitchen table mid-lesson, seen straight on at sitting height. BACKGROUND: warm plaster wall, a tiled splashback and a tall window onto a garden at the left, all paler in the distance. MIDGROUND: the table with a deep cream bowl and a wooden spoon standing in it, a folded linen cloth, a jug and a small stack of plain plates. FOREGROUND: the near table edge running off the bottom edge, a chair back and a linen napkin.\n\nComposition: a warm overhead table with ingredients along the lower edge and an empty board across the top for the headline.\n\nGrammar motifs: work surface, ingredients, recipe card stand, linen, ceramic bowl.\n\nThe upper third of the frame is a quiet field reserved for the lesson title typeset later: low contrast, no small detail.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, lamp, field green. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No recipe card text, no measuring marks, no cup or gram markings, no numbers, no timer face, no temperature dial, no procedure. Nothing in the plate implies a tested recipe or a food-safety instruction.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": "palette line extended with the warm-metal sentence",
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "\\ \\ /,, ~—1—1\\",
+            "max_conf": 83.78,
+            "tokens": [
+              {
+                "text": "\\",
+                "conf": 80.97
+              },
+              {
+                "text": "\\",
+                "conf": 83.78
+              },
+              {
+                "text": "/,,",
+                "conf": 62.35
+              },
+              {
+                "text": "~—1—1\\",
+                "conf": 25.23
+              }
+            ],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#CCB79D",
+            "black_minima": 0.05089,
+            "cool_share": 0.0,
+            "neutral_share": 0.00437
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "kitchen table with a deep cream bowl and spoon, jug, folded cloth, blank plates; tall window at the left; chair back in the foreground",
+            "residual": "the tap and sink are visible at the left edge as warm brass and cream ceramic, not chrome"
+          },
+          "derivation": "raw 2688x1536 resized to the required 1344x768; the 2688x1536 sibling beside it is that frame kept un-resized",
+          "source_frame": {
+            "path": "lesson-scene/mixing-lesson@2x.png",
+            "size": [
+              2688,
+              1536
+            ],
+            "scale": 2.0,
+            "provider_frame": [
+              2688,
+              1536
+            ],
+            "native_2x": true,
+            "note": "the provider returned a 2x frame; the 2688x1536 file beside the plate is that frame carried through the print-safety lift"
+          }
+        }
+      }
+    ],
+    "collectible": []
+  },
+  "resolution": {
+    "hero": {
+      "size": [
+        1344,
+        768
+      ],
+      "source": {
+        "path": "hero/kitchen-table@2x.png",
+        "size": [
+          2688,
+          1536
+        ],
+        "sha256": "5c219bc549835a796b1f221c310c63f15c0eb2dbbe66cc961fd7b404412a7dbb",
+        "scale": 2.0,
+        "method": "provider return at 2688x1536, kept un-resized",
+        "note": "the source a full-bleed plate is encoded from; the 1344x768 plate beside it is the shipped fallback"
+      }
+    },
+    "lesson_scene": {
+      "size": [
+        1344,
+        768
+      ],
+      "source": {
+        "path": "lesson-scene/mixing-lesson@2x.png",
+        "size": [
+          2688,
+          1536
+        ],
+        "sha256": "cffa84048604edfc612c3ea1f102965957189a5af7d7a9a924d32207dd285840",
+        "scale": 2.0,
+        "method": "provider return at 2688x1536, kept un-resized",
+        "note": "the source a full-bleed plate is encoded from; the 1344x768 plate beside it is the shipped fallback"
+      }
+    },
+    "section": {
+      "size": [
+        1344,
+        768
+      ],
+      "source": null,
+      "note": "the section plate ships at its rendered 1344x768 only; no 2x sibling exists, so a loader must not expect one"
+    },
+    "cover": {
+      "3x2": {
+        "size": [
+          1200,
+          800
+        ],
+        "rendered": [
+          600,
+          400
+        ],
+        "scale": 2.0,
+        "natural": {
+          "size": [
+            2304,
+            1536
+          ],
+          "frame": [
+            2688,
+            1536
+          ],
+          "scale_vs_plate": 1.92,
+          "scale_vs_render": 3.84
+        }
+      },
+      "4x5": {
+        "size": [
+          640,
+          800
+        ],
+        "rendered": [
+          320,
+          400
+        ],
+        "scale": 2.0
+      }
+    }
+  },
+  "fallbacks": {
+    "lesson_scene": [
+      "section",
+      "background"
+    ],
+    "cover": [
+      "course-master",
+      "background"
+    ],
+    "hero": [
+      "background"
+    ],
+    "section": [
+      "background"
+    ]
+  },
+  "generation_budget": {
+    "attempts_allowed": 50,
+    "per_asset_max": 4,
+    "attempts_used": 4
+  }
+}

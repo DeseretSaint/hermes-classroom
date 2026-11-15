@@ -1,0 +1,92 @@
+[
+  {
+    "asset": "archive-desk",
+    "role": "hero",
+    "raw": "archive-desk.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21275/GcK3kYoeMeNZ2srf0ma-3_hk1C2r8F.png",
+    "attempt": 1,
+    "verdict": "accepted",
+    "reference": "docs/concept-parity/refs/home.png",
+    "vision": "bookcase of plain blank spines, desk with a stack of blank sheets, blank index cards in a box, brass inkwell, blank-faced stamp, magnifier; no lettering on any spine or card",
+    "residual": "the spines are blank but their shelving is dense; the upper third is bookcase rather than bare wall, so the measured quiet band sits on a shelf face"
+  },
+  {
+    "asset": "document-trays-3x2",
+    "role": "cover",
+    "raw": "document-trays-3x2.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21284/oEAzmN7gwKUafYb28zHqa_dDwC6wm2.png",
+    "attempt": 3,
+    "verdict": "accepted",
+    "reference": null,
+    "prompt_delta": "no reference image; heading paragraph gains a 'not a screenshot / do not paint the words of this instruction' clause after attempt 2",
+    "vision": "three stacked ochre trays of completely blank sheets, a blank card, a brass seal and a magnifier on an ochre desk",
+    "residual": "the shelf spines behind are plain but warm; no mark on any sheet"
+  },
+  {
+    "asset": "document-trays-3x2",
+    "role": "cover",
+    "raw": "rejected/document-trays-a.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21276/6Z0b0Ix4Dzamuiz1xpPrD_h3s9dXgL.png",
+    "attempt": 1,
+    "verdict": "rejected",
+    "reason": "the reference mockup was reproduced literally: a red Coursebook shop sign, interface chrome, a standing person and a menu board"
+  },
+  {
+    "asset": "document-trays-3x2",
+    "role": "cover",
+    "raw": "rejected/document-trays-b.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab2127c/RYbbjzU_PUqzEaId32RgA_yvZYGKsk.png",
+    "attempt": 2,
+    "verdict": "rejected",
+    "reason": "the word PLACE burned into the top-left corner of the plate"
+  },
+  {
+    "asset": "index-drawer",
+    "role": "section",
+    "raw": "index-drawer.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21288/n4cyFTkZfBcN6md0P47-A_ZgCtLdZX.png",
+    "attempt": 4,
+    "verdict": "accepted",
+    "reference": null,
+    "vision": "open drawer of blank index cards in tidy rows, a second drawer of rolled blank sheets, a blank label holder",
+    "residual": "the label holder is a blank brass plate; the card rows read as a grid of card edges, not a printed grid"
+  },
+  {
+    "asset": "index-drawer",
+    "role": "section",
+    "raw": "rejected/index-drawer-a.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21275/FbpUmXGDVvscncFBS4oEp_vn8sWk93.png",
+    "attempt": 1,
+    "verdict": "rejected",
+    "reason": "gibberish lettering burned into the top band ('Pinms teoy endle b Gib reen')"
+  },
+  {
+    "asset": "index-drawer",
+    "role": "section",
+    "raw": "rejected/index-drawer-b.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab2127c/0fulS-tgxcYRGeSAuEo-P_6YtPD446.png",
+    "attempt": 2,
+    "verdict": "rejected",
+    "reason": "the word PLACE burned into the top band"
+  },
+  {
+    "asset": "reading-desk",
+    "role": "lesson_scene",
+    "raw": "reading-desk.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab2127d/7ah9KoSY5zL4PZL_Usb-o_nVwnSaN7.png",
+    "attempt": 2,
+    "verdict": "accepted",
+    "reference": null,
+    "vision": "reading desk with an open book of two blank cream pages, brass lamp, blank cards in a tray, bookcase of plain spines, chair back",
+    "residual": "the book's page edges are modelled but no mark is printed on either page"
+  },
+  {
+    "asset": "reading-desk",
+    "role": "lesson_scene",
+    "raw": "rejected/reading-desk-a.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21276/l6NGlhOVLjqTAti2WTSe-_2Yot1Mcu.png",
+    "attempt": 1,
+    "verdict": "rejected",
+    "reason": "the reference interface was composited in: circular Coursebook logo and wordmark top-left, plus a green chalkboard"
+  }
+]

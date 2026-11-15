@@ -1,0 +1,65 @@
+[
+  {
+    "asset": "drafting-board",
+    "role": "hero",
+    "raw": "drafting-board.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21293/vplyD-7vwtujphziFJHIk_kzQA1cNF.png",
+    "attempt": 1,
+    "verdict": "accepted",
+    "reference": null,
+    "vision": "tilted drafting board with a plain unmarked surface, brass dividers, a plain triangle, chalk in a tray, rolled paper on a shelf, warm wall and window",
+    "residual": "the board fades into warm wall across the upper third, which is the quiet field; no grid or figure is painted"
+  },
+  {
+    "asset": "instruments-3x2",
+    "role": "cover",
+    "raw": "instruments-3x2.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab2129b/aiSWHncEzJQvxDkHDOQs1_SMY5axkP.png",
+    "attempt": 3,
+    "verdict": "accepted",
+    "reference": null,
+    "prompt_delta": "the ruler and the straightedge were removed from the scene entirely after two attempts produced tick marks; the negative list gained 'no ruler, no tick marks'",
+    "vision": "plain cream board, brass dividers, a wooden triangle, a pencil, a cloth eraser and a small chalk tray, rolled paper on a shelf",
+    "residual": "none observed: no figure, no tick, no letter anywhere on the board"
+  },
+  {
+    "asset": "instruments-3x2",
+    "role": "cover",
+    "raw": "rejected/instruments-a.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21293/Q48DL2QSbzgIge5DQ9vC1_cWOlvVsD.png",
+    "attempt": 1,
+    "verdict": "rejected",
+    "reason": "a full printed grid across the drawing sheet"
+  },
+  {
+    "asset": "instruments-3x2",
+    "role": "cover",
+    "raw": "rejected/instruments-b.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21298/no_ModiyL-YMh4z4ZcAsH_PzLvPyum.png",
+    "attempt": 2,
+    "verdict": "rejected",
+    "reason": "two rulers carrying graduation ticks and small figures"
+  },
+  {
+    "asset": "grid-board",
+    "role": "section",
+    "raw": "grid-board.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21294/XVKu--zJAzqFEWBi4xZHC_rPeHbFSp.png",
+    "attempt": 1,
+    "verdict": "accepted",
+    "reference": null,
+    "vision": "board seen from above with a plain unmarked surface, a wooden triangle, brass dividers, a chalk tray and a cloth eraser",
+    "residual": "none observed on the board surface"
+  },
+  {
+    "asset": "chalk-tray",
+    "role": "lesson_scene",
+    "raw": "chalk-tray.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21294/oKQtxpGfiIu2tkGvLIDof_Bba3KVYu.png",
+    "attempt": 1,
+    "verdict": "accepted",
+    "reference": null,
+    "vision": "drafting board seen straight on with a plain surface, brass dividers, a triangle and a cloth eraser, rolled paper on a shelf, stool below",
+    "residual": "the board is entirely unmarked, so it can never act as a worked example"
+  }
+]
