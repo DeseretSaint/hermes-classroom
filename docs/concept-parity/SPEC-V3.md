@@ -750,6 +750,10 @@ Two arithmetic rules are stated here because the deck cannot name them as a `com
 | `studio.banner.export_approve` | Approve the current lesson set before exporting. |
 | `studio.review.blocked` | Export is blocked ({reason}). |
 | `studio.review.blocked_unknown` | Export is blocked and the backend returned no reason string. |
+| `studio.review.blocked.no_final_approval` | The generated lesson set has not been approved. Approval is a separate step from approving the plan. |
+| `studio.review.blocked.changes_need_review` | Changes need review. The approved lesson set no longer matches the pages shown, so export is blocked until you approve them again. |
+| `studio.review.blocked.plan_not_approved` | The plan is not approved, so there are no pages to export. |
+| `studio.review.blocked.no_generated_content` | No lesson pages have been generated yet. |
 | `studio.check.alignment` | whether each objective matches the goal |
 | `studio.check.sources` | whether each claim has a source that was actually read |
 | `studio.check.structure` | whether the units, objectives and checks fit together |
@@ -768,7 +772,7 @@ Two arithmetic rules are stated here because the deck cannot name them as a `com
 | `studio.review.loading` | Reading the pending changes. |
 | `studio.review.clean` | The approved lesson set matches the pages shown, so export is available. |
 | `studio.review.empty` | No fine-tune change is waiting for review. |
-| `studio.review.order` | plan {kind} |
+| `studio.review.order` | plan change |
 | `studio.review.changed` | Changed: {change} |
 | `studio.review.now` | Now: {value} |
 | `studio.review.before` | Before: {value} |
@@ -915,7 +919,7 @@ This subsection is the fill rule for every row that carries a brace, in one tabl
 build the string the code prints and `test_every_templated_row_fills_only_its_declared_slots`
 (`tests/test_cp_spec.py`) can fail when a name drifts again.
 
-Three rules bind this table:
+Four rules bind this table:
 
 1. For a `field:`/`computed:`/`art:`/`contract:` row the value is the row's own Source cell; the
    table adds only the shaping the surface applies (slice, join, plural, currency, prefix).
@@ -925,6 +929,9 @@ Three rules bind this table:
 3. A value the backend did not send takes the row's "when empty" wording; it never renders an empty
    separator. A placeholder whose own text carries a separator (`{when}` in
    `studio.gate.approved_line`) is empty, not a stray space, when its value is missing.
+4. No row fills a slot with a contract enum value. When the surface interpolates an enum word, the
+   row's fix is a fixed deck-authored word plus a surface change that stops printing the value — not
+   a placeholder that carries `reorder`, `objective_edit` or `undo` onto the screen.
 
 #### 5.7.1 Home card and defaults line
 
@@ -986,9 +993,8 @@ Three rules bind this table:
 
 | id | placeholders | filled by |
 |---|---|---|
-| `studio.review.blocked` | `{reason}` | `status.blocked_reason`, written as `Export is blocked (${…})` at `95-studio.js:3766` and `95-studio.js:7392` — but only for a reason the curated map does not name: `EXPORT_BLOCKED_COPY` (`95-studio.js:78`) renders four known reasons as whole sentences with no parentheses, so this row reproduces the fallback branch only (see the copy-owner note below) |
+| `studio.review.blocked` | `{reason}` | `status.blocked_reason`, written as `Export is blocked (${…})` at `95-studio.js:3766` and `95-studio.js:7392` — the fallback branch only, reached when the reason is not one `EXPORT_BLOCKED_COPY` (`95-studio.js:78`) names. The four known reasons print a whole sentence each, rowed as `studio.review.blocked.no_final_approval` (`95-studio.js:79`), `studio.review.blocked.changes_need_review` (`95-studio.js:80`), `studio.review.blocked.plan_not_approved` (`95-studio.js:81`) and `studio.review.blocked.no_generated_content` (`95-studio.js:82`) |
 | `studio.finetune.scope` | `{title}` | `95-studio.js:4594` writes `1 section: ` then the title, and the word `untitled` when it has none |
-| `studio.review.order` | `{kind}` | `row.kind` at `95-studio.js:4666`, a contract value (`reorder`, `objective_edit`, `undo`) — see the copy-owner note below |
 | `studio.review.changed` | `{change}` | the changed field names joined by ` · `, else `no named field`, `95-studio.js:4684` |
 | `studio.review.now` | `{value}` | `orderLine(row.after)`, `95-studio.js:4689` |
 | `studio.review.before` | `{value}` | `orderLine(row.before)`, `95-studio.js:4693` |
@@ -1017,17 +1023,35 @@ Three rules bind this table:
 | `studio.gate.backend_reason` | `{reason}` | `status.blocked_reason`, and the words `none reported` when the backend sent none, `95-studio.js:7397` |
 | `studio.gate.export_line` | `{export_id}` · `{when}` · `{hash}` | `exported.export_id`, `whenLabel(exported.exported_at)`, `exported.content_hash`, `95-studio.js:7449` |
 
-**Open copy questions, not repaired here.** Both are the copy owner's call, because each is about
-user-visible wording rather than a slot name; this card does not change product code.
+**Copy-owner decisions.** `t_15050aa4` closed both questions above. Both were about user-visible
+wording, so neither changed product code on that card; the one surface change either decision needed
+is its own card.
 
-- `studio.review.order` now names the slot the code fills (`{kind}`), and the value it prints is a
-  contract enum word (`reorder`, `objective_edit`, `undo`) at `95-studio.js:4666`. That is a code
-  value on screen, which `COPY.md`'s binding rule 2 forbids: either the row is reworded (for example
-  to `plan change`) and the surface drops `row.kind`, or the deck accepts the enum word.
-- `studio.review.blocked` reproduces only the fallback branch. `EXPORT_BLOCKED_COPY`
-  (`95-studio.js:78`) prints a whole sentence for each of the four known blocked reasons and no
-  parentheses, so the deck owes four rows (or one row plus the map) before the panel's common states
-  are rowed. The deck records the ship as it is until the owner picks the wording.
+1. **`studio.review.order` — decided A: the deck's wording wins over the enum.** The row now reads
+   `plan change`, carries no `{brace}`, and has left this table. The surface stops printing
+   `row.kind` at `95-studio.js:4666`; the follow-up card is `t_e8ad3cd7`, which names that line.
+   Why: `objective_edit` is a field value with an underscore, and `COPY.md`'s binding rule 2 is a
+   hard rule, not a preference. The badge's remaining job is only to say which object the revision
+   belongs to — `plan`, beside its sibling `lesson page` — while what changed is already said in
+   plain words by the row's own `Changed:`, `Now:` and `Before:` lines and by the chip beside the
+   badge (`Edited`, `Approved`, `Could not be written`). A three-way kind-to-label map would add
+   three deck rows plus a translation table in code to re-say what those lines say. The enum stays
+   in the contract at `contracts/rpc.v24.json:9012-9018`; only the badge's text changes.
+2. **`studio.review.blocked` — the fallback row stays, and the four curated sentences are now four
+   rows.** `studio.review.blocked` renders only a reason `EXPORT_BLOCKED_COPY` (`95-studio.js:78`)
+   does not name; `studio.review.blocked_unknown` still covers a read that returned no reason
+   string; and the four known reasons each have their own row, quoting the map entry's own line:
+   `studio.review.blocked.no_final_approval` (`95-studio.js:79`),
+   `studio.review.blocked.changes_need_review` (`95-studio.js:80`),
+   `studio.review.blocked.plan_not_approved` (`95-studio.js:81`) and
+   `studio.review.blocked.no_generated_content` (`95-studio.js:82`). The sentences are reproduced
+   verbatim, not paraphrased, and they carry no parentheses, so the fallback row's
+   `Export is blocked ({reason}).` never prints beside a curated reason. None of the four carries a
+   brace, so they add nothing to this table.
+3. **Deck and build differ in exactly one place until `t_e8ad3cd7` lands:** `COPY.md`'s
+   `studio.review.order` row says `plan change`, while the build at `f9be4126` still prints
+   `plan ${row.kind}`. The deck row's Where cell states that difference, so nobody reads the deck as
+   a description of the current ship.
 
 ---
 
