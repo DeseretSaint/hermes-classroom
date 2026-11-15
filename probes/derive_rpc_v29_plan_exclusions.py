@@ -67,6 +67,16 @@ def serialise(document: dict) -> str:
     return json.dumps(document, indent=2, ensure_ascii=False) + "\n"
 
 
+def _source_document() -> tuple[dict, bool]:
+    """``(document, composed)`` — the v29 already on disk when a sibling derived one, else v28."""
+    if TARGET.exists():
+        existing = json.loads(TARGET.read_text(encoding="utf-8"))
+        if int(existing.get("x-contract-version", 0)) == 29:
+            return existing, True
+        raise SystemExit(f"{TARGET.name} exists but is not version 29; refusing to overwrite it")
+    return json.loads(SOURCE.read_text(encoding="utf-8")), False
+
+
 def derive(source: dict, *, composed: bool = False) -> dict:
     """The upgrade-7 delta applied to v28 (or to a v29 being composed), and nothing else."""
     version = int(source["x-contract-version"])
@@ -80,8 +90,11 @@ def derive(source: dict, *, composed: bool = False) -> dict:
         document["x-contract-version"] = 29
         document["x-supersedes"] = f"{base}/v28"
         document["description"] = f"{DELTA} {source['description']}"
-    elif not str(document.get("description", "")).startswith(DELTA):
-        # Composing over a sibling's v29 keeps its delta text, then carries this one.
+    elif DELTA not in str(document.get("description", "")):
+        # Composing over a sibling's v29 keeps its delta text, then carries this one. Test the
+        # whole description, not its prefix: siblings are folded in name order and each prepends
+        # its own banner, so on the union this delta no longer sits first and a prefix test
+        # would prepend it a second time on every re-run.
         document["description"] = f"{DELTA} {document['description']}"
 
     plan = document["$defs"]["outline_plan"]
@@ -104,14 +117,19 @@ def derive(source: dict, *, composed: bool = False) -> dict:
 
 
 def main() -> int:
-    raw = SOURCE.read_text(encoding="utf-8")
+    base_document, composed = _source_document()
+    # Guard whichever document is actually being re-serialised: a v29 that does not round-trip
+    # would otherwise be rewritten as a diff of every line, and a v28 that does not is the
+    # fork this probe exists to refuse.
+    source_path = TARGET if composed else SOURCE
+    raw = source_path.read_text(encoding="utf-8")
     source = json.loads(raw)
     if serialise(source) != raw:
         raise SystemExit(
-            "rpc.v28.json does not round-trip under this serialiser; refusing to write a v29 "
-            "whose diff would be every line"
+            f"{source_path.name} does not round-trip under this serialiser; refusing to write a "
+            "v29 whose diff would be every line"
         )
-    target = serialise(derive(source))
+    target = serialise(derive(base_document, composed=composed))
     TARGET.write_text(target, encoding="utf-8")
     print(f"wrote {TARGET.relative_to(ROOT)} ({len(target)} bytes)")
     return 0

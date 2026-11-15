@@ -10,6 +10,8 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import shutil
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -5797,6 +5799,67 @@ class V29AmendmentTest(unittest.TestCase):
         derived = module.serialise(module.derive(_document("rpc.v28.json")))
         shipped = (contracts.CONTRACT_DIR / "rpc.v29.json").read_text(encoding="utf-8")
         self.assertEqual(shipped, derived, "rpc.v29.json drifted from its derivation")
+
+
+class V29PlanExclusionsProbeTest(unittest.TestCase):
+    """The plan-exclusions probe's documented command composes; it must never fork v29.
+
+    ``probes/derive_rpc_v29_plan_exclusions.py`` says running it directly on a tree whose
+    ``contracts/rpc.v29.json`` already declares 29 *composes* over that document. Its ``main()``
+    used to read v28 unconditionally and write the result, which would have replaced the 430,030
+    character union with this card's ~413,800 character slice — dropping the hint ladder, the
+    review-interval reason and the recognition-label enum. Both hazards (the fork, and the
+    description banner re-prepended) are invisible to a test that only re-derives via
+    ``derive_rpc_v29.py``, so this drives the probe's own ``main()`` on a scratch copy.
+    """
+
+    def _probe(self):
+        spec = importlib.util.spec_from_file_location(
+            "derive_rpc_v29_plan_exclusions",
+            contracts.CONTRACT_DIR.parent / "probes" / "derive_rpc_v29_plan_exclusions.py",
+        )
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+    def test_the_documented_command_rewrites_the_shipped_v29_byte_for_byte(self) -> None:
+        shipped = (contracts.CONTRACT_DIR / "rpc.v29.json").read_bytes()
+        module = self._probe()
+        with tempfile.TemporaryDirectory() as tmp:
+            scratch = Path(tmp) / "contracts"
+            scratch.mkdir()
+            for name in ("rpc.v28.json", "rpc.v29.json"):
+                shutil.copyfile(contracts.CONTRACT_DIR / name, scratch / name)
+            module.__dict__.update(
+                ROOT=Path(tmp),
+                SOURCE=scratch / "rpc.v28.json",
+                TARGET=scratch / "rpc.v29.json",
+            )
+            self.assertEqual(module.main(), 0)
+            self.assertEqual(
+                (scratch / "rpc.v29.json").read_bytes(),
+                shipped,
+                "the plan-exclusions probe forked the composed v29 instead of composing over it",
+            )
+
+    def test_a_present_but_not_29_target_is_refused(self) -> None:
+        module = self._probe()
+        with tempfile.TemporaryDirectory() as tmp:
+            scratch = Path(tmp) / "contracts"
+            scratch.mkdir()
+            shutil.copyfile(contracts.CONTRACT_DIR / "rpc.v28.json", scratch / "rpc.v28.json")
+            # A target that exists but is not v29 is neither composed with nor overwritten.
+            shutil.copyfile(contracts.CONTRACT_DIR / "rpc.v28.json", scratch / "rpc.v29.json")
+            module.__dict__.update(
+                ROOT=Path(tmp),
+                SOURCE=scratch / "rpc.v28.json",
+                TARGET=scratch / "rpc.v29.json",
+            )
+            with self.assertRaises(SystemExit):
+                module.main()
+            self.assertEqual((scratch / "rpc.v29.json").read_bytes(),
+                             (contracts.CONTRACT_DIR / "rpc.v28.json").read_bytes())
 
 
 class V29ReviewIntervalTest(unittest.TestCase):
