@@ -465,7 +465,7 @@ family or collapses to a badge plus two claims, so the rows are stated in the ha
 | `studio.review.loading` | Reading the pending changes. | deck | 32 | `95-studio.js:4617` · review read in flight |
 | `studio.review.clean` | The approved lesson set matches the pages shown, so export is available. | deck | 80 | `95-studio.js:4643` · review clean state |
 | `studio.review.empty` | No fine-tune change is waiting for review. | deck | 48 | `95-studio.js:4652` · review empty state |
-| `studio.review.order` | plan change | deck | 12 | `95-studio.js:4666` · review diff header badge. The shipped build still prints `plan ${row.kind}` — the plan-revision contract enum (`reorder`, `objective_edit`, `undo`, `contracts/rpc.v24.json:9012-9018`), which binding rule 2 refuses; the one-line surface change that prints these words is `t_e8ad3cd7` |
+| `studio.review.order` | plan change | deck | 12 | `95-studio.js:4666` · review diff header badge. The badge names the object the revision belongs to — `plan`, beside the sibling `lesson page` — while the plan-revision contract enum (`reorder`, `objective_edit`, `undo`, `contracts/rpc.v24.json:9012-9018`) stays in the payload and the row's `data-cb-review-plan-revision` / `data-cb-review-state` attributes and never prints; binding rule 2 forbids showing it |
 | `studio.review.changed` | Changed: {change} | deck | 40 | `95-studio.js:4684` · review diff row |
 | `studio.review.now` | Now: {value} | deck | 28 | `95-studio.js:4689` · review diff row |
 | `studio.review.before` | Before: {value} | deck | 32 | `95-studio.js:4693` · review diff row |

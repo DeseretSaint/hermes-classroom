@@ -4663,7 +4663,7 @@ function StudioReviewDiff({ review, objectives }) {
               jsxs('div', {
                 className: 'flex flex-wrap items-center gap-2 text-xs',
                 children: [
-                  jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: `plan ${row.kind}` }, 'kind'),
+                  jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: 'plan change' }, 'kind'),
                   jsx(FineTuneChip, {
                     chip:
                       row.state === 'needs_review'
