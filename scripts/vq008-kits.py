@@ -1905,7 +1905,23 @@ def main() -> int:
     ap.add_argument("--write-one", metavar="GRAMMAR")
     ap.add_argument("--check-one", metavar="GRAMMAR")
     ap.add_argument("--calibrate", action="store_true")
+    ap.add_argument(
+        "--kit-root",
+        metavar="DIR",
+        help="read every kit from DIR/<grammar>/ instead of assets/visual-kits. Use for a "
+             "throwaway copy: the mutation fixtures judge a copy so a killed run cannot leave "
+             "a mutant in the worktree. Only --check / --check-one read manifests, so the "
+             "writing modes refuse it.",
+    )
     args = ap.parse_args()
+    if args.kit_root:
+        global KITS
+        if not (args.check or args.check_one):
+            ap.error("--kit-root only applies to --check / --check-one; the writing modes always "
+                     "write assets/visual-kits")
+        KITS = Path(args.kit_root).expanduser().resolve()
+        if not KITS.is_dir():
+            ap.error(f"--kit-root {args.kit_root} is not a directory")
     if args.plan:
         return plan()
     if args.write:
