@@ -3,10 +3,11 @@
 Card: **CP-031**. Scope: CP-021, CP-022, CP-023, CP-024, CP-025a, CP-025b. Docs only.
 
 **Inventory revision:** the complete sweep and every cited line are re-derived from `origin/master`
-at **`a11bc0e4bdf55683ea3c1660f8031d0f5a5f3ef6`** (CP-031c-R, card `t_54a44039`, re-sweeping
-CP-031c's `5d2b303e` sweep and keeping CP-031b-R's `t_adc9bdee` substance). Docs only; no product
-string changed. The swept revision is pinned on **content**: `00-header.js` `ab62cbd7`, `30-home.js`
-`14fda088`, `90-course.js` `2cafd20b`, `95-studio.js` `20e07391`, `97-world.js` `00d46dcf`. A master
+at **`14fb14f3e8c5306f973bf98ba270140ca98f0ac5`** (CP-031d, card `t_d20f3f5e`, re-deriving
+CP-031c-R's `a11bc0e4` sweep, which re-derived CP-031c's `5d2b303e` sweep and kept CP-031b-R's
+`t_adc9bdee` substance). Docs only; no product string changed. The swept revision is pinned on
+**content**: `00-header.js` `ab62cbd7`, `30-home.js` `9877b940`, `90-course.js` `a47e7fe2`,
+`95-studio.js` `77d8b2ec`, `97-world.js` `00d46dcf`. A master
 that moves without touching those five blobs is harmless; one that moves a blob fails the gate by
 name, so the next author re-sweeps rather than rotating citations.
 
