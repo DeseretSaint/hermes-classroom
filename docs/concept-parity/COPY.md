@@ -441,8 +441,12 @@ family or collapses to a badge plus two claims, so the rows are stated in the ha
 | `studio.banner.reason.replaced` | A newer approval replaced this one. | `field:`parent.blueprint.read.approval.invalidated_reason`` == `replaced` | 40 | `95-studio.js:3746` · `APPROVAL_INVALIDATION_COPY` |
 | `studio.banner.reason.unknown` | The lesson set you approved no longer matches the current pages. | deck | 70 | `95-studio.js:3761` · unknown-reason fallback |
 | `studio.banner.export_approve` | Approve the current lesson set before exporting. | deck | 60 | `95-studio.js:3767` · no blocked reason yet |
-| `studio.review.blocked` | Export is blocked ({reason}). | deck + field:`parent.blueprint.read.export.blocked_reason` | 60 | `95-studio.js:3766`; `95-studio.js:7392` · one sentence, two renderings |
+| `studio.review.blocked` | Export is blocked ({reason}). | deck + field:`parent.blueprint.read.export.blocked_reason` | 60 | `95-studio.js:3766`; `95-studio.js:7392` · the fallback branch only: a reason `EXPORT_BLOCKED_COPY` (`95-studio.js:78`) knows prints its own sentence instead, rowed as the four rows below |
 | `studio.review.blocked_unknown` | Export is blocked and the backend returned no reason string. | deck | 60 | `95-studio.js:4646` · the honest no-reason branch |
+| `studio.review.blocked.no_final_approval` | The generated lesson set has not been approved. Approval is a separate step from approving the plan. | deck | 100 | `95-studio.js:79` · `EXPORT_BLOCKED_COPY.no_final_approval`, printed by `95-studio.js:3766` and `95-studio.js:7392` |
+| `studio.review.blocked.changes_need_review` | Changes need review. The approved lesson set no longer matches the pages shown, so export is blocked until you approve them again. | deck | 130 | `95-studio.js:80` · `EXPORT_BLOCKED_COPY.changes_need_review`, printed by `95-studio.js:3766` and `95-studio.js:7392` |
+| `studio.review.blocked.plan_not_approved` | The plan is not approved, so there are no pages to export. | deck | 58 | `95-studio.js:81` · `EXPORT_BLOCKED_COPY.plan_not_approved`, printed by `95-studio.js:3766` and `95-studio.js:7392` |
+| `studio.review.blocked.no_generated_content` | No lesson pages have been generated yet. | deck | 40 | `95-studio.js:82` · `EXPORT_BLOCKED_COPY.no_generated_content`, printed by `95-studio.js:3766` and `95-studio.js:7392` |
 | `studio.check.alignment` | whether each objective matches the goal | deck | 50 | `95-studio.js:3869` · `PLAN_CHECK_LABELS` |
 | `studio.check.sources` | whether each claim has a source that was actually read | deck | 60 | `95-studio.js:3870` · `PLAN_CHECK_LABELS` |
 | `studio.check.structure` | whether the units, objectives and checks fit together | deck | 60 | `95-studio.js:3871` · `PLAN_CHECK_LABELS` |
@@ -461,7 +465,7 @@ family or collapses to a badge plus two claims, so the rows are stated in the ha
 | `studio.review.loading` | Reading the pending changes. | deck | 32 | `95-studio.js:4617` · review read in flight |
 | `studio.review.clean` | The approved lesson set matches the pages shown, so export is available. | deck | 80 | `95-studio.js:4643` · review clean state |
 | `studio.review.empty` | No fine-tune change is waiting for review. | deck | 48 | `95-studio.js:4652` · review empty state |
-| `studio.review.order` | plan {kind} | deck | 24 | `95-studio.js:4666` · review diff header; `{kind}` is the revision's contract `kind` value |
+| `studio.review.order` | plan change | deck | 12 | `95-studio.js:4666` · review diff header badge. The shipped build still prints `plan ${row.kind}` — the plan-revision contract enum (`reorder`, `objective_edit`, `undo`, `contracts/rpc.v24.json:9012-9018`), which binding rule 2 refuses; the one-line surface change that prints these words is `t_e8ad3cd7` |
 | `studio.review.changed` | Changed: {change} | deck | 40 | `95-studio.js:4684` · review diff row |
 | `studio.review.now` | Now: {value} | deck | 28 | `95-studio.js:4689` · review diff row |
 | `studio.review.before` | Before: {value} | deck | 32 | `95-studio.js:4693` · review diff row |
