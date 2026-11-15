@@ -78,10 +78,10 @@ in migration `0012_fine_tune_revisions`, v13 adds GM-001's Game Mode storage —
 `courses.presentation_mode` plus eight play/homework/tutor tables — in migration
 `0013_game_mode_contracts`, and v14 removes exactly one unique key from `takehome_packs` in
 `0014_takehome_pack_revision_scope`, rebuilding that table in place with rows and indexes preserved,
-additive only. The suite is `Ran 5120 tests in 1179.248s … OK (skipped=19)`, exit 0, on the record's measured
-commit `b9895039` (trunk `2dec360f` plus the docs-truth gate commit, module `ca575b3a…`), the tree
-the `tests` block of `docs/release-evidence.json` names (2026-11-15); the 19 skips are the suite's
-own declared skips (`OK (skipped=19)`), not a partial run. The previous record was
+additive only. The suite is `Ran 5134 tests in 1048.008s … OK (skipped=20)`, exit 0, on `c88787c9` (trunk carrying
+the docs-truth gate commit `b9895039` plus the source-URL rule `d7ced942` and the plan-exclusions probe
+`86003288`, module `ca575b3a…`), the tree the `tests` block of `docs/release-evidence.json` names
+(2026-11-15); the 20 skips are the suite's own declared skips (`OK (skipped=20)`), not a partial run. The previous record was
 `Ran 4577 tests in 1524s … OK (skipped=12)` on `master` `7e7a54fe`
 (module `94104fbd…`), the tree the `tests` block of `docs/release-evidence.json` named until this
 re-measurement (2026-11-12): the
@@ -353,8 +353,7 @@ holds the demo back. No recording happens without DeseretSaint's approval.
 | No release tag | Atlas's operator gate forbids publishing a release or tag until DeseretSaint signs off in chat | Atlas, DeseretSaint |
 
 Verified, so they are not blockers: 93/93 `cb.rpc` v29 methods mounted with no
-contract problems, schema v15 from migrations `0001`-`0015`, 5120 tests on the record's measured
-commit `b9895039` (2747 on the older release tree `b9f4a19`, 4577 on `master` `7e7a54fe`), pack round-trip and export
+contract problems, schema v15 from migrations `0001`-`0015`, 5134 tests on `c88787c9` (2747 on the older release tree `b9f4a19`, 4577 on `master` `7e7a54fe`), pack round-trip and export
 hash matching, eight `parent.*` methods, the replan carry with the Parent Studio plan guard, and the
 full replan → lessons → export loop on contest row 9 at `29bede7` (export `exp_2e068c56`, content
 hash `sha256:ccf69462…e5a5` matching the approved hash, `export.ready: true`). The UI halves beyond
@@ -368,7 +367,7 @@ resolved for the recording.
 | Repository | `https://github.com/DeseretSaint/hermes-classroom` (public; `master` is pushed and clones anonymously) |
 | Release branch | `master` (pushed to `origin/master`; tags, catalog PR and publication remain operator-gated) |
 | Record's measured commit | `b9895039` — trunk `2dec360f` plus the docs-truth gate commit (`scripts/check-docs-truth.py` reads `WIRE_CONTRACT_VERSION`, with its tests; no product, contract or Desktop file moves) |
-| Measured on that commit | suite `Ran 5120 tests in 1179.248s … OK (skipped=19)`, exit 0; `cb.rpc` v29 / 93 declared methods / 93 handlers; `cb.db` v15; `desktop/plugin.js` sha256 `ca575b3a…5b0`; M4 62 frames, 15/15 claims PASS, 2,172 text nodes / 320 AX controls / 158 full-motion animated nodes, summed from the committed audit the module pins |
+| Measured on that commit | suite `Ran 5134 tests in 1048.008s … OK (skipped=20)` on `c88787c9` (product blocks measured on `b9895039`, identical bytes), exit 0; `cb.rpc` v29 / 93 declared methods / 93 handlers; `cb.db` v15; `desktop/plugin.js` sha256 `ca575b3a…5b0`; M4 62 frames, 15/15 claims PASS, 2,172 text nodes / 320 AX controls / 158 full-motion animated nodes, summed from the committed audit the module pins |
 | Release candidate commit (previous record) | `b9f4a197e42e4f033298d94608fcb5b63640b094` — frozen master: the H-210-R2 merge over `df052ea` (the live pack round trip that closed gate 4 plus its capture); the diff from `df052ea` is `docs/` and `audit/` only, and `desktop/plugin.js` is still `cd862140…c516` |
 | Measured on that commit (previous record) | suite `Ran 2747 tests in 410.301s … OK (skipped=1)`; `cb.rpc` v20 / 73 methods / 73 handlers; `cb.db` v12; `desktop/plugin.js` sha256 `cd862140…c516`; M4 62 frames, 15/15 claims PASS (audit measured on `ab6dc7e`, plugin pin unchanged, not regenerated) |
 | Tag | none. Publication gate closed; a tag is forbidden until sign-off |

@@ -5,17 +5,17 @@
  "branch": "master",
  "merge_commit": "2dec360f49d0c140f14e0a4a3458a8f88710d0ce",
  "measured_by": "Harbor (t_37198955)",
- "record_scope": "measured_commit is the tree every block below was measured on: master 2dec360f plus the docs-truth gate commit b9895039 (scripts/check-docs-truth.py reads WIRE_CONTRACT_VERSION from coursebook/contracts.py, with its tests; no product, contract or Desktop file moves). The record's own commit sits on top of that tree, which is why the release run is made from measured_commit with the record's update in the working tree: `python3 scripts/check-docs-truth.py --skip-tests --require-head` passes at measured_commit, and every measured_commit field in this record names it. An earlier record described the frozen release tree b9f4a19 and its cd862140 module; that is history, kept in the notes below rather than in the measured fields.",
+ "record_scope": "measured_commit is the tree every block below was measured on: master 2dec360f plus the docs-truth gate commit b9895039 (scripts/check-docs-truth.py reads WIRE_CONTRACT_VERSION from coursebook/contracts.py, with its tests; no product, contract or Desktop file moves). The record's own commit sits on top of that tree, which is why the release run is made from measured_commit with the record's update in the working tree: `python3 scripts/check-docs-truth.py --skip-tests --require-head` passes at measured_commit, and every measured_commit field in this record names it. An earlier record described the frozen release tree b9f4a19 and its cd862140 module; that is history, kept in the notes below rather than in the measured fields. The `tests` block alone is re-measured at c88787c9 (2026-11-15): the two merges landed after b9895039 (the H-115-D1 source-URL rule d7ced942, the rpc.v29 plan-exclusions probe 86003288) add 14 tests and one skip, so the suite count is c88787c9's 5134, while every product block below keeps its b9895039 measurement because `desktop/plugin.js` and every contract file are byte-identical between the two trees (plugin sha256 ca575b3a…).",
  "tests": {
   "command": "python3 -m unittest discover -s tests -t .",
-  "measured_commit": "b989503962b09658d6a33ff0c0e12e3775fa8332",
-  "measured_commit_short": "b9895039",
+  "measured_commit": "c88787c9eb19415e8d5b81b36c765fddcf27ec6b",
+  "measured_commit_short": "c88787c9",
   "measured_at": "2026-11-15",
-  "ran": 5120,
-  "skipped": 19,
-  "seconds": 1179.248,
-  "verdict": "OK (skipped=19)",
-  "note": "Measured 2026-11-15 on b9895039 in a dedicated scratch worktree: `Ran 5120 tests in 1179.248s`, `OK (skipped=19)`, exit 0, one uninterrupted run (started 2026-11-15T06:55:42Z, finished 2026-11-15T07:15:23Z). No failures and no errors; the 19 skips are the suite's own declared skips, and no environment-only failure (dangling symlink, installed-module preflight) appeared in this run. Previous records: Ran 4577 at 7e7a54fe, 4573 at 67c1c405, 4458 at 4f93f890, 4453 at 88a88744, 4434 at 170aa650, 4375 at 5df8dfdc, 4359 at 8eb1f944, 4350 at 6dc7a927, 4033 at 6d08cc8a. The delta over 4577 is the merges between 7e7a54fe and 2dec360f plus the gate commit's own tests, measured as one run rather than decomposed card by card."
+  "ran": 5134,
+  "skipped": 20,
+  "seconds": 1048.008,
+  "verdict": "OK (skipped=20)",
+  "note": "Measured 2026-11-15 on c88787c9 (the trunk that carries the docs-truth gate commit b9895039, the H-115-D1 source-URL rule d7ced942 and the rpc.v29 plan-exclusions probe 86003288) in a dedicated scratch worktree: `Ran 5134 tests in 1048.008s`, `OK (skipped=20)`, exit 0, one uninterrupted run. No failures and no errors; the 20 skips are the suite's own declared skips. This supersedes the 5120 measured at b9895039: the two merges landed on top of the record's own tree add 14 tests and one skip. Previous records: Ran 5120 at b9895039, 4577 at 7e7a54fe, 4573 at 67c1c405, 4458 at 4f93f890, 4453 at 88a88744, 4434 at 170aa650, 4375 at 5df8dfdc, 4359 at 8eb1f944, 4350 at 6dc7a927, 4033 at 6d08cc8a."
  },
  "rpc": {
   "contract": "cb.rpc",
