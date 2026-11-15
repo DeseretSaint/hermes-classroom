@@ -189,7 +189,7 @@ long child-safe forms are two different sentences, so collapsing them would lose
 
 | id | Text | Source | Cap | Where |
 |---|---|---|---|---|
-| `classroom.back` | Back to {course title} | field:`library_item.title` | 48 | C2 |
+| `classroom.back` | Back to {course} | field:`library_item.title` | 48 | C2 · `70-learning.js:3580` · the template's own slot key is `{course}` |
 | `classroom.title` | {course title} | field:`library_item.title` | 60 | C4 |
 | `classroom.section` | {section title} | field:`lesson.page.section.title` | 60 | C4 |
 | `classroom.stepper.label` | This section | deck | 16 | C3 (screen-reader group name) |
@@ -227,7 +227,7 @@ long child-safe forms are two different sentences, so collapsing them would lose
 | `classroom.evidence.title` | Evidence | deck | 12 | C8, C9 |
 | `classroom.evidence.count` | {n} of {total} checks recorded | computed:`count(attempt_count > 0)` over field:`lesson.page.checks[]`, total = that array's length | 32 | C8 |
 | `classroom.evidence.empty` | No checks recorded yet. | deck | 28 | C8 empty |
-| `classroom.aside.next` | Next up: {next section} | field:`library_item.next_step.label` | 48 | C8 |
+| `classroom.aside.next` | Next up: {next} | field:`library_item.next_step.label` | 48 | C8 · `70-learning.js:3613` · the template's own slot key is `{next}` |
 | `classroom.aside.tutor` | Ask the tutor | deck | 16 | C8 quiet action |
 | `classroom.nochat.title` | This section has no chat yet | deck | 32 | C7 region |
 | `classroom.nochat.body` | Start a fresh run to open a chat for this section. | deck | 60 | C7 region |
@@ -461,13 +461,13 @@ family or collapses to a badge plus two claims, so the rows are stated in the ha
 | `studio.review.loading` | Reading the pending changes. | deck | 32 | `95-studio.js:4617` · review read in flight |
 | `studio.review.clean` | The approved lesson set matches the pages shown, so export is available. | deck | 80 | `95-studio.js:4643` · review clean state |
 | `studio.review.empty` | No fine-tune change is waiting for review. | deck | 48 | `95-studio.js:4652` · review empty state |
-| `studio.review.order` | plan {id} | deck | 24 | `95-studio.js:4666` · review diff header |
+| `studio.review.order` | plan {kind} | deck | 24 | `95-studio.js:4666` · review diff header; `{kind}` is the revision's contract `kind` value |
 | `studio.review.changed` | Changed: {change} | deck | 40 | `95-studio.js:4684` · review diff row |
 | `studio.review.now` | Now: {value} | deck | 28 | `95-studio.js:4689` · review diff row |
 | `studio.review.before` | Before: {value} | deck | 32 | `95-studio.js:4693` · review diff row |
 | `studio.review.row.lesson_page` | lesson page | deck | 16 | `95-studio.js:4711` · review row kind |
-| `studio.review.row.changed` | {path} — changed: {change} | deck | 80 | `95-studio.js:4728` · review row |
-| `studio.review.row.page` | page {n}… | deck | 16 | `95-studio.js:4739` · review row page marker |
+| `studio.review.row.changed` | {title} — changed: {change} | deck | 80 | `95-studio.js:4728` · review row; `{title}` is the objective's own title |
+| `studio.review.row.page` | page {hash}… | deck | 16 | `95-studio.js:4739` · review row page marker; `{hash}` is the first 23 characters of `page_hash_after` |
 | `studio.review.row.consequence` | {n} stored attempt(s) reference this section; the edit was confirmed against that consequence. | deck | 160 | `95-studio.js:4734` · stored-revision review row |
 | `studio.finetune.move.blocked` | That move would put one unit’s objectives behind a later unit, so the stored order was kept. | deck | 110 | `95-studio.js:4896` · `prerequisite_order_conflict` |
 | `studio.finetune.undo.stale` | A later change landed after that revision, so the undo would overwrite it; nothing was written. | deck | 110 | `95-studio.js:4899` · stale undo refused |
@@ -488,8 +488,8 @@ family or collapses to a badge plus two claims, so the rows are stated in the ha
 | `studio.finetune.title` | Fine-tune this approved course | deck | 32 | `95-studio.js:5288` · section heading |
 | `studio.finetune.undo` | Undo last structural change | deck | 32 | `95-studio.js:5307` · quiet action |
 | `studio.finetune.note` | Reorder or retitle an objective and the change is written to storage as a revision that needs review; lesson pages, checks and attempts are not rewritten. Every move is sent with the full order, so the order you see is the order the backend returned. | deck | 260 | `95-studio.js:5318-5320` · editor note |
-| `studio.finetune.order_label` | {n} in stored order | deck | 24 | `95-studio.js:5339` · order label |
-| `studio.finetune.move_label` | {title}. {note}. Press Alt+ArrowUp or Alt+ArrowDown to move it. | deck | 96 | `95-studio.js:5356` · row action label |
+| `studio.finetune.order_label` | {sections} in stored order | deck | 24 | `95-studio.js:5339` · order label; `{sections}` is the deck's own plural noun for the section list, not a count |
+| `studio.finetune.move_label` | {ordinal}. {title}. Press Alt+ArrowUp or Alt+ArrowDown to move it. | deck | 96 | `95-studio.js:5356` · row action label; the ordinal comes first, then the title |
 | `studio.finetune.shortcut` | Alt+ArrowUp Alt+ArrowDown | deck | 28 | `95-studio.js:5357` · key hint |
 | `studio.finetune.page.none` | no page yet | deck | 16 | `95-studio.js:5387` · page marker |
 | `studio.finetune.page.version` | page v{n} | deck | 16 | `95-studio.js:5388` · page marker |
@@ -499,7 +499,7 @@ family or collapses to a badge plus two claims, so the rows are stated in the ha
 | `studio.finetune.edit` | Edit section | deck | 16 | `95-studio.js:5422` · editor open |
 | `studio.finetune.close` | Close editor | deck | 16 | `95-studio.js:5422` · editor close |
 | `studio.finetune.regenerate` | Regenerate this section | deck | 24 | `95-studio.js:5434` · regenerate open |
-| `studio.finetune.field.objective_title` | {name} title | deck | 40 | `95-studio.js:5449` · objective title field |
+| `studio.finetune.field.objective_title` | {section} title | deck | 40 | `95-studio.js:5449` · objective title field; `{section}` is the deck's own section noun |
 | `studio.finetune.field.objective_title_note` | Stored on the objective. The section page keeps its authored prose; a retitle is a plan revision that needs review. | deck | 140 | `95-studio.js:5451` · objective title note |
 | `studio.finetune.field.title` | Section page title | deck | 24 | `95-studio.js:5461` · page title field |
 | `studio.finetune.field.title_note` | Stored on the authored page through lesson.revise, fenced on the page digest this read served ({digest}…). The result is a new page revision that needs review. | deck | 170 | `95-studio.js:5464` · page title note |
@@ -535,7 +535,7 @@ family or collapses to a badge plus two claims, so the rows are stated in the ha
 | `studio.gate.row.current_hash` | Current content hash | deck | 24 | `95-studio.js:7338` · gate table row label |
 | `studio.gate.row.final` | Final approval | deck | 20 | `95-studio.js:7343` · gate table row label |
 | `studio.gate.note` | Approving the plan approved the outline and its activities. This gate is separate: it approves the generated lesson set by its content hash, and any later edit to the plan, the pages or the course title clears it. | deck | 240 | `95-studio.js:7347` · gate note |
-| `studio.gate.approved_line` | Lesson set approved{when}{note} | deck + field:`parent.blueprint.read.approval.state` | 96 | `95-studio.js:7352-7354` · approval record, computed |
+| `studio.gate.approved_line` | Lesson set approved{when}{note}. | deck + field:`parent.blueprint.read.approval.state` | 96 | `95-studio.js:7352-7354` · approval record, computed; each placeholder carries its own leading separator and the sentence closes with a period |
 | `studio.gate.no_plan` | There is no approved plan to approve a lesson set for yet. | deck | 64 | `95-studio.js:7363` · no plan |
 | `studio.gate.no_pages` | No generated pages exist yet, so there is nothing to approve. Generate the lessons from the Plan view first. | deck | 120 | `95-studio.js:7364` · no pages |
 | `studio.gate.unsupported` | This backend does not implement parent.final.approve yet. | deck | 60 | `95-studio.js:7369` · backend without the method |

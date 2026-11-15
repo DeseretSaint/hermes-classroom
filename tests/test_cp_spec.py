@@ -50,6 +50,9 @@ BANNED_WORDS = ("stars", "star", "rating", "ratings", "reviews", "learners", "ma
 ID_TOKEN = re.compile(
     r"`((?:home|discover|classroom|course|lab|nav)\.[a-z0-9_]+(?:\.[a-z0-9_]+)*)`"
 )
+#: A templated row writes a value the surface fills as `{name}`. SPEC-V3 §5.7 declares which names
+#: each row may fill, so a row whose brace does not match the code's slot fails a gate.
+PLACEHOLDER = re.compile(r"\{([^{}]+)\}")
 SHA_ROW = re.compile(r"^- (R-[A-Z]+): ([0-9a-f]{64})$", re.MULTILINE)
 
 # COPY.md source grammar. A `field:` source must name a real value path; a bare def or method name
@@ -237,6 +240,87 @@ class TestCopyDeck(unittest.TestCase):
                 r"single_home_host|binding|projection)\b",
                 f"{string_id} shows an internal value",
             )
+
+    def test_every_templated_row_fills_only_its_declared_slots(self):
+        """SPEC-V3 §5.7 declares the slots each row fills; a row may not name another one.
+
+        Round 1 refused ``studio.gate.export_line`` for writing ``{kind}`` where
+        ``desktop/src/95-studio.js:7449`` fills ``exported.export_id``, and the same audit found
+        four more rows of that class (``studio.review.order``, ``studio.review.row.changed``,
+        ``studio.review.row.page``, ``studio.finetune.move_label``) plus the two classroom rows
+        whose slot keys are ``{course}`` and ``{next}``. The deck is only buildable when a
+        placeholder names what the code interpolates, so §5.7 is the declaration and this is the
+        gate: a renamed placeholder now fails here instead of shipping as an unfillable row.
+
+        Same shape as ``test_every_new_row_cites_the_file_and_line_it_words`` in
+        ``tests/test_cp_copy_inventory.py``, which proves a citation's line exists in the cited
+        file: a plausible-looking value is checked against the document that owns it, not against
+        itself.
+        """
+        rules = self.fill_rules()
+        self.assertGreaterEqual(
+            len(rules), 60, "SPEC-V3 §5.7 declares too few templated rows to be a real gate"
+        )
+
+        failures: list[str] = []
+        templated = 0
+        by_id = {string_id: text for string_id, text, _cap in self.rows}
+        for string_id, text in by_id.items():
+            found = PLACEHOLDER.findall(text)
+            if not found:
+                continue
+            templated += 1
+            declared = rules.get(string_id)
+            if declared is None:
+                failures.append(f"{string_id}: carries {found} but §5.7 declares no slots")
+                continue
+            undeclared = [slot for slot in found if slot not in declared]
+            if undeclared:
+                failures.append(
+                    f"{string_id}: fills {undeclared}, which §5.7 does not declare "
+                    f"(declared: {list(declared)})"
+                )
+            order = [declared.index(slot) for slot in found if slot in declared]
+            if order != sorted(order):
+                failures.append(
+                    f"{string_id}: fills {found} in an order §5.7 does not declare "
+                    f"(declared: {list(declared)})"
+                )
+        self.assertGreaterEqual(templated, 60, "no templated row was found, so this gate is vacuous")
+
+        # A declaration for a row that has no placeholder is a stale filler rule: it would let the
+        # row's next real placeholder pass without anyone reading the rule.
+        dead = [
+            string_id
+            for string_id in rules
+            if string_id in by_id and not PLACEHOLDER.search(by_id[string_id])
+        ]
+        dead += [string_id for string_id in rules if string_id not in by_id]
+        if dead:
+            failures.append(f"§5.7 declares slots for rows that fill none: {sorted(dead)}")
+
+        self.assertEqual(failures, [], "\n".join(failures))
+
+    def fill_rules(self) -> dict[str, tuple[str, ...]]:
+        """id -> declared placeholder names, in declared order, from SPEC-V3 §5.7."""
+        body = self.spec.split("\n### 5.7 ", 1)[1].split("\n## 6.", 1)[0]
+        rules: dict[str, tuple[str, ...]] = {}
+        row = re.compile(r"^\|\s*`([a-z0-9]+\.[a-z0-9._]+)`\s*\|([^|]+)\|([^|]+)\|\s*$")
+        for line in body.splitlines():
+            match = row.match(line)
+            if not match:
+                continue
+            string_id, slots, filled_by = match.groups()
+            declared = tuple(PLACEHOLDER.findall(slots))
+            self.assertTrue(declared, f"§5.7 declares no placeholder for `{string_id}`")
+            self.assertRegex(
+                filled_by,
+                r"`[^`]+`",
+                f"§5.7 says what fills `{string_id}` without naming a source",
+            )
+            self.assertNotIn(string_id, rules, f"§5.7 declares `{string_id}` twice")
+            rules[string_id] = declared
+        return rules
 
 
 class TestSpecCompleteness(unittest.TestCase):

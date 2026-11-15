@@ -768,13 +768,13 @@ Two arithmetic rules are stated here because the deck cannot name them as a `com
 | `studio.review.loading` | Reading the pending changes. |
 | `studio.review.clean` | The approved lesson set matches the pages shown, so export is available. |
 | `studio.review.empty` | No fine-tune change is waiting for review. |
-| `studio.review.order` | plan {id} |
+| `studio.review.order` | plan {kind} |
 | `studio.review.changed` | Changed: {change} |
 | `studio.review.now` | Now: {value} |
 | `studio.review.before` | Before: {value} |
 | `studio.review.row.lesson_page` | lesson page |
-| `studio.review.row.changed` | {path} — changed: {change} |
-| `studio.review.row.page` | page {n}… |
+| `studio.review.row.changed` | {title} — changed: {change} |
+| `studio.review.row.page` | page {hash}… |
 | `studio.review.row.consequence` | {n} stored attempt(s) reference this section; the edit was confirmed against that consequence. |
 | `studio.finetune.move.blocked` | That move would put one unit’s objectives behind a later unit, so the stored order was kept. |
 | `studio.finetune.undo.stale` | A later change landed after that revision, so the undo would overwrite it; nothing was written. |
@@ -795,8 +795,8 @@ Two arithmetic rules are stated here because the deck cannot name them as a `com
 | `studio.finetune.title` | Fine-tune this approved course |
 | `studio.finetune.undo` | Undo last structural change |
 | `studio.finetune.note` | Reorder or retitle an objective and the change is written to storage as a revision that needs review; lesson pages, checks and attempts are not rewritten. Every move is sent with the full order, so the order you see is the order the backend returned. |
-| `studio.finetune.order_label` | {n} in stored order |
-| `studio.finetune.move_label` | {title}. {note}. Press Alt+ArrowUp or Alt+ArrowDown to move it. |
+| `studio.finetune.order_label` | {sections} in stored order |
+| `studio.finetune.move_label` | {ordinal}. {title}. Press Alt+ArrowUp or Alt+ArrowDown to move it. |
 | `studio.finetune.shortcut` | Alt+ArrowUp Alt+ArrowDown |
 | `studio.finetune.page.none` | no page yet |
 | `studio.finetune.page.version` | page v{n} |
@@ -806,7 +806,7 @@ Two arithmetic rules are stated here because the deck cannot name them as a `com
 | `studio.finetune.edit` | Edit section |
 | `studio.finetune.close` | Close editor |
 | `studio.finetune.regenerate` | Regenerate this section |
-| `studio.finetune.field.objective_title` | {name} title |
+| `studio.finetune.field.objective_title` | {section} title |
 | `studio.finetune.field.objective_title_note` | Stored on the objective. The section page keeps its authored prose; a retitle is a plan revision that needs review. |
 | `studio.finetune.field.title` | Section page title |
 | `studio.finetune.field.title_note` | Stored on the authored page through the revision verb, fenced on the page digest this read served ({digest}…). The result is a new page revision that needs review. |
@@ -842,7 +842,7 @@ Two arithmetic rules are stated here because the deck cannot name them as a `com
 | `studio.gate.row.current_hash` | Current content hash |
 | `studio.gate.row.final` | Final approval |
 | `studio.gate.note` | Approving the plan approved the outline and its activities. This gate is separate: it approves the generated lesson set by its content hash, and any later edit to the plan, the pages or the course title clears it. |
-| `studio.gate.approved_line` | Lesson set approved{when}{note} |
+| `studio.gate.approved_line` | Lesson set approved{when}{note}. |
 | `studio.gate.no_plan` | There is no approved plan to approve a lesson set for yet. |
 | `studio.gate.no_pages` | No generated pages exist yet, so there is nothing to approve. Generate the lessons from the Plan view first. |
 | `studio.gate.unsupported` | This backend does not implement parent.final.approve yet. |
@@ -902,6 +902,132 @@ The create form's five recipes, four dials and four filters, at `00-header.js:12
 | `create.filter.in_progress` | In progress |
 | `create.filter.review_due` | Review due |
 | `create.filter.archived` | Archived |
+
+---
+
+### 5.7 Fill rules for every templated row
+
+`COPY.md`'s binding rule 12 says a `{brace}` marks a value the surface fills from the named field. A
+row whose placeholder name does not match the slot the code fills cannot be built from the deck:
+round 1 refused `studio.gate.export_line` for writing `{kind}` where `95-studio.js:7449` fills
+`exported.export_id`, and the same audit over the rest of the deck found more rows of that class.
+This subsection is the fill rule for every row that carries a brace, in one table, so a reader can
+build the string the code prints and `test_every_templated_row_fills_only_its_declared_slots`
+(`tests/test_cp_spec.py`) can fail when a name drifts again.
+
+Three rules bind this table:
+
+1. For a `field:`/`computed:`/`art:`/`contract:` row the value is the row's own Source cell; the
+   table adds only the shaping the surface applies (slice, join, plural, currency, prefix).
+2. For a `deck` row the value is the expression named here, at the cited line. The deck never
+   renames a code slot: the placeholder takes the name the code fills, even when that name is a
+   noun (`{sections}`, `{section}`) rather than a count.
+3. A value the backend did not send takes the row's "when empty" wording; it never renders an empty
+   separator. A placeholder whose own text carries a separator (`{when}` in
+   `studio.gate.approved_line`) is empty, not a stray space, when its value is missing.
+
+#### 5.7.1 Home card and defaults line
+
+| id | placeholders | filled by |
+|---|---|---|
+| `home.card.subject` | `{subject label}` | the Source cell: `library_item.subject_label`, else the subject domain or the recipe word |
+| `home.card.meta` | `{done}` · `{total}` | `30-home.js:257` writes `${done} of ${total} sections done` from `library_item.sections_done` / `sections_total`, else from `evidence_summary.independent` / `total_objectives` |
+| `home.card.practice` | `{n}` | `30-home.js:235` writes `1 check recorded` for one and `${count} checks recorded` otherwise, from `library_item.checks_recorded` |
+| `home.card.next` | `{next step}` | the Source cell: `library_item.next_step.label` |
+| `home.defaults.view` | `{mode}` | the presentation label for `prefs.defaultMode`, with the fallback word `Game`, `30-home.js:4752` |
+| `home.defaults.classroom` | `{mode}` | the presentation label for the classroom's `override`, with `override` itself as the fallback, `30-home.js:4761` |
+| `home.defaults.session` | `{n}` | `prefs.sessionMinutes`, `30-home.js:4775` |
+
+#### 5.7.2 Discover
+
+| id | placeholders | filled by |
+|---|---|---|
+| `discover.feature.title` | `{pack title}` | the Source cell: `pack.inspect.manifest.title` |
+| `discover.feature.body` | `{pack subtitle}` | the Source cell: `pack.inspect.manifest.subtitle` |
+| `discover.shelf.count` | `{n}` | the Source cell: `pack.list.total`, installed filter |
+| `discover.card.meta` | `{n}` | the Source cell's computed sum over `pack.inspect.manifest.objectives[].sections[]`, else `library_item.sections_total` |
+| `discover.rejected.banner` | `{pack title}` | the Source cell: `pack.inspect.manifest.title` |
+
+#### 5.7.3 Classroom and course home
+
+| id | placeholders | filled by |
+|---|---|---|
+| `classroom.back` | `{course}` | `library_item.title`; the template's own slot key is `{course}` at `70-learning.js:3580`, filled at `70-learning.js:5249` |
+| `classroom.title` | `{course title}` | the Source cell: `library_item.title` |
+| `classroom.section` | `{section title}` | the Source cell: `lesson.page.section.title` |
+| `classroom.scene.credit` | `{art credit}` | the Source cell: `license.per_artifact[].attribution` |
+| `classroom.check.question` | `{check prompt}` | the Source cell: `check.get.stimulus.prompt` |
+| `classroom.check.option` | `{choice text}` | the Source cell: `check.get.stimulus.choices[]` |
+| `classroom.check.item` | `{item label}` | the Source cell: `check.get.stimulus.items[].label` |
+| `classroom.check.correct` | `{why}` | `70-learning.js:3603` writes the prefix `That is right.`; the value is `attempt.submit.criteria[].observed` |
+| `classroom.check.wrong` | `{why}` | `70-learning.js:3604` writes the prefix `Not quite.`; the value is `attempt.submit.criteria[].observed` |
+| `classroom.evidence.count` | `{n}` · `{total}` | `70-learning.js:3611` carries the same two slots, filled at `70-learning.js:3840` from the recorded checks |
+| `classroom.aside.next` | `{next}` | `library_item.next_step.label`; the template's own slot key is `{next}` at `70-learning.js:3613`, filled at `70-learning.js:5220` |
+| `classroom.game.xp` | `{n}` | the Source cell: `engagement.read.xp_total`, Game mode only |
+| `classroom.tutor.bind_failed` | `{code}` · `{message}` | `bound.code` with the fallback `BIND_REFUSED`, then `bound.message` with the fallback `this chat could not be bound.`, `00-header.js:961` |
+| `course.back` | `{parent}` | the destination label the deck names, not a backend field (`course.back`'s own Source cell) |
+| `course.title` | `{course title}` | the Source cell: `library_item.title` |
+| `course.subject` | `{subject label}` | the Source cell: `library_item.subject_label` |
+| `course.hero.credit` | `{art credit}` | the Source cell: `license.per_artifact[].attribution` |
+| `course.next.label` | `{next step}` | the Source cell: `library_item.next_step.label` |
+| `course.evidence.count` | `{n}` · `{total}` | the Source cell: `library_item.sections_done` / `sections_total` |
+| `course.others.row` | `{title}` · `{next step}` | the Source cell: `library_item.title` then `library_item.next_step.label` |
+| `course.end.practice` | `{n}` | `library_item.checks_recorded`, pluralised as `home.card.practice` is |
+
+#### 5.7.4 Lab and Game
+
+| id | placeholders | filled by |
+|---|---|---|
+| `lab.palette.role` | `{role name}` | the contract role key itself, printed at `85-v3-primitives.js:1253` |
+| `lab.palette.ratio` | `{ratio}` | the computed contrast, and `85-v3-primitives.js:1263` writes `${ratio}:1` |
+| `game.journal.overflow` | `{shown}` | the 12 rows `30-home.js:5064` keeps (`rows.slice(0, 12)`); the sentence is authored and ships with that truncation |
+
+#### 5.7.5 Parent Studio review and fine-tune
+
+| id | placeholders | filled by |
+|---|---|---|
+| `studio.review.blocked` | `{reason}` | `status.blocked_reason`, written as `Export is blocked (${…})` at `95-studio.js:3766` and `95-studio.js:7392` — but only for a reason the curated map does not name: `EXPORT_BLOCKED_COPY` (`95-studio.js:78`) renders four known reasons as whole sentences with no parentheses, so this row reproduces the fallback branch only (see the copy-owner note below) |
+| `studio.finetune.scope` | `{title}` | `95-studio.js:4594` writes `1 section: ` then the title, and the word `untitled` when it has none |
+| `studio.review.order` | `{kind}` | `row.kind` at `95-studio.js:4666`, a contract value (`reorder`, `objective_edit`, `undo`) — see the copy-owner note below |
+| `studio.review.changed` | `{change}` | the changed field names joined by ` · `, else `no named field`, `95-studio.js:4684` |
+| `studio.review.now` | `{value}` | `orderLine(row.after)`, `95-studio.js:4689` |
+| `studio.review.before` | `{value}` | `orderLine(row.before)`, `95-studio.js:4693` |
+| `studio.review.row.changed` | `{title}` · `{change}` | `titleOf(row.objective_id)` then the joined changed fields, `95-studio.js:4728` |
+| `studio.review.row.page` | `{hash}` | the first 23 characters of `row.page_hash_after`, `95-studio.js:4739` |
+| `studio.review.row.consequence` | `{n}` | `row.evidence_attempts`, `95-studio.js:4734` |
+| `studio.finetune.order_saved` | `{detail}` | one `<n>. <title>` per stored position joined by ` · `, `95-studio.js:4950-4955` |
+| `studio.finetune.undone` | `{order}` | the same numbered titles, read back from the undo result, `95-studio.js:5009-5013` |
+| `studio.finetune.consequence_error` | `{n}` · `{consequence}` | `attempts`, then `FINE_TUNE_EVIDENCE_CONSEQUENCE` (`95-studio.js:4544`), `95-studio.js:5190-5191` |
+| `studio.finetune.queued` | `{section}` | `objective.title`, `95-studio.js:5269` |
+| `studio.finetune.order_label` | `{sections}` | `CB_COPY.section.many` (`Sections`) at `95-studio.js:5339` — a noun, not a count |
+| `studio.finetune.move_label` | `{ordinal}` · `{title}` | `objective.ordinal` then `objective.title`, `95-studio.js:5356` |
+| `studio.finetune.page.version` | `{n}` | `ref.lesson_version`, `95-studio.js:5388` |
+| `studio.finetune.field.objective_title` | `{section}` | `CB_COPY.section.one` (`Section`) at `95-studio.js:5449` — a noun, not a name |
+| `studio.finetune.field.title_note` | `{digest}` | `String(ref.page_hash).slice(0, 16)`, `95-studio.js:5464` |
+| `studio.finetune.consequence_dialog` | `{n}` · `{consequence}` | `evidencePrompt.attempts`, then `FINE_TUNE_EVIDENCE_CONSEQUENCE`, `95-studio.js:5560` |
+
+#### 5.7.6 Regeneration and the lesson-set gate
+
+| id | placeholders | filled by |
+|---|---|---|
+| `studio.regen.estimate` | `{low}` · `{high}` | the preflight minimum and maximum through the `money` formatter, `95-studio.js:5636`; the arithmetic is §5.6 |
+| `studio.regen.queued` | `{section}` · `{job}` | `fineTuneScopeLine(regenResult.title)` — so the printed value is itself `1 section: <title>` — then `regenResult.jobId`, `95-studio.js:5677` |
+| `studio.regen.price` | `{low}` · `{high}` | the queued job's minimum and maximum through `money`, `95-studio.js:5684-5685` |
+| `studio.gate.approved_line` | `{when}` · `{note}` | `' on ' + whenLabel(approved_at)` or nothing, then `' for content hash ' + content_hash` or nothing, and the sentence closes with a period, `95-studio.js:7352-7354` |
+| `studio.gate.backend_reason` | `{reason}` | `status.blocked_reason`, and the words `none reported` when the backend sent none, `95-studio.js:7397` |
+| `studio.gate.export_line` | `{export_id}` · `{when}` · `{hash}` | `exported.export_id`, `whenLabel(exported.exported_at)`, `exported.content_hash`, `95-studio.js:7449` |
+
+**Open copy questions, not repaired here.** Both are the copy owner's call, because each is about
+user-visible wording rather than a slot name; this card does not change product code.
+
+- `studio.review.order` now names the slot the code fills (`{kind}`), and the value it prints is a
+  contract enum word (`reorder`, `objective_edit`, `undo`) at `95-studio.js:4666`. That is a code
+  value on screen, which `COPY.md`'s binding rule 2 forbids: either the row is reworded (for example
+  to `plan change`) and the surface drops `row.kind`, or the deck accepts the enum word.
+- `studio.review.blocked` reproduces only the fallback branch. `EXPORT_BLOCKED_COPY`
+  (`95-studio.js:78`) prints a whole sentence for each of the four known blocked reasons and no
+  parentheses, so the deck owes four rows (or one row plus the map) before the panel's common states
+  are rowed. The deck records the ship as it is until the owner picks the wording.
 
 ---
 
