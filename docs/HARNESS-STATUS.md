@@ -2,19 +2,21 @@
 
 Owner: quill (H-11, board card `t_6f41e0b0`). Branch `wt/harness-docs`.
 
-**Current `master` (measured 2026-11-10, supervisor CP-052 merge `b1913af7`):**
-`b1913af77c3f50319af1dbd85555f9adc4271a20`. On it `cb.rpc` is v26
-(`coursebook/contracts.py`) with 93 declared methods and 93 handlers, `cb.db` is v14
-(`contracts/db.v14.json`, `DB_SCHEMA_VERSION = 14` in `coursebook/db.py`, migrations
-`0001`-`0014`), `desktop/plugin.js` is sha256
-`4087908c1881df93bf0f7e71bbac65c2511aee3f115271f6b3f846091c9d03b7` (the module this tree ships; the record's
-M4 pin is the older `b9f4a19` `cd862140` measurement, whose numbers the head audit reproduces), and the suite is
-`Ran 3523 tests in 951.634s … OK (skipped=11)`.
+**Current record (2026-11-15, trunk `2dec360f` plus the docs-truth gate commit `b9895039`):**
+`b989503962b09658d6a33ff0c0e12e3775fa8332`. On it `cb.rpc` is v29
+(`coursebook/contracts.py`, `WIRE_CONTRACT_VERSION = 29`) with 93 declared methods and 93 handlers,
+`cb.db` is v15 (`contracts/db.v15.json`, `DB_SCHEMA_VERSION = 15` in `coursebook/db.py`, migrations
+`0001`-`0015`), `desktop/plugin.js` is sha256
+`ca575b3af0e2cdf14ad5547dab57bbb37a6baea45e11c50ef690f5a4143055b0` (the module this tree ships,
+rebuilt by `scripts/build_plugin.py`; the committed M4 audit pins it and
+`scripts/check-audit-pin.py` passes), and the suite is
+`Ran 5120 tests in 1179.248s … OK (skipped=19)`, exit 0.
 
-The suite and contract values are the record in `docs/release-evidence.json`, measured at that
-commit (the `tests`, `rpc` and `db` blocks each name `b1913af7`). The record's top-level
-`measured_commit`, module pin and M4 block remain the `b9f4a19` release-tree
-measurement (`cb.rpc` v20, `cb.db` v13, module `cd862140…`, suite `Ran 2747 tests … OK (skipped=1)`).
+Every value above is the record in `docs/release-evidence.json`, measured at that commit: the
+top-level `measured_commit`, the `tests`, `rpc`, `db` and `plugin` blocks and the M4 block (2,172
+text nodes, 320 AX controls, 158 full-motion animated nodes) all name it. The previous record —
+`cb.rpc` v26, `cb.db` v14, module `4087908c…`, `Ran 3523 tests … OK (skipped=11)` at `b1913af7` —
+is history.
 
 **Historical snapshot label — not current.** The row-by-row body (§1-§7) is a snapshot written
 against `master` at `498b1daeae946d988072bb7852c07b4cfbddeb8e` (2026-11-07 01:54 -0700), where the

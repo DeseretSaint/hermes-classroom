@@ -1,71 +1,64 @@
 {
- "measured_commit": "b9f4a197e42e4f033298d94608fcb5b63640b094",
- "measured_commit_short": "b9f4a19",
- "measured_at": "2026-11-09",
+ "measured_commit": "b989503962b09658d6a33ff0c0e12e3775fa8332",
+ "measured_commit_short": "b9895039",
+ "measured_at": "2026-11-15",
  "branch": "master",
- "merge_commit": "b9f4a197e42e4f033298d94608fcb5b63640b094",
- "measured_by": "H-212 (t_48394407)",
- "record_scope": "measured_commit is the frozen release tree that the module pin and the M4 audit describe. The tests, rpc and db blocks track the master tree the release gate reads and each names its own measurement commit, because test-only merges land without moving the release pin.",
+ "merge_commit": "2dec360f49d0c140f14e0a4a3458a8f88710d0ce",
+ "measured_by": "Harbor (t_37198955)",
+ "record_scope": "measured_commit is the tree every block below was measured on: master 2dec360f plus the docs-truth gate commit b9895039 (scripts/check-docs-truth.py reads WIRE_CONTRACT_VERSION from coursebook/contracts.py, with its tests; no product, contract or Desktop file moves). The record's own commit sits on top of that tree, which is why the release run is made from measured_commit with the record's update in the working tree: `python3 scripts/check-docs-truth.py --skip-tests --require-head` passes at measured_commit, and every measured_commit field in this record names it. An earlier record described the frozen release tree b9f4a19 and its cd862140 module; that is history, kept in the notes below rather than in the measured fields.",
  "tests": {
   "command": "python3 -m unittest discover -s tests -t .",
-  "measured_commit": "7e7a54fe599b9534c3a56b119bb0d5a15f8314d9",
-  "measured_commit_short": "7e7a54fe",
-  "measured_at": "2026-11-12",
-  "ran": 4577,
-  "skipped": 12,
-  "seconds": 1524.0,
-  "verdict": "OK (skipped=12)",
-  "note": "Measured 2026-11-12 on `7e7a54fe`, the E2E U2 merge (`2fe0dd15`, the answer disclosure asks before it downgrades the attempt) over the merged E2E trunk `67c1c405`: Ran 4577 tests in 1524s, OK (skipped=12), one uninterrupted run in a dedicated scratch worktree. The 4-test delta over 4573 is `tests/test_desktop_u2_answer_confirm.py` (4 cases: first press writes nothing, cancel writes nothing, a refused write keeps the confirm open, and the confirm is the only path to `lesson.assist(kind:'answer_shown')`). The same tree passes `bash scripts/validate-plugin.sh` 4/4 (4425 files) and `python3 scripts/check-docs-truth.py --skip-tests`; `desktop/plugin.js` is 94104fbd. Previous records (4573 at 67c1c405, 4458 at 4f93f890, 4453 at 88a88744, 4444 at d616f84a, 4437 at 5e3a7759, 4434 at 170aa650, 4429 at 165d7da0, 4424 at ec99038e, 4375 at 5df8dfdc, 4359 at 8eb1f944) are history."
+  "measured_commit": "b989503962b09658d6a33ff0c0e12e3775fa8332",
+  "measured_commit_short": "b9895039",
+  "measured_at": "2026-11-15",
+  "ran": 5120,
+  "skipped": 19,
+  "seconds": 1179.248,
+  "verdict": "OK (skipped=19)",
+  "note": "Measured 2026-11-15 on b9895039 in a dedicated scratch worktree: `Ran 5120 tests in 1179.248s`, `OK (skipped=19)`, exit 0, one uninterrupted run (started 2026-11-15T06:55:42Z, finished 2026-11-15T07:15:23Z). No failures and no errors; the 19 skips are the suite's own declared skips, and no environment-only failure (dangling symlink, installed-module preflight) appeared in this run. Previous records: Ran 4577 at 7e7a54fe, 4573 at 67c1c405, 4458 at 4f93f890, 4453 at 88a88744, 4434 at 170aa650, 4375 at 5df8dfdc, 4359 at 8eb1f944, 4350 at 6dc7a927, 4033 at 6d08cc8a. The delta over 4577 is the merges between 7e7a54fe and 2dec360f plus the gate commit's own tests, measured as one run rather than decomposed card by card."
  },
  "rpc": {
   "contract": "cb.rpc",
-  "version": 28,
-  "measured_commit": "131179ac6d8bddd77c33f71432d3f6644454a282",
+  "version": 29,
+  "measured_commit": "b989503962b09658d6a33ff0c0e12e3775fa8332",
   "declared_methods": 93,
   "handlers": 93,
-  "note": "re-asserted by the supervisor on the merged E2E trunk 67c1c405: contracts/rpc.v28.json declares 93 methods and 93 handlers (the same set as v27 — no method moved in v26, v27 or v28) and `x-supersedes` names contracts/rpc.v27.json; coursebook/contracts.py WIRE_CONTRACT_VERSION = 28. v28 composes two additive amendments over v27 (E2E L1 and E2E L4/L5): `check.open`, `check.get` and `progression.challenge_out` responses gain one optional boolean `revisit` (a passed generated section reopens as a clone of the newest closed authored check at the next version, recorded as an attempt and its layer-1 row but never moving `objectives.state`, never writing a second layer-2 row and never paying XP twice); `library_item.next_step.kind` gains `review_lesson`, the terminal `complete` and the repair-only `repair_lesson`; `outline_objective` and the `lesson.page` section record may carry `section_id`, `lesson_state` and `lesson_rejection_reasons`; `lesson.regenerate` accepts the optional `reasons` the caller displayed; and `lesson.page.section` gains `sections_total`, the count the handler already projected. Every new key is optional, every response that omits it keeps its exact v27 shape, and no method, required key, error code, job kind, answer kind, verdict, evidence class or vocabulary value moves. v27 (item 28b) added the optional `lesson_document_media.labels` array, v26 (CP-052) the optional `world_brief.route_anchors` array; both stay on disk byte-identical as immutable history. The record's previous v27 / 93 methods and v26 / 93 before it stay in the immutable history."
+  "note": "Read from the tree, not copied: coursebook/contracts.py WIRE_CONTRACT_VERSION = 29 (line 98), contracts/rpc.v29.json declares 93 methods (counted by scripts/check-docs-truth.py through the methods object), its `x-supersedes` names contracts/rpc.v28.json, and coursebook/api.py implemented_methods() returns 93 after importing coursebook.domain, engagement, pack_flow, pronunciation, syllabus, tutor and world. v29 composes six additive amendments over v28 and adds no method: cb.jobs v6 adds a nullable `retry` to job.activity (the last refused lesson-section attempt with its bounded reason and prompt version); attempt.submit's response gains an optional `feedback` rule and each criteria row the same optional facts; review_item may carry `interval_reason`; pronunciation_assessment gains required `measure`, `caveat`, `gated` and `min_word_confidence`, and a `meets_target` whose weakest matched word is under the floor falls to `close`; outline_plan gains optional `exclusions` and `time_estimate`; and the authored hint ladder adds `assistance_policy` on check_stimulus, `assistance` on check.get and an optional `rung` on lesson.assist. contracts/rpc.v28.json stays byte-identical as immutable history. The previous record's v28 / 93 declared methods and v27 / v26 / 93 before it stay in history."
  },
  "db": {
   "contract": "cb.db",
   "version": 15,
-  "measured_commit": "67c1c405c84ba63882bda29e4fac07477ee12969",
+  "measured_commit": "b989503962b09658d6a33ff0c0e12e3775fa8332",
   "schema_version": 15,
   "migrations": "0001-0015",
-  "note": "re-asserted on the merged E2E trunk 67c1c405: coursebook/db.py DB_SCHEMA_VERSION = 15; contracts/db.v15.json schema_version 15; migrations 0001_initial.sql through 0015_check_revisit.sql. v15 is additive over v14 by one migration: 0015_check_revisit.sql adds exactly one column, `checks.revisit` (INTEGER NOT NULL DEFAULT 0), the flag that marks a check as a revisit clone of a closed authored check, so every existing row reads unchanged and contracts/db.v14.json stays byte-identical as immutable history. The suite, module pin and M4 values in this record stay the b9f4a19 measurement; this block tracks the tree the release gate reads."
+  "note": "Measured on b9895039: coursebook/db.py DB_SCHEMA_VERSION = 15 (line 230); contracts/db.v15.json schema_version 15; migrations 0001_initial.sql through 0015_check_revisit.sql. v15 is additive over v14 by one migration: 0015_check_revisit.sql adds exactly one column, `checks.revisit` (INTEGER NOT NULL DEFAULT 0), the flag that marks a check as a revisit clone of a closed authored check, so every existing row reads unchanged and contracts/db.v14.json stays byte-identical as immutable history."
  },
  "plugin": {
   "path": "desktop/plugin.js",
-  "sha256": "cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516",
-  "measured_commit": "b9f4a197e42e4f033298d94608fcb5b63640b094",
-  "note": "This pin is the frozen release tree b9f4a19 and is checked against that commit's desktop/plugin.js. Re-checked 2026-11-12: trunk 170aa650 carries a different module, 9015b84c7e33c2caa357792a5eb9542dc69332490baea42895213d26b554a33b, because the CB-trunk frame-rig merge moved the exported four names (05056293), the 0.2.1 share-confirmation rebuild (9d6588a3) rebuilt it, and the VQ-011 Home tag-aspect merge (165d7da0) rebuilt it again; every module-pinned proof was re-derived at each step (fe1a8fc6, then 165d7da0). The older pin still describes the pinned release commit; re-pinning this field to the trunk module is the operator's release-pin decision, not a docs edit."
+  "sha256": "ca575b3af0e2cdf14ad5547dab57bbb37a6baea45e11c50ef690f5a4143055b0",
+  "measured_commit": "b989503962b09658d6a33ff0c0e12e3775fa8332",
+  "note": "python3 scripts/build_plugin.py on this tree writes `build_plugin: wrote desktop/plugin.js from 21 segments (ca575b3af0e2cdf14ad5547dab57bbb37a6baea45e11c50ef690f5a4143055b0)`, and `git show b9895039:desktop/plugin.js | sha256sum` is the same value, so the pin describes the module committed at measured_commit and not a working-tree rebuild. scripts/check-audit-pin.py reports `audit matches desktop/plugin.js (ca575b3af0e2)`, so the committed M4 audit measures this module. History: the previous record pinned the frozen release tree b9f4a19 (module cd862140...) and left re-pinning to the operator; this pass performed that re-pin at the measured commit."
  },
  "m4": {
   "frames": 62,
   "claims_pass": 15,
   "claims_total": 15,
-  "text_nodes": 2120,
+  "text_nodes": 2172,
   "forced_color_frames": 6,
   "min_authored_ratio": 5.93,
-  "ax_controls": 298,
+  "ax_controls": 320,
   "ax_unnamed": 0,
   "overflow_px": 0,
   "animated_nodes_reduced": 0,
-  "animated_nodes_full": 70,
-  "source": "audit/visual/m4-visual/audit.json, regenerated by python3 scripts/m4v-audit.py in the H-203 pass on ab6dc7e, the settled H-209 tree (H-208 union plus H-182/D8, H-182/D6, validator-reject, private test node_modules). The audit was regenerated after that — for CP-020a 45c7d972 (merge 67ca98b), CP-020b 1aa11577, CP-043 04452231, and the module this tree ships, 4087908c (2026-11-10) — and each regeneration changed only generated_at, the recorded branch and plugin_sha256, so every measurement below reproduced unchanged; the committed audit now names the shipped module. The pin this record carries is the b9f4a19 cd862140 measurement (unchanged from ab6dc7e), and re-pinning it to the shipped module is the remaining freeze step. 15/15 claims PASS, 62 frames, 2120 measured text nodes over the 56 non-forced frames, 298 AX controls over the 32 frames with an accessibility tree, 0 unnamed, worst authored contrast 5.93:1, 0 clipped text, 0 px horizontal overflow. C-08: 0 animated nodes in the four reduced-motion frames against 70 in the full-motion frames. The tree's module at that re-pin was 514942bc (5f956f7b, the v27 labels merge): python3 scripts/m4v-audit.py on it returned 15/15 claims PASS over 62 frames, 2,120 text nodes on the 56 non-forced frames, worst authored contrast 5.93:1, 0 clipped, 0 overflow, changing only generated_at, branch and plugin_sha256 — the pin recorded above stays the frozen release tree's b9f4a19 cd862140, as record_scope says.",
-  "recheck_2026_11_12": {
-   "frozen_tree": "b9f4a19",
-   "frozen_tree_measurement": "2,120 text nodes over the 56 non-forced frames, 298 AX controls over the 32 frames with an accessibility tree, 70 animated nodes in full motion; 15/15 claims PASS, 62 frames, worst authored contrast 5.93:1, 0 clipped, 0 overflow",
-   "trunk_commit": "88a88744a5ec06b86c5a77442cffecd5ed40064b",
-   "trunk_plugin_sha256": "e87a2e01cee4ff99e9844456cef820ba37b89e6069aef72b60120a63091e0ee7",
-   "trunk_measurement": "2,172 text nodes over the 56 non-forced frames, 320 AX controls over the 32 frames with an accessibility tree, 158 animated nodes in full motion; 15/15 claims PASS, 62 frames, worst authored contrast 5.93:1, 0 clipped, 0 overflow (audit generated_at 2026-11-12T21:51:52.600Z)",
-   "note": "Re-checked 2026-11-12 for gate 8 by summing the committed audit/visual/m4-visual/audit.json per-frame measurements, the same derivation every earlier record used (text nodes and AX controls over the 56 non-forced frames, animated nodes over all 62); the b9f4a19 numbers reproduce exactly. The audit committed at trunk 170aa650, regenerated for the VQ-011 module 9015b84c in 165d7da0, is pinned to that module and does not reproduce the frozen tree's text-node, AX-control or full-motion animation counts, so the m4 block above still describes the pinned release tree b9f4a19, not the trunk head. That drift arrived with the CB-trunk re-pin at 6dc7a927 (d6d85566): the audit committed there measures 2,172 / 320 / 158, and the re-pins after it, the Gate 5 artwork at 8eb1f944 (52dac9ed), the 0.2.1 module at fe1a8fc6 (28bc081c) and the VQ-011 module at 165d7da0 (9015b84c), each differ from it only in generated_at, branch and plugin_sha256, so those merges moved the pin and not a measurement. Re-checked again 2026-11-12 at trunk 88a88744 (UI-K9 f766d1c6): the audit regenerated for module e87a2e01 (generated_at 2026-11-12T21:51:52.600Z, recorded branch wt/ui-k9-cover-provenance) differs from the 9015b84c one only in generated_at, branch and plugin_sha256, so 2,172 text nodes, 320 AX controls and 158 full-motion animated nodes carry forward again. Re-pinning this block to trunk (and re-running scripts/m4v-repro-check.py there, which has not been run at e87a2e01) is the operator's remaining freeze decision, not a docs edit."
-  }
+  "animated_nodes_full": 158,
+  "measured_commit": "b989503962b09658d6a33ff0c0e12e3775fa8332",
+  "source": "audit/visual/m4-visual/audit.json at measured_commit, the committed audit `scripts/check-audit-pin.py` names as matching desktop/plugin.js (ca575b3af0e2). Every number here is a sum over its per-frame rows, the derivation every earlier record used: text nodes and AX controls over the 56 non-forced frames, AX controls only over the 32 frames that have an accessibility tree, animated nodes over all 62 (0 in the four reduced-motion frames, 158 in full motion), worst authored contrast over the non-forced frames. The file's own summary reports 62 frames, 6 forced-colors frames and 15/15 claims PASS, and its generated_at is 2026-11-15T04:04:23.035Z. History: the b9f4a19 / cd862140 record measured 2,120 text nodes, 298 AX controls and 70 full-motion animated nodes; the CB-trunk re-pin at d6d85566 moved those to 2,172 / 320 / 158, and every re-pin after it (52dac9ed, 28bc081c, 9015b84c, e87a2e01, and the module this tree ships) changed only generated_at, branch and plugin_sha256. scripts/m4v-repro-check.py has not been run above cd862140, so this is one committed generation, not a two-run pair."
  },
  "m4_repro": {
   "command": "python3 scripts/m4v-repro-check.py",
   "result": "PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots",
   "plugin_sha256": "cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516",
-  "note": "the reproducibility pair was run at cd862140; the later regenerations (45c7d972, 1aa11577, 04452231, 4087908c) each rewrote only generated_at, branch and the pin, which is the same thing the pair proves across two runs: every measurement and screenshot reproduced unchanged.",
+  "note": "History: the reproducibility pair was run at cd862140 (the b9f4a19 module). It has not been re-run above that pin, so it is not a claim about the ca575b3a module this record pins; the later regenerations each rewrote only generated_at, branch and the pin, which is what the pair proved across two runs.",
   "reference_time": "2026-11-07T10:00:00.000Z"
  },
  "adversarial_state": {
@@ -77,7 +70,7 @@
   "blocked_scenarios": [
    "S13"
   ],
-  "note": "measured on ab6dc7e in the H-203 pass; not re-run on the frozen tree b9f4a19, so it is carried as the last measurement of this matrix rather than a claim about b9f4a19. S13 is BLOCKED because the auxiliary grader lane is disabled in this release"
+  "note": "measured on ab6dc7e in the H-203 pass; not re-run on b9895039, so it is carried as the last measurement of this matrix rather than a claim about b9895039. S13 is BLOCKED because the auxiliary grader lane is disabled in this release."
  },
  "historical_plugin_pins": [
   {

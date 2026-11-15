@@ -1,49 +1,53 @@
 # Release evidence — what is measured, on which commit, and what is branch-only
 
-Status: the H-212 freeze pass, re-derived on the frozen `master`
-`b9f4a197e42e4f033298d94608fcb5b63640b094` (the H-210-R2 merge over `df052ea`: the live pack
-round trip that closed gate 4, plus its capture under `audit/adversarial/h210r2-pack-roundtrip/`).
-Every number below was produced by a command in this pass on that commit unless a row names another
-commit. The suite count and the contract counts are the exception: they are re-measured on `master`
-`07976d8` and the rows name that tree. Machine-readable copy: `docs/release-evidence.json`, checked
-against the documents by `python3 scripts/check-docs-truth.py`.
+Status: the release record, re-measured on the merged trunk `2dec360f` plus the docs-truth gate
+commit `b989503962b09658d6a33ff0c0e12e3775fa8332` (the gate reads `WIRE_CONTRACT_VERSION` from
+`coursebook/contracts.py`, with its tests; no product, contract or Desktop file moves). Every number
+in the first table was produced by a command on that tree unless the row names another commit.
+Machine-readable copy: `docs/release-evidence.json`, checked against the documents by
+`python3 scripts/check-docs-truth.py`. `--require-head` also requires every recorded commit to be
+the checkout's HEAD, so the release run is made from the measured commit with the record's update in
+the working tree, before that update is committed.
 
-The commit before it, `ab6dc7e`, is the earlier H-209 measurement tree; the numbers attributed to it
-below are that pass's record and are left as history rather than rewritten.
+The frozen H-212 tree `b9f4a197e42e4f033298d94608fcb5b63640b094` (the H-210-R2 merge over
+`df052ea`, plus the gate-4 capture under `audit/adversarial/h210r2-pack-roundtrip/`) and the earlier
+`ab6dc7e` H-209 tree are kept below as history; their rows name their own commits and are not claims
+about this tree.
 
 **This is not a green release.** The suite passes, but no demo is recorded, no license exists, no
 live Desktop window has driven this exact commit, and the operator publication gate in
 `docs/SUBMISSION.md` §0 is closed. No tag, catalog pull request or announcement was made.
 
-## Measured on `b9f4a19` (frozen tree)
+## Measured on `b9895039` (merged trunk plus the docs-truth gate)
 
 | Fact | Value | Measured on | Command |
 | --- | --- | --- | --- |
-| Suite | `Ran 2747 tests in 410.301s`, `OK (skipped=1)` | `b9f4a19` (H-212) | `python3 -m unittest discover -s tests -t .` |
-| `cb.rpc` | v20, 73 declared methods | `b9f4a19` (re-asserted, H-212) | `contracts/rpc.v20.json` (`coursebook/contracts.py:51` `WIRE_CONTRACT_VERSION = 20`) |
-| Handlers | 73, asserted by the registry; `METHOD_HANDLERS` after importing every registering module | `b9f4a19` (measured, H-212) | `coursebook/api.py`, registry test in the suite |
-| `cb.db` | v13, `DB_SCHEMA_VERSION = 13`, migrations `0001`-`0013` | `4e3d6c6` (GM-001 contract freeze) | `coursebook/db.py:230`, `contracts/db.v13.json` |
-| Shipped module | `desktop/plugin.js` sha256 `cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516` | `b9f4a19` (re-hashed, H-212) | `sha256sum desktop/plugin.js` |
-| M4 audit | 62 frames, 15/15 claims PASS, 2,120 measured text nodes over 56 non-forced frames, worst authored contrast 5.93:1, 0 unnamed of 298 AX controls, 0 px overflow | `ab6dc7e` (H-203) for the `cd862140` release-tree pin; the same audit regenerated for CP-020a `45c7d972`, CP-020b `1aa11577`, CP-043 `04452231` and the shipped module `4087908c` on 2026-11-10, every measurement reproduced (only `generated_at`, branch and pin changed) | `python3 scripts/m4v-audit.py` → `audit/visual/m4-visual/audit.json` |
-| Adversarial state matrix | `SUMMARY total=23 fail=0 pass=23`; S13 BLOCKED because the auxiliary grader lane is disabled in this release | `ab6dc7e` (H-203); **not re-run** on `b9f4a19` — carried as the last measurement of this matrix, not a claim about the frozen tree | `python3 tests/adversarial/attack_state.py` |
+| Suite | `Ran 5120 tests in 1179.248s`, `OK (skipped=19)`, exit 0 | `b9895039` (trunk `2dec360f` plus the gate commit) | `python3 -m unittest discover -s tests -t .` |
+| `cb.rpc` | v29, 93 declared methods | `b9895039` | `contracts/rpc.v29.json` (`coursebook/contracts.py:98` `WIRE_CONTRACT_VERSION = 29`) |
+| Handlers | 93, from `implemented_methods()` after importing every registering module | `b9895039` | `coursebook/api.py`, registry test in the suite |
+| `cb.db` | v15, `DB_SCHEMA_VERSION = 15`, migrations `0001`-`0015` | `b9895039` | `coursebook/db.py:230`, `contracts/db.v15.json` |
+| Shipped module | `desktop/plugin.js` sha256 `ca575b3af0e2cdf14ad5547dab57bbb37a6baea45e11c50ef690f5a4143055b0`, rebuilt from `desktop/src` | `b9895039` | `python3 scripts/build_plugin.py` (prints the sha); `sha256sum desktop/plugin.js` |
+| M4 audit | 62 frames, 15/15 claims PASS, 2,172 measured text nodes over 56 non-forced frames, 320 AX controls over the 32 frames with an accessibility tree, 0 unnamed, 158 full-motion animated nodes against 0 in the four reduced-motion frames, worst authored contrast 5.93:1, 0 clipped, 0 overflow | `b9895039`: summed frame by frame from the committed `audit/visual/m4-visual/audit.json`, which is pinned to `ca575b3a` (`scripts/check-audit-pin.py` reports `audit matches desktop/plugin.js (ca575b3af0e2)`) | per-frame sums of that file |
+| Adversarial state matrix | `SUMMARY total=23 fail=0 pass=23`; S13 BLOCKED because the auxiliary grader lane is disabled in this release | `ab6dc7e` (H-203); **not re-run** on `b9895039` — carried as the last measurement of this matrix, not a claim about this tree | `python3 tests/adversarial/attack_state.py` |
 
-The `audit.json` carried `plugin_sha256` equal to the `b9f4a19` module's hash (`cd862140…c516`, the same
-module as `ab6dc7e`), which is what made the M4 row a claim about that tree rather than a stale pin:
-`desktop/plugin.js` is byte-identical on `ab6dc7e` and `b9f4a19`, so the audit was not regenerated in
-the H-212 pass. The committed audit has since been regenerated four times — for CP-020a `45c7d972`
-(`67ca98b`), CP-020b `1aa11577`, CP-043 `04452231` and the module this tree ships, `4087908c`
-(2026-11-10) — and each regeneration changed only `generated_at`, the recorded branch and the pin, so
-every measurement and every committed screenshot below reproduced unchanged. The `cd862140` pin is the
-release-tree record; re-pinning it to the shipped module is the remaining freeze step.
+The committed `audit/visual/m4-visual/audit.json` names the module this tree ships
+(`ca575b3a…5b0`), and `scripts/check-audit-pin.py` fails when the audit and the module disagree —
+that check is what makes the M4 row a claim about this tree rather than a stale pin. Its per-frame
+sums are the row above. History: the `b9f4a19` audit was pinned to `cd862140` (the same module as
+`ab6dc7e`, so it was not regenerated in the H-212 pass) and measured 2,120 / 298 / 70. It was then
+regenerated for CP-020a `45c7d972` (`67ca98b`), CP-020b `1aa11577`, CP-043 `04452231` and
+`4087908c`, each regeneration changing only `generated_at`, the recorded branch and the pin, until
+the CB-trunk re-pin at `d6d85566` moved the text-node, AX-control and animation counts to
+2,172 / 320 / 158. Every re-pin since — `52dac9ed`, `28bc081c`, `9015b84c`, `e87a2e01`, and the
+module this tree ships — reproduced those measurements.
 
 Two measurements moved on the settled `ab6dc7e` tree and are recorded there as measured rather than
-carried forward: the text-node count is **2,120** over the 56 non-forced frames (the H-183/H-189
-learner-copy sweep and the H-182/D8 objective copy reduced painted prose on those surfaces), and
-`C-08` measures **0** animated nodes in the four reduced-motion frames against **70** in the
-full-motion frames (H-152's transitions are real, and the preference suppresses them). The AX control
-count (298 over the 32 frames with an accessibility tree), the worst authored contrast (5.93:1), and
-the overflow/clipping counts (0) are unchanged. A prior record quoting 2,416 text nodes describes the
-`eed7dc7` slice, not this tree.
+carried forward: the text-node count (2,120 over the 56 non-forced frames, after the H-183/H-189
+learner-copy sweep and the H-182/D8 objective copy reduced painted prose) and `C-08` (0 animated
+nodes in the four reduced-motion frames against 70 in full motion). The CB-trunk re-pin then moved
+that text-node count to 2,172, the AX controls from 298 to 320 and the full-motion animation count
+from 70 to 158; the worst authored contrast (5.93:1) and the overflow/clipping counts (0) have not
+moved. A prior record quoting 2,416 text nodes describes the `eed7dc7` slice, not this tree.
 
 ## Suite and contract re-measurement on `master` `8eb1f944` (2026-11-12)
 
@@ -57,11 +61,13 @@ land without moving the release pin:
 | `cb.rpc` | v28, 93 declared methods, 93 handlers, no declared method without a handler and none outside the contract | `67c1c405` (`master`, 2026-11-12, the merged E2E trunk) | `contracts/rpc.v28.json`, `coursebook/contracts.py` `WIRE_CONTRACT_VERSION = 28`, `coursebook/api.py` `METHOD_HANDLERS` after importing every registering module |
 | `cb.db` | v15, `DB_SCHEMA_VERSION = 15`, migrations `0001`-`0015` | `67c1c405` (`master`, 2026-11-12, the merged E2E trunk; v15 adds the one-column `checks.revisit` flag by `0015_check_revisit.sql`) | `coursebook/db.py`, `contracts/db.v15.json` |
 
-The 2026-11-12 run on `7e7a54fe` is the count every release document now quotes:
-`Ran 4577 tests in 1524s`, `OK (skipped=12)`, exit 0. Its 119-test delta over the `4f93f890` count of
-4458 is the merged cards' own cases — E2E L1/L4/L5, S5/S6, G6, U3b, U2 — plus the v15 schema pins
-re-derived on the union; the record in
-`docs/release-evidence.json` names `67c1c405` and the suite discovered exactly that count. The
+The 2026-11-12 run on `7e7a54fe` was the count every release document quoted until this
+re-measurement: `Ran 4577 tests in 1524s`, `OK (skipped=12)`, exit 0. Its 119-test delta over the
+`4f93f890` count of 4458 is the merged cards' own cases — E2E L1/L4/L5, S5/S6, G6, U3b, U2 — plus
+the v15 schema pins re-derived on the union. The current record names `b9895039`, and the suite
+discovered `Ran 5120 tests in 1179.248s`, `OK (skipped=19)` there; the 543-test delta over 4577 is
+the merges between `7e7a54fe` and `2dec360f` plus the docs-truth gate's own tests, measured as one
+run rather than decomposed card by card. The
 duration was measured while other workers were active on the host, so it is a count measurement, not
 a quiet-host timing. The previous records — 4458 at `4f93f890`, 4453 at `88a88744`, 4434 at
 `170aa650`, 4375 at `5df8dfdc`, 4359 at `8eb1f944`, 4350 at `6dc7a927`, 4212 at `5f956f7b`, and 4033
@@ -69,20 +75,18 @@ at `6d08cc8a` before it — are history. `cb.rpc` v26, v27 and v28 are each addi
 add no method (v28 also carries the `cb.db` v15 `checks.revisit` column), so the registry test still
 holds 93 declared to 93 handlers.
 
-The M4 block on the `b9f4a19` table above still describes the frozen release tree; this pass does not
-re-pin it. Re-checked 2026-11-12 by summing the committed `audit/visual/m4-visual/audit.json`
-per-frame measurements (the same derivation every earlier record used), the `b9f4a19` audit reproduces
-2,120 text nodes / 298 AX controls / 70 full-motion animated nodes exactly. The audit committed at
-`165d7da0`, regenerated for the VQ-011 module `9015b84c`, was pinned to that module and measured
-2,172 / 320 / 158 with all 15 claims PASS; the audit committed at `88a88744`, regenerated for UI-K9's
-module `e87a2e01` (`f766d1c6`), measures the same 2,172 / 320 / 158 and is the pin the committed
-audit now names. That drift belongs to the CB-trunk re-pin at `6dc7a927` (`d6d85566`): comparing that
-audit with the ones committed at `8eb1f944` (`52dac9ed`), at `fe1a8fc6` (`28bc081c`), at `165d7da0`
-(`9015b84c`) and at `88a88744` (`e87a2e01`) shows only `generated_at`, `branch` and `plugin_sha256`
-differ, so the re-pins after the CB-trunk merge moved the pin and not a measurement.
-The frozen-tree M4 row is therefore not a claim about the head. Re-pinning it (and re-running
-`scripts/m4v-repro-check.py` at `e87a2e01`, which has not been run) is the operator's remaining freeze
-decision.
+The M4 row on the current table is re-derived from the committed
+`audit/visual/m4-visual/audit.json` at this tree: summing its per-frame measurements (the derivation
+every earlier record used) gives 2,172 text nodes, 320 AX controls and 158 full-motion animated
+nodes, with all 15 claims PASS, and `scripts/check-audit-pin.py` names the module it is pinned to
+(`ca575b3a`). The audit committed at `165d7da0` was the first to measure that set: it was regenerated
+for the VQ-011 module `9015b84c` and measured 2,172 / 320 / 158, and the audit committed at
+`88a88744`, regenerated for UI-K9's module `e87a2e01` (`f766d1c6`), measures the same. That drift
+belongs to the CB-trunk re-pin at `6dc7a927` (`d6d85566`): comparing that audit with the ones
+committed at `8eb1f944` (`52dac9ed`), at `fe1a8fc6` (`28bc081c`), at `165d7da0` (`9015b84c`) and at
+`88a88744` (`e87a2e01`) shows only `generated_at`, `branch` and `plugin_sha256` differ, so the
+re-pins after the CB-trunk merge moved the pin and not a measurement. `scripts/m4v-repro-check.py`
+has not been run above `cd862140`; the M4 row is one committed generation, not a two-run pair.
 
 The previous record quoted `Ran 2880 tests in 540.226s … OK (skipped=1)` measured on the merged
 GM-005 tree over `origin/master` `3fb3779`. That count went stale when CP-014, CP-020a, CP-020b,
