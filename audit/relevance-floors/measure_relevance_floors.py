@@ -46,7 +46,21 @@ def _verdict_rows(gate: dict[str, Any]) -> list[dict[str, Any]]:
     return rows
 
 
-def _distribution(gate: dict[str, Any], rows: list[dict[str, Any]], texts: list[str]) -> dict[str, Any]:
+def _distribution(
+    gate: dict[str, Any],
+    rows: list[dict[str, Any]],
+    texts: list[str],
+    source_texts: list[str] | None = None,
+) -> dict[str, Any]:
+    """Summarise one gate pass.
+
+    ``texts`` are the strings the gate actually scored; ``source_texts`` are the fetched bodies they
+    were cut from. Clipping must be measured against the source, never against the already-bounded
+    text — ``len(text[:BOUND]) > BOUND`` is false by construction and would report "nothing clipped"
+    in the very block whose job is length honesty.
+    """
+
+    clipped_check = texts if source_texts is None else source_texts
     best = gate["best_score"]
     floor = relevance.MIN_COVERAGE
     margin = relevance.RELATIVE_MARGIN * best
@@ -70,7 +84,7 @@ def _distribution(gate: dict[str, Any], rows: list[dict[str, Any]], texts: list[
         "goal_terms_matched_by_any_page_count": len(matched_anywhere),
         "goal_terms_matched_by_no_page": [t for t in terms if t not in matched_anywhere],
         "text_chars": [len(t) for t in texts],
-        "texts_clipped": [len(t) > BOUND for t in texts],
+        "texts_clipped": [len(t) > BOUND for t in clipped_check],
     }
 
 
@@ -92,6 +106,7 @@ def _gate(goal: str, pages: list[dict[str, Any]], bound: int | None) -> tuple[di
 def _measure_packet(name: str, goal: str, pages: list[dict[str, Any]], notes: list[str]) -> dict[str, Any]:
     full_gate, full_texts = _gate(goal, pages, None)
     bounded_gate, bounded_texts = _gate(goal, pages, BOUND)
+    fetched_texts = [page.get("text") or "" for page in pages]
     return {
         "packet": name,
         "goal": goal,
@@ -113,7 +128,9 @@ def _measure_packet(name: str, goal: str, pages: list[dict[str, Any]], notes: li
         },
         "bounded_6000": {
             "table": _verdict_rows(bounded_gate),
-            "distribution": _distribution(bounded_gate, _verdict_rows(bounded_gate), bounded_texts),
+            "distribution": _distribution(
+                bounded_gate, _verdict_rows(bounded_gate), bounded_texts, fetched_texts
+            ),
         },
         "notes": notes,
     }
