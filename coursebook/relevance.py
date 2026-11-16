@@ -107,8 +107,10 @@ MIN_COVERAGE = 0.5
 #: The second half of the refusal: a page below :data:`MIN_COVERAGE` is still admitted when it
 #: reaches this share of the best page in the same pass. A compound goal names more terms than one
 #: honest page covers, so "a manufacturer note at 0.275 against a 0.685 best" is a resource, not a
-#: stranger. Measured on the full fetched bodies, the fig pass put the forestry page at 0.28 of its
-#: best page and the soldering pass put a genuine CU Boulder soldering resource at 0.38 of 1.00;
+#: stranger. Measured on the committed fig-tree packet — a short reconstruction whose bodies are all
+#: under 300 chars, so full body and ``content[:6000]`` are the same — the forestry page sits at 0.28
+#: of its best page; measured on the H-40 soldering pass's full fetched bodies, a genuine CU Boulder
+#: soldering resource is 0.38 of 1.00;
 #: measured on ``content[:6000]``, the same CU Boulder page is 0.35 against 0.69 (0.52 of the best)
 #: and the manufacturer note is 0.275 against 0.685 — 0.40146 of the best. So 0.35 holds at both
 #: lengths, and the bounded headroom is only ~0.05: patching this constant to 0.40 still admits the
