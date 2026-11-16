@@ -216,6 +216,31 @@ def _scope_finding() -> Finding | None:
         f"single-home storage pinned to {pin} via {seam['module']}.{seam['attribute']}")
 
 
+#: Import name and runtime lane for each Python dependency the product declares. ``level`` is
+#: ``error`` when the product cannot answer a learner at all without the wheel and ``warning``
+#: when it has a typed degraded path (docs/INSTALL.md says so). The level decides two separate
+#: questions: whether the finding fails the provisioning check, and whether ``DEPS_OK`` is emitted.
+_DEPENDENCY_PROBES: tuple[tuple[str, str, str], ...] = (
+    ("jsonschema", "error", "structured grading and every contract check"),
+    ("faster_whisper", "warning", "pronunciation practice (reported unavailable)"),
+    ("pypdf", "warning", "syllabus import (answers PARSER_UNAVAILABLE)"),
+    ("json_repair", "warning",
+     "reading a malformed but complete JSON answer (a malformed one is refused instead)"),
+)
+
+
+def _dependency_importable(module: str) -> bool:
+    """Whether ``module`` imports in this interpreter; the seam the tests replace.
+
+    A broken import is the same as a missing one here: the product has one degraded path, not two.
+    """
+    try:
+        __import__(module)
+    except Exception:  # noqa: BLE001
+        return False
+    return True
+
+
 def inspect_provisioning(source: Path, home: Path | None = None) -> list[Finding]:
     """Check that the package a *user* installs is complete and wired, not just present.
 
@@ -318,22 +343,33 @@ def inspect_provisioning(source: Path, home: Path | None = None) -> list[Finding
         findings.append(Finding(
             "error", "CONTRACTS_UNREADABLE", f"the contract set cannot be loaded: {exc}"))
 
-    # 4. Optional/required Python dependencies. A missing optional one degrades a named lane.
-    for module, level, lane in (
-        ("jsonschema", "error", "structured grading and every contract check"),
-        ("faster_whisper", "warning", "pronunciation practice (reported unavailable)"),
-        ("pypdf", "warning", "syllabus import (answers PARSER_UNAVAILABLE)"),
-        ("json_repair", "warning",
-         "reading a malformed but complete JSON answer (a malformed one is refused instead)"),
-    ):
-        try:
-            __import__(module)
-        except Exception:  # noqa: BLE001 - a broken install is the same as a missing one here
+    # 4. Python dependencies. A missing `error` dependency fails the check; a missing `warning`
+    #    one only degrades a named lane. `DEPS_OK` answers the first question only: an optional
+    #    wheel that is absent is a supported install (a typed degraded path), so it must not
+    #    suppress the dependency block's OK verdict as though the package were incomplete.
+    for module, level, lane in _DEPENDENCY_PROBES:
+        if not _dependency_importable(module):
             findings.append(Finding(
                 level, "DEP_MISSING", f"{module} is not importable; {lane} cannot run",
-                f"python3 -m pip install '{module}'"))
-    if not any(finding.code == "DEP_MISSING" for finding in findings):
-        findings.append(Finding("ok", "DEPS_OK", "declared Python dependencies import"))
+                f"python3 -m pip install '{module}'  (the gate's full set: "
+                "uv pip install --python \"$(command -v python3)\" -r requirements-dev.txt)"))
+    required_missing = [
+        finding for finding in findings
+        if finding.code == "DEP_MISSING" and finding.level == "error"
+    ]
+    optional_missing = [
+        finding for finding in findings
+        if finding.code == "DEP_MISSING" and finding.level != "error"
+    ]
+    if not required_missing:
+        caveat = (
+            f"; {len(optional_missing)} optional wheel(s) absent, each with a named degraded lane"
+            if optional_missing else ""
+        )
+        findings.append(Finding(
+            "ok", "DEPS_OK",
+            f"{len(_DEPENDENCY_PROBES) - len(optional_missing)} of "
+            f"{len(_DEPENDENCY_PROBES)} declared Python dependencies import{caveat}"))
 
     # 5. Bundled starter packs: each must verify its own manifest hash.
     packs_dir = source / "bundled" / "packs"
