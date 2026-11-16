@@ -1,0 +1,921 @@
+{
+  "grammar": "archive_desk",
+  "kit_id": "archive_desk@1",
+  "label": "Archive desk",
+  "version": 1,
+  "status": "built_for_owner_review",
+  "art_bible": "docs/concept-parity/ART-BIBLE.md",
+  "lane": "display_plate",
+  "prompt_version": "vq008-kit-prompt-v1",
+  "palette": {
+    "warm paper": "#f7f1e4 (canvas)",
+    "dark brown ink": "#3a2318 (ink)",
+    "ochre": "#7b4b0a (wood)",
+    "coral": "#9c2e1c (terracotta)",
+    "field green": "#2f6047 (forest)"
+  },
+  "palette_tokens": [
+    "warm paper",
+    "dark brown ink",
+    "ochre",
+    "coral",
+    "field green"
+  ],
+  "medium": "a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; papers, trays and stamps painted as flat masses",
+  "composition": "an overhead desk vignette with overlapping papers; a clean margin at the top left holds the headline",
+  "motifs": [
+    "document tray",
+    "stamp",
+    "index cards",
+    "map drawer",
+    "reading chair"
+  ],
+  "subject_cues": [
+    "document tray",
+    "wax stamp",
+    "index cards",
+    "map drawer"
+  ],
+  "illustration_role": "orientation only; never an invented source or quotation",
+  "cannot_do": "invent a source or a quotation",
+  "provider_free": true,
+  "manifest_shape": {
+    "based_on": "field_atlas@2",
+    "loader_contract": "roles[] holds only kit-local display plates: id/role/path/size/sha256/textless=true/source=curated_kit, every path relative and inside the kit directory, PNG. `resolution[role].source` names the 2x sibling a full-bleed plate is encoded from. Shared-kernel rows are references, not roles: they live in kernel.assets with their repo-relative path and sha256 and must be resolved through kernel.assets, never mounted as a kit-local plate.",
+    "generation_log": "the generation.json sidecar beside this manifest, pinned by sha256 here rather than inlined",
+    "divergences": [
+      "a `section` role is VQ-008's own; field_atlas@2 has none, and the section ships no 2x sibling",
+      "covers are two aspects of one generic display cover, not per-course covers",
+      "generation_log is a pinned sidecar, not an inlined list",
+      "field_atlas@2 copies its kernel bytes into the kit and lists them as roles; these kits keep one shared kernel and declare it as references in kernel.assets, so roles stay kit-local plates"
+    ]
+  },
+  "ocr_policy": {
+    "tool": "tesseract default page segmentation on the shipped plate",
+    "fail_rule": "a token of >= 3 alphanumeric characters at confidence >= 60",
+    "calibration": "real UI strings on refs/home.png and refs/classroom.png score 74-95; painted line art on these plates scores 12-52",
+    "limitation": "OCR is a cheap backstop, not the textless control. Recall measured this round on the shipped lab_bench hero with Liberation Sans Bold burned in: 120 pt 'TORQUE 45 Nm' and 'CAUTION' return no readable token at default page segmentation or at psm 6/11/12; 72 pt returns only isolated one-character fragments ('7' at 82.3, '4' at 59.4); 48 pt and 32 pt return nothing. A legible 120 pt line scoring zero shows recall does not rise with type size, and an independent 72 pt probe recovered one three-character fragment at 90.9, so a clean OCR run is not evidence that a plate is textless. The primary control is the recorded per-plate vision pass: every accepted row in generation.json must carry a vision and a residual verdict, and --check refuses an accepted row without either and a kit whose hero, 3:2 cover, section or lesson scene has no accepted row behind it. Painted pseudo-lettering is the same case with less contrast.",
+    "calibrated_on": [
+      "docs/concept-parity/refs/home.png",
+      "docs/concept-parity/refs/classroom.png"
+    ]
+  },
+  "reference": {
+    "path": "docs/concept-parity/refs/home.png",
+    "note": "the reference mockup(s) the accepted plates were generated against; mockups, not a source of course titles",
+    "sha256": "fd75bed31cd773ab50a5b5ad62daa46566d50b1b7f3ed1582a52915a14f3ffe3"
+  },
+  "specimens": {
+    "contact_sheet": {
+      "path": "docs/visual-review/vq-008/archive_desk-contact-sheet.png",
+      "size": [
+        1260,
+        2810
+      ],
+      "sha256": "fdcc90c808c08addd676415eee4e36d173101696620cdee845c03c3a2a1408e5",
+      "bytes": 5896845,
+      "note": "rebuilt by `python3 scripts/vq008-kits.py --contact docs/visual-review/vq-008`; every shipped plate, the shared kernel rows and this grammar's art direction"
+    }
+  },
+  "supersedes": null,
+  "generation_log": {
+    "path": "generation.json",
+    "rows": 9,
+    "bytes": 4017,
+    "sha256": "7ffda3de0d8a1c459ab6a7db9f899c1a6ad4859f1bfc88874d0e95b552846ce9",
+    "note": "the attempt log is a sidecar pinned here by hash; every rejected attempt is kept"
+  },
+  "kernel": {
+    "kit_id": "coursebook-kernel@1",
+    "note": "shared objects, frames, badges, materials and fox poses are referenced from one kernel; a kit does not copy new bytes for them. These rows are references, not kit-local plates: resolve each through this block, never mount it as a role.",
+    "groups": {
+      "frame": [
+        "assets/masters/objects/medallion-rim.svg",
+        "assets/masters/objects/stamp-rim.svg"
+      ],
+      "badge": [
+        "assets/masters/objects/tag.svg",
+        "assets/masters/objects/ticket.svg"
+      ],
+      "object": [
+        "assets/objects/clock.webp",
+        "assets/objects/passport-tray.webp",
+        "assets/objects/shelf-plank.webp"
+      ],
+      "material": [
+        "assets/material/grain-paper.webp",
+        "assets/material/vignette-parchment.webp",
+        "assets/material/wood-plank.webp"
+      ],
+      "fox": [
+        "assets/fox/fox-read-256.webp",
+        "assets/fox/fox-point-256.webp",
+        "assets/fox/fox-clock-256.webp",
+        "assets/fox/fox-think-256.webp",
+        "assets/fox/fox-cheer-256.webp",
+        "assets/fox/fox-wave-256.webp",
+        "assets/fox/fox-sleep-256.webp"
+      ]
+    },
+    "assets": [
+      {
+        "id": "medallion-rim",
+        "role": "frame",
+        "path": "assets/masters/objects/medallion-rim.svg",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "203a388f72105572bc6bd77310f2625561ce9aa59c59cea867e521767d76886c",
+        "bytes": 346,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "stamp-rim",
+        "role": "frame",
+        "path": "assets/masters/objects/stamp-rim.svg",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "1def3c1a51893732243b65d4ca0e927ee49daec3a4dd012b579fd0ce13849ef8",
+        "bytes": 413,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "tag",
+        "role": "badge",
+        "path": "assets/masters/objects/tag.svg",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "a2d0b16e01fc8e6c829c9ba2e2020e7248b5a54714d42fc191a91dad53a40650",
+        "bytes": 416,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "ticket",
+        "role": "badge",
+        "path": "assets/masters/objects/ticket.svg",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "7f5a658ef5d90b265e4940544b3cf569ea9349a36a4479795eb1f8b1f4365c35",
+        "bytes": 437,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "clock",
+        "role": "object",
+        "path": "assets/objects/clock.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "24c5f6e97127b301073ca378d20c63b8d25cf3849ea8800052614ad1ee1fa079",
+        "bytes": 26566,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "passport-tray",
+        "role": "object",
+        "path": "assets/objects/passport-tray.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "0b1233e392733e009c300b76224dab184d2eb010a8e20bf100c7bddf17478928",
+        "bytes": 10884,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "shelf-plank",
+        "role": "object",
+        "path": "assets/objects/shelf-plank.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "0acd9168165664fb4a5f860c13fbd900ec7d62f33b36a3738d22e44ea6bb2d4f",
+        "bytes": 17780,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "grain-paper",
+        "role": "material",
+        "path": "assets/material/grain-paper.webp",
+        "size": [
+          96,
+          96
+        ],
+        "sha256": "0058897dc5aca76a52a6d2230c8b13832cafdfeddd2613312a284910db4821f4",
+        "bytes": 820,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "vignette-parchment",
+        "role": "material",
+        "path": "assets/material/vignette-parchment.webp",
+        "size": [
+          2688,
+          1428
+        ],
+        "sha256": "84b460a871f36c996c0469c073af72481173c5cf394eee64fcc7542190aa6995",
+        "bytes": 24532,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "wood-plank",
+        "role": "material",
+        "path": "assets/material/wood-plank.webp",
+        "size": [
+          96,
+          96
+        ],
+        "sha256": "b6cfc60039ab0783bb8d9b79323486e29362b8e1a5f2f6806690f446982c291d",
+        "bytes": 1228,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "fox-read-256",
+        "role": "fox",
+        "path": "assets/fox/fox-read-256.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "db1a98a24285a8ca5067124764e9498cab85f20ced28f1158a7f916c45d8d0b4",
+        "bytes": 14774,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "fox-point-256",
+        "role": "fox",
+        "path": "assets/fox/fox-point-256.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "7c021980c39533b8cb4c1db5de38b4fe0fc1edfaddeae58a87bc74551a95d4f4",
+        "bytes": 11422,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "fox-clock-256",
+        "role": "fox",
+        "path": "assets/fox/fox-clock-256.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "f931ca1f921654150f9b4d7a02dfff2476f5d810873cfe5ba07a3b36efeb8245",
+        "bytes": 12748,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "fox-think-256",
+        "role": "fox",
+        "path": "assets/fox/fox-think-256.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "e8be6eea4edafa106d777bd104205d11e0cd92268562fc48145b636146606d2b",
+        "bytes": 10344,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "fox-cheer-256",
+        "role": "fox",
+        "path": "assets/fox/fox-cheer-256.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "142a04d34df2c0c4e3a3787f696e159a0a00756801dd9e2e3f292e9686d42f82",
+        "bytes": 13506,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "fox-wave-256",
+        "role": "fox",
+        "path": "assets/fox/fox-wave-256.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "85b531ea4711c484246c624a7c32317e59452d9e47bcf01869ff66110990f5f4",
+        "bytes": 12174,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "fox-sleep-256",
+        "role": "fox",
+        "path": "assets/fox/fox-sleep-256.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "ce669e8395217a41c6b97c373c9ae5f947acf54f09e1a056854a779f9b4247e6",
+        "bytes": 10518,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      }
+    ]
+  },
+  "roles": {
+    "hero": [
+      {
+        "id": "archive-desk",
+        "role": "hero",
+        "path": "hero/archive-desk.png",
+        "size": [
+          1344,
+          768
+        ],
+        "sha256": "4b550d20718249fc93368690ef544ffa1a3a50deeb3a51d04a4eee00166e2d80",
+        "bytes": 1366644,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
+          "reference_image": "docs/concept-parity/refs/home.png",
+          "media_url": "https://v3b.fal.media/files/b/0ab21275/GcK3kYoeMeNZ2srf0ma-3_hk1C2r8F.png",
+          "raw_path": ".vq-raw/vq008/archive_desk/archive-desk.raw.png",
+          "raw_sha256": "97dd85f493edc23475a9c5d90bfa575fe92fe79107b50b832c535768057a62fb",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: a reading desk seen from slightly above, the desk of someone mid-research. BACKGROUND: a tall dark ochre bookcase against a warm plaster wall, its shelves full of plain blank spines, and a tall window at the upper right onto soft grey-free daylight. MIDGROUND: the wide ochre desk with a stack of plain document trays, overlapping sheets of completely blank paper, a brass inkwell and a plain wax stamp with a blank face, a row of blank index cards standing in a wooden box. FOREGROUND: the near desk edge running off the bottom edge, a magnifier, a brass paperweight and one blank card.\n\nComposition: an overhead desk vignette with overlapping papers; a clean margin at the top left holds the headline.\n\nGrammar motifs: document tray, stamp, index cards, map drawer, reading chair.\n\nThe upper third of the frame is a quiet field reserved for a headline typeset later: a plain painted surface with a couple of faint broad brush marks, low contrast, no small detail, reaching the top edge of the frame, still painted environment and not bare parchment.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, coral, field green. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. Every sheet of paper, card, spine, ledger and label is completely blank: no writing, no lettering, no quotation, no line of text, no signature, no seal impression, no document number. Nothing in the plate is a source, a quotation or a record, and nothing in it is legal or medical advice.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": null,
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "* L == i l,! ! | I",
+            "max_conf": 88.82,
+            "tokens": [
+              {
+                "text": "*",
+                "conf": 22.45
+              },
+              {
+                "text": "L",
+                "conf": 75.32
+              },
+              {
+                "text": "==",
+                "conf": 65.57
+              },
+              {
+                "text": "i",
+                "conf": 11.35
+              },
+              {
+                "text": "l,!",
+                "conf": 59.52
+              },
+              {
+                "text": "!",
+                "conf": 71.92
+              },
+              {
+                "text": "|",
+                "conf": 79.94
+              },
+              {
+                "text": "I",
+                "conf": 88.82
+              }
+            ],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#B5946B",
+            "black_minima": 0.03922,
+            "cool_share": 0.0,
+            "neutral_share": 0.10418,
+            "quiet_field": {
+              "x": 0,
+              "y": 120,
+              "w": 544,
+              "h": 220,
+              "note": "the flattest band this plate actually offers in the upper 45%, chosen by the better of its measured contrast against contract ink and against cream paper",
+              "contrast_p5_on_cream": 14.98,
+              "best_contrast": 14.98,
+              "type_tone": "cream",
+              "percentile_5": 29,
+              "percentile_25": 46,
+              "median": 126,
+              "contrast_p5": 1.06,
+              "contrast_median": 4.4,
+              "detail_energy": 0.0317
+            }
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "bookcase of plain blank spines, desk with a stack of blank sheets, blank index cards in a box, brass inkwell, blank-faced stamp, magnifier; no lettering on any spine or card",
+            "residual": "the spines are blank but their shelving is dense; the upper third is bookcase rather than bare wall, so the measured quiet band sits on a shelf face"
+          },
+          "derivation": "raw 2688x1536 resized to the required 1344x768; the 2688x1536 sibling beside it is that frame kept un-resized",
+          "source_frame": {
+            "path": "hero/archive-desk@2x.png",
+            "size": [
+              2688,
+              1536
+            ],
+            "scale": 2.0,
+            "provider_frame": [
+              2688,
+              1536
+            ],
+            "native_2x": true,
+            "note": "the provider returned a 2x frame; the 2688x1536 file beside the plate is that frame carried through the print-safety lift"
+          }
+        }
+      }
+    ],
+    "cover": [
+      {
+        "id": "document-trays-3x2",
+        "role": "cover",
+        "path": "cover/document-trays-3x2.png",
+        "size": [
+          1200,
+          800
+        ],
+        "sha256": "06b1009510c1177632f7c030666df3d416bc2153590bf0e68b41ec620b3637ec",
+        "bytes": 1118340,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "text-only prompt: no reference image was passed, with the host upscale pass on",
+          "reference_image": null,
+          "media_url": "https://v3b.fal.media/files/b/0ab21284/oEAzmN7gwKUafYb28zHqa_dDwC6wm2.png",
+          "raw_path": ".vq-raw/vq008/archive_desk/document-trays-3x2.raw.png",
+          "raw_sha256": "918ef5f6ca4d85bdc9ab1c06bb7d58dee405f95492026440023b7533fb9e8b8f",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: the document trays and papers on the desk, tighter, subject held in the middle half of the frame so a narrow vertical crop still holds it. BACKGROUND: the bookcase and a panel of warm wall. MIDGROUND: three stacked ochre document trays overflowing with completely blank sheets, a plain wax seal, a brass clip and a small stamp with a blank face. FOREGROUND: the desk edge running off the bottom and side edges, a magnifier and a blank index card.\n\nComposition: an overhead desk vignette with overlapping papers; a clean margin at the top left holds the headline.\n\nGrammar motifs: document tray, stamp, index cards, map drawer, reading chair.\n\nThe headline band and the middle half of the frame stay quiet enough for a title typeset later: no small detail in the centre, no busy pattern behind the middle.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, coral, field green. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. Every sheet of paper, card, spine, ledger and label is completely blank: no writing, no lettering, no quotation, no line of text, no signature, no seal impression, no document number. Nothing in the plate is a source, a quotation or a record, and nothing in it is legal or medical advice.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": "no reference image; heading paragraph gains a 'not a screenshot / do not paint the words of this instruction' clause after attempt 2",
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#E1D0BD",
+            "black_minima": 0.03922,
+            "cool_share": 0.0,
+            "neutral_share": 0.12325
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "three stacked ochre trays of completely blank sheets, a blank card, a brass seal and a magnifier on an ochre desk",
+            "residual": "the shelf spines behind are plain but warm; no mark on any sheet"
+          },
+          "derivation": "raw 2048x1152 centre crop 1728x1152, resized to 1200x800; the 4:5 is a 921x1152 centre crop of the same frame, not a second generation",
+          "source_frame": {
+            "path": null,
+            "size": [
+              1728,
+              1152
+            ],
+            "scale": 2.88,
+            "ratios": {
+              "shipped_vs_render": 2.0,
+              "natural_vs_shipped": 1.44,
+              "natural_vs_render": 2.88
+            },
+            "note": "the shipped 1200x800 plate is exactly 2x the 600x400 render; the 1728x1152 natural crop is 1.44x the shipped plate and 2.88x the render"
+          },
+          "crop_4x5": {
+            "size": [
+              921,
+              1152
+            ],
+            "frame": [
+              2048,
+              1152
+            ],
+            "note": "centre crop of the same provider frame, resized to 640x800 (2x of a 320x400 render)"
+          }
+        }
+      },
+      {
+        "id": "document-trays-4x5",
+        "role": "cover",
+        "path": "cover/document-trays-4x5.png",
+        "size": [
+          640,
+          800
+        ],
+        "sha256": "580b0b7d003821176ecbb3230b54bdd2de7dfed28ecc63980a503824e1d9bcea",
+        "bytes": 600069,
+        "textless": true,
+        "source": "curated_kit",
+        "derived_from": "document-trays-3x2",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "text-only prompt: no reference image was passed, with the host upscale pass on",
+          "reference_image": null,
+          "media_url": "https://v3b.fal.media/files/b/0ab21284/oEAzmN7gwKUafYb28zHqa_dDwC6wm2.png",
+          "raw_path": ".vq-raw/vq008/archive_desk/document-trays-3x2.raw.png",
+          "raw_sha256": "918ef5f6ca4d85bdc9ab1c06bb7d58dee405f95492026440023b7533fb9e8b8f",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: the document trays and papers on the desk, tighter, subject held in the middle half of the frame so a narrow vertical crop still holds it. BACKGROUND: the bookcase and a panel of warm wall. MIDGROUND: three stacked ochre document trays overflowing with completely blank sheets, a plain wax seal, a brass clip and a small stamp with a blank face. FOREGROUND: the desk edge running off the bottom and side edges, a magnifier and a blank index card.\n\nComposition: an overhead desk vignette with overlapping papers; a clean margin at the top left holds the headline.\n\nGrammar motifs: document tray, stamp, index cards, map drawer, reading chair.\n\nThe headline band and the middle half of the frame stay quiet enough for a title typeset later: no small detail in the centre, no busy pattern behind the middle.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, coral, field green. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. Every sheet of paper, card, spine, ledger and label is completely blank: no writing, no lettering, no quotation, no line of text, no signature, no seal impression, no document number. Nothing in the plate is a source, a quotation or a record, and nothing in it is legal or medical advice.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": "no reference image; heading paragraph gains a 'not a screenshot / do not paint the words of this instruction' clause after attempt 2",
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#E0CDB6",
+            "black_minima": 0.03922
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "three stacked ochre trays of completely blank sheets, a blank card, a brass seal and a magnifier on an ochre desk",
+            "residual": "the shelf spines behind are plain but warm; no mark on any sheet"
+          },
+          "derivation": "centre crop of the document-trays-3x2 natural 2048x1152 frame to 921x1152 (4:5), resized to 640x800; derived from the same generation, not a second attempt",
+          "crop_4x5": {
+            "size": [
+              921,
+              1152
+            ],
+            "frame": [
+              2048,
+              1152
+            ],
+            "note": "centre crop of the same provider frame, resized to 640x800 (2x of a 320x400 render)"
+          },
+          "source_frame": {
+            "path": null,
+            "referent": "document-trays-3x2",
+            "frame": [
+              2048,
+              1152
+            ],
+            "crop": [
+              921,
+              1152
+            ],
+            "size": [
+              921,
+              1152
+            ],
+            "shipped": [
+              640,
+              800
+            ],
+            "scale_vs_render": 2.8781,
+            "note": "the 921x1152 centre crop of the 2048x1152 provider frame, resized to the shipped 640x800 (2x of a 320x400 render)"
+          }
+        }
+      }
+    ],
+    "section": [
+      {
+        "id": "index-drawer",
+        "role": "section",
+        "path": "section/index-drawer.png",
+        "size": [
+          1344,
+          768
+        ],
+        "sha256": "5bfd2a2952c71d86e47b0a0fc328dd7f4885d69cb543b844b134aabd69b33c6f",
+        "bytes": 1418961,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "text-only prompt: no reference image was passed, with the host upscale pass on",
+          "reference_image": null,
+          "media_url": "https://v3b.fal.media/files/b/0ab21288/n4cyFTkZfBcN6md0P47-A_ZgCtLdZX.png",
+          "raw_path": ".vq-raw/vq008/archive_desk/index-drawer.raw.png",
+          "raw_sha256": "31482e870200576ecd2852b7be47f53e13c9a7af07791e5ce7c1d021ebbc25be",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: an open index-card drawer and a map drawer pulled out, seen from above. BACKGROUND: the ochre cabinet body and a warm plaster wall. MIDGROUND: the drawer full of blank index cards standing in tidy rows, and beside it a shallow map drawer holding a rolled blank chart sheet. FOREGROUND: the cabinet edge running off the bottom edge, a brass label holder with a blank face and a plain card.\n\nComposition: an overhead desk vignette with overlapping papers; a clean margin at the top left holds the headline.\n\nGrammar motifs: document tray, stamp, index cards, map drawer, reading chair.\n\nThe upper third of the frame is a quiet field reserved for a section title typeset later: low contrast, no small detail.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, coral, field green. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. Every sheet of paper, card, spine, ledger and label is completely blank: no writing, no lettering, no quotation, no line of text, no signature, no seal impression, no document number. Nothing in the plate is a source, a quotation or a record, and nothing in it is legal or medical advice.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": null,
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#DDC7AD",
+            "black_minima": 0.03922,
+            "cool_share": 0.0,
+            "neutral_share": 0.02451
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "open drawer of blank index cards in tidy rows, a second drawer of rolled blank sheets, a blank label holder",
+            "residual": "the label holder is a blank brass plate; the card rows read as a grid of card edges, not a printed grid"
+          }
+        }
+      }
+    ],
+    "lesson_scene": [
+      {
+        "id": "reading-desk",
+        "role": "lesson_scene",
+        "path": "lesson-scene/reading-desk.png",
+        "size": [
+          1344,
+          768
+        ],
+        "sha256": "59bf3686afa76cd06dd56f77b35b18da9e01e0f6900de540caf741dc04fc97db",
+        "bytes": 1172339,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "text-only prompt: no reference image was passed, with the host upscale pass on",
+          "reference_image": null,
+          "media_url": "https://v3b.fal.media/files/b/0ab2127d/7ah9KoSY5zL4PZL_Usb-o_nVwnSaN7.png",
+          "raw_path": ".vq-raw/vq008/archive_desk/reading-desk.raw.png",
+          "raw_sha256": "09079ccca2d36b6a044e3794a4bdf966c51e510582c0bcdfc75ac93101a794f3",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: a reading desk with an empty chair, seen straight on. BACKGROUND: a tall bookcase of plain blank spines and a warm wall, a tall window at the left. MIDGROUND: the desk with an open blank ledger, a brass reading lamp with a cream shade, a stack of blank cards and a plain document tray. FOREGROUND: the desk front running off the bottom edge, the chair back and a folded cloth.\n\nComposition: an overhead desk vignette with overlapping papers; a clean margin at the top left holds the headline.\n\nGrammar motifs: document tray, stamp, index cards, map drawer, reading chair.\n\nThe upper third of the frame is a quiet field reserved for the lesson title typeset later: low contrast, no small detail.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, coral, field green. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. Every sheet of paper, card, spine, ledger and label is completely blank: no writing, no lettering, no quotation, no line of text, no signature, no seal impression, no document number. Nothing in the plate is a source, a quotation or a record, and nothing in it is legal or medical advice.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": null,
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#E4D8C7",
+            "black_minima": 0.03922,
+            "cool_share": 0.0,
+            "neutral_share": 0.12281
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "reading desk with an open book of two blank cream pages, brass lamp, blank cards in a tray, bookcase of plain spines, chair back",
+            "residual": "the book's page edges are modelled but no mark is printed on either page"
+          },
+          "derivation": "raw 2048x1152 resized to the required 1344x768; the 2688x1536 sibling beside it is the same frame resampled to 2688x1536 (not a native 2x return)",
+          "source_frame": {
+            "path": "lesson-scene/reading-desk@2x.png",
+            "size": [
+              2688,
+              1536
+            ],
+            "scale": 2.0,
+            "provider_frame": [
+              2048,
+              1152
+            ],
+            "native_2x": false,
+            "note": "the provider returned a 2048x1152 frame, so the 2688x1536 file beside the plate is a resampled 2x frame, not a native provider return; Gate 2 sees a 2x asset but the provenance says which it is"
+          }
+        }
+      }
+    ],
+    "collectible": []
+  },
+  "resolution": {
+    "hero": {
+      "size": [
+        1344,
+        768
+      ],
+      "source": {
+        "path": "hero/archive-desk@2x.png",
+        "size": [
+          2688,
+          1536
+        ],
+        "sha256": "295f3f467a87a3db6ecf6c1a0d6938b4e24ca913c945230553abca55f2fe15d1",
+        "scale": 2.0,
+        "method": "provider return at 2688x1536, kept un-resized",
+        "note": "the source a full-bleed plate is encoded from; the 1344x768 plate beside it is the shipped fallback"
+      }
+    },
+    "lesson_scene": {
+      "size": [
+        1344,
+        768
+      ],
+      "source": {
+        "path": "lesson-scene/reading-desk@2x.png",
+        "size": [
+          2688,
+          1536
+        ],
+        "sha256": "fd4f82c0b6a808abad631f0dc35d78f63d44f231a30c6f44ecbbbdb48d067df7",
+        "scale": 2.0,
+        "method": "resampled from the provider's 2048x1152 return to 2688x1536",
+        "note": "the source a full-bleed plate is encoded from; the 1344x768 plate beside it is the shipped fallback"
+      }
+    },
+    "section": {
+      "size": [
+        1344,
+        768
+      ],
+      "source": null,
+      "note": "the section plate ships at its rendered 1344x768 only; no 2x sibling exists, so a loader must not expect one"
+    },
+    "cover": {
+      "3x2": {
+        "size": [
+          1200,
+          800
+        ],
+        "rendered": [
+          600,
+          400
+        ],
+        "scale": 2.0,
+        "natural": {
+          "size": [
+            1728,
+            1152
+          ],
+          "frame": [
+            2048,
+            1152
+          ],
+          "scale_vs_plate": 1.44,
+          "scale_vs_render": 2.88
+        }
+      },
+      "4x5": {
+        "size": [
+          640,
+          800
+        ],
+        "rendered": [
+          320,
+          400
+        ],
+        "scale": 2.0
+      }
+    }
+  },
+  "fallbacks": {
+    "lesson_scene": [
+      "section",
+      "background"
+    ],
+    "cover": [
+      "course-master",
+      "background"
+    ],
+    "hero": [
+      "background"
+    ],
+    "section": [
+      "background"
+    ]
+  },
+  "generation_budget": {
+    "attempts_allowed": 50,
+    "per_asset_max": 4,
+    "attempts_used": 9
+  }
+}

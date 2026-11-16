@@ -1,0 +1,82 @@
+[
+  {
+    "asset": "dome-slit",
+    "role": "hero",
+    "raw": "dome-slit.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab2124b/NH-myevGhpdFfBploAPyL_HolTSmdw.png",
+    "attempt": 1,
+    "verdict": "accepted",
+    "prompt_delta": "palette line extended with: \"The night sky is deep warm field green, never blue, never navy, never black; no grey, no steel, no chrome.\"",
+    "vision": "domed interior, wide slit onto a deep field-green sky with flat stars, plain brass refractor on a yoke, stool, hose coil, case; no lettering on any instrument",
+    "residual": "the sky is dark, so the headline band must be set in cream rather than ink; the measured quiet field records type_tone"
+  },
+  {
+    "asset": "instrument-3x2",
+    "role": "cover",
+    "raw": "instrument-3x2.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21255/ESqgSK2UY_yxACfG8Exbc_1q3ibXsw.png",
+    "attempt": 2,
+    "verdict": "accepted",
+    "prompt_delta": "palette line extended with the green-sky sentence; textless paragraph replaced by the blank-paper and unengraved-tool version",
+    "vision": "brass refractor across the bench, dome ribs, green star sky, a pile of blank sheets, blank log pages, a cloth",
+    "residual": "the rolled chart beside the sheet stack keeps a faint drafting grid; the sheet stack itself is plain"
+  },
+  {
+    "asset": "chart-table",
+    "role": "section",
+    "raw": "chart-table.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21264/_8VGVmCUXvw03UH4Ca0UT_4RZJlHpo.png",
+    "attempt": 4,
+    "verdict": "accepted",
+    "prompt_delta": "chart stage rewritten: no chart sheet at all, three plain brass weights, a pile of blank sheets, one plain unmarked brass disc; textless paragraph carries the unengraved-tool clause",
+    "vision": "table with blank cream sheets, blank cards, plain brass weights and a plain brass disc, pencil; no drawing and no engraving",
+    "residual": "the dome wall behind the table reads grey-green rather than a warm tint"
+  },
+  {
+    "asset": "chart-table",
+    "role": "section",
+    "raw": "rejected/chart-table-a.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab2124b/txDgWTlZTerYQ8vzAhFse_JSMN327p.png",
+    "attempt": 1,
+    "verdict": "rejected",
+    "reason": "a drawn pentagram-like figure on the star chart sheet and ruled lines on the log"
+  },
+  {
+    "asset": "chart-table",
+    "role": "section",
+    "raw": "rejected/chart-table-b.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21257/WRPpQdpY2_e1H8GcRiaRE_tY8r7j3e.png",
+    "attempt": 2,
+    "verdict": "rejected",
+    "reason": "a geometric star-chart drawing on the sheet plus ruled lines on the log"
+  },
+  {
+    "asset": "chart-table",
+    "role": "section",
+    "raw": "rejected/chart-table-c.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab2125b/-ucZ27ucAJ_aDbttWCfph_mzThKsSp.png",
+    "attempt": 3,
+    "verdict": "rejected",
+    "reason": "engraved lettering on the brass dividers and a compass rose on the astrolabe disc"
+  },
+  {
+    "asset": "observation-desk",
+    "role": "lesson_scene",
+    "raw": "observation-desk.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21255/W20fFBvKWRrdTWrv4_owf_EI8QGyc7.png",
+    "attempt": 2,
+    "verdict": "accepted",
+    "prompt_delta": "palette line extended with the green-sky sentence; textless paragraph carries the blank-paper and unengraved-tool clause",
+    "vision": "timber observatory room, green star sky through a shuttered window, brass lamp with cream shade, open book with two blank pages, small telescope, cup",
+    "residual": "the open book pages are blank but their edges are softly modelled; no mark on any page"
+  },
+  {
+    "asset": "observation-desk",
+    "role": "lesson_scene",
+    "raw": "rejected/observation-desk-a.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab2124b/7ukzU7XbHQGV5GhUwxlx3_PPIhoHjL.png",
+    "attempt": 1,
+    "verdict": "rejected",
+    "reason": "scribbled line marks across the open log"
+  }
+]

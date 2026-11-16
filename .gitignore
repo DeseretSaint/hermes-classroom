@@ -29,3 +29,4 @@ visual/frames/
 
 # local worktrees (never tracked)
 /wt/
+.vq-raw/
