@@ -10,6 +10,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from coursebook import db, install_check
 
@@ -19,6 +20,44 @@ REPO = Path(__file__).resolve().parent.parent
 class ProvisioningCheckTest(unittest.TestCase):
     def codes(self, findings) -> set[str]:
         return {finding.code for finding in findings}
+
+    def test_an_absent_optional_dependency_degrades_its_lane_and_still_reports_DEPS_OK(self) -> None:
+        """A supported install without `json_repair` is not an incomplete package.
+
+        The product has a typed degraded path for every optional wheel (docs/INSTALL.md): the
+        malformed-answer repair is skipped and the answer is refused as before. `DEPS_OK` must
+        therefore survive a warning-level miss, carrying the caveat, or a legal install is
+        reported as broken — which is exactly how `test_the_shipped_checkout_provisions_cleanly`
+        failed on a venv that simply lacked `json_repair` (t_3a77c891).
+        """
+        with mock.patch.object(
+            install_check, "_dependency_importable",
+            side_effect=lambda module: module != "json_repair",
+        ):
+            findings = install_check.inspect_provisioning(REPO)
+        codes = self.codes(findings)
+        self.assertIn("DEPS_OK", codes, [finding.__dict__ for finding in findings])
+        missing = [finding for finding in findings if finding.code == "DEP_MISSING"]
+        self.assertEqual(len(missing), 1, [finding.__dict__ for finding in findings])
+        self.assertEqual(missing[0].level, "warning")
+        self.assertIn("json_repair", missing[0].message)
+        self.assertIn("requirements-dev.txt", missing[0].fix or "")
+        deps_ok = next(finding for finding in findings if finding.code == "DEPS_OK")
+        self.assertIn("3 of 4", deps_ok.message)
+        self.assertIn("optional wheel", deps_ok.message)
+        self.assertFalse([finding for finding in findings if finding.level == "error"])
+
+    def test_an_absent_required_dependency_withholds_DEPS_OK_and_fails_the_check(self) -> None:
+        """`jsonschema` is graded as an error; without it `DEPS_OK` must not be emitted."""
+        with mock.patch.object(
+            install_check, "_dependency_importable",
+            side_effect=lambda module: module != "jsonschema",
+        ):
+            findings = install_check.inspect_provisioning(REPO)
+        self.assertNotIn("DEPS_OK", self.codes(findings))
+        errors = [finding for finding in findings if finding.level == "error"]
+        self.assertEqual([finding.code for finding in errors], ["DEP_MISSING"])
+        self.assertIn("jsonschema", errors[0].message)
 
     def test_the_shipped_checkout_provisions_cleanly(self) -> None:
         findings = install_check.inspect_provisioning(REPO)
