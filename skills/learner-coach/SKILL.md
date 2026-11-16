@@ -1,7 +1,7 @@
 ---
 name: learner-coach
 description: "Teach any Coursebook section without giving away the check."
-version: 1.0.0
+version: 1.1.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos]
@@ -25,9 +25,15 @@ thing and asks the learner to try.
 
 ## Procedure
 
-1. **Find the open section before teaching.** Read the active binding and
-   objective from the Coursebook store, or ask the learner to name the course
-   and section. Do not invent a lesson from a generic topic.
+1. **Find the open section before teaching, in the one store the turn names.**
+   A governed turn injects the absolute plugin-data `data.db` path and the bound
+   `objective_id`; read only that file and that id. Never probe other homes,
+   rank candidate stores by freshness, or fall back to a sibling store when the
+   bound id is missing — say `bound_objective_not_in_store` and stop instead.
+   Only when no store is injected (a legacy/manual prompt) read the active
+   binding and objective from the Coursebook store, or ask the learner to name
+   the course and section. If the bound section has no stored teaching body,
+   say so and stop; never invent a lesson from a generic topic.
 2. **Identify the actual construct.** Name what is being practised:
    recognition, recall, discrimination, comprehension, procedure, transfer or
    production. A technical procedure needs ordering and safety checks; a
@@ -42,9 +48,16 @@ thing and asks the learner to try.
    Do not print the reference answer, including inside a "remind me" answer.
    For a multiple-choice or line-selection check, describe the competing cues
    without naming the winner.
-5. **Ask exactly one fresh check.** Match the section's answer format so the
-   grader can accept the learner's next message. Do not ask a second question
-   in the same turn and do not answer for the learner.
+5. **Ask exactly one fresh check — or the section's own evidence request.** Match
+   the answer format the checker accepts so the learner's next message can be
+   read verbatim: one short line, in the representation the check declares, no
+   explanation. Do not ask a second question in the same turn and do not answer
+   for the learner. When the section has **no check** (`dials.assessment='none'`,
+   e.g. a checklist or a verification procedure), never invent one and never
+   call the plugin broken: give the numbered steps, the kit, the stop condition
+   and ask for the evidence the objective's `evidence_criteria_json` records —
+   each step ticked after doing it, plus the one observation that has a real
+   answer.
 6. **Adapt after a miss.** Read what was already asked and what was already
    tried. Change the representation, not just the wording, then issue one new
    check. A repeated stimulus is not remediation.
@@ -58,8 +71,8 @@ thing and asks the learner to try.
   the learner to state a safety stop or a verification step when the procedure
   has one.
 - **Language fields:** include the target script, a pronunciation scaffold when
-  the learner's level needs it, and a short gloss. Never treat romaji or
-  furigana as evidence of reading ability.
+  the learner's level needs it, and a short gloss. Never treat a transliteration
+  or reading aid as evidence of reading ability.
 - **Quantitative fields:** ask for the relationship or the check, not a
   memorised final number. Show units and a sanity check.
 - **Parent-led lessons:** the parent is the operator. Give the parent the
@@ -71,6 +84,7 @@ thing and asks the learner to try.
 - Name the section and the construct in one sentence.
 - Give the smallest explanation that makes the check fair.
 - Quote the check's question or restate its exact answer format.
-- End with one clear request for the learner's attempt.
-- Never claim a pass, a grade or independent verification. The pane and the
-  grader own that.
+- End with one clear request for the learner's attempt — the one short line the
+  grader accepts, or the criteria evidence when the section has no check.
+- Never print the reference answer and never claim a pass, a grade or
+  independent verification. The pane and the grader own that.

@@ -5,6 +5,35 @@ instruction line — the absolute `…/plugin-data/coursebook/data.db` path, whi
 store the chat's binding was found in. Do not go looking in other HERMES_HOMEs: the
 objective id on the turn decides the store, not a probe.
 
+A governed lesson turn injects the absolute plugin-data `data.db` path and the
+bound `objective_id`; use those verbatim. Do not scan sibling homes or rank by
+freshness for a bound turn. If the named objective is absent, return
+`bound_objective_not_in_store` and stop; do not salvage from another store.
+
+Only for an unbound legacy/manual prompt may you locate the store by
+**freshness**, not by the id's shape:
+
+```bash
+for db in ~/.hermes/plugin-data/coursebook/data.db \
+          ~/.hermes/*/plugin-data/coursebook/data.db; do
+  stat -c '%y %n' "$db" 2>/dev/null
+done
+```
+
+```sql
+select r.id, r.last_opened_at, o.ordinal, o.title, o.evidence_target, c.title
+from lesson_runs r join objectives o on o.id = r.objective_id
+left join plans p on p.id = o.plan_id
+left join courses c on c.id = p.course_id
+order by r.last_opened_at desc limit 5;
+```
+
+The freshest run, not the newest binding, is the section the learner just
+opened — opening a section writes the run before the chat binds, so on turn one
+the `status='active'` binding still points at an older chat. Objective ids come
+as pack-era `obj_<hex>` or newer bare `<hex>`; `where id like 'obj_%'` silently
+misses the newer packs.
+
 ## Which run/objective is open
 
 ```python
@@ -84,6 +113,28 @@ select * from transitions order by rowid desc limit 5;   -- next_action: retry_a
 Compare the closed check's stimulus with the open one. Identical or
 same-scene stimuli mean the previous item is the one to avoid; `next_action`
 `retry_attempt` confirms the harness expects a fresh attempt, not a lecture.
+
+## Sections with no check row
+
+A real section can have **zero** `checks` rows. Generated courses with
+`dials.assessment='none'` (checklists, verification procedures, handwork) carry
+their material in the objective's `evidence_criteria_json` — the numbered steps
+the learner ticks — plus `plans.schedule_json.check_plan` and
+`gen_plan_documents.document_json`.
+
+```sql
+select dials_json from courses
+ where id = (select course_id from plans where id = ?);
+select schedule_json from plans where id = ?;                    -- check_plan kind='verification'
+select evidence_criteria_json from objectives where id = ?;      -- the steps
+select document_json from gen_plan_documents where plan_id = ?;  -- plan, objectives, evidence_note
+```
+
+`gen_lessons` and `gen_plan_sections` are often empty while a plan is `draft` /
+`needs_review`; the plan document is then the only body text. If
+`plan.evidence_note` marks the content `unverified` (empty source ledger), state
+that caveat in the tutor reply before the learner acts on safety-critical steps.
+Never invent a check for such a section and never borrow another section's.
 
 ## Course, plan and pack framing
 

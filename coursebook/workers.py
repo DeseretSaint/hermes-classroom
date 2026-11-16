@@ -135,9 +135,18 @@ def _persist_run(lease: Lease, request: ResearchRequest, run: research.ResearchR
             now=None,
         )
         ledger = sources.ledger(connection, request.course_id)
+    message = f"ledger recorded {len(ledger)} sources"
+    if run.dropped:
+        # CP-015g quality: a fetched page the relevance gate refused is paid for and is *not* a
+        # ledger row. Say so on the checkpoint; the run snapshot carries the per-page reason.
+        message += f"; {len(run.dropped)} off-topic page(s) dropped"
     return {
-        "checkpoint": {"research_run_id": research_run_id, "ledger_size": len(ledger)},
-        "message": f"ledger recorded {len(ledger)} sources",
+        "checkpoint": {
+            "research_run_id": research_run_id,
+            "ledger_size": len(ledger),
+            "dropped_count": len(run.dropped),
+        },
+        "message": message,
     }
 
 

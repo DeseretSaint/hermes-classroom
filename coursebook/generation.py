@@ -11757,6 +11757,10 @@ _GENERATION_DDL: tuple[str, ...] = (
         queries_json TEXT NOT NULL DEFAULT '[]',
         sources_json TEXT NOT NULL DEFAULT '[]',
         failures_json TEXT NOT NULL DEFAULT '[]',
+        -- CP-015g quality: a fetched page the relevance gate refused. It was paid for and it is
+        -- not in ``sources_json``, so the loss is recorded here with its query, score, matched
+        -- terms and reason instead of vanishing.
+        dropped_json TEXT NOT NULL DEFAULT '[]',
         reason TEXT,
         created_at TEXT NOT NULL
     )
@@ -11831,6 +11835,12 @@ def ensure_schema(connection: sqlite3.Connection) -> None:
         if "failures_json" not in run_columns:
             connection.execute(
                 "ALTER TABLE gen_research_runs ADD COLUMN failures_json TEXT NOT NULL DEFAULT '[]'"
+            )
+        # CP-015g quality: the same additive rule for the relevance gate's record. A run written
+        # before the gate has no dropped pages to report, and an empty list is the honest value.
+        if "dropped_json" not in run_columns:
+            connection.execute(
+                "ALTER TABLE gen_research_runs ADD COLUMN dropped_json TEXT NOT NULL DEFAULT '[]'"
             )
         # H-05: the plan declares each section's media need. A plan table created before that
         # declaration gains the column in place; legacy rows keep NULL and are explicitly the
@@ -12731,7 +12741,7 @@ def _persist_research(
         source_ledger.apply_run(connection, course_id, run)
         connection.execute(
             "INSERT INTO gen_research_runs (id, course_id, job_id, status, queries_json, sources_json, "
-            "failures_json, reason, created_at) VALUES (?,?,?,?,?,?,?,?,?)",
+            "failures_json, dropped_json, reason, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
             (
                 run_id,
                 course_id,
@@ -12740,6 +12750,7 @@ def _persist_research(
                 _json(run.queries),
                 _json([source.to_dict() for source in run.sources]),
                 _json(run.failures),
+                _json(run.dropped),
                 run.reason,
                 created_at,
             ),

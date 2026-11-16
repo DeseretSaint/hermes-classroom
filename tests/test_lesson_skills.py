@@ -18,7 +18,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from coursebook import bindings, db, hooks, lesson_skills
+from coursebook import bindings, db, domain, hooks, lesson_skills
 
 # ``discover -s tests`` imports this module top-level (no parent package), so the relative form
 # raises ImportError there and the suite counts a loader error as a failure. The package form is
@@ -261,6 +261,7 @@ class BoundStoreTest(KernelCase):
         self.assertIn("no stored content", text)
         self.assertIn("Do not teach any section", text)
         self.assertIn("do not read any other Coursebook store", text)
+        self.assertIn("do not issue a check", text)
         self.assertNotIn(str(foreign.resolve()), text)
 
     def test_an_objective_row_missing_from_the_store_stands_down(self) -> None:
@@ -292,6 +293,133 @@ class BoundStoreTest(KernelCase):
         answer = lesson_skills.skill_for_session(stored)
         self.assertEqual(answer["skill"], lesson_skills.COACH_SKILL)
         self.assertIsNone(answer["store_path"], "a chat with no live run has no lesson store to read")
+
+
+class NoCheckLessonTest(KernelCase):
+    """A section authored with ``assessment='none'`` has no ``checks`` row — and the turn must say so.
+
+    H-113: the old instruction told every bound turn to read "check stimulus, reference answer".
+    For a checklist or verification procedure there is no such row, so the tutor would either
+    look for a check that does not exist or invent one. The turn now carries the store's own
+    answer (``has_check=False``) and the reply path is the objective's evidence criteria.
+    """
+
+    def setUp(self) -> None:
+        super().setUp()
+        hooks._TURNS.clear()
+        hooks._GOVERNED.clear()
+        hooks._SKILLS.clear()
+
+    def _no_check_chat(self) -> tuple[str, str]:
+        """course -> objective (procedure) -> run -> binding, with no check opened anywhere."""
+        course_id, plan_id = self.new_course(title="Bleed a radiator", recipe="committed")
+        objective_id = domain.record_objective(
+            plan_id,
+            title="Bleed a radiator safely",
+            evidence_target="procedure",
+            criteria=[
+                {"id": "kit", "description": "Collect the key, cloth and container"},
+                {"id": "step_cold", "description": "Only open the valve with the system cold"},
+                {"id": "step_order", "description": "Open the bleed valve, then the inlet"},
+                {"id": "stop", "description": "Stop when water runs without air"},
+            ],
+        )
+        # The authored no-check state: the assessment dial is off, so zero checks is correct.
+        self.execute(
+            "UPDATE courses SET dials_json = ? WHERE id = ?",
+            ('{"assessment": "none", "autonomy": "guided", "depth": "survey", "pace": "light"}', course_id),
+        )
+        self.execute(
+            "UPDATE plans SET schedule_json = ? WHERE id = ?",
+            ('{"check_plan": [{"objective_ref": 1, "kind": "verification"}]}', plan_id),
+        )
+        enrollment_id = self.new_enrollment(course_id)
+        self.approve(enrollment_id, plan_id, 0)
+        run = self.ok(
+            "lesson.begin",
+            {"enrollment_id": enrollment_id, "objective_id": objective_id, "mode": "fresh"},
+            idempotency_key=f"begin-{os.urandom(6).hex()}",
+        )["result"]
+        stored = "20261107_130000_nocheck"
+        bindings.bind_session(
+            stored_session_id=stored,
+            enrollment_id=enrollment_id,
+            objective_id=objective_id,
+            lesson_run_id=run["lesson_run_id"],
+        )
+        return stored, objective_id
+
+    def test_the_store_reports_no_check_for_an_authored_procedure(self) -> None:
+        stored, objective_id = self._no_check_chat()
+        self.assertEqual(self.scalar("SELECT count(*) FROM checks WHERE objective_id = ?", (objective_id,)), 0)
+        answer = lesson_skills.skill_for_session(stored)
+        self.assertEqual(answer["skill"], lesson_skills.TUTOR_SKILL)
+        self.assertEqual(answer["reason"], lesson_skills.REASON_LIVE_BINDING)
+        self.assertTrue(answer["objective_in_store"])
+        self.assertIs(answer["has_check"], False)
+        self.assertEqual(answer["evidence_target"], "procedure")
+
+    def test_the_instruction_teaches_the_criteria_and_never_a_check(self) -> None:
+        stored, objective_id = self._no_check_chat()
+        answer = lesson_skills.skill_for_session(stored)
+        text = lesson_skills.instruction(
+            str(answer["skill"]),
+            str(answer["reason"]),
+            store_path=answer["store_path"],
+            objective_id=answer["objective_id"],
+            has_check=answer["has_check"],
+            evidence_target=answer["evidence_target"],
+        )
+        self.assertIn("no check row", text)
+        self.assertIn("evidence criteria", text)
+        self.assertIn("procedure", text)
+        self.assertIn("never invent a check", text)
+        self.assertIn(objective_id, text)
+        self.assertIn(str((db.store_root() / "data.db").resolve()), text)
+        # The old wording sent the tutor looking for a graded item that does not exist.
+        self.assertNotIn("check stimulus", text)
+        self.assertNotIn("read the check", text.lower())
+        self.assertNotIn("exactly one check", text)
+        self.assertNotIn("reference answer", text)
+
+    def test_the_hook_carries_the_no_check_instruction_to_the_turn(self) -> None:
+        stored, objective_id = self._no_check_chat()
+        hook = hooks.pre_llm_call(session_id=stored, user_message="What am I practising here?")
+        self.assertIsNotNone(hook)
+        self.assertIn("no check row", hook["context"])
+        self.assertIn("evidence criteria", hook["context"])
+        self.assertIn(objective_id, hook["context"])
+        self.assertNotIn("check stimulus", hook["context"])
+        self.assertIn("Do not probe, glob, or open any other Coursebook store", hook["context"])
+
+    def test_a_checked_section_still_names_its_check(self) -> None:
+        lesson = self.prepare_lesson()
+        run = self.ok(
+            "lesson.begin",
+            {"enrollment_id": lesson["enrollment_id"], "objective_id": lesson["objective_id"], "mode": "fresh"},
+            idempotency_key=f"begin-{os.urandom(6).hex()}",
+        )["result"]
+        stored = "20261107_130500_check"
+        bindings.bind_session(
+            stored_session_id=stored,
+            enrollment_id=lesson["enrollment_id"],
+            objective_id=lesson["objective_id"],
+            lesson_run_id=run["lesson_run_id"],
+        )
+        answer = lesson_skills.skill_for_session(stored)
+        self.assertIs(answer["has_check"], True)
+        text = lesson_skills.instruction(
+            str(answer["skill"]),
+            str(answer["reason"]),
+            store_path=answer["store_path"],
+            objective_id=answer["objective_id"],
+            has_check=answer["has_check"],
+            evidence_target=answer["evidence_target"],
+        )
+        self.assertIn("check stimulus and rubric", text)
+        self.assertIn("exactly one check", text)
+        self.assertIn("one short line", text)
+        self.assertNotIn("no check row", text)
 
 
 class HookWiringTest(KernelCase):

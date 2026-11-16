@@ -35,7 +35,7 @@ from pathlib import Path
 from typing import Any, Iterable, Protocol, Sequence
 from urllib.parse import urlparse
 
-from . import curriculum, policy
+from . import curriculum, policy, relevance
 from .deadline import (
     CallCapacityExhausted,
     DeadlineExceeded,
@@ -429,6 +429,10 @@ class SourceRecord:
     excerpt_state: str = "recorded"
     query: str = ""
     truncated: bool = False
+    #: Weighted share of the goal's own content terms the fetched text uses (``relevance`` module).
+    #: A row in ``ResearchRun.sources`` is always at or above the floor; the score is kept so the
+    #: ledger shows *why* it was admitted rather than only that it was.
+    relevance_score: float = 1.0
 
     def __post_init__(self) -> None:
         if self.excerpt_state not in ("recorded", "no_body"):
@@ -458,6 +462,12 @@ class ResearchRun:
     step-by-step, the reference/glossary tail), the count says so instead of leaving the plan to
     invent the practice the ledger never covered. It is ``0`` for survey/working passes, which
     never asked the breadth questions at all.
+
+    ``dropped`` is the relevance half of the ledger: a page that was fetched but scored
+    ``off_topic`` for the goal (``relevance`` module) is recorded with its URL, the query that
+    found it, its score, the goal terms it matched and the reason. It is never in ``sources``, so
+    it never reaches the plan digest, the validator's ledger or ``supported_by`` — but the loss is
+    visible and reproducible.
     """
 
     status: str  # "ok" | "degraded" | "unavailable"
@@ -466,6 +476,8 @@ class ResearchRun:
     reason: str | None = None
     failures: list[dict[str, str]] = field(default_factory=list)
     queries_breadth_dropped: int = 0
+    dropped: list[dict[str, Any]] = field(default_factory=list)
+    relevance: dict[str, Any] = field(default_factory=dict)
 
     @property
     def query_failures(self) -> list[dict[str, Any]]:
@@ -481,6 +493,8 @@ class ResearchRun:
             "reason": self.reason,
             "failures": [dict(item) for item in self.failures],
             "queries_breadth_dropped": self.queries_breadth_dropped,
+            "dropped": [dict(item) for item in self.dropped],
+            "relevance": dict(self.relevance),
         }
 
 
@@ -1220,6 +1234,10 @@ def run_research(
     ordered_candidates = _stratified_candidates(candidates, budget.max_pages)
 
     sources: list[SourceRecord] = []
+    #: The bounded fetched body per source, kept only until the relevance gate scores the pass.
+    #: The record itself keeps an excerpt; the gate reads the whole fetched window, because a page
+    #: can state the goal's subject after its first paragraph.
+    scored_texts: list[str] = []
     failures: list[dict[str, str]] = []
     for candidate in ordered_candidates:
         if len(sources) >= budget.max_sources:
@@ -1282,12 +1300,55 @@ def run_research(
                 truncated=truncated,
             )
         )
+        scored_texts.append(content[: budget.max_page_chars])
+
+    # Relevance (CP-015g quality): the plan author receives this pass as its ledger, and may cite
+    # only what it contains. A provider mixes unrelated pages into a result list — a measured
+    # "prune a fig tree" pass carried a meat-processing page and a forestry tree-identification
+    # page — so the digest is a scored selection of what speaks to the goal, not a transcript.
+    # The judgement is deterministic arithmetic over the goal's own words (``relevance``); a page
+    # below the floor is recorded in ``dropped`` with its query, score and reason, and is never a
+    # ``SourceRecord``, so it can bind no claim and support no objective.
+    gate = relevance.gate_pages(
+        goal,
+        [
+            {"title": source.title, "url": source.url, "text": text}
+            for source, text in zip(sources, scored_texts)
+        ],
+    )
+    kept = set(gate["kept"])
+    admitted: list[SourceRecord] = []
+    dropped: list[dict[str, Any]] = []
+    for verdict in gate["verdicts"]:
+        source = sources[int(verdict["index"])]
+        if int(verdict["index"]) in kept:
+            source.relevance_score = float(verdict["score"])
+            admitted.append(source)
+            continue
+        dropped.append(
+            {
+                "url": source.url,
+                "title": source.title,
+                "query": source.query,
+                "verdict": relevance.OFF_TOPIC,
+                "relevance_score": float(verdict["score"]),
+                "matched_terms": list(verdict["matched"]),
+                "reason": verdict["reason"],
+            }
+        )
+    sources = admitted
 
     if not sources:
         reason = "no source could be fetched"
+        if dropped:
+            reason = _bound(
+                f"every fetched source was off-topic for the goal; {len(dropped)} dropped"
+                f" (see the ledger's dropped records)",
+                _MAX_REASON,
+            )
         if failures:
             reason += f"; {len(failures)} fetch failure(s), first: {failures[0]['url']}: {failures[0]['error']}"
-        else:
+        elif not dropped:
             search_errors = [entry["error"] for entry in records if entry.get("error")]
             if search_errors:
                 reason += f"; search failed: {search_errors[0]}"
@@ -1298,6 +1359,8 @@ def run_research(
             reason=_bound(reason, _MAX_REASON),
             failures=failures,
             queries_breadth_dropped=queries_breadth_dropped,
+            dropped=dropped,
+            relevance=_relevance_summary(gate),
         )
     # A search failure is not a fetch failure, but it is not silence either: the queries that
     # raised never contributed a candidate, so a pass where most of the bounded questions went
@@ -1317,6 +1380,8 @@ def run_research(
         reasons.append(
             f"{query_failed} of {query_total} search queries failed; first: {first_error}"
         )
+    if dropped:
+        reasons.append(f"{len(dropped)} off-topic source(s) dropped (see the research ledger)")
     reason = _bound("; ".join(reasons), _MAX_REASON) if reasons else None
     return ResearchRun(
         status="degraded" if degraded else "ok",
@@ -1325,7 +1390,22 @@ def run_research(
         reason=reason,
         failures=failures,
         queries_breadth_dropped=queries_breadth_dropped,
+        dropped=dropped,
+        relevance=_relevance_summary(gate),
     )
+
+
+def _relevance_summary(gate: dict[str, Any]) -> dict[str, Any]:
+    """The gate's own record, without per-page detail that ``dropped`` already carries."""
+    return {
+        "terms": list(gate.get("terms") or []),
+        "min_coverage": gate.get("min_coverage"),
+        "relative_margin": gate.get("relative_margin"),
+        "best_score": gate.get("best_score"),
+        "floor_tripped": bool(gate.get("floor_tripped")),
+        "kept": len(gate.get("kept") or []),
+        "dropped": len(gate.get("dropped") or []),
+    }
 
 
 def _normalize_quote(text: Any) -> str:

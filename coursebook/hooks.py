@@ -176,6 +176,8 @@ def pre_llm_call(
             store_path=decision.get("store_path"),
             objective_id=decision.get("objective_id"),
             binding_id=decision.get("binding_id"),
+            has_check=decision.get("has_check"),
+            evidence_target=decision.get("evidence_target"),
         )
     except Exception:  # noqa: BLE001 - a hook that cannot finish must never grant a pass
         _TURNS.pop(key, None)

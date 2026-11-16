@@ -48,6 +48,48 @@ class BundledSkillTest(unittest.TestCase):
             self.assertIn(token, text.lower())
         self.assertNotIn("Japanese affection", text)
 
+    def _skill_text(self, name: str) -> str:
+        return (ROOT / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
+
+    def test_the_tutor_skill_documents_the_no_check_reply_path(self) -> None:
+        # H-113: a section may have zero checks by design; "read the check" would send the tutor
+        # looking for a graded item that does not exist, and inventing one is worse.
+        text = self._skill_text("lesson-tutoring")
+        for token in (
+            "assessment='none'",
+            "no `checks` row",
+            "evidence_criteria_json",
+            "bound_objective_not_in_store",
+            "one short",
+            "answer format",
+        ):
+            self.assertIn(token, text)
+        self.assertIn("Never invent", text)
+        self.assertIn("never report the plugin as broken", text)
+
+    def test_the_tutor_skill_names_the_injected_store_and_no_other_home(self) -> None:
+        text = self._skill_text("lesson-tutoring")
+        self.assertIn("absolute", text)
+        self.assertIn("data.db", text)
+        self.assertIn("objective_id", text)
+        self.assertIn("sibling", text)
+
+    def test_the_coach_skill_names_the_injected_store_and_the_no_check_path(self) -> None:
+        text = self._skill_text("learner-coach")
+        self.assertIn("data.db", text)
+        self.assertIn("objective_id", text)
+        self.assertIn("bound_objective_not_in_store", text)
+        self.assertIn("no check", text.lower())
+        self.assertIn("evidence_criteria_json", text)
+        self.assertIn("one short line", text)
+
+    def test_neither_bundled_skill_assumes_one_subject(self) -> None:
+        # The tutor serves every course, so no bundled procedure may hard-code a language.
+        for name in ("lesson-tutoring", "learner-coach"):
+            text = self._skill_text(name).lower()
+            for token in ("japanese", "romaji", "furigana", "kana"):
+                self.assertNotIn(token, text, f"{name} is not subject-neutral")
+
 
 if __name__ == "__main__":
     unittest.main()

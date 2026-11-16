@@ -24,6 +24,13 @@ from tests.blueprint_support import (
 )
 from tests.test_generation import FakeLLM, NOW, plan_job
 
+#: A fetched page that genuinely speaks to "Order coffee in Japanese". The relevance gate scores
+#: the fetched body against the goal, so a seam standing in for a real pass must fetch real prose.
+_ON_TOPIC_BODY = (
+    "Order coffee in Japanese: say コーヒーをください at the counter and the staff will ask whether "
+    "you want it hot or iced. A Japanese café lists the coffee order on the menu, and staff will "
+    "repeat the order back. " * 8
+)
 
 class _SearchAnswersOnce:
     """A seam whose search raises on every query but the first.
@@ -65,7 +72,10 @@ class _SearchFlakyOnce:
         ]
 
     def fetch(self, url: str, max_chars: int) -> dict:
-        return {"url": url, "title": url, "content": "page body text " * 20, "published_at": None}
+        # On-topic prose, not filler: the relevance gate judges the fetched body, and a page whose
+        # only text is "page body text" carries nothing to score. This seam is about query
+        # accounting, so its pages must look like the pass they are standing in for.
+        return {"url": url, "title": url, "content": _ON_TOPIC_BODY, "published_at": None}
 
 
 class ResearchQueryHonestyTest(unittest.TestCase):

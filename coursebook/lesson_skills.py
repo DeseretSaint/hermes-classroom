@@ -92,11 +92,16 @@ def skill_for_session(session_id: Any) -> dict[str, Any]:
     """Resolve the skill for one *stored* session id.
 
     Returns ``{"skill", "reason", "binding_status", "objective_id", "binding_id", "store_path",
-    "objective_in_store"}``. Never raises: a hook that cannot read state must not fail the turn,
-    and an absent store is the ordinary state of an install nobody has opened yet.
+    "objective_in_store", "has_check", "evidence_target"}``. Never raises: a hook that cannot read
+    state must not fail the turn, and an absent store is the ordinary state of an install nobody
+    has opened yet.
 
     ``store_path`` is the one database the turn may read and it is always the store the binding
-    was found in, so the agent never has to choose between homes (H-69).
+    was found in, so the agent never has to choose between homes (H-69). ``has_check`` is the
+    store's own answer to "is there a graded item here": ``None`` when no objective row exists,
+    otherwise ``True``/``False`` from a ``checks`` row. A section with none is a real authored
+    state (``assessment='none'`` procedures), so the instruction must never tell the tutor to
+    read a check that does not exist.
     """
     answer: dict[str, Any] = {
         "skill": None,
@@ -106,6 +111,8 @@ def skill_for_session(session_id: Any) -> dict[str, Any]:
         "binding_id": None,
         "store_path": None,
         "objective_in_store": None,
+        "has_check": None,
+        "evidence_target": None,
     }
     stored = str(session_id or "").strip()
     if not stored:
@@ -124,13 +131,23 @@ def skill_for_session(session_id: Any) -> dict[str, Any]:
                 (stored,),
             ).fetchone()
             objective_in_store = None
+            has_check = None
+            evidence_target = None
             if row is not None and row["objective_id"]:
-                objective_in_store = (
-                    connection.execute(
-                        "SELECT 1 FROM objectives WHERE id = ?", (str(row["objective_id"]),)
-                    ).fetchone()
-                    is not None
-                )
+                objective_row = connection.execute(
+                    "SELECT evidence_target FROM objectives WHERE id = ?",
+                    (str(row["objective_id"]),),
+                ).fetchone()
+                objective_in_store = objective_row is not None
+                if objective_row is not None:
+                    evidence_target = str(objective_row["evidence_target"] or "") or None
+                    has_check = (
+                        connection.execute(
+                            "SELECT 1 FROM checks WHERE objective_id = ? LIMIT 1",
+                            (str(row["objective_id"]),),
+                        ).fetchone()
+                        is not None
+                    )
     except Exception:  # noqa: BLE001 - a read that fails injects nothing
         answer["reason"] = "unreadable"
         return answer
@@ -150,6 +167,8 @@ def skill_for_session(session_id: Any) -> dict[str, Any]:
             "binding_id": str(row["id"]) if row is not None else None,
             "store_path": store_file_path() if skill == TUTOR_SKILL else None,
             "objective_in_store": objective_in_store,
+            "has_check": has_check,
+            "evidence_target": evidence_target,
         }
     )
     return answer
@@ -162,18 +181,25 @@ def instruction(
     store_path: str | None = None,
     objective_id: str | None = None,
     binding_id: str | None = None,
+    has_check: bool | None = None,
+    evidence_target: str | None = None,
 ) -> str:
     """The turn-local instruction that makes the agent actually load the skill.
 
     Plain text on the current user message (``pre_llm_call`` context injection). It names the
     namespaced skill so a same-named user skill in ``~/.hermes/skills`` can never be mistaken
-    for the bundled one, and it repeats the two rules a learner turn must never break — both
+    for the bundled one, and it repeats the rules a learner turn must never break — both
     skills already carry them, and a reminder on the turn is what makes the load stick.
 
     For the tutor it also names the **one** store this turn may read, its absolute path and the
     bound objective id. That is the whole H-69 fix: no candidate list, no "use the store that
     returns rows", so a coursebook DB in some other home can never answer for this lesson.
+
+    ``has_check=False`` is the no-check authored state (``assessment='none'`` procedures): the
+    turn must teach from the objective's evidence criteria and must not read, request or invent
+    a check. ``None`` means the store did not answer and the generic wording is used.
     """
+    no_check = skill == TUTOR_SKILL and has_check is False
     if skill == TUTOR_SKILL:
         if reason == REASON_BOUND_OBJECTIVE_MISSING:
             scope = (
@@ -191,25 +217,61 @@ def instruction(
                 else " The only store you may read is the one the plugin names on this turn"
             )
             bound = f" and it holds the bound objective `{objective_id}`." if objective_id else "."
-            scope = (
-                " This chat governs a lesson run: read the open section out of the Coursebook"
-                " store (objective, check stimulus, reference answer) rather than guessing it."
-                + only_store
-                + bound
-                + " Do not probe, glob, or open any other Coursebook store — another HERMES_HOME,"
-                " a QA home or a test home — even if it returns rows for the same shape."
-            )
+            construct = f" (evidence target `{evidence_target}`)" if evidence_target else ""
+            if no_check:
+                scope = (
+                    " This chat governs a lesson section with **no check row** in the store:"
+                    f" objective `{objective_id or '(the bound objective)'}` is evidenced by its"
+                    f" criteria{construct} — the numbered steps — not by a graded item."
+                    " Read those evidence criteria and the teaching body or plan document, and"
+                    " never invent a check or borrow another section's; if the plan records a"
+                    " check that is merely not open yet, tell the learner to open it from the"
+                    " section pane."
+                    + only_store
+                    + bound
+                    + " Do not probe, glob, or open any other Coursebook store — another"
+                    " HERMES_HOME, a QA home or a test home — even if it returns rows for the"
+                    " same shape."
+                )
+            else:
+                scope = (
+                    " This chat governs a lesson run: read the bound section out of the"
+                    " Coursebook store — the objective, its evidence criteria and teaching body,"
+                    " and the check stimulus and rubric when the objective has one — rather than"
+                    " guessing it."
+                    + only_store
+                    + bound
+                    + " Do not probe, glob, or open any other Coursebook store — another"
+                    " HERMES_HOME, a QA home or a test home — even if it returns rows for the"
+                    " same shape. If the objective has no teaching body, say the bound section"
+                    " has no stored content and stop; never fill the gap with invented material."
+                )
     else:
         scope = (
             " This chat is a Coursebook chat with no live lesson run: ask which course and"
             " section the learner means before teaching anything, and do not invent a lesson."
         )
+    if skill == TUTOR_SKILL and reason == REASON_BOUND_OBJECTIVE_MISSING:
+        close = (
+            " Do not print an answer key and do not issue a check: there is no stored section to"
+            " check this turn."
+        )
+    elif no_check:
+        close = (
+            " Never print an answer key and never invent a check; end with the section's own"
+            " evidence request — each criteria step ticked after doing it, plus the one"
+            " observation the criteria record."
+        )
+    else:
+        close = (
+            " Never print the reference answer; end with exactly one check in the section's own"
+            " answer format — one short line the grader accepts."
+        )
     return (
         f"[Coursebook] Load the bundled skill `{skill}` before you reply:"
         f' call skill_view(name="{skill}") and follow it for this turn.'
         f"{scope}"
-        " Never print the reference answer; end with exactly one check in the section's own"
-        " answer format."
+        f"{close}"
     )
 
 
@@ -221,6 +283,8 @@ def attach(
     store_path: str | None = None,
     objective_id: str | None = None,
     binding_id: str | None = None,
+    has_check: bool | None = None,
+    evidence_target: str | None = None,
 ) -> Any:
     """Put the instruction on a ``pre_llm_call`` return value without disturbing the gate.
 
@@ -235,6 +299,8 @@ def attach(
         store_path=store_path,
         objective_id=objective_id,
         binding_id=binding_id,
+        has_check=has_check,
+        evidence_target=evidence_target,
     )
     if hook is None:
         return {"context": note}
