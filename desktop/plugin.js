@@ -1073,9 +1073,25 @@ async function fetchSchema() {
 
 /**
  * Backend health, as the UI must see it:
- *   loading | ready | degraded (backend answered, database not migrated) | unavailable (no backend)
+ *   loading | ready | degraded (backend answered, no schema yet) |
+ *   failed (backend answered, the store exists but the migration did not complete) |
+ *   unavailable (no backend)
  * Never optimistic: nothing here reports a course state it did not read.
  */
+
+/**
+ * Which health state one `health.get` result means. Pure, so a Node harness can call it directly.
+ *
+ * `degraded` and `failed` are different facts and are never collapsed into one: "not migrated" is
+ * only true when the backend has no schema, never when `ensure_schema` raised (H-114 F11).
+ */
+function healthStatus(result) {
+  const db = (result && result.db) || {}
+  if (db.ready) return 'ready'
+  if (db.state === 'failed' || db.error) return 'failed'
+  return 'degraded'
+}
+
 function useHealth() {
   const [state, setState] = useState({ status: 'loading', result: null, error: null })
   const [ticket, setTicket] = useState(0)
@@ -1092,11 +1108,7 @@ function useHealth() {
         const response = await fetchHealth()
         if (cancelled) return
         if (response && response.ok) {
-          setState({
-            status: response.result.db && response.result.db.ready ? 'ready' : 'degraded',
-            result: response.result,
-            error: null
-          })
+          setState({ status: healthStatus(response.result), result: response.result, error: null })
         } else {
           setState({ status: 'unavailable', result: null, error: response && response.error })
         }
@@ -2042,6 +2054,7 @@ function SkipToContent({ label }) {
 
 function backendCopy(status) {
   if (status === 'degraded') return 'Database not migrated'
+  if (status === 'failed') return 'Database needs repair'
   if (status === 'unavailable') return 'Backend off'
   return null
 }
@@ -2108,8 +2121,81 @@ function DegradedBody({ result, reload }) {
             detail: db.ready ? 'Profile-scoped SQLite is ready.' : 'No course tables exist for this profile yet.'
           })
         ]
-      })
+      }),
+      jsx(ReconciliationNote, { result })
     ]
+  })
+}
+
+/**
+ * The backend answered but `ensure_schema` raised: the store exists and could not be prepared.
+ *
+ * This is the branch that must never borrow the unmigrated copy (H-114 F11). A failed migration
+ * — disk I/O, a locked or corrupt file — is not "this profile has no course tables"; saying so
+ * would be a confident wrong answer about the user's own data. The bounded `db.error` the
+ * contract carries is rendered verbatim so the failure is diagnosable, and the retry is the
+ * backend's own `health.get` again (which re-attempts the migration on the server).
+ */
+function MigrationFailedBody({ result, reload }) {
+  const db = result && result.db ? result.db : {}
+  const error = db.error || {}
+  const errorCode = error.type ? String(error.type) : 'MIGRATION_FAILED'
+  const target = error.target_schema_version || db.target_schema_version
+  const detail = error.message ? String(error.message) : 'The backend did not report a message.'
+  return jsx('div', {
+    className: 'mx-auto flex w-full max-w-xl flex-col gap-4 py-8',
+    'data-cb-health': 'migration-failed',
+    children: [
+      jsx(sdk.ErrorState, {
+        title: 'The course database could not be prepared',
+        description:
+          'The backend is connected, but preparing this profile’s course store failed. This is not ' +
+          'an empty library and not a profile that was never set up — the store exists and the ' +
+          'migration did not complete, so nothing can be stored or listed until it does. Retrying ' +
+          'asks the backend to migrate again.',
+        children: jsxs('div', {
+          className: 'flex flex-wrap items-center justify-center gap-2',
+          children: [
+            jsx(CbAction, { variant: 'primary', onClick: reload, children: 'Retry migration' }),
+            jsx(CbAction, { variant: 'secondary', onClick: openCapabilities, children: 'Open Capabilities' })
+          ]
+        })
+      }),
+      jsxs('div', {
+        className: 'flex flex-col',
+        children: [
+          jsx(StatusRow, {
+            label: 'Migration error',
+            value: errorCode,
+            detail
+          }),
+          jsx(StatusRow, {
+            label: 'Target schema',
+            value: target ? `schema v${target}` : 'unknown',
+            detail: db.schema_version ? `Applied schema v${db.schema_version}` : 'No migration was applied.'
+          }),
+          jsx(StatusRow, {
+            label: 'Backend contract',
+            value: `cb.rpc v${result && result.contract_version ? result.contract_version : backendWire.contractVersion}`,
+            detail: `plugin ${result && result.plugin_version ? result.plugin_version : 'unknown'}`
+          })
+        ]
+      }),
+      jsx(ReconciliationNote, { result })
+    ]
+  })
+}
+
+/** A failed plugin-load recovery is visible wherever health is rendered, never only in a log. */
+function ReconciliationNote({ result }) {
+  const reconciliation = result && result.reconciliation
+  if (!reconciliation || reconciliation.state !== 'failed') return null
+  const error = reconciliation.error ? String(reconciliation.error) : 'STARTUP_RECONCILIATION'
+  const message = reconciliation.message ? String(reconciliation.message) : 'The recovery step did not report a message.'
+  return jsx('div', {
+    className: 'mt-2 text-xs text-(--ui-text-secondary)',
+    'data-cb-reconciliation': 'failed',
+    children: `${error}: ${message}`
   })
 }
 
@@ -46970,6 +47056,10 @@ function CoursebookPage() {
     body = jsx('div', { className: 'py-10', children: jsx(sdk.Loader, { label: 'Reading the Coursebook backend' }) })
   } else if (health.status === 'unavailable') {
     body = jsx(BackendUnavailable, { error: health.error, reload: reloadHealth })
+  } else if (health.status === 'failed') {
+    // The store exists and `ensure_schema` raised: a distinct branch with its own copy, never the
+    // "no course tables" degradation (H-114 F11).
+    body = jsx(MigrationFailedBody, { reload: reloadHealth, result: health.result })
   } else if (health.status === 'degraded') {
     body = jsx(DegradedBody, { reload: reloadHealth, result: health.result })
   } else if (creating) {
@@ -49566,6 +49656,10 @@ export {
   useCbSettled,
   BackendUnavailable,
   PackImportFlow,
+  DegradedBody,
+  MigrationFailedBody,
+  ReconciliationNote,
+  healthStatus,
   CB_HOME_PREF_DEFAULTS,
   CB_PRESENTATION_LABEL,
   CB_PRESENTATION_OPTIONS,

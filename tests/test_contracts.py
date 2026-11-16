@@ -328,7 +328,45 @@ def _normalise_refresh_refs(payload: dict) -> dict:
         "https://contracts.coursebook.hermes/jobs/v6#",
         "https://contracts.coursebook.hermes/jobs/v2#",
     )
-    return json.loads(raw)
+    # t_891d90e7 folded the additive cb.errors v5 into the same wire documents so a budget stop
+    # validates: the envelope `code` enum is the only thing that moved, and it is still a
+    # reference-only amendment, so the snapshot comparison maps the version back.
+    raw = raw.replace(
+        "https://contracts.coursebook.hermes/errors/v5#",
+        "https://contracts.coursebook.hermes/errors/v4#",
+    )
+    return _without_health_v29(json.loads(raw))
+
+
+def _without_health_v29(payload: dict) -> dict:
+    """Undo H-131's named ``health.get`` amendment so a pre-v29 snapshot compares verbatim.
+
+    v29's other half is additive and named: ``db`` gains ``state``/``target_schema_version`` and an
+    optional bounded ``error``, and the response gains a required ``reconciliation`` block. A
+    carried-over comparison restores the pre-v29 shape rather than weakening the assertion.
+    """
+    response = payload.get("response") if isinstance(payload, dict) else None
+    if not isinstance(response, dict):
+        return payload
+    properties = response.get("properties") or {}
+    if "plugin_version" not in properties or "db" not in properties:
+        return payload
+    if "reconciliation" not in properties:
+        return payload
+    properties.pop("reconciliation")
+    required = response.get("required") or []
+    if "reconciliation" in required:
+        required.remove("reconciliation")
+    properties["db"] = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["ready", "schema_version"],
+        "properties": {
+            "ready": {"type": "boolean"},
+            "schema_version": {"type": ["integer", "null"], "minimum": 0},
+        },
+    }
+    return payload
 
 
 def _carried_payload(payload: dict, method: str) -> dict:
@@ -1244,7 +1282,7 @@ class V4AmendmentTest(unittest.TestCase):
         # packs row. No table, no column, no migration, no error code — the storage snapshot this
         # amendment froze against is cb.db v2.
         self.assertEqual(_document("db.v2.json")["x-contract-version"], 2)
-        self.assertEqual(contracts.contract_version("cb.errors"), 4)
+        self.assertEqual(contracts.contract_version("cb.errors"), 5)
         v2_codes = set(_document("errors.v2.json")["code_catalog"])
         # cb.errors moved to v3 for cb.rpc v11's PREREQUISITE_UNMET; this amendment added none.
         # The live catalog moved on to v4 (H-26), so the era snapshot is the authority here.
@@ -2529,7 +2567,7 @@ class V7AmendmentTest(unittest.TestCase):
         self.assertIn("ALTER TABLE sources ADD COLUMN content_hash TEXT", sql)
 
     def test_v7_adds_no_error_code_and_no_job_kind(self) -> None:
-        self.assertEqual(contracts.contract_version("cb.errors"), 4)
+        self.assertEqual(contracts.contract_version("cb.errors"), 5)
         self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
         self.assertEqual(contracts.contract_version("cb.jobs"), 6)
         # This amendment changed nothing about the pack document. The *pointer* has since
@@ -2646,7 +2684,7 @@ class V9AmendmentTest(unittest.TestCase):
         self.assertIn("UNIQUE (enrollment_id, attempt_nonce)", sql)
 
     def test_v9_adds_no_error_code_and_no_job_kind(self) -> None:
-        self.assertEqual(contracts.contract_version("cb.errors"), 4)
+        self.assertEqual(contracts.contract_version("cb.errors"), 5)
         self.assertEqual(contracts.contract_version("cb.jobs"), 6)
         self.assertEqual(contracts.audit_contracts(), [])
 
@@ -2916,7 +2954,7 @@ class V10AmendmentTest(unittest.TestCase):
         self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v15.json")
 
     def test_v10_adds_no_error_code_and_no_vocabulary_change(self) -> None:
-        self.assertEqual(contracts.contract_version("cb.errors"), 4)
+        self.assertEqual(contracts.contract_version("cb.errors"), 5)
         self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
         self.assertEqual(contracts.contract_version("cb.jobs"), 6)
         # This amendment changed nothing about the pack document. The *pointer* has since
@@ -3193,7 +3231,7 @@ class V11AmendmentTest(unittest.TestCase):
             "check.open", {"enrollment_id": "enr_12345678", "objective_id": "obj_12345678"})
 
     def test_prerequisite_unmet_is_a_typed_refusal(self) -> None:
-        self.assertEqual(contracts.CONTRACT_FILES["cb.errors"], "errors.v4.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.errors"], "errors.v5.json")
         self.assertIn("PREREQUISITE_UNMET", contracts.error_codes())
         catalog = contracts.error_catalog()["PREREQUISITE_UNMET"]
         self.assertEqual(catalog["category"], "state")
@@ -3989,7 +4027,7 @@ class V16AmendmentTest(unittest.TestCase):
                 )
 
     def test_the_practice_methods_add_no_error_code_and_no_job_kind(self) -> None:
-        self.assertEqual(contracts.contract_version("cb.errors"), 4)
+        self.assertEqual(contracts.contract_version("cb.errors"), 5)
         self.assertEqual(contracts.contract_version("cb.jobs"), 6)
         self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
         # `attempt.submit` may not grade a practice: one chat line is not a verdict.
@@ -4241,7 +4279,7 @@ class V17AmendmentTest(unittest.TestCase):
                 self.assertNotIn(filename, contracts.CONTRACT_FILES.values())
 
     def test_no_error_code_job_table_or_vocabulary_moved(self) -> None:
-        self.assertEqual(contracts.contract_version("cb.errors"), 4)
+        self.assertEqual(contracts.contract_version("cb.errors"), 5)
         self.assertEqual(contracts.contract_version("cb.jobs"), 6)
         self.assertEqual(contracts.contract_version("cb.db"), 15)
         self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
@@ -4421,7 +4459,7 @@ class V20AmendmentTest(unittest.TestCase):
 
     def test_v20_moves_no_method_error_code_job_or_vocabulary(self) -> None:
         self.assertEqual(contracts.contract_version("cb.rpc"), 29)
-        self.assertEqual(contracts.contract_version("cb.errors"), 4)
+        self.assertEqual(contracts.contract_version("cb.errors"), 5)
         self.assertEqual(contracts.contract_version("cb.jobs"), 6)
         self.assertEqual(contracts.contract_version("cb.db"), 15)
         self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
@@ -4617,7 +4655,7 @@ class V23AmendmentTest(unittest.TestCase):
 
     def test_v23_moves_no_error_code_job_table_or_vocabulary(self) -> None:
         self.assertEqual(contracts.contract_version("cb.rpc"), 29)
-        self.assertEqual(contracts.contract_version("cb.errors"), 4)
+        self.assertEqual(contracts.contract_version("cb.errors"), 5)
         self.assertEqual(contracts.contract_version("cb.jobs"), 6)
         self.assertEqual(contracts.contract_version("cb.db"), 15)
         self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
@@ -4796,7 +4834,7 @@ class V24AmendmentTest(unittest.TestCase):
 
     def test_v24_moves_no_error_code_job_table_or_vocabulary(self) -> None:
         self.assertEqual(contracts.contract_version("cb.rpc"), 29)
-        self.assertEqual(contracts.contract_version("cb.errors"), 4)
+        self.assertEqual(contracts.contract_version("cb.errors"), 5)
         self.assertEqual(contracts.contract_version("cb.jobs"), 6)
         self.assertEqual(contracts.contract_version("cb.db"), 15)
         self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
@@ -4908,7 +4946,7 @@ class V25AmendmentTest(unittest.TestCase):
         self.assertEqual(item["properties"]["subject_label"]["maxLength"], 60)
 
     def test_v25_moves_no_error_code_job_table_or_vocabulary(self) -> None:
-        self.assertEqual(contracts.contract_version("cb.errors"), 4)
+        self.assertEqual(contracts.contract_version("cb.errors"), 5)
         self.assertEqual(contracts.contract_version("cb.jobs"), 6)
         self.assertEqual(contracts.contract_version("cb.db"), 15)
         self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
@@ -5041,7 +5079,7 @@ class V26AmendmentTest(unittest.TestCase):
         self.assertEqual(contracts.contract_version("cb.rpc"), 29)
 
     def test_v26_moves_no_error_code_job_table_or_vocabulary(self) -> None:
-        self.assertEqual(contracts.contract_version("cb.errors"), 4)
+        self.assertEqual(contracts.contract_version("cb.errors"), 5)
         self.assertEqual(contracts.contract_version("cb.jobs"), 6)
         self.assertEqual(contracts.contract_version("cb.db"), 15)
         self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
@@ -5200,7 +5238,7 @@ class V27AmendmentTest(unittest.TestCase):
         self.assertEqual(shipped, derived, "rpc.v27.json drifted from its derivation")
 
     def test_v27_moves_no_error_code_job_table_or_vocabulary(self) -> None:
-        self.assertEqual(contracts.contract_version("cb.errors"), 4)
+        self.assertEqual(contracts.contract_version("cb.errors"), 5)
         self.assertEqual(contracts.contract_version("cb.jobs"), 6)
         self.assertEqual(contracts.contract_version("cb.db"), 15)
         self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
@@ -5374,7 +5412,7 @@ class V28AmendmentTest(unittest.TestCase):
         self.assertEqual(shipped, derived, "rpc.v28.json drifted from its derivation")
 
     def test_v28_moves_no_error_code_job_table_or_vocabulary(self) -> None:
-        self.assertEqual(contracts.contract_version("cb.errors"), 4)
+        self.assertEqual(contracts.contract_version("cb.errors"), 5)
         self.assertEqual(contracts.contract_version("cb.jobs"), 6)
         self.assertEqual(contracts.contract_version("cb.db"), 15)
         self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
@@ -5520,7 +5558,7 @@ class V29NextStepKindTest(unittest.TestCase):
         self.assertEqual(shipped, derived, "rpc.v29.json drifted from its derivation")
 
     def test_v29_moves_no_error_code_job_table_or_vocabulary(self) -> None:
-        self.assertEqual(contracts.contract_version("cb.errors"), 4)
+        self.assertEqual(contracts.contract_version("cb.errors"), 5)
         # UP-36 adds cb.jobs v6 (the nullable `activity.retry`); v5 stays readable for every frozen
         # rpc document that points at it, so this is an additive version, not a table rewrite.
         self.assertEqual(contracts.contract_version("cb.jobs"), 6)
@@ -5673,7 +5711,7 @@ class V29Up13FeedbackTest(unittest.TestCase):
         self.assertEqual(shipped, derived, "rpc.v29.json drifted from its derivation")
 
     def test_v29_moves_no_error_code_job_table_or_vocabulary(self) -> None:
-        self.assertEqual(contracts.contract_version("cb.errors"), 4)
+        self.assertEqual(contracts.contract_version("cb.errors"), 5)
         self.assertEqual(contracts.contract_version("cb.jobs"), 6)
         self.assertEqual(contracts.contract_version("cb.db"), 15)
         self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
@@ -6071,7 +6109,7 @@ class V29Upgrade36RefreshTest(unittest.TestCase):
         self.assertNotIn("rpc.v28.json", contracts.CONTRACT_FILES.values())
 
     def test_v29_moves_no_error_code_table_or_vocabulary(self) -> None:
-        self.assertEqual(contracts.contract_version("cb.errors"), 4)
+        self.assertEqual(contracts.contract_version("cb.errors"), 5)
         self.assertEqual(contracts.contract_version("cb.db"), 15)
         self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
         self.assertEqual(contracts.audit_contracts(), [])
@@ -6121,6 +6159,213 @@ def _review_item_payload() -> dict:
         "overdue": False,
         "overdue_days": 0,
     }
+
+
+class V29HealthMigrationAmendmentTest(unittest.TestCase):
+    """H-131: ``health.get`` says whether the store could not be prepared.
+
+    ``_health_get`` swallowed ``ensure_schema()``'s exception and ``db.health()`` answered only
+    ``{ready, schema_version}``, so a store whose migration failed for a real reason was
+    wire-identical to a profile that was never migrated — and the pane told that user their
+    profile has no course tables. v29 folds the fix into the version that already ships.
+    """
+
+    def test_the_health_get_amendment_is_the_only_payload_change_it_makes(self) -> None:
+        before = _document("rpc.v28.json")["$defs"]["methods"]["properties"]["health.get"]["response"]
+        after = contracts.contract("cb.rpc")["$defs"]["methods"]["properties"]["health.get"]["response"]
+        self.assertEqual(set(after["properties"]) - set(before["properties"]), {"reconciliation"})
+        self.assertEqual(set(before["properties"]) - set(after["properties"]), set())
+        self.assertIn("reconciliation", after["required"])
+        self.assertEqual(
+            set(after["properties"]["db"]["required"]) - set(before["properties"]["db"]["required"]),
+            {"state", "target_schema_version"},
+        )
+        self.assertEqual(
+            set(after["properties"]["db"]["properties"]) - set(before["properties"]["db"]["properties"]),
+            {"state", "target_schema_version", "error"},
+        )
+        self.assertEqual(
+            set(before["properties"]["db"]["properties"]) - set(after["properties"]["db"]["properties"]),
+            set(),
+        )
+        # The ready/unmigrated answer is unchanged: `state: ready` still carries `ready: true` and
+        # the applied version, and the version echo stays 29.
+        self.assertEqual(
+            after["properties"]["contract_version"],
+            {"const": contracts.WIRE_CONTRACT_VERSION},
+        )
+
+    def test_the_failed_state_is_bounded_and_names_the_target_schema(self) -> None:
+        db = contracts.method_schema("health.get")["response"]["properties"]["db"]
+        self.assertEqual(db["properties"]["state"]["enum"], ["ready", "unmigrated", "failed"])
+        error = db["properties"]["error"]
+        self.assertEqual(error["properties"]["type"]["maxLength"], 80)
+        self.assertEqual(error["properties"]["message"]["maxLength"], 300)
+        self.assertIn("target_schema_version", error["required"])
+        # `error` is only for a migration that raised: a healthy or fresh profile omits it.
+        self.assertEqual(db["required"], ["ready", "schema_version", "state", "target_schema_version"])
+        reconciliation = contracts.method_schema("health.get")["response"]["properties"]["reconciliation"]
+        self.assertEqual(reconciliation["properties"]["state"]["enum"], ["ok", "failed"])
+        self.assertEqual(reconciliation["properties"]["message"]["maxLength"], 300)
+
+    def test_a_migration_failure_answer_validates_against_the_live_wire(self) -> None:
+        contracts.validate_definition(
+            "cb.rpc",
+            "envelope_response_ok",
+            {
+                "ok": True,
+                "contract_version": contracts.WIRE_CONTRACT_VERSION,
+                "operation_id": "op-health-failed-1",
+                "revision": 1,
+                "result": {
+                    "ok": True,
+                    "plugin_version": "0.1.0",
+                    "contract_version": contracts.WIRE_CONTRACT_VERSION,
+                    "db": {
+                        "ready": False,
+                        "schema_version": None,
+                        "state": "failed",
+                        "target_schema_version": 15,
+                        "error": {
+                            "type": "OperationalError",
+                            "message": "disk I/O error",
+                            "target_schema_version": 15,
+                        },
+                    },
+                    "reconciliation": {"state": "ok", "error": None, "message": None},
+                },
+            },
+        )
+
+    def test_the_shipped_wire_documents_are_their_chain_derivations(self) -> None:
+        """The fold is derived through the documents' own probes, never hand-copied."""
+        spec = importlib.util.spec_from_file_location(
+            "derive_budget_stop_contracts",
+            contracts.CONTRACT_DIR.parent / "probes" / "derive_budget_stop_contracts.py",
+        )
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.assertEqual(
+            (contracts.CONTRACT_DIR / "errors.v5.json").read_text(encoding="utf-8"),
+            module.serialise(module.derive_errors(_document("errors.v4.json"))),
+            "errors.v5.json drifted from its derivation",
+        )
+        jobs = module._sibling("derive_jobs_v6.py")
+        self.assertEqual(
+            (contracts.CONTRACT_DIR / "jobs.v6.json").read_text(encoding="utf-8"),
+            module.serialise(jobs.derive(_document("jobs.v5.json"))),
+            "jobs.v6.json drifted from its composed derivation",
+        )
+        rpc = module._sibling("derive_rpc_v29.py")
+        self.assertEqual(
+            (contracts.CONTRACT_DIR / "rpc.v29.json").read_text(encoding="utf-8"),
+            module.serialise(rpc.derive(_document("rpc.v28.json"))),
+            "rpc.v29.json drifted from its composed derivation",
+        )
+
+
+class ErrorsV5BudgetStopTest(unittest.TestCase):
+    """t_891d90e7: a declared spend ceiling is a typed state stop, not a content refusal.
+
+    CP-015e measured the misreading (job 98d3c0e…, ``sections_completed_count: 0``): running out
+    of a provider-call budget reported ``POLICY_VIOLATION``, whose catalogue category is
+    ``content`` and whose summary is about untrusted content changing policy. v5 adds exactly one
+    code and moves nothing else in the catalogue.
+    """
+
+    V4_SHA256 = "1dc77ba8829f4ef7f7dc8d4f196f2ce68f9cdaa82bf690f0a161d754202d1793"
+
+    def test_v5_is_v4_plus_one_code(self) -> None:
+        v4 = _document("errors.v4.json")
+        current = contracts.contract("cb.errors")
+        self.assertEqual(current["x-contract-version"], 5)
+        self.assertEqual(current["x-supersedes"], v4["$id"])
+        self.assertEqual(set(current["code_catalog"]) - set(v4["code_catalog"]), {"BUDGET_EXHAUSTED"})
+        self.assertEqual(set(v4["code_catalog"]) - set(current["code_catalog"]), set())
+        for code, entry in v4["code_catalog"].items():
+            with self.subTest(code=code):
+                self.assertEqual(current["code_catalog"][code], entry, f"{code} moved")
+        # Enum, $defs catalog and catalog agree one-for-one, and no category value was invented.
+        self.assertEqual(set(current["$defs"]["code_catalog"]["properties"]), set(current["code_catalog"]))
+        self.assertEqual(
+            set(current["$defs"]["error"]["properties"]["code"]["enum"]),
+            set(current["code_catalog"]),
+        )
+        self.assertEqual(
+            current["$defs"]["error"]["properties"]["category"]["enum"],
+            v4["$defs"]["error"]["properties"]["category"]["enum"],
+        )
+
+    def test_the_budget_stop_is_state_not_content(self) -> None:
+        catalog = contracts.error_catalog()["BUDGET_EXHAUSTED"]
+        self.assertEqual(catalog["category"], "state")
+        self.assertFalse(catalog["retryable"])
+        self.assertEqual(catalog["http"], 409)
+        # The whole point: it is not the content-category policy refusal it used to borrow.
+        self.assertNotEqual(catalog["category"], contracts.error_catalog()["POLICY_VIOLATION"]["category"])
+        self.assertIn("nothing was validated or rejected", catalog["summary"])
+
+    def test_the_kernel_reports_the_code_for_a_ceiling_and_a_preflight(self) -> None:
+        from coursebook import generation as gen, job_service
+
+        self.assertEqual(gen.CostCeilingExceeded.code, "BUDGET_EXHAUSTED")
+        self.assertEqual(gen.CostPreflightRefused.code, "BUDGET_EXHAUSTED")
+        stop = gen.CostCeilingExceeded(
+            "provider-call budget exhausted before coursebook.unit_sections.validate"
+        )
+        stop.estimated_cost_usd = 0.16
+        error = job_service._stage_error(stop)
+        self.assertEqual(error["code"], "BUDGET_EXHAUSTED")
+        self.assertEqual(error["category"], "state")
+        self.assertFalse(error["retryable"])
+        self.assertEqual(error["details"]["reason"], "cost_ceiling_exceeded")
+        self.assertEqual(error["message"], str(stop))
+
+    def test_the_preflight_refusals_report_the_typed_code(self) -> None:
+        """Both ``jobs.create``-side refusals carry the code, not ``POLICY_VIOLATION``."""
+        import inspect
+
+        from coursebook import domain
+
+        source = inspect.getsource(domain)
+        self.assertEqual(source.count('"BUDGET_EXHAUSTED"'), 2)
+        # The preflight reason still travels in details, so a client can tell the two shapes apart.
+        self.assertEqual(source.count('reason="cost_preflight_insufficient"'), 2)
+
+    def test_a_budget_stop_satisfies_the_live_error_envelope(self) -> None:
+        """The reason the wire refs moved: the plugin's own failure must validate against its wire."""
+        error = contracts.build_error(
+            "BUDGET_EXHAUSTED",
+            "provider-call budget exhausted before coursebook.unit_sections.validate",
+            reason="cost_ceiling_exceeded",
+            purpose="coursebook.unit_sections.validate",
+        )
+        self.assertEqual(error["category"], "state")
+        self.assertFalse(error["retryable"])
+        contracts.validate_definition(
+            "cb.rpc",
+            "envelope_response_error",
+            {
+                "ok": False,
+                "contract_version": contracts.WIRE_CONTRACT_VERSION,
+                "operation_id": "op-budget-stop-1",
+                "error": error,
+            },
+        )
+
+    def test_the_refs_resolve_the_current_error_envelope(self) -> None:
+        for contract_id in ("cb.rpc", "cb.jobs"):
+            with self.subTest(contract_id=contract_id):
+                refs = json.dumps(contracts.contract(contract_id))
+                self.assertIn("https://contracts.coursebook.hermes/errors/v5#/$defs/error", refs)
+                self.assertNotIn("https://contracts.coursebook.hermes/errors/v4#/$defs/error", refs)
+
+    def test_v4_stays_byte_identical_history(self) -> None:
+        digest = hashlib.sha256((contracts.CONTRACT_DIR / "errors.v4.json").read_bytes()).hexdigest()
+        self.assertEqual(digest, self.V4_SHA256)
+        self.assertNotIn("errors.v4.json", contracts.CONTRACT_FILES.values())
+        self.assertEqual(contracts.audit_contracts(), [])
 
 
 if __name__ == "__main__":

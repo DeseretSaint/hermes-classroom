@@ -6,8 +6,10 @@ name instead of mutating global import state.
 
 Transport decisions (frozen for v1):
 
-* ``GET  /health``  -> the ``health.get`` result body. Always HTTP 200; ``db.ready`` carries the
-  state. A degraded backend is a fact to render, not a transport failure.
+* ``GET  /health``  -> the ``health.get`` result body. Always HTTP 200; ``db.ready`` carries
+  readiness, ``db.state`` says *which* not-ready it is (``unmigrated`` vs ``failed``, with a
+  bounded ``db.error``) and ``reconciliation`` reports the plugin-load recovery. A degraded
+  backend is a fact to render, not a transport failure.
 * ``GET  /schema``  -> the ``schema.get`` result body (contract inventory + hashes).
 * ``POST /rpc``     -> one command. Always HTTP 200 with a contract envelope: ``ok:false`` means
   the command was refused, which the Desktop half renders from ``error.code``. Transport-level

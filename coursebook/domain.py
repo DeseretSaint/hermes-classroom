@@ -2757,8 +2757,9 @@ def jobs_create(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
         except generation.GenerationRejected as exc:
             raise RpcError.of("VALIDATION_FAILED", str(exc), field="brief.budget_usd") from exc
         if preflight is not None and not preflight.fits_minimum:
+            # cb.errors v5: a declared spend ceiling is a typed state stop, not a content refusal.
             raise RpcError.of(
-                "POLICY_VIOLATION",
+                "BUDGET_EXHAUSTED",
                 preflight.refusal_message(),
                 reason="cost_preflight_insufficient",
                 **preflight.to_dict(),
@@ -6711,8 +6712,9 @@ def lesson_regenerate(payload: dict[str, Any], envelope: dict[str, Any]) -> tupl
         except generation.GenerationRejected as exc:
             raise RpcError.of("VALIDATION_FAILED", str(exc), field="section_id") from exc
         if preflight is None or not preflight.fits_minimum:
+            # cb.errors v5: the ceiling cannot pay this section; nothing ran and nothing was judged.
             raise RpcError.of(
-                "POLICY_VIOLATION",
+                "BUDGET_EXHAUSTED",
                 preflight.refusal_message() if preflight is not None
                 else "the cost preflight could not size this section.",
                 reason="cost_preflight_insufficient",

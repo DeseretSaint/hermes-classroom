@@ -9,6 +9,7 @@ rather than a silent success.
 
 from __future__ import annotations
 
+import logging
 import sqlite3
 from typing import Any, Callable
 
@@ -29,6 +30,8 @@ from .contracts import (
 
 RPC_CONTRACT = WIRE_CONTRACT_ID
 RPC_CONTRACT_VERSION = WIRE_CONTRACT_VERSION
+
+logger = logging.getLogger("coursebook")
 
 #: ``method -> handler(payload, envelope) -> (revision, result)``
 Handler = Callable[[dict[str, Any], dict[str, Any]], "tuple[int, dict[str, Any]]"]
@@ -69,19 +72,46 @@ def _health_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
     leave a fresh install permanently ``Degraded`` with no path to ``course.create``. Chat
     lifecycle hooks never provision (CB-014-R1 R1), so this handler is the seam (R4).
 
-    ``db.health()`` itself stays a pure read. A migration failure is swallowed here and shows up
-    honestly as ``db.ready: false`` with the version still on disk — never raised, never faked.
+    A migration failure is **not** swallowed into silence (H-114 F11). The GET still answers
+    ``ok: true`` — a degraded backend is a fact to render, not a transport failure — but the
+    exception is logged at WARNING and carried as a bounded ``db.error`` with ``db.state:
+    "failed"``, so the Desktop can say the store exists and could not be prepared instead of
+    claiming the profile has no course tables. ``db.health()`` itself stays a pure read.
     """
+    failure: dict[str, Any] | None = None
     try:
         db.ensure_schema()
-    except Exception:  # noqa: BLE001 - health must answer, and must not claim ready on failure
-        pass
+    except Exception as exc:  # noqa: BLE001 - health must answer, and must not claim ready on failure
+        failure = {"type": type(exc).__name__, "message": str(exc)}
+        logger.warning(
+            "coursebook: database migration failed (%s): %s", type(exc).__name__, exc
+        )
     return 0, {
         "plugin_version": __version__,
         "contract_version": RPC_CONTRACT_VERSION,
-        "db": db.health(),
+        "db": db.health(failure),
+        "reconciliation": startup_reconciliation_block(),
         "backend": "python",
     }
+
+
+def startup_reconciliation_block() -> dict[str, Any]:
+    """The bounded ``reconciliation`` block on ``health.get`` (H-114 F22).
+
+    ``coursebook.hooks.STARTUP_RECONCILIATION`` runs once at plugin load and, before this, nothing
+    ever read it: a failed load-time recovery was invisible outside a dict. The import is local
+    because ``hooks`` imports this module through ``domain`` — a module-level import here would be
+    a cycle.
+    """
+    try:
+        from . import hooks
+    except Exception as exc:  # noqa: BLE001 - a missing hook module is itself a reportable fact
+        return {
+            "state": "failed",
+            "error": type(exc).__name__[:80],
+            "message": str(exc)[:300],
+        }
+    return hooks.startup_reconciliation_health()
 
 
 def _schema_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:

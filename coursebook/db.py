@@ -668,11 +668,45 @@ def recover_interrupted() -> dict[str, int]:
     return {"attempts": int(attempts), "jobs": int(jobs)}
 
 
-def health() -> dict[str, Any]:
-    """The ``health.get`` database block. Honest about an unmigrated database."""
-    version = applied_schema_version()
-    target = target_schema_version()
-    return {
-        "ready": version is not None and version >= target,
+#: Bounds on the diagnostic text a failed migration may put on the wire (``cb.rpc`` v29).
+MIGRATION_ERROR_TYPE_MAX = 80
+MIGRATION_ERROR_MESSAGE_MAX = 300
+
+
+def health(failure: dict[str, Any] | None = None) -> dict[str, Any]:
+    """The ``health.get`` database block. Honest about an unmigrated *and* a failed store.
+
+    ``ready: false`` is not one fact, and this block must not report it as one. A profile that has
+    never been migrated has no schema on disk (``state: "unmigrated"``); a store whose
+    ``ensure_schema`` raised could not be prepared at all — disk I/O, a locked or corrupt file —
+    and that is ``state: "failed"``. Telling a user their course tables do not exist when the
+    truth is "the migration failed" is a wrong, actionable statement (H-114 F11), so ``failure``
+    (the exception the caller caught) becomes a bounded ``error`` object rather than being inferred
+    back into "not migrated".
+
+    This is a pure read and never raises: a health answer that throws is not an answer.
+    """
+    try:
+        version = applied_schema_version()
+    except Exception as exc:  # noqa: BLE001 - an unreadable store is a failed state, not a raise
+        if failure is None:
+            failure = {"type": type(exc).__name__, "message": str(exc)}
+        version = None
+    try:
+        target = int(target_schema_version())
+    except Exception:  # noqa: BLE001 - a broken contract must not turn health into a throw
+        target = DB_SCHEMA_VERSION
+    ready = failure is None and version is not None and version >= target
+    block: dict[str, Any] = {
+        "ready": ready,
         "schema_version": version,
+        "state": "ready" if ready else ("failed" if failure is not None else "unmigrated"),
+        "target_schema_version": target,
     }
+    if failure is not None:
+        block["error"] = {
+            "type": str(failure.get("type") or "Exception")[:MIGRATION_ERROR_TYPE_MAX],
+            "message": str(failure.get("message") or "")[:MIGRATION_ERROR_MESSAGE_MAX],
+            "target_schema_version": target,
+        }
+    return block

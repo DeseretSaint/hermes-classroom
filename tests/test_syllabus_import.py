@@ -235,7 +235,8 @@ class ContractDeltaTest(KernelCase):
 
     def test_errors_v4_adds_only_the_typed_syllabus_refusals(self) -> None:
         v3 = json.loads((contracts.CONTRACT_DIR / "errors.v3.json").read_text(encoding="utf-8"))
-        current = contracts.contract("cb.errors")
+        # v4 issued this delta; v5 is additive over it, so the claim is read from the frozen file.
+        current = json.loads((contracts.CONTRACT_DIR / "errors.v4.json").read_text(encoding="utf-8"))
         self.assertEqual(current["x-contract-version"], 4)
         added = set(current["code_catalog"]) - set(v3["code_catalog"])
         self.assertEqual(added, {

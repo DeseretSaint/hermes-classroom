@@ -108,7 +108,33 @@ def serialise(document: dict) -> str:
     return json.dumps(document, indent=2, ensure_ascii=False) + "\n"
 
 
+def _apply_siblings(document: dict) -> dict:
+    """Apply every sibling ``derive_jobs_v6_*.py`` delta on top of this base.
+
+    One contract version carries every additive change shipped together, so the shipped document
+    is the composition: this script writes the base delta, then each sibling's own composing
+    script (``derive_jobs_v6_error_ref.py``, …) applies its delta to the document in hand.
+    Applying them here, not only from a shell loop, keeps ``derive()`` and the shipped file in
+    step for every test that re-derives and compares.
+    """
+    import importlib.util
+    import inspect
+
+    for probe in sorted((ROOT / "probes").glob("derive_jobs_v6_*.py")):
+        spec = importlib.util.spec_from_file_location(probe.stem, probe)
+        if spec is None or spec.loader is None:
+            raise SystemExit(f"cannot load sibling derivation {probe.name}")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        sibling = getattr(module, "derive", None)
+        if sibling is None or "composed" not in inspect.signature(sibling).parameters:
+            raise SystemExit(f"{probe.name} does not compose (no composed= parameter)")
+        document = sibling(document, composed=True)
+    return document
+
+
 def derive(source: dict) -> dict:
+    """The shipped v6: this script's delta plus every sibling's composing delta."""
     if int(source["x-contract-version"]) != 5:
         raise SystemExit(f"expected jobs.v5.json, found v{source['x-contract-version']}")
     document = json.loads(json.dumps(source))  # deep copy; the source file is never edited
@@ -125,7 +151,7 @@ def derive(source: dict) -> dict:
     if "retry" in activity["required"]:
         raise SystemExit("activity.required already names retry")
     activity["required"] = list(activity["required"]) + ["retry"]
-    return document
+    return _apply_siblings(document)
 
 
 def main() -> int:

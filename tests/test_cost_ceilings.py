@@ -301,7 +301,7 @@ class JobViewRecoveryTest(KernelCase):
                 "jobs.create",
                 {"kind": "plan", "brief": {"stage": "lessons", "plan_id": plan_id}},
             )
-        self.assertEqual(error["code"], "POLICY_VIOLATION")
+        self.assertEqual(error["code"], "BUDGET_EXHAUSTED")
         self.assertEqual(error["details"]["reason"], "cost_preflight_insufficient")
         self.assertEqual(error["details"]["minimum_calls"], 16)
         self.assertEqual(error["details"]["max_cost_usd"], 0.2)
@@ -337,7 +337,7 @@ class JobViewRecoveryTest(KernelCase):
 
         job = self.ok("jobs.get", {"job_id": job_id})["result"]["job"]
         self.assertEqual(job["state"], "failed")
-        self.assertEqual(job["error"]["code"], "POLICY_VIOLATION")
+        self.assertEqual(job["error"]["code"], "BUDGET_EXHAUSTED")
         self.assertEqual(job["error"]["details"]["reason"], "cost_ceiling_exceeded")
         self.assertEqual(job["error"]["details"]["sections_completed_count"], 2)
         self.assertEqual(job["error"]["details"]["actions"], ["continue_remaining", "raise_budget", "stop"])
