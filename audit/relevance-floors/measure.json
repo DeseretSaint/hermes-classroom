@@ -1,0 +1,1410 @@
+{
+  "what": "coursebook.relevance floors measured on unbounded content and on content[:6000]",
+  "why": "production scores content[:max_page_chars] (6000); the module docstring quotes unbounded figures",
+  "source_commit": "5b173a86",
+  "min_coverage": 0.5,
+  "relative_margin": 0.35,
+  "production_bound_chars": 6000,
+  "gate_call": "relevance.gate_pages(goal, [{title, url, text}]) as research.run_research calls it",
+  "packets": {
+    "H-40 soldering_full": {
+      "packet": "H-40 soldering_full",
+      "goal": "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering.",
+      "bound_chars": 6000,
+      "pages": [
+        {
+          "url": "https://www.st.com/resource/en/technical_note/tn1225-mounting-instructions-for-thd-throughhole-device-packages-stmicroelectronics.pdf",
+          "title": "Mounting instructions for THD (through-hole device) packages - Technical note",
+          "body_chars_fetched": 39670,
+          "body_chars_scored_full": 39670,
+          "body_chars_scored_bounded": 6000,
+          "clipped_by_bound": true
+        },
+        {
+          "url": "https://engineering.purdue.edu/ece477/Course/Lectures/ToSource/Slides/9-SolderingAndAssembly/9-AssemblyAndSoldering.pdf",
+          "title": "Soldering, Assembly, and Manufacturing (ECE 477 lecture)",
+          "body_chars_fetched": 12243,
+          "body_chars_scored_full": 12243,
+          "body_chars_scored_bounded": 6000,
+          "clipped_by_bound": true
+        },
+        {
+          "url": "https://physicslabs.colorado.edu/courses/phys-3330/resources/soldering/",
+          "title": "Soldering Resources | Physics Undergraduate Labs | University of Colorado Boulder",
+          "body_chars_fetched": 2981,
+          "body_chars_scored_full": 2981,
+          "body_chars_scored_bounded": 2981,
+          "clipped_by_bound": false
+        },
+        {
+          "url": "https://www.ifixit.com/News/97850/soldering-simplified-a-newbies-guide-to-through-hole-soldering",
+          "title": "Soldering Simplified: A Newbie's Guide to Through-Hole Soldering - iFixit",
+          "body_chars_fetched": 27361,
+          "body_chars_scored_full": 27361,
+          "body_chars_scored_bounded": 6000,
+          "clipped_by_bound": true
+        },
+        {
+          "url": "https://www.instructables.com/Soldering-Through-Hole-Components/",
+          "title": "Soldering Through Hole Components | Soldering Basics : 8 Steps - Instructables",
+          "body_chars_fetched": 25640,
+          "body_chars_scored_full": 25640,
+          "body_chars_scored_bounded": 6000,
+          "clipped_by_bound": true
+        },
+        {
+          "url": "https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms",
+          "title": "Soldering Glossary of Terms - iFixit",
+          "body_chars_fetched": 17875,
+          "body_chars_scored_full": 17875,
+          "body_chars_scored_bounded": 6000,
+          "clipped_by_bound": true
+        }
+      ],
+      "unbounded": {
+        "table": [
+          {
+            "index": 0,
+            "url": "https://www.st.com/resource/en/technical_note/tn1225-mounting-instructions-for-thd-throughhole-device-packages-stmicroelectronics.pdf",
+            "title": "Mounting instructions for THD (through-hole device) packages - Technical note",
+            "score": 1.0,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "prep",
+              "firs",
+              "sold",
+              "repa",
+              "thro",
+              "hole",
+              "pcb",
+              "safe",
+              "comp",
+              "plac",
+              "join",
+              "insp",
+              "deso"
+            ],
+            "reason": "uses 13 of the goal's 13 content terms (prep, firs, sold, repa, thro, hole, pcb, safe, comp, plac, join, insp, deso); weighted coverage 1.00 meets the 0.50 floor"
+          },
+          {
+            "index": 1,
+            "url": "https://engineering.purdue.edu/ece477/Course/Lectures/ToSource/Slides/9-SolderingAndAssembly/9-AssemblyAndSoldering.pdf",
+            "title": "Soldering, Assembly, and Manufacturing (ECE 477 lecture)",
+            "score": 0.714,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "sold",
+              "thro",
+              "hole",
+              "pcb",
+              "safe",
+              "comp",
+              "plac",
+              "join",
+              "insp",
+              "deso"
+            ],
+            "reason": "uses 10 of the goal's 13 content terms (sold, thro, hole, pcb, safe, comp, plac, join, insp, deso); weighted coverage 0.71 meets the 0.50 floor"
+          },
+          {
+            "index": 2,
+            "url": "https://physicslabs.colorado.edu/courses/phys-3330/resources/soldering/",
+            "title": "Soldering Resources | Physics Undergraduate Labs | University of Colorado Boulder",
+            "score": 0.382,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "sold",
+              "thro",
+              "hole",
+              "safe",
+              "comp",
+              "join"
+            ],
+            "reason": "uses 6 of the goal's 13 content terms (sold, thro, hole, safe, comp, join); weighted coverage 0.38 is below the 0.50 floor but reaches 0.35 of this pass's best page (1.00), so it is admitted"
+          },
+          {
+            "index": 3,
+            "url": "https://www.ifixit.com/News/97850/soldering-simplified-a-newbies-guide-to-through-hole-soldering",
+            "title": "Soldering Simplified: A Newbie's Guide to Through-Hole Soldering - iFixit",
+            "score": 0.889,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "prep",
+              "firs",
+              "sold",
+              "repa",
+              "thro",
+              "hole",
+              "pcb",
+              "safe",
+              "comp",
+              "plac",
+              "join",
+              "deso"
+            ],
+            "reason": "uses 12 of the goal's 13 content terms (prep, firs, sold, repa, thro, hole, pcb, safe, comp, plac, join, deso); weighted coverage 0.89 meets the 0.50 floor"
+          },
+          {
+            "index": 4,
+            "url": "https://www.instructables.com/Soldering-Through-Hole-Components/",
+            "title": "Soldering Through Hole Components | Soldering Basics : 8 Steps - Instructables",
+            "score": 0.522,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "firs",
+              "sold",
+              "thro",
+              "hole",
+              "comp",
+              "plac",
+              "join",
+              "deso"
+            ],
+            "reason": "uses 8 of the goal's 13 content terms (firs, sold, thro, hole, comp, plac, join, deso); weighted coverage 0.52 meets the 0.50 floor"
+          },
+          {
+            "index": 5,
+            "url": "https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms",
+            "title": "Soldering Glossary of Terms - iFixit",
+            "score": 0.696,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "firs",
+              "sold",
+              "repa",
+              "thro",
+              "hole",
+              "pcb",
+              "comp",
+              "plac",
+              "join",
+              "deso"
+            ],
+            "reason": "uses 10 of the goal's 13 content terms (firs, sold, repa, thro, hole, pcb, comp, plac, join, deso); weighted coverage 0.70 meets the 0.50 floor"
+          }
+        ],
+        "distribution": {
+          "best_score": 1.0,
+          "min_coverage": 0.5,
+          "relative_line": 0.35,
+          "pages_at_or_above_min_coverage": 5,
+          "pages_admitted_by_relative_margin_only": 1,
+          "pages_below_both_lines": 0,
+          "kept": 6,
+          "dropped": 0,
+          "floor_tripped": false,
+          "goal_terms": [
+            "prep",
+            "firs",
+            "sold",
+            "repa",
+            "thro",
+            "hole",
+            "pcb",
+            "safe",
+            "comp",
+            "plac",
+            "join",
+            "insp",
+            "deso"
+          ],
+          "goal_term_count": 13,
+          "goal_terms_matched_by_any_page": [
+            "comp",
+            "deso",
+            "firs",
+            "hole",
+            "insp",
+            "join",
+            "pcb",
+            "plac",
+            "prep",
+            "repa",
+            "safe",
+            "sold",
+            "thro"
+          ],
+          "goal_terms_matched_by_any_page_count": 13,
+          "goal_terms_matched_by_no_page": [],
+          "text_chars": [
+            39670,
+            12243,
+            2981,
+            27361,
+            25640,
+            17875
+          ],
+          "texts_clipped": [
+            true,
+            true,
+            false,
+            true,
+            true,
+            true
+          ]
+        }
+      },
+      "bounded_6000": {
+        "table": [
+          {
+            "index": 0,
+            "url": "https://www.st.com/resource/en/technical_note/tn1225-mounting-instructions-for-thd-throughhole-device-packages-stmicroelectronics.pdf",
+            "title": "Mounting instructions for THD (through-hole device) packages - Technical note",
+            "score": 0.275,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "sold",
+              "thro",
+              "hole",
+              "pcb",
+              "comp"
+            ],
+            "reason": "uses 5 of the goal's 13 content terms (sold, thro, hole, pcb, comp); weighted coverage 0.28 is below the 0.50 floor but reaches 0.35 of this pass's best page (0.69), so it is admitted"
+          },
+          {
+            "index": 1,
+            "url": "https://engineering.purdue.edu/ece477/Course/Lectures/ToSource/Slides/9-SolderingAndAssembly/9-AssemblyAndSoldering.pdf",
+            "title": "Soldering, Assembly, and Manufacturing (ECE 477 lecture)",
+            "score": 0.685,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "sold",
+              "thro",
+              "hole",
+              "pcb",
+              "safe",
+              "comp",
+              "plac",
+              "join",
+              "insp",
+              "deso"
+            ],
+            "reason": "uses 10 of the goal's 13 content terms (sold, thro, hole, pcb, safe, comp, plac, join, insp, deso); weighted coverage 0.69 meets the 0.50 floor"
+          },
+          {
+            "index": 2,
+            "url": "https://physicslabs.colorado.edu/courses/phys-3330/resources/soldering/",
+            "title": "Soldering Resources | Physics Undergraduate Labs | University of Colorado Boulder",
+            "score": 0.353,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "sold",
+              "thro",
+              "hole",
+              "safe",
+              "comp",
+              "join"
+            ],
+            "reason": "uses 6 of the goal's 13 content terms (sold, thro, hole, safe, comp, join); weighted coverage 0.35 is below the 0.50 floor but reaches 0.35 of this pass's best page (0.69), so it is admitted"
+          },
+          {
+            "index": 3,
+            "url": "https://www.ifixit.com/News/97850/soldering-simplified-a-newbies-guide-to-through-hole-soldering",
+            "title": "Soldering Simplified: A Newbie's Guide to Through-Hole Soldering - iFixit",
+            "score": 0.545,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "prep",
+              "sold",
+              "repa",
+              "thro",
+              "hole",
+              "safe",
+              "comp",
+              "plac"
+            ],
+            "reason": "uses 8 of the goal's 13 content terms (prep, sold, repa, thro, hole, safe, comp, plac); weighted coverage 0.55 meets the 0.50 floor"
+          },
+          {
+            "index": 4,
+            "url": "https://www.instructables.com/Soldering-Through-Hole-Components/",
+            "title": "Soldering Through Hole Components | Soldering Basics : 8 Steps - Instructables",
+            "score": 0.453,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "firs",
+              "sold",
+              "thro",
+              "hole",
+              "comp",
+              "plac",
+              "deso"
+            ],
+            "reason": "uses 7 of the goal's 13 content terms (firs, sold, thro, hole, comp, plac, deso); weighted coverage 0.45 is below the 0.50 floor but reaches 0.35 of this pass's best page (0.69), so it is admitted"
+          },
+          {
+            "index": 5,
+            "url": "https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms",
+            "title": "Soldering Glossary of Terms - iFixit",
+            "score": 0.588,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "sold",
+              "repa",
+              "thro",
+              "hole",
+              "pcb",
+              "comp",
+              "plac",
+              "join",
+              "deso"
+            ],
+            "reason": "uses 9 of the goal's 13 content terms (sold, repa, thro, hole, pcb, comp, plac, join, deso); weighted coverage 0.59 meets the 0.50 floor"
+          }
+        ],
+        "distribution": {
+          "best_score": 0.685,
+          "min_coverage": 0.5,
+          "relative_line": 0.2397,
+          "pages_at_or_above_min_coverage": 3,
+          "pages_admitted_by_relative_margin_only": 3,
+          "pages_below_both_lines": 0,
+          "kept": 6,
+          "dropped": 0,
+          "floor_tripped": false,
+          "goal_terms": [
+            "prep",
+            "firs",
+            "sold",
+            "repa",
+            "thro",
+            "hole",
+            "pcb",
+            "safe",
+            "comp",
+            "plac",
+            "join",
+            "insp",
+            "deso"
+          ],
+          "goal_term_count": 13,
+          "goal_terms_matched_by_any_page": [
+            "comp",
+            "deso",
+            "firs",
+            "hole",
+            "insp",
+            "join",
+            "pcb",
+            "plac",
+            "prep",
+            "repa",
+            "safe",
+            "sold",
+            "thro"
+          ],
+          "goal_terms_matched_by_any_page_count": 13,
+          "goal_terms_matched_by_no_page": [],
+          "text_chars": [
+            6000,
+            6000,
+            2981,
+            6000,
+            6000,
+            6000
+          ],
+          "texts_clipped": [
+            true,
+            true,
+            false,
+            true,
+            true,
+            true
+          ]
+        }
+      },
+      "notes": [
+        "six real fetched pages, verbatim from audit/adversarial/harness-e2e/transcripts/soldering_full.json",
+        "the docstring's '0.38 against a best page at 1.00' is the unbounded column of the physicslabs.colorado.edu row"
+      ]
+    },
+    "fig-tree prune pass": {
+      "packet": "fig-tree prune pass",
+      "goal": "prune a fig tree",
+      "bound_chars": 6000,
+      "pages": [
+        {
+          "url": "https://www.rhs.org.uk/fig-pruning/1",
+          "title": "Pruning fig trees: a practical guide",
+          "body_chars_fetched": 250,
+          "body_chars_scored_full": 250,
+          "body_chars_scored_bounded": 250,
+          "clipped_by_bound": false
+        },
+        {
+          "url": "https://www.fao.org/meat-guidelines",
+          "title": "Guidelines for slaughtering, meat cutting and further processing",
+          "body_chars_fetched": 118,
+          "body_chars_scored_full": 118,
+          "body_chars_scored_bounded": 118,
+          "clipped_by_bound": false
+        },
+        {
+          "url": "https://forestry.extension.wisc.edu/tree-identification",
+          "title": "Tree Identification \u2013 Forestry & Wildlife",
+          "body_chars_fetched": 109,
+          "body_chars_scored_full": 109,
+          "body_chars_scored_bounded": 109,
+          "clipped_by_bound": false
+        }
+      ],
+      "unbounded": {
+        "table": [
+          {
+            "index": 0,
+            "url": "https://www.rhs.org.uk/fig-pruning/1",
+            "title": "Pruning fig trees: a practical guide",
+            "score": 1.0,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "prun",
+              "fig",
+              "tree"
+            ],
+            "reason": "uses 3 of the goal's 3 content terms (prun, fig, tree); weighted coverage 1.00 meets the 0.50 floor"
+          },
+          {
+            "index": 1,
+            "url": "https://www.fao.org/meat-guidelines",
+            "title": "Guidelines for slaughtering, meat cutting and further processing",
+            "score": 0.0,
+            "verdict": "off_topic",
+            "kept": false,
+            "matched": [],
+            "reason": "uses 0 of the goal's 3 content terms (none); weighted coverage 0.00 is below the 0.50 floor and below 0.35 of this pass's best page (1.00)"
+          },
+          {
+            "index": 2,
+            "url": "https://forestry.extension.wisc.edu/tree-identification",
+            "title": "Tree Identification \u2013 Forestry & Wildlife",
+            "score": 0.276,
+            "verdict": "off_topic",
+            "kept": false,
+            "matched": [
+              "tree"
+            ],
+            "reason": "uses 1 of the goal's 3 content terms (tree); weighted coverage 0.28 is below the 0.50 floor and below 0.35 of this pass's best page (1.00)"
+          }
+        ],
+        "distribution": {
+          "best_score": 1.0,
+          "min_coverage": 0.5,
+          "relative_line": 0.35,
+          "pages_at_or_above_min_coverage": 1,
+          "pages_admitted_by_relative_margin_only": 0,
+          "pages_below_both_lines": 2,
+          "kept": 1,
+          "dropped": 2,
+          "floor_tripped": false,
+          "goal_terms": [
+            "prun",
+            "fig",
+            "tree"
+          ],
+          "goal_term_count": 3,
+          "goal_terms_matched_by_any_page": [
+            "fig",
+            "prun",
+            "tree"
+          ],
+          "goal_terms_matched_by_any_page_count": 3,
+          "goal_terms_matched_by_no_page": [],
+          "text_chars": [
+            250,
+            118,
+            109
+          ],
+          "texts_clipped": [
+            false,
+            false,
+            false
+          ]
+        }
+      },
+      "bounded_6000": {
+        "table": [
+          {
+            "index": 0,
+            "url": "https://www.rhs.org.uk/fig-pruning/1",
+            "title": "Pruning fig trees: a practical guide",
+            "score": 1.0,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "prun",
+              "fig",
+              "tree"
+            ],
+            "reason": "uses 3 of the goal's 3 content terms (prun, fig, tree); weighted coverage 1.00 meets the 0.50 floor"
+          },
+          {
+            "index": 1,
+            "url": "https://www.fao.org/meat-guidelines",
+            "title": "Guidelines for slaughtering, meat cutting and further processing",
+            "score": 0.0,
+            "verdict": "off_topic",
+            "kept": false,
+            "matched": [],
+            "reason": "uses 0 of the goal's 3 content terms (none); weighted coverage 0.00 is below the 0.50 floor and below 0.35 of this pass's best page (1.00)"
+          },
+          {
+            "index": 2,
+            "url": "https://forestry.extension.wisc.edu/tree-identification",
+            "title": "Tree Identification \u2013 Forestry & Wildlife",
+            "score": 0.276,
+            "verdict": "off_topic",
+            "kept": false,
+            "matched": [
+              "tree"
+            ],
+            "reason": "uses 1 of the goal's 3 content terms (tree); weighted coverage 0.28 is below the 0.50 floor and below 0.35 of this pass's best page (1.00)"
+          }
+        ],
+        "distribution": {
+          "best_score": 1.0,
+          "min_coverage": 0.5,
+          "relative_line": 0.35,
+          "pages_at_or_above_min_coverage": 1,
+          "pages_admitted_by_relative_margin_only": 0,
+          "pages_below_both_lines": 2,
+          "kept": 1,
+          "dropped": 2,
+          "floor_tripped": false,
+          "goal_terms": [
+            "prun",
+            "fig",
+            "tree"
+          ],
+          "goal_term_count": 3,
+          "goal_terms_matched_by_any_page": [
+            "fig",
+            "prun",
+            "tree"
+          ],
+          "goal_terms_matched_by_any_page_count": 3,
+          "goal_terms_matched_by_no_page": [],
+          "text_chars": [
+            250,
+            118,
+            109
+          ],
+          "texts_clipped": [
+            false,
+            false,
+            false
+          ]
+        }
+      },
+      "notes": [
+        "the pages the floors were set from are NOT committed as fetched bodies; the packet committed in tests/test_cp015g_relevance_gate.py is a short reconstruction of three pages (on-topic RHS page plus the FAO and forestry pages)",
+        "every body here is far below the 6000 bound, so the unbounded and bounded columns are identical by construction and the truncation path is not exercised by this packet"
+      ]
+    },
+    "fig-tree padded control": {
+      "packet": "fig-tree prune pass (bodies padded past 6000 \u2014 synthetic control)",
+      "goal": "prune a fig tree",
+      "bound_chars": 6000,
+      "pages": [
+        {
+          "url": "https://www.rhs.org.uk/fig-pruning/1",
+          "title": "Pruning fig trees: a practical guide",
+          "body_chars_fetched": 10040,
+          "body_chars_scored_full": 10040,
+          "body_chars_scored_bounded": 6000,
+          "clipped_by_bound": true
+        },
+        {
+          "url": "https://www.fao.org/meat-guidelines",
+          "title": "Guidelines for slaughtering, meat cutting and further processing",
+          "body_chars_fetched": 4760,
+          "body_chars_scored_full": 4760,
+          "body_chars_scored_bounded": 4760,
+          "clipped_by_bound": false
+        },
+        {
+          "url": "https://forestry.extension.wisc.edu/tree-identification",
+          "title": "Tree Identification \u2013 Forestry & Wildlife",
+          "body_chars_fetched": 4400,
+          "body_chars_scored_full": 4400,
+          "body_chars_scored_bounded": 4400,
+          "clipped_by_bound": false
+        }
+      ],
+      "unbounded": {
+        "table": [
+          {
+            "index": 0,
+            "url": "https://www.rhs.org.uk/fig-pruning/1",
+            "title": "Pruning fig trees: a practical guide",
+            "score": 1.0,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "prun",
+              "fig",
+              "tree"
+            ],
+            "reason": "uses 3 of the goal's 3 content terms (prun, fig, tree); weighted coverage 1.00 meets the 0.50 floor"
+          },
+          {
+            "index": 1,
+            "url": "https://www.fao.org/meat-guidelines",
+            "title": "Guidelines for slaughtering, meat cutting and further processing",
+            "score": 0.0,
+            "verdict": "off_topic",
+            "kept": false,
+            "matched": [],
+            "reason": "uses 0 of the goal's 3 content terms (none); weighted coverage 0.00 is below the 0.50 floor and below 0.35 of this pass's best page (1.00)"
+          },
+          {
+            "index": 2,
+            "url": "https://forestry.extension.wisc.edu/tree-identification",
+            "title": "Tree Identification \u2013 Forestry & Wildlife",
+            "score": 0.276,
+            "verdict": "off_topic",
+            "kept": false,
+            "matched": [
+              "tree"
+            ],
+            "reason": "uses 1 of the goal's 3 content terms (tree); weighted coverage 0.28 is below the 0.50 floor and below 0.35 of this pass's best page (1.00)"
+          }
+        ],
+        "distribution": {
+          "best_score": 1.0,
+          "min_coverage": 0.5,
+          "relative_line": 0.35,
+          "pages_at_or_above_min_coverage": 1,
+          "pages_admitted_by_relative_margin_only": 0,
+          "pages_below_both_lines": 2,
+          "kept": 1,
+          "dropped": 2,
+          "floor_tripped": false,
+          "goal_terms": [
+            "prun",
+            "fig",
+            "tree"
+          ],
+          "goal_term_count": 3,
+          "goal_terms_matched_by_any_page": [
+            "fig",
+            "prun",
+            "tree"
+          ],
+          "goal_terms_matched_by_any_page_count": 3,
+          "goal_terms_matched_by_no_page": [],
+          "text_chars": [
+            10040,
+            4760,
+            4400
+          ],
+          "texts_clipped": [
+            true,
+            false,
+            false
+          ]
+        }
+      },
+      "bounded_6000": {
+        "table": [
+          {
+            "index": 0,
+            "url": "https://www.rhs.org.uk/fig-pruning/1",
+            "title": "Pruning fig trees: a practical guide",
+            "score": 1.0,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "prun",
+              "fig",
+              "tree"
+            ],
+            "reason": "uses 3 of the goal's 3 content terms (prun, fig, tree); weighted coverage 1.00 meets the 0.50 floor"
+          },
+          {
+            "index": 1,
+            "url": "https://www.fao.org/meat-guidelines",
+            "title": "Guidelines for slaughtering, meat cutting and further processing",
+            "score": 0.0,
+            "verdict": "off_topic",
+            "kept": false,
+            "matched": [],
+            "reason": "uses 0 of the goal's 3 content terms (none); weighted coverage 0.00 is below the 0.50 floor and below 0.35 of this pass's best page (1.00)"
+          },
+          {
+            "index": 2,
+            "url": "https://forestry.extension.wisc.edu/tree-identification",
+            "title": "Tree Identification \u2013 Forestry & Wildlife",
+            "score": 0.276,
+            "verdict": "off_topic",
+            "kept": false,
+            "matched": [
+              "tree"
+            ],
+            "reason": "uses 1 of the goal's 3 content terms (tree); weighted coverage 0.28 is below the 0.50 floor and below 0.35 of this pass's best page (1.00)"
+          }
+        ],
+        "distribution": {
+          "best_score": 1.0,
+          "min_coverage": 0.5,
+          "relative_line": 0.35,
+          "pages_at_or_above_min_coverage": 1,
+          "pages_admitted_by_relative_margin_only": 0,
+          "pages_below_both_lines": 2,
+          "kept": 1,
+          "dropped": 2,
+          "floor_tripped": false,
+          "goal_terms": [
+            "prun",
+            "fig",
+            "tree"
+          ],
+          "goal_term_count": 3,
+          "goal_terms_matched_by_any_page": [
+            "fig",
+            "prun",
+            "tree"
+          ],
+          "goal_terms_matched_by_any_page_count": 3,
+          "goal_terms_matched_by_no_page": [],
+          "text_chars": [
+            6000,
+            4760,
+            4400
+          ],
+          "texts_clipped": [
+            true,
+            false,
+            false
+          ]
+        }
+      },
+      "notes": [
+        "synthetic control only: the same three fixture bodies repeated past the bound"
+      ]
+    },
+    "H-40 plus one off-topic page control": {
+      "packet": "H-40 soldering_full + one off-topic page (synthetic control)",
+      "goal": "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering.",
+      "bound_chars": 6000,
+      "pages": [
+        {
+          "url": "https://www.st.com/resource/en/technical_note/tn1225-mounting-instructions-for-thd-throughhole-device-packages-stmicroelectronics.pdf",
+          "title": "Mounting instructions for THD (through-hole device) packages - Technical note",
+          "body_chars_fetched": 39670,
+          "body_chars_scored_full": 39670,
+          "body_chars_scored_bounded": 6000,
+          "clipped_by_bound": true
+        },
+        {
+          "url": "https://engineering.purdue.edu/ece477/Course/Lectures/ToSource/Slides/9-SolderingAndAssembly/9-AssemblyAndSoldering.pdf",
+          "title": "Soldering, Assembly, and Manufacturing (ECE 477 lecture)",
+          "body_chars_fetched": 12243,
+          "body_chars_scored_full": 12243,
+          "body_chars_scored_bounded": 6000,
+          "clipped_by_bound": true
+        },
+        {
+          "url": "https://physicslabs.colorado.edu/courses/phys-3330/resources/soldering/",
+          "title": "Soldering Resources | Physics Undergraduate Labs | University of Colorado Boulder",
+          "body_chars_fetched": 2981,
+          "body_chars_scored_full": 2981,
+          "body_chars_scored_bounded": 2981,
+          "clipped_by_bound": false
+        },
+        {
+          "url": "https://www.ifixit.com/News/97850/soldering-simplified-a-newbies-guide-to-through-hole-soldering",
+          "title": "Soldering Simplified: A Newbie's Guide to Through-Hole Soldering - iFixit",
+          "body_chars_fetched": 27361,
+          "body_chars_scored_full": 27361,
+          "body_chars_scored_bounded": 6000,
+          "clipped_by_bound": true
+        },
+        {
+          "url": "https://www.instructables.com/Soldering-Through-Hole-Components/",
+          "title": "Soldering Through Hole Components | Soldering Basics : 8 Steps - Instructables",
+          "body_chars_fetched": 25640,
+          "body_chars_scored_full": 25640,
+          "body_chars_scored_bounded": 6000,
+          "clipped_by_bound": true
+        },
+        {
+          "url": "https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms",
+          "title": "Soldering Glossary of Terms - iFixit",
+          "body_chars_fetched": 17875,
+          "body_chars_scored_full": 17875,
+          "body_chars_scored_bounded": 6000,
+          "clipped_by_bound": true
+        },
+        {
+          "url": "https://www.fao.org/meat-guidelines",
+          "title": "Guidelines for slaughtering, meat cutting and further processing",
+          "body_chars_fetched": 118,
+          "body_chars_scored_full": 118,
+          "body_chars_scored_bounded": 118,
+          "clipped_by_bound": false
+        }
+      ],
+      "unbounded": {
+        "table": [
+          {
+            "index": 0,
+            "url": "https://www.st.com/resource/en/technical_note/tn1225-mounting-instructions-for-thd-throughhole-device-packages-stmicroelectronics.pdf",
+            "title": "Mounting instructions for THD (through-hole device) packages - Technical note",
+            "score": 1.0,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "prep",
+              "firs",
+              "sold",
+              "repa",
+              "thro",
+              "hole",
+              "pcb",
+              "safe",
+              "comp",
+              "plac",
+              "join",
+              "insp",
+              "deso"
+            ],
+            "reason": "uses 13 of the goal's 13 content terms (prep, firs, sold, repa, thro, hole, pcb, safe, comp, plac, join, insp, deso); weighted coverage 1.00 meets the 0.50 floor"
+          },
+          {
+            "index": 1,
+            "url": "https://engineering.purdue.edu/ece477/Course/Lectures/ToSource/Slides/9-SolderingAndAssembly/9-AssemblyAndSoldering.pdf",
+            "title": "Soldering, Assembly, and Manufacturing (ECE 477 lecture)",
+            "score": 0.715,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "sold",
+              "thro",
+              "hole",
+              "pcb",
+              "safe",
+              "comp",
+              "plac",
+              "join",
+              "insp",
+              "deso"
+            ],
+            "reason": "uses 10 of the goal's 13 content terms (sold, thro, hole, pcb, safe, comp, plac, join, insp, deso); weighted coverage 0.71 meets the 0.50 floor"
+          },
+          {
+            "index": 2,
+            "url": "https://physicslabs.colorado.edu/courses/phys-3330/resources/soldering/",
+            "title": "Soldering Resources | Physics Undergraduate Labs | University of Colorado Boulder",
+            "score": 0.396,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "sold",
+              "thro",
+              "hole",
+              "safe",
+              "comp",
+              "join"
+            ],
+            "reason": "uses 6 of the goal's 13 content terms (sold, thro, hole, safe, comp, join); weighted coverage 0.40 is below the 0.50 floor but reaches 0.35 of this pass's best page (1.00), so it is admitted"
+          },
+          {
+            "index": 3,
+            "url": "https://www.ifixit.com/News/97850/soldering-simplified-a-newbies-guide-to-through-hole-soldering",
+            "title": "Soldering Simplified: A Newbie's Guide to Through-Hole Soldering - iFixit",
+            "score": 0.906,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "prep",
+              "firs",
+              "sold",
+              "repa",
+              "thro",
+              "hole",
+              "pcb",
+              "safe",
+              "comp",
+              "plac",
+              "join",
+              "deso"
+            ],
+            "reason": "uses 12 of the goal's 13 content terms (prep, firs, sold, repa, thro, hole, pcb, safe, comp, plac, join, deso); weighted coverage 0.91 meets the 0.50 floor"
+          },
+          {
+            "index": 4,
+            "url": "https://www.instructables.com/Soldering-Through-Hole-Components/",
+            "title": "Soldering Through Hole Components | Soldering Basics : 8 Steps - Instructables",
+            "score": 0.539,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "firs",
+              "sold",
+              "thro",
+              "hole",
+              "comp",
+              "plac",
+              "join",
+              "deso"
+            ],
+            "reason": "uses 8 of the goal's 13 content terms (firs, sold, thro, hole, comp, plac, join, deso); weighted coverage 0.54 meets the 0.50 floor"
+          },
+          {
+            "index": 5,
+            "url": "https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms",
+            "title": "Soldering Glossary of Terms - iFixit",
+            "score": 0.715,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "firs",
+              "sold",
+              "repa",
+              "thro",
+              "hole",
+              "pcb",
+              "comp",
+              "plac",
+              "join",
+              "deso"
+            ],
+            "reason": "uses 10 of the goal's 13 content terms (firs, sold, repa, thro, hole, pcb, comp, plac, join, deso); weighted coverage 0.71 meets the 0.50 floor"
+          },
+          {
+            "index": 6,
+            "url": "https://www.fao.org/meat-guidelines",
+            "title": "Guidelines for slaughtering, meat cutting and further processing",
+            "score": 0.094,
+            "verdict": "off_topic",
+            "kept": false,
+            "matched": [
+              "insp"
+            ],
+            "reason": "uses 1 of the goal's 13 content terms (insp); weighted coverage 0.09 is below the 0.50 floor and below 0.35 of this pass's best page (1.00)"
+          }
+        ],
+        "distribution": {
+          "best_score": 1.0,
+          "min_coverage": 0.5,
+          "relative_line": 0.35,
+          "pages_at_or_above_min_coverage": 5,
+          "pages_admitted_by_relative_margin_only": 1,
+          "pages_below_both_lines": 1,
+          "kept": 6,
+          "dropped": 1,
+          "floor_tripped": false,
+          "goal_terms": [
+            "prep",
+            "firs",
+            "sold",
+            "repa",
+            "thro",
+            "hole",
+            "pcb",
+            "safe",
+            "comp",
+            "plac",
+            "join",
+            "insp",
+            "deso"
+          ],
+          "goal_term_count": 13,
+          "goal_terms_matched_by_any_page": [
+            "comp",
+            "deso",
+            "firs",
+            "hole",
+            "insp",
+            "join",
+            "pcb",
+            "plac",
+            "prep",
+            "repa",
+            "safe",
+            "sold",
+            "thro"
+          ],
+          "goal_terms_matched_by_any_page_count": 13,
+          "goal_terms_matched_by_no_page": [],
+          "text_chars": [
+            39670,
+            12243,
+            2981,
+            27361,
+            25640,
+            17875,
+            118
+          ],
+          "texts_clipped": [
+            true,
+            true,
+            false,
+            true,
+            true,
+            true,
+            false
+          ]
+        }
+      },
+      "bounded_6000": {
+        "table": [
+          {
+            "index": 0,
+            "url": "https://www.st.com/resource/en/technical_note/tn1225-mounting-instructions-for-thd-throughhole-device-packages-stmicroelectronics.pdf",
+            "title": "Mounting instructions for THD (through-hole device) packages - Technical note",
+            "score": 0.289,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "sold",
+              "thro",
+              "hole",
+              "pcb",
+              "comp"
+            ],
+            "reason": "uses 5 of the goal's 13 content terms (sold, thro, hole, pcb, comp); weighted coverage 0.29 is below the 0.50 floor but reaches 0.35 of this pass's best page (0.69), so it is admitted"
+          },
+          {
+            "index": 1,
+            "url": "https://engineering.purdue.edu/ece477/Course/Lectures/ToSource/Slides/9-SolderingAndAssembly/9-AssemblyAndSoldering.pdf",
+            "title": "Soldering, Assembly, and Manufacturing (ECE 477 lecture)",
+            "score": 0.686,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "sold",
+              "thro",
+              "hole",
+              "pcb",
+              "safe",
+              "comp",
+              "plac",
+              "join",
+              "insp",
+              "deso"
+            ],
+            "reason": "uses 10 of the goal's 13 content terms (sold, thro, hole, pcb, safe, comp, plac, join, insp, deso); weighted coverage 0.69 meets the 0.50 floor"
+          },
+          {
+            "index": 2,
+            "url": "https://physicslabs.colorado.edu/courses/phys-3330/resources/soldering/",
+            "title": "Soldering Resources | Physics Undergraduate Labs | University of Colorado Boulder",
+            "score": 0.368,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "sold",
+              "thro",
+              "hole",
+              "safe",
+              "comp",
+              "join"
+            ],
+            "reason": "uses 6 of the goal's 13 content terms (sold, thro, hole, safe, comp, join); weighted coverage 0.37 is below the 0.50 floor but reaches 0.35 of this pass's best page (0.69), so it is admitted"
+          },
+          {
+            "index": 3,
+            "url": "https://www.ifixit.com/News/97850/soldering-simplified-a-newbies-guide-to-through-hole-soldering",
+            "title": "Soldering Simplified: A Newbie's Guide to Through-Hole Soldering - iFixit",
+            "score": 0.561,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "prep",
+              "sold",
+              "repa",
+              "thro",
+              "hole",
+              "safe",
+              "comp",
+              "plac"
+            ],
+            "reason": "uses 8 of the goal's 13 content terms (prep, sold, repa, thro, hole, safe, comp, plac); weighted coverage 0.56 meets the 0.50 floor"
+          },
+          {
+            "index": 4,
+            "url": "https://www.instructables.com/Soldering-Through-Hole-Components/",
+            "title": "Soldering Through Hole Components | Soldering Basics : 8 Steps - Instructables",
+            "score": 0.469,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "firs",
+              "sold",
+              "thro",
+              "hole",
+              "comp",
+              "plac",
+              "deso"
+            ],
+            "reason": "uses 7 of the goal's 13 content terms (firs, sold, thro, hole, comp, plac, deso); weighted coverage 0.47 is below the 0.50 floor but reaches 0.35 of this pass's best page (0.69), so it is admitted"
+          },
+          {
+            "index": 5,
+            "url": "https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms",
+            "title": "Soldering Glossary of Terms - iFixit",
+            "score": 0.607,
+            "verdict": "on_topic",
+            "kept": true,
+            "matched": [
+              "sold",
+              "repa",
+              "thro",
+              "hole",
+              "pcb",
+              "comp",
+              "plac",
+              "join",
+              "deso"
+            ],
+            "reason": "uses 9 of the goal's 13 content terms (sold, repa, thro, hole, pcb, comp, plac, join, deso); weighted coverage 0.61 meets the 0.50 floor"
+          },
+          {
+            "index": 6,
+            "url": "https://www.fao.org/meat-guidelines",
+            "title": "Guidelines for slaughtering, meat cutting and further processing",
+            "score": 0.092,
+            "verdict": "off_topic",
+            "kept": false,
+            "matched": [
+              "insp"
+            ],
+            "reason": "uses 1 of the goal's 13 content terms (insp); weighted coverage 0.09 is below the 0.50 floor and below 0.35 of this pass's best page (0.69)"
+          }
+        ],
+        "distribution": {
+          "best_score": 0.686,
+          "min_coverage": 0.5,
+          "relative_line": 0.2401,
+          "pages_at_or_above_min_coverage": 3,
+          "pages_admitted_by_relative_margin_only": 3,
+          "pages_below_both_lines": 1,
+          "kept": 6,
+          "dropped": 1,
+          "floor_tripped": false,
+          "goal_terms": [
+            "prep",
+            "firs",
+            "sold",
+            "repa",
+            "thro",
+            "hole",
+            "pcb",
+            "safe",
+            "comp",
+            "plac",
+            "join",
+            "insp",
+            "deso"
+          ],
+          "goal_term_count": 13,
+          "goal_terms_matched_by_any_page": [
+            "comp",
+            "deso",
+            "firs",
+            "hole",
+            "insp",
+            "join",
+            "pcb",
+            "plac",
+            "prep",
+            "repa",
+            "safe",
+            "sold",
+            "thro"
+          ],
+          "goal_terms_matched_by_any_page_count": 13,
+          "goal_terms_matched_by_no_page": [],
+          "text_chars": [
+            6000,
+            6000,
+            2981,
+            6000,
+            6000,
+            6000,
+            118
+          ],
+          "texts_clipped": [
+            true,
+            true,
+            false,
+            true,
+            true,
+            true,
+            false
+          ]
+        }
+      },
+      "notes": [
+        "synthetic control only: the fig packet's FAO meat page appended to the H-40 pass, so the pass contains a page that cannot speak to the goal at either text length"
+      ]
+    }
+  },
+  "production_path": {
+    "H-40 soldering_full": {
+      "status": "ok",
+      "terms": [
+        "prep",
+        "firs",
+        "sold",
+        "repa",
+        "thro",
+        "hole",
+        "pcb",
+        "safe",
+        "comp",
+        "plac",
+        "join",
+        "insp",
+        "deso"
+      ],
+      "best_score": 0.685,
+      "min_coverage": 0.5,
+      "relative_margin": 0.35,
+      "floor_tripped": false,
+      "admitted": [
+        {
+          "url": "https://engineering.purdue.edu/ece477/Course/Lectures/ToSource/Slides/9-SolderingAndAssembly/9-AssemblyAndSoldering.pdf",
+          "title": "Soldering, Assembly, and Manufacturing (ECE 477 lecture)",
+          "relevance_score": 0.685
+        },
+        {
+          "url": "https://www.instructables.com/Soldering-Through-Hole-Components/",
+          "title": "Soldering Through Hole Components | Soldering Basics : 8 Steps - Instructables",
+          "relevance_score": 0.453
+        },
+        {
+          "url": "https://physicslabs.colorado.edu/courses/phys-3330/resources/soldering/",
+          "title": "Soldering Resources | Physics Undergraduate Labs | University of Colorado Boulder",
+          "relevance_score": 0.353
+        },
+        {
+          "url": "https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms",
+          "title": "Soldering Glossary of Terms - iFixit",
+          "relevance_score": 0.588
+        },
+        {
+          "url": "https://www.st.com/resource/en/technical_note/tn1225-mounting-instructions-for-thd-throughhole-device-packages-stmicroelectronics.pdf",
+          "title": "Mounting instructions for THD (through-hole device) packages - Technical note",
+          "relevance_score": 0.275
+        },
+        {
+          "url": "https://www.ifixit.com/News/97850/soldering-simplified-a-newbies-guide-to-through-hole-soldering",
+          "title": "Soldering Simplified: A Newbie's Guide to Through-Hole Soldering - iFixit",
+          "relevance_score": 0.545
+        }
+      ],
+      "dropped": [],
+      "note": null
+    },
+    "fig-tree prune pass": {
+      "status": "ok",
+      "terms": [
+        "prun",
+        "fig",
+        "tree"
+      ],
+      "best_score": 1.0,
+      "min_coverage": 0.5,
+      "relative_margin": 0.35,
+      "floor_tripped": false,
+      "admitted": [
+        {
+          "url": "https://www.rhs.org.uk/fig-pruning/1",
+          "title": "Pruning fig trees: a practical guide",
+          "relevance_score": 1.0
+        }
+      ],
+      "dropped": [
+        {
+          "url": "https://forestry.extension.wisc.edu/tree-identification",
+          "title": "Tree Identification \u2013 Forestry & Wildlife",
+          "query": "prune a fig tree",
+          "verdict": "off_topic",
+          "relevance_score": 0.276,
+          "matched_terms": [
+            "tree"
+          ],
+          "reason": "uses 1 of the goal's 3 content terms (tree); weighted coverage 0.28 is below the 0.50 floor and below 0.35 of this pass's best page (1.00)"
+        },
+        {
+          "url": "https://www.fao.org/meat-guidelines",
+          "title": "Guidelines for slaughtering, meat cutting and further processing",
+          "query": "prune a fig tree",
+          "verdict": "off_topic",
+          "relevance_score": 0.0,
+          "matched_terms": [],
+          "reason": "uses 0 of the goal's 3 content terms (none); weighted coverage 0.00 is below the 0.50 floor and below 0.35 of this pass's best page (1.00)"
+        }
+      ],
+      "note": null
+    }
+  },
+  "relative_margin_probe": {
+    "text": "content[:6000]",
+    "best_score": 0.685,
+    "tightest_admitted_page": {
+      "url": "https://www.st.com/resource/en/technical_note/tn1225-mounting-instructions-for-thd-throughhole-device-packages-stmicroelectronics.pdf",
+      "title": "Mounting instructions for THD (through-hole device) packages - Technical note",
+      "score": 0.275
+    },
+    "flip_ratio": 0.40145985401459855,
+    "flip_note": "a page is admitted when score >= RELATIVE_MARGIN * best, so this page is refused by any margin strictly above flip_ratio and admitted at or below it",
+    "probes": [
+      {
+        "relative_margin": 0.35,
+        "relative_line": 0.23975,
+        "tightest_page_score": 0.275,
+        "tightest_page_verdict": "on_topic",
+        "kept": 6,
+        "dropped": 0
+      },
+      {
+        "relative_margin": 0.4,
+        "relative_line": 0.274,
+        "tightest_page_score": 0.275,
+        "tightest_page_verdict": "on_topic",
+        "kept": 6,
+        "dropped": 0
+      },
+      {
+        "relative_margin": 0.4014,
+        "relative_line": 0.274959,
+        "tightest_page_score": 0.275,
+        "tightest_page_verdict": "on_topic",
+        "kept": 6,
+        "dropped": 0
+      },
+      {
+        "relative_margin": 0.40146,
+        "relative_line": 0.275,
+        "tightest_page_score": 0.275,
+        "tightest_page_verdict": "off_topic",
+        "kept": 5,
+        "dropped": 1
+      },
+      {
+        "relative_margin": 0.41,
+        "relative_line": 0.28085,
+        "tightest_page_score": 0.275,
+        "tightest_page_verdict": "off_topic",
+        "kept": 5,
+        "dropped": 1
+      }
+    ]
+  }
+}

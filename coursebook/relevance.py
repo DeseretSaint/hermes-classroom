@@ -22,9 +22,48 @@ gives an explicit verdict:
   :data:`RELATIVE_MARGIN` of the best page this pass fetched. Both halves are needed: a long,
   compound goal ("prepare for a first soldering repair …: safety, component placement, joints,
   inspection and desoldering") names more terms than any one good page covers, so an honest
-  soldering resource scored 0.38 while the pass's best page scored 1.00 — an absolute floor alone
-  called that expert resource off-topic. A page the pass itself shows to be far less relevant than
-  what it already found is the defensible refusal.
+  soldering resource scored 0.382 against a best page of 1.000 **on the full fetched bodies** —
+  an absolute floor alone called that expert resource off-topic. A page the pass itself shows to be
+  far less relevant than what it already found is the defensible refusal.
+
+Measured floors, by text length
+-------------------------------
+Every figure in this section except the stranger control was measured twice on the committed packets:
+once on the **full fetched body** and once on ``content[:6000]`` — the slice
+``research.run_research`` actually scores
+(``ResearchBudget.max_page_chars``, default 6000). Evidence:
+``audit/relevance-floors/measure.json``, re-derivable with
+``audit/relevance-floors/measure_relevance_floors.py``. Same verdicts at both lengths on both
+packets; the arithmetic moves, because five of the soldering packet's six bodies are longer than
+the bound.
+
+* **H-40 soldering pass** (``audit/adversarial/harness-e2e/transcripts/soldering_full.json``; goal
+  "prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints,
+  inspection and desoldering"; six pages, every one genuine):
+
+  - full body: best 1.000 (st.com THD mounting note), CU Boulder soldering resources 0.382
+    (0.38 of the best), the other four 0.522–0.889. Nothing dropped.
+  - ``content[:6000]``: best 0.685 (Purdue ECE 477 lecture), CU Boulder 0.353 (0.52 of the best),
+    st.com 0.275 (0.40146 of the best — the tightest admission), the other three 0.453–0.588.
+    Nothing dropped either, and only three of six clear :data:`MIN_COVERAGE` on their own — the
+    other three are admitted by the relative half, so the headroom this constant relies on is
+    *bounded-text* headroom: 0.40146 is only ~0.05 above :data:`RELATIVE_MARGIN`. Measured with the
+    real gate, a margin of 0.40 still admits that manufacturer's own through-hole note (line 0.274,
+    score 0.275, kept 6). The flip ratio is ``0.275 / 0.685 = 0.40146``; the probe's ``0.40146``
+    row already refuses it (line 0.275, kept 5, dropped 1), as does 0.41.
+
+* **Fig-tree pass** ("prune a fig tree"; the RHS on-topic page plus the FAO meat page and a forestry
+  tree-identification page): best 1.000, forestry 0.276 (one of three goal terms — ``tree``), FAO
+  0.000; both off-topic pages refused at *both* lengths. Every body in this packet is under 300
+  characters, so the two columns are identical and the packet does not exercise truncation at all:
+  its off-topic pages drop because a short body uses one goal term, not because a long body was cut.
+  The committed fig-tree packet is a short reconstruction of the three pages — the fetched bodies
+  were never committed — so how a long real forestry page would score is unmeasured here.
+
+* **A stranger inside a bounded pass** (*synthetic* — a constructed pass, not a recorded one):
+  appending the FAO meat page from the fig pass to the H-40 pages and scoring
+  ``content[:6000]`` gives it 0.092 against a 0.240 relative line, and it is dropped. The gate does
+  refuse a stranger at 6000 chars; the recorded soldering pass simply carried none to refuse.
 
 Two honest escapes:
 
@@ -60,14 +99,23 @@ OFF_TOPIC = "off_topic"
 #: The weighted share of the goal's own terms a page must use to enter the plan digest on its own
 #: merits. Half is the rule of thumb the measured pass supports: the two on-topic fig pages used the
 #: goal's terms; the tree-identification page used one of three (``tree``) and the meat page used
-#: none.
+#: none — the same at full body length and at ``content[:6000]``, because those bodies are short.
+#: On the bounded soldering pass only three of six genuine pages clear it on their own, which is
+#: what the relative half below is for.
 MIN_COVERAGE = 0.5
 
 #: The second half of the refusal: a page below :data:`MIN_COVERAGE` is still admitted when it
 #: reaches this share of the best page in the same pass. A compound goal names more terms than one
-#: honest page covers, so "0.38 against a 1.00 best" is a resource, not a stranger. The measured
-#: fig pass put the forestry page at 0.29 of its best page and the measured soldering pass put a
-#: genuine CU Boulder soldering resource at 0.38, so the line sits at 0.35.
+#: honest page covers, so "a manufacturer note at 0.275 against a 0.685 best" is a resource, not a
+#: stranger. Measured on the committed fig-tree packet — a short reconstruction whose bodies are all
+#: under 300 chars, so full body and ``content[:6000]`` are the same — the forestry page sits at 0.28
+#: of its best page; measured on the H-40 soldering pass's full fetched bodies, a genuine CU Boulder
+#: soldering resource is 0.38 of 1.00;
+#: measured on ``content[:6000]``, the same CU Boulder page is 0.35 against 0.69 (0.52 of the best)
+#: and the manufacturer note is 0.275 against 0.685 — 0.40146 of the best. So 0.35 holds at both
+#: lengths, and the bounded headroom is only ~0.05: patching this constant to 0.40 still admits the
+#: note (line 0.274, score 0.275), and only a margin above the flip ratio 0.40146 refuses it (the
+#: probe's 0.40146 row and 0.41 both do). The line sits at 0.35.
 RELATIVE_MARGIN = 0.35
 
 #: Function words carry no subject. Deliberately a closed, short list: it removes the words that
@@ -170,16 +218,23 @@ def _reason(
         f"uses {len(matched)} of the goal's {len(terms)} content terms"
         f" ({', '.join(matched) or 'none'}); weighted coverage {score:.2f}"
     )
+    # The page's own ratio, not the line it is compared against: a reader must be able to
+    # reproduce the verdict from the sentence. ``best`` is 0 only for a pass with no score (the
+    # gate then keeps every page via ``floor_tripped``), so the guard is defensive, not a case
+    # the shipped copy reaches.
+    ratio = score / best if best > 0 else 0.0
     if verdict == ON_TOPIC and score >= MIN_COVERAGE:
         return f"{use} meets the {MIN_COVERAGE:.2f} floor"
     if verdict == ON_TOPIC:
         return (
             f"{use} is below the {MIN_COVERAGE:.2f} floor but reaches"
-            f" {RELATIVE_MARGIN:.2f} of this pass's best page ({best:.2f}), so it is admitted"
+            f" {ratio:.2f} of this pass's best page ({best:.2f}), above the"
+            f" {RELATIVE_MARGIN:.2f} line, so it is admitted"
         )
     return (
-        f"{use} is below the {MIN_COVERAGE:.2f} floor and below {RELATIVE_MARGIN:.2f} of this"
-        f" pass's best page ({best:.2f})"
+        f"{use} is below the {MIN_COVERAGE:.2f} floor and reaches"
+        f" {ratio:.2f} of this pass's best page ({best:.2f}), below the"
+        f" {RELATIVE_MARGIN:.2f} line"
     )
 
 
