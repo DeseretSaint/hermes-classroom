@@ -25,17 +25,23 @@ Exit codes: 0 nothing to do or bumped; 3 a branch is prepared and needs an owner
 from __future__ import annotations
 
 import argparse
+import atexit
 import json
 import os
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 FORK = Path.home() / "Projects/hermes-fork"
 ENTRY_REL = "plugin-catalog/coursebook.yaml"
 BRANCH = "add-coursebook-catalog-entry"
+_TEMP_ENTRY_PREFIX = "catalog-entry-"
+# Only a run that died before its exit leaves its temp entry behind, so anything this old is
+# debris. The age guard keeps a concurrent run's live file safe.
+_TEMP_ENTRY_STALE_SECONDS = 3600
 
 
 def run(cmd: list[str], cwd: Path, *, check: bool = True) -> str:
@@ -51,13 +57,31 @@ def pr_state() -> dict:
     return json.loads(out)
 
 
+def _prune_temp_entries() -> None:
+    """Remove pinned-entry temp files a previous run left behind in the temp dir."""
+    cutoff = time.time() - _TEMP_ENTRY_STALE_SECONDS
+    for stale in Path(tempfile.gettempdir()).glob(f"{_TEMP_ENTRY_PREFIX}*.yaml"):
+        try:
+            if stale.stat().st_mtime < cutoff:
+                stale.unlink()
+        except OSError:
+            pass  # another run may be winning the same race; it is only debris
+
+
 def entry_at(fork: Path, ref: str) -> Path:
-    """Write the entry as it exists at *ref* to a temp file, so a stale checkout cannot lie."""
+    """Write the entry as it exists at *ref* to a temp file, so a stale checkout cannot lie.
+
+    The file is unlinked at exit: it is a scratch copy of committed YAML, and a run that died
+    before reaching its exit used to leave one behind per attempt (they piled up in the cache).
+    """
     text = run(["git", "show", f"{ref}:{ENTRY_REL}"], fork)
-    fd, path = tempfile.mkstemp(prefix="catalog-entry-", suffix=".yaml")
+    _prune_temp_entries()
+    fd, path = tempfile.mkstemp(prefix=_TEMP_ENTRY_PREFIX, suffix=".yaml")
     with os.fdopen(fd, "w") as fh:
         fh.write(text + "\n")
-    return Path(path)
+    entry = Path(path)
+    atexit.register(entry.unlink, missing_ok=True)
+    return entry
 
 
 def delivery(entry: Path) -> dict:
