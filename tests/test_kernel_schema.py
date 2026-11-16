@@ -9,10 +9,11 @@ from __future__ import annotations
 
 import sqlite3
 import unittest
+from unittest import mock
 
-from coursebook import db
+from coursebook import api, contracts, db
 from coursebook.contracts import contract
-from tests.kernel_support import KernelCase
+from tests.kernel_support import KernelCase, request
 
 
 class SchemaConformanceTest(KernelCase):
@@ -125,7 +126,15 @@ class MigrationRunnerTest(KernelCase):
         self.assertEqual(before, after)
 
     def test_health_reports_ready_after_migration(self) -> None:
-        self.assertEqual(db.health(), {"ready": True, "schema_version": db.target_schema_version()})
+        self.assertEqual(
+            db.health(),
+            {
+                "ready": True,
+                "schema_version": db.target_schema_version(),
+                "state": "ready",
+                "target_schema_version": db.target_schema_version(),
+            },
+        )
 
     def test_a_fresh_profile_is_honestly_not_ready(self) -> None:
         import os
@@ -135,7 +144,17 @@ class MigrationRunnerTest(KernelCase):
         previous = os.environ["HERMES_HOME"]
         os.environ["HERMES_HOME"] = fresh
         try:
-            self.assertEqual(db.health(), {"ready": False, "schema_version": None})
+            self.assertEqual(
+                db.health(),
+                {
+                    "ready": False,
+                    "schema_version": None,
+                    "state": "unmigrated",
+                    "target_schema_version": db.target_schema_version(),
+                },
+            )
+            # No store has no migration error: "unmigrated" is not "failed".
+            self.assertNotIn("error", db.health())
             self.assertIsNone(db.applied_schema_version())
             # A command migrates on first use instead of failing on a fresh install.
             response = self.ok("course.create", {"title": "Fresh", "recipe": "casual", "goal": "Start"})
@@ -155,6 +174,74 @@ class MigrationRunnerTest(KernelCase):
             connection.execute("UPDATE schema_migrations SET checksum = 'sha256:" + "0" * 64 + "'")
         with self.assertRaises(db.SchemaDrift):
             db.migrate()
+
+
+class HealthMigrationFailureTest(KernelCase):
+    """H-114 F11/F22 — a migration that *failed* is not a profile that was never migrated.
+
+    ``health.get`` provisions on first contact, so its migration can fail for a real reason (disk
+    I/O, a locked or corrupt store). Before ``cb.rpc`` v29 that failure was swallowed and the
+    response was indistinguishable from a fresh profile: ``db.ready: false`` with the old version
+    on disk, which the pane rendered as "this profile has no course tables". v29 carries
+    ``db.state``, ``db.target_schema_version`` and a bounded ``db.error``, and the GET still
+    answers ``ok``.
+    """
+
+    def test_a_failed_migration_carries_a_bounded_error_and_the_get_still_answers(self) -> None:
+        with mock.patch.object(
+            db, "ensure_schema", side_effect=sqlite3.OperationalError("disk I/O error")
+        ):
+            with self.assertLogs("coursebook", level="WARNING") as logs:
+                response = api.dispatch(request("health.get"))
+        # The GET is not a transport failure: it answered, and dispatch validated the result
+        # against the current response schema (an out-of-contract block would be INTERNAL_ERROR).
+        self.assertTrue(response["ok"], response)
+        self.assertEqual(response["contract_version"], contracts.WIRE_CONTRACT_VERSION)
+        block = response["result"]["db"]
+        self.assertFalse(block["ready"])
+        self.assertEqual(block["state"], "failed")
+        self.assertEqual(block["schema_version"], db.applied_schema_version())
+        self.assertEqual(block["target_schema_version"], db.target_schema_version())
+        self.assertEqual(block["error"]["type"], "OperationalError")
+        self.assertIn("disk I/O error", block["error"]["message"])
+        self.assertEqual(block["error"]["target_schema_version"], db.target_schema_version())
+        # The failure is never silent: the handler logged it at WARNING.
+        self.assertTrue(
+            any("migration failed" in line for line in logs.output), logs.output
+        )
+
+    def test_a_healthy_store_carries_no_error_field(self) -> None:
+        response = api.dispatch(request("health.get"))
+        self.assertTrue(response["ok"], response)
+        block = response["result"]["db"]
+        self.assertTrue(block["ready"])
+        self.assertEqual(block["state"], "ready")
+        self.assertNotIn("error", block)
+
+    def test_a_failed_startup_reconciliation_is_exposed_on_health_and_logged(self) -> None:
+        from coursebook import hooks
+
+        report = {"error": "OperationalError", "message": "orphaned artifact staging unreadable"}
+        with mock.patch.object(hooks, "STARTUP_RECONCILIATION", report):
+            response = api.dispatch(request("health.get"))
+        self.assertTrue(response["ok"], response)
+        block = response["result"]["reconciliation"]
+        self.assertEqual(block["state"], "failed")
+        self.assertEqual(block["error"], "OperationalError")
+        self.assertEqual(block["message"], "orphaned artifact staging unreadable")
+        # ...and the pane's block agrees with what the module logs at load time.
+        with self.assertLogs("coursebook", level="WARNING") as logs:
+            hooks._warn_startup_reconciliation(report)
+        self.assertTrue(any("startup reconciliation failed" in line for line in logs.output))
+
+    def test_a_healthy_load_reports_reconciliation_ok(self) -> None:
+        from coursebook import hooks
+
+        with mock.patch.object(hooks, "STARTUP_RECONCILIATION", {"attempts": 0, "jobs": 0, "artifacts": {}}):
+            response = api.dispatch(request("health.get"))
+        self.assertEqual(
+            response["result"]["reconciliation"], {"state": "ok", "error": None, "message": None}
+        )
 
 
 if __name__ == "__main__":

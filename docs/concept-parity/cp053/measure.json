@@ -2,7 +2,7 @@
   "card": "CP-053 / G2 Home re-pin (t_8db56021)",
   "surface": "desktop/plugin.js CoursebookHome at route width 1344, rendered by design/home-scene.html (generated from the module by scripts/gen-home-proof.py)",
   "capture": "chromium --headless=new --window-size=1344,768 --force-device-scale-factor=1",
-  "module_sha256": "ca575b3af0e2cdf14ad5547dab57bbb37a6baea45e11c50ef690f5a4143055b0",
+  "module_sha256": "a7d9037bf3b658f84b2e1517e4ad661487b96fa864941f49550d60b499620a8b",
   "reference": "docs/concept-parity/refs/home-plate-1344-textless.png",
   "reference_sha256": "806080bbcdca5376e936fe02975ce605fe9af01415f6768ec8c12dd5d402b4b6",
   "reference_role": "the owner-adopted Home ground (G1 ruling 2, Home only); docs/concept-parity/refs/home.png stays in the tree as history and is no longer the Home reference",
@@ -25,6 +25,6 @@
     "ground": 0.9337
   },
   "not_a_desktop_capture": "no host, no backend; the scene canvas only. This row measures the shipped scene against the adopted Home ground it is pinned to. The remaining deltas are the scene's own live paint (opaque hero sign, four card faces, tag, fox) laid over the ground, not drift.",
-  "measured_at": "2026-11-14",
-  "note": "Re-measured 2026-11-14 on module ca575b3a after the generated page was re-rendered from that module; fresh chromium capture at 1344x768 of design/home-scene.html, fresh RMSE against docs/concept-parity/refs/home-plate-1344-textless.png, nothing carried over. Clears the 0.85 approval floor."
+  "measured_at": "2026-11-16",
+  "note": "Re-measured 2026-11-16 on module a7d9037b after the generated page was re-rendered from that module; fresh chromium capture at 1344x768 of design/home-scene.html, fresh RMSE against docs/concept-parity/refs/home-plate-1344-textless.png, nothing carried over. Clears the 0.85 approval floor."
 }

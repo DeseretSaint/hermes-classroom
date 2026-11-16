@@ -297,7 +297,7 @@ class BudgetStopIsNotARejectionTest(unittest.TestCase):
         reject_error = job_service._stage_error(rejected)
 
         # Different codes, and neither is the other's shape.
-        self.assertEqual(budget_error["code"], "POLICY_VIOLATION")
+        self.assertEqual(budget_error["code"], "BUDGET_EXHAUSTED")
         self.assertEqual(reject_error["code"], "VALIDATION_FAILED")
         self.assertNotEqual(budget_error["code"], reject_error["code"])
 

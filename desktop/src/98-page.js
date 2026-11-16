@@ -276,6 +276,10 @@ function CoursebookPage() {
     body = jsx('div', { className: 'py-10', children: jsx(sdk.Loader, { label: 'Reading the Coursebook backend' }) })
   } else if (health.status === 'unavailable') {
     body = jsx(BackendUnavailable, { error: health.error, reload: reloadHealth })
+  } else if (health.status === 'failed') {
+    // The store exists and `ensure_schema` raised: a distinct branch with its own copy, never the
+    // "no course tables" degradation (H-114 F11).
+    body = jsx(MigrationFailedBody, { reload: reloadHealth, result: health.result })
   } else if (health.status === 'degraded') {
     body = jsx(DegradedBody, { reload: reloadHealth, result: health.result })
   } else if (creating) {

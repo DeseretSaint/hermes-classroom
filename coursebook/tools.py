@@ -84,6 +84,7 @@ def status_handler(args: dict[str, Any] | None = None, **_kwargs: Any) -> str:
         "plugin_version": __version__,
         "contract_version": api.RPC_CONTRACT_VERSION,
         "db": _db_health(),
+        "reconciliation": api.startup_reconciliation_block(),
         "validator": _validator_status(),
         "implemented_methods": list(api.implemented_methods()),
     }
@@ -96,7 +97,9 @@ def _db_health() -> dict[str, Any]:
     try:
         return db.health()
     except Exception as exc:  # noqa: BLE001 - a status tool reports failure, it never raises
-        return {"ready": False, "schema_version": None, "error": type(exc).__name__}
+        # Same block shape as a caught migration failure: never a bare ``error`` that would break
+        # the ``health.get`` shape the tool mirrors.
+        return db.health({"type": type(exc).__name__, "message": str(exc)})
 
 
 def _validator_status() -> dict[str, Any]:

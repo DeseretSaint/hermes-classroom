@@ -387,3 +387,37 @@ def reconcile_on_startup() -> dict[str, Any]:
 
 
 STARTUP_RECONCILIATION = reconcile_on_startup()
+
+
+def _warn_startup_reconciliation(report: dict[str, Any]) -> None:
+    """Log a failed load-time recovery at WARNING (H-114 F22); the pane reads the same block."""
+    logger.warning(
+        "coursebook: startup reconciliation failed (%s): %s",
+        report.get("error"),
+        report.get("message"),
+    )
+
+
+if STARTUP_RECONCILIATION.get("error"):
+    # A load-time recovery failure is a real fact about this profile's store. It cannot break the
+    # plugin (see ``reconcile_on_startup``), and it must not be silent either: before this the only
+    # reader of this dict was a comment, so a failed reconcile left no trace.
+    _warn_startup_reconciliation(STARTUP_RECONCILIATION)
+
+
+def startup_reconciliation_health() -> dict[str, Any]:
+    """The bounded ``reconciliation`` block ``health.get`` carries (``cb.rpc`` v29).
+
+    ``STARTUP_RECONCILIATION`` is computed exactly once, at plugin load. ``ok`` means the
+    load-time recovery ran (its counts are in the dict, not on the wire); ``failed`` carries the
+    same bounded error the module logs at WARNING, so the pane and the log agree.
+    """
+    report = STARTUP_RECONCILIATION or {}
+    error = report.get("error")
+    if not error:
+        return {"state": "ok", "error": None, "message": None}
+    return {
+        "state": "failed",
+        "error": str(error)[:80],
+        "message": str(report.get("message") or "")[:300],
+    }

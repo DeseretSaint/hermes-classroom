@@ -1151,7 +1151,11 @@ _PROVIDER_ERRORS = frozenset({"ProviderTimeout", "ProviderFailure", "ResearchTim
 #: Exceptions that are a declared policy ceiling, not a bug or a host outage. A cost ceiling is a
 #: deterministic stop, so the same request will fail the same way until the operator raises it —
 #: the recovery checkpoint, not an automatic retry, is the next step.
-_POLICY_ERRORS = frozenset({"ResearchUnavailable", "CostCeilingExceeded", "CostPreflightRefused"})
+#:
+#: ``CostCeilingExceeded`` and ``CostPreflightRefused`` are deliberately **absent**: since
+#: ``cb.errors`` v5 each carries ``code = "BUDGET_EXHAUSTED"`` itself (decision t_891d90e7), because
+#: ``POLICY_VIOLATION`` is category ``content`` and a spend stop is not a content refusal.
+_POLICY_ERRORS = frozenset({"ResearchUnavailable"})
 
 
 def _error_code(exc: Exception) -> str:

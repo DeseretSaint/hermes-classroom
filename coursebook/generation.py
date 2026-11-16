@@ -1145,11 +1145,14 @@ class CostCeilingExceeded(GenerationError):
     ``provider-call budget exhausted`` so it cannot be mistaken for a validator's rejection.
     """
 
-    #: A dedicated code would name this better, but ``cb.errors`` is frozen and code additions are
-    #: a contract bump owned by Atlas. ``POLICY_VIOLATION`` plus ``details.reason =
-    #: cost_ceiling_exceeded`` is the documented shape (docs/CONTRACTS.md), and the details below
-    #: make it distinguishable from a content rejection without inventing a code.
-    code = "POLICY_VIOLATION"
+    #: ``cb.errors`` v5's typed budget stop (decision t_891d90e7). A declared spend ceiling is
+    #: arithmetic, not a content verdict: ``POLICY_VIOLATION`` is category ``content`` and its
+    #: summary is "untrusted content attempted to change policy…", so rendering a spend stop under it
+    #: told the operator the content had been refused (CP-015e, job 98d3c0e…). The code is
+    #: ``state``/409/not-retryable, the same request keeps failing until the ceiling moves, and
+    #: ``details.reason`` names which arithmetic ran out (``cost_ceiling_exceeded`` or
+    #: ``cost_preflight_insufficient``). Nothing was validated or rejected under either.
+    code = "BUDGET_EXHAUSTED"
 
     def __init__(
         self,

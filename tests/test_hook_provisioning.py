@@ -106,7 +106,15 @@ class AbsentStoreIsNotGoverned(FreshHomeCase):
         self.assertIsNone(db.applied_schema_version())
         self.assertFalse(db.store_exists())
         # The health snapshot is a pure read too: only the handler provisions (R4).
-        self.assertEqual(db.health(), {"ready": False, "schema_version": None})
+        self.assertEqual(
+            db.health(),
+            {
+                "ready": False,
+                "schema_version": None,
+                "state": "unmigrated",
+                "target_schema_version": db.target_schema_version(),
+            },
+        )
         self.assert_nothing_provisioned("by applied_schema_version()/health()")
 
     def test_t3b_a_missing_file_in_an_existing_directory_opens_no_connection(self) -> None:

@@ -29,7 +29,13 @@ CONTRACT_DIR = Path(__file__).resolve().parent.parent / "contracts"
 #: The v1 files stay on disk as immutable history; only the current version is in the inventory.
 CONTRACT_FILES: dict[str, str] = {
     "cb.vocabulary": "vocabulary.v1.json",
-    "cb.errors": "errors.v4.json",
+    # t_891d90e7: v5 adds exactly one code, BUDGET_EXHAUSTED (state, not retryable, HTTP 409), so a
+    # declared spend ceiling is not reported as POLICY_VIOLATION — whose category is `content` and
+    # whose summary is about untrusted content. errors.v4.json stays byte-identical history. The
+    # code lives in the envelope cb.rpc and cb.jobs `$ref`, so both current wire documents were
+    # amended in place to resolve errors v5 (the same v29/v6 their own cards issued): a second
+    # rpc.v29.json or jobs.v6.json cannot exist, so the refresh composes into the current version.
+    "cb.errors": "errors.v5.json",
     # UP-14 (t_92039128): v29 is additive over v28 — the authored hint ladder. `check_stimulus`
     # may carry `assistance_policy` (gate, inherited evidence class, rung kinds/labels), `check.get`
     # may carry `assistance` (authored rungs, used, next rung), and `lesson.assist` accepts an

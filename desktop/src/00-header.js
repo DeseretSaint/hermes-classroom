@@ -1073,9 +1073,25 @@ async function fetchSchema() {
 
 /**
  * Backend health, as the UI must see it:
- *   loading | ready | degraded (backend answered, database not migrated) | unavailable (no backend)
+ *   loading | ready | degraded (backend answered, no schema yet) |
+ *   failed (backend answered, the store exists but the migration did not complete) |
+ *   unavailable (no backend)
  * Never optimistic: nothing here reports a course state it did not read.
  */
+
+/**
+ * Which health state one `health.get` result means. Pure, so a Node harness can call it directly.
+ *
+ * `degraded` and `failed` are different facts and are never collapsed into one: "not migrated" is
+ * only true when the backend has no schema, never when `ensure_schema` raised (H-114 F11).
+ */
+function healthStatus(result) {
+  const db = (result && result.db) || {}
+  if (db.ready) return 'ready'
+  if (db.state === 'failed' || db.error) return 'failed'
+  return 'degraded'
+}
+
 function useHealth() {
   const [state, setState] = useState({ status: 'loading', result: null, error: null })
   const [ticket, setTicket] = useState(0)
@@ -1092,11 +1108,7 @@ function useHealth() {
         const response = await fetchHealth()
         if (cancelled) return
         if (response && response.ok) {
-          setState({
-            status: response.result.db && response.result.db.ready ? 'ready' : 'degraded',
-            result: response.result,
-            error: null
-          })
+          setState({ status: healthStatus(response.result), result: response.result, error: null })
         } else {
           setState({ status: 'unavailable', result: null, error: response && response.error })
         }

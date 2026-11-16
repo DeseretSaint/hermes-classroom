@@ -1393,7 +1393,7 @@ Before a lesson job spends anything, `preflight_lesson_cost(n)` states the arith
 `assert_cost_preflight` refuses when the configured ceiling cannot pay the **minimum** (one
 generation + one validation per section, no retries). `jobs.create` runs the same preflight for a
 `brief.stage = lessons` request and refuses *before creating the job row*, with
-`POLICY_VIOLATION` / `details.reason = cost_preflight_insufficient` and the numbers, so the queue
+`BUDGET_EXHAUSTED` / `details.reason = cost_preflight_insufficient` and the numbers, so the queue
 never holds a job that is guaranteed to half-fail. Below the **worst legal** cost but above the
 minimum the job starts — and if the ceiling does bind, it now leaves a recovery checkpoint instead
 of a dead end.
@@ -1451,10 +1451,13 @@ number moved with the call.
 #### A budget stop is not a verdict (`CP-015e`)
 
 `CostCeilingExceeded` is a spend arithmetic stop: nothing was validated and nothing was rejected.
-`cb.errors` is frozen, so the code stays the documented `POLICY_VIOLATION` with
-`details.reason = cost_ceiling_exceeded` — a dedicated code would name it better and is a contract
-bump owned by Atlas, not something this module invents. What the backend does guarantee, so an
-operator cannot read the failure as a content refusal:
+The code is `BUDGET_EXHAUSTED` (`cb.errors` v5, decision t_891d90e7) with
+`details.reason = cost_ceiling_exceeded`: a declared ceiling is a `state` stop, not a `content`
+refusal, so the same request keeps failing until the ceiling moves and the catalogue's summary is
+true of the failure. (Before v5 it reported `POLICY_VIOLATION`, whose category is `content` and
+whose summary is about untrusted content — a spend stop read as a content verdict, CP-015e job
+`98d3c0e43fcc452dad317b7757619c41`.) What the backend does guarantee, so an operator cannot read
+the failure as a content refusal:
 
 * the message opens with `provider-call budget exhausted before <purpose>` (or `after` when a
   returned call crossed the dollar ceiling);
