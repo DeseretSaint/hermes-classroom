@@ -149,7 +149,7 @@ class ArtBibleMediumTest(unittest.TestCase):
         for role in world.PROMPT_ROLES:
             with self.subTest(role=role):
                 kwargs = {}
-                if role == "section":
+                if role in ("section", "lesson_scene"):
                     kwargs = {"section_id": "s1", "section_title": "Feeding the starter"}
                 prompt = world.build_prompt(brief, grammar, role=role, **kwargs)
                 body = prompt.prompt.lower()
@@ -161,8 +161,9 @@ class ArtBibleMediumTest(unittest.TestCase):
                 self.assertIn("quiet", body)
                 self.assertIn("never by the image", body)
                 # GM-003: the prompt body is digit-free; a hex or a measurement is a leak. The
-                # section id is an opaque stored key ("s1"), not course text, and predates v2.
-                if role != "section":
+                # section id is an opaque stored key ("s1"), not course text, and predates v2; a
+                # VQ-004 lesson scene carries the same opaque key.
+                if role not in ("section", "lesson_scene"):
                     self.assertIsNone(
                         re.search(r"\d", prompt.prompt), f"{role} body carries a digit"
                     )
@@ -437,7 +438,9 @@ class LightRuleContractTest(unittest.TestCase):
         for name in world.GRAMMARS:
             for role in world.PROMPT_ROLES:
                 kwargs = {}
-                if role == "section":
+                if role in ("section", "lesson_scene"):
+                    # VQ-004: a lesson scene is a per-key plate like a section card, so it needs
+                    # the same key.
                     kwargs = {"section_id": "s1", "section_title": "Feeding the starter"}
                 prompt = world.build_prompt(brief, name, role=role, **kwargs)
                 body = prompt.prompt.lower()

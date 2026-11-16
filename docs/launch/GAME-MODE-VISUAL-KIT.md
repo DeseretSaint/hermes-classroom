@@ -172,7 +172,36 @@ Textbook mode. A flat Game fallback is forbidden.
 - `world.approve` refuses partial worlds and never approves a failed plate.
 - The installed plugin, not a proof HTML, is captured with real course data.
 
-## 10. Non-goals
+## 10. As landed
+
+The loader (`coursebook/visual_kits.py`) and the critic (`coursebook/world_critic.py`) are on
+trunk, and the vocabulary they accept is the shelf trunk actually ships:
+
+- **Roles.** `hero, cover, section, lesson_scene, collectible, object, fox, home_ground`.
+  `home_ground` joined the loader when `field_atlas@3` adopted the owner-approved Home ground; it is
+  the Home *stage backdrop* (`desktop/plugin.js` role `kit.home_ground.home-ground`), a full-bleed
+  1344x768 plate. `scripts/vq008-kits.py` and `scripts/build_cb_assets.py` read the same tuple. A
+  manifest that invents a role name is refused (`kit_unknown_role`), never guessed at.
+- **Provenance words.** A `roles[]` row must record `source = curated_kit`, or `source = derived`
+  for a byte-identical copy of a plate the owner already approved for another surface. The
+  `derived` word exists because `field_atlas@3`'s `home_ground` row *is* that copy, and relabelling
+  it `curated_kit` to buy a green check would be a false statement about the file. A row with no
+  source, or with a word that claims a provider generated it, is refused
+  (`kit_asset_source_invalid`). Artifact provenance carries the row's own word verbatim.
+- **Who approved the art.** Approval is read from the manifest's `status` at registration and
+  re-read at `world.approve`: an owner-approved status (`approved`, `approved_once`, or an
+  `owner_rework_of_rejected_v*` lineage — `field_atlas`) registers
+  `approved: true / curated_kit_approved_once`; a review status (`built_for_owner_review`, the seven
+  VQ-008 kits) registers `approved: false / curated_kit_owner_review` and its world is refused final
+  approval with `kit_not_owner_approved`. A review-status world is previewable; it is not blessable.
+- **The one gap.** `world.read` still cannot carry `kit_id`, per-asset `source`, or a
+  `lesson_scene` asset role: the frozen v26 `world_brief`/`world_asset` records are
+  `additionalProperties: false` and the `world_asset.role` enum is `hero|cover|section`. Kit
+  identity and provenance therefore live on the artifacts, and `lesson_scene` rows are stored and
+  keyed but filtered out of `_asset_views`. Widening that is an additive contract revision for the
+  owner of the RPC, not something this loader may do on its own.
+
+## 11. Non-goals
 
 - No per-lesson image generation beyond the two-scene budget.
 - No user-drawn or CSS-drawn substitute for a missing plate.

@@ -7,10 +7,11 @@ Japanese field-atlas; and the anti-generic swap must reject art that would serve
 from __future__ import annotations
 
 import re
+import tempfile
 import unittest
 
-from coursebook import api, domain, executor, world
-from coursebook import gm_contract
+from coursebook import api, domain, executor, visual_kits, world
+from coursebook import gm_contract, world_critic
 from tests.kernel_support import KernelCase, criteria_with, numeric_spec
 from tests.world_fixtures import (
     GENERIC_SWAP_BRIEF,
@@ -409,15 +410,43 @@ class FakeWorldMedia:
         return self.PNG + tag, "image/png"
 
 
+class FakeWorldCritic:
+    """A critic-shaped seam: both passes answer, and either can be told to refuse.
+
+    ``ocr_text`` makes the OCR pass return one readable token; ``vision_fails`` makes the vision
+    pass name hard fails. ``Unavailable`` is bound through :data:`world_critic.UNAVAILABLE` when a
+    test needs a host with no pass at all.
+    """
+
+    def __init__(self, *, ocr_text: str | None = None, vision_fails: tuple[str, ...] = ()) -> None:
+        self.ocr_text = ocr_text
+        self.vision_fails = tuple(vision_fails)
+        self.ocr_calls: list[bytes] = []
+        self.vision_calls: list[dict] = []
+
+    def ocr(self, data: bytes, mime: str) -> list[tuple[str, float]]:
+        self.ocr_calls.append(data)
+        if self.ocr_text is None:
+            return []
+        return [(self.ocr_text, 92.0)]
+
+    def vision(self, data: bytes, context: dict) -> dict:
+        self.vision_calls.append(dict(context))
+        return {"hard_fails": list(self.vision_fails), "scores": {"composition": 4.5}}
+
+
 class WorldMediaJobTest(WorldHandlerMixin, KernelCase):
     def setUp(self) -> None:
         super().setUp()
         self.course_id, self.plan_id = self.new_course()
         self.fake = FakeWorldMedia()
+        self.critic = FakeWorldCritic()
         world.bind_media(self.fake)
+        world_critic.bind(ocr=self.critic.ocr, vision=self.critic.vision)
 
     def tearDown(self) -> None:
         world.bind_media(None)
+        world_critic.reset()
         super().tearDown()
 
     def _brief(self, fixture: dict | None = None) -> dict:
@@ -635,10 +664,13 @@ class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
                 criteria=criteria_with(numeric_spec()),
             )
         self.fake = FakeWorldMedia()
+        self.critic = FakeWorldCritic()
         world.bind_media(self.fake)
+        world_critic.bind(ocr=self.critic.ocr, vision=self.critic.vision)
 
     def tearDown(self) -> None:
         world.bind_media(None)
+        world_critic.reset()
         super().tearDown()
 
     def count(self, sql: str) -> int:
@@ -646,6 +678,19 @@ class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
 
         with db.read() as connection:
             return int(connection.execute(sql).fetchone()[0])
+
+    def _empty_shelf(self) -> None:
+        """Bind a kit shelf carrying no grammar's kit.
+
+        A provider refusal is a *named terminal failure* only when no curated art can answer it.
+        VQ-008 landed a ``workshop_manual`` kit, so a technical course's refusal is now answered by
+        the curated kit (that path is proved in ``tests.test_vq004_world_kit``); these two tests are
+        about the no-curated-art case, so they run against an empty shelf.
+        """
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        visual_kits.bind_root(tmp.name)
+        self.addCleanup(visual_kits.bind_root, None)
 
     def _concepts_then_style(self) -> tuple[dict, dict]:
         self.ok(
@@ -687,6 +732,7 @@ class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
     def test_concept_failure_leaves_named_terminal_state(self) -> None:
         # D1: a provider refusal on the concept stage must not leave the world stuck in
         # concepts_generating with error:null; it is a terminal, named failure.
+        self._empty_shelf()
         self.fake.fail_when = "style board"
         self.ok(
             "world.generate",
@@ -1010,6 +1056,7 @@ class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
         self.assertEqual(self.count("SELECT COUNT(*) FROM jobs"), 1)
 
     def test_partial_world_failure_names_missing_roles(self) -> None:
+        self._empty_shelf()
         read, approved = self._concepts_then_style()
         self.assertEqual(approved["state"], "style_selected")
         sections = read["world"]["brief"]["sections"]

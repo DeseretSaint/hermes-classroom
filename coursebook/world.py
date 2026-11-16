@@ -104,6 +104,19 @@ class WorldPolicyViolation(ValueError):
         super().__init__(message)
 
 
+#: Brief keys the backend stores but the frozen wire record does not declare (VQ-004). Keeping
+#: one tuple means a read, an approval and a job brief cannot disagree about what is internal.
+INTERNAL_BRIEF_FIELDS: tuple[str, ...] = ("visual_kit_id", "lesson_scene_keys")
+
+
+def strip_internal_brief(value: Any) -> dict[str, Any]:
+    """The stored brief minus the internal planning keys the frozen record does not declare."""
+    brief = dict(value) if isinstance(value, Mapping) else {}
+    for internal in INTERNAL_BRIEF_FIELDS:
+        brief.pop(internal, None)
+    return brief
+
+
 @dataclass(frozen=True)
 class WorldBrief:
     """The typed brief the backend builds from the approved plan (never from one keyword).
@@ -128,6 +141,14 @@ class WorldBrief:
     #: tuples of mappings rather than typed coordinates so a stored anchor reads back byte-identical
     #: instead of being re-derived; `route_anchor_problems` is the one validator.
     route_anchors: tuple[Mapping[str, Any], ...] = ()
+    #: VQ-004: the curated kit this world draws on, `<grammar>@<version>`. Defaulted from the
+    #: selected grammar when the brief is stored. It is an *internal* planning field: the frozen
+    #: ``world_brief`` record does not declare it, so ``to_wire`` drops it from every response and
+    #: the artifact provenance carries ``kit_id`` instead (GAME-MODE-VISUAL-KIT §8).
+    visual_kit_id: str = ""
+    #: VQ-004: the up-to-two lesson/section keys this course asks a lesson scene for. Also
+    #: internal: a lesson scene is optional, and the wire brief has no field for the request.
+    lesson_scene_keys: tuple[str, ...] = ()
 
     @classmethod
     def from_mapping(cls, value: Mapping[str, Any]) -> "WorldBrief":
@@ -153,6 +174,10 @@ class WorldBrief:
             forbidden=tuple(str(item) for item in (value.get("forbidden") or ()) if str(item).strip()),
             sections=sections,
             route_anchors=anchors,
+            visual_kit_id=str(value.get("visual_kit_id") or ""),
+            lesson_scene_keys=tuple(
+                str(item) for item in (value.get("lesson_scene_keys") or ()) if str(item).strip()
+            ),
         )
 
     def as_dict(self) -> dict[str, Any]:
@@ -175,7 +200,23 @@ class WorldBrief:
         # exact bytes and a no-anchor read is unchanged. Anchors are carried, never recomputed.
         if self.route_anchors:
             brief["route_anchors"] = [dict(item) for item in self.route_anchors]
+        # VQ-004: the world's kit and its lesson-scene request are stored so a regenerate reuses
+        # the same kit and the same scene keys. Both are internal (see `to_wire`).
+        if self.visual_kit_id:
+            brief["visual_kit_id"] = self.visual_kit_id
+        if self.lesson_scene_keys:
+            brief["lesson_scene_keys"] = list(self.lesson_scene_keys)
         return brief
+
+    def to_wire(self) -> dict[str, Any]:
+        """The stored brief projected onto the frozen ``world_brief`` record (cb.rpc v26).
+
+        The record is ``additionalProperties: false``, so the two VQ-004 planning keys are stored
+        in ``brief_json`` but never returned. A response that carried them would fail the contract
+        it is validated against, and the card forbids breaking v26; the provenance on each
+        registered artifact carries ``kit_id`` and ``source`` instead.
+        """
+        return strip_internal_brief(self.as_dict())
 
     @property
     def needs_service_grammar(self) -> bool:
@@ -536,7 +577,9 @@ __all__ = [
 #: Prompt roles. These are prompt labels, not the stored ``world_assets.role`` values: a style
 #: board is a concept, never a kit asset, so it is deliberately absent from ``WorldRole``.
 #: ``card`` is additive: a 3:2 mechanical card crop (SPEC-V3 §2), never a new kit spend.
-PROMPT_ROLES = ("style_board", "hero", "cover", "section", "card")
+#: ``lesson_scene`` (VQ-004) is a place for one lesson, at most two per course; it is a
+#: ``world_assets`` role the table already declares.
+PROMPT_ROLES = ("style_board", "hero", "cover", "section", "card", "lesson_scene")
 
 #: Three real directions from the same brief — each one is still the art bible's single medium
 #: (opaque gouache, warm paper, upper-left key, warm ink line). They change pigment family and
@@ -580,6 +623,8 @@ _ASPECT = {
     "cover": "4:5",
     "section": "1:1",
     "card": "3:2",
+    # VQ-004: a lesson scene is the classroom's full-bleed field, the same box as the hero.
+    "lesson_scene": "16:9",
 }
 
 #: The card art ratio, named for the layout and its contract test.
@@ -808,19 +853,30 @@ def build_prompt(
     service = typed.needs_service_grammar or record.name == "workshop_manual"
     section_clause = ""
     section_lettering_negative = ""
-    if role == "section":
+    if role in ("section", "lesson_scene"):
         if not section_id:
             raise WorldPolicyViolation(
-                "section_prompt_needs_section_id", "a section card prompt needs a section id."
+                f"{role}_prompt_needs_section_id",
+                "a section card prompt needs a section id."
+                if role == "section"
+                else "a lesson scene prompt needs a section id.",
             )
         # Every section plate is orientation, never the technique — not only a service world.
         # A section title in any subject names an action ("A first travis pattern", "Pulling air
         # through the line"), and a model asked for it paints hands mid-procedure, which is the
         # defect this fence exists to prevent. The title never reaches the prompt as prose.
-        section_clause = (
-            f" Section scene {section_id}: place and mood only, no procedure, "
-            "sequence or tool action depicted."
-        )
+        # VQ-004: a lesson scene is the same rule at the lesson's own key — a place, never the
+        # lesson's procedure or its answer.
+        if role == "section":
+            section_clause = (
+                f" Section scene {section_id}: place and mood only, no procedure, "
+                "sequence or tool action depicted."
+            )
+        else:
+            section_clause = (
+                f" Lesson scene {section_id}: the place the lesson happens, place and mood only, "
+                "no procedure, sequence or tool action depicted."
+            )
         if record.name != "workshop_manual":
             # A section title is course text. Carry it only as a suppression instruction: a
             # positive clause is painted as a heading by the image model, which breaks the
@@ -835,7 +891,7 @@ def build_prompt(
     # The notation class: domain words decide whether staves, chord boxes, code lines, equations
     # or tick boxes are the natural illustration this plate must refuse to paint.
     negative.extend(notation_hazards(typed))
-    if role == "section":
+    if role in ("section", "lesson_scene"):
         negative.extend(
             (
                 "no depicted procedure, no technique action",
@@ -987,15 +1043,23 @@ def build_kit_prompts(
     style_id: str,
     style: WorldPrompt | None = None,
     max_sections: int = 6,
+    lesson_scene_keys: Sequence[str] = (),
 ) -> list[WorldPrompt]:
-    """The actual kit: one hero, one cover, and one card per section (capped at six)."""
+    """The actual kit: one hero, one cover, one card per section (capped at six), and at most two
+    optional lesson scenes for the keys the brief asked for (VQ-004).
+
+    The budget is the plan's §4.5 ceiling: a hero, a cover, up to six sections, up to two lesson
+    scenes. Lesson scenes are optional: a brief that asks for none adds no spend, and a refused one
+    falls back to the section plate rather than failing the kit.
+    """
     typed = _as_brief(brief)
     chosen = WorldPolicy.assert_allowed(typed, grammar)
     prompts = [
         build_prompt(typed, chosen, role="hero", style_id=style_id, style=style),
         build_prompt(typed, chosen, role="cover", style_id=style_id, style=style),
     ]
-    for section_id, section_title in _clamp_sections(typed, max_sections):
+    sections = _clamp_sections(typed, max_sections)
+    for section_id, section_title in sections:
         prompts.append(
             build_prompt(
                 typed,
@@ -1007,7 +1071,35 @@ def build_kit_prompts(
                 section_title=section_title,
             )
         )
+    titles = {section_id: title for section_id, title in sections}
+    for key in _lesson_scene_keys(typed, lesson_scene_keys):
+        prompts.append(
+            build_prompt(
+                typed,
+                chosen,
+                role="lesson_scene",
+                style_id=style_id,
+                style=style,
+                section_id=key,
+                section_title=titles.get(key),
+            )
+        )
     return prompts
+
+
+def _lesson_scene_keys(
+    brief: WorldBrief, requested: Sequence[str] = ()
+) -> tuple[str, ...]:
+    """The up-to-two lesson/section keys this kit builds a scene for, deduped and in order."""
+    declared = tuple(section_id for section_id, _ in brief.sections)
+    wanted = tuple(str(item) for item in (requested or brief.lesson_scene_keys) if str(item).strip())
+    keys: list[str] = []
+    for key in wanted:
+        # A scene key must name a section this brief declares; a stale key is dropped rather than
+        # paid for.
+        if key in declared and key not in keys:
+            keys.append(key)
+    return tuple(keys[:MAX_KIT_LESSON_SCENES])
 
 
 # ── cache identity ──────────────────────────────────────────────────────────
@@ -1088,6 +1180,9 @@ MAX_CONCEPTS = 3
 #: The kit budget: one hero, one cover and at most six section cards.
 MAX_KIT_SECTIONS = 6
 
+#: VQ-004: at most two optional lesson scenes for a course (plan §4.5).
+MAX_KIT_LESSON_SCENES = 2
+
 #: The most route anchors one plate may declare (``cb.rpc`` ``world_brief.route_anchors``).
 MAX_ROUTE_ANCHORS = 24
 
@@ -1157,10 +1252,21 @@ def _monotonic() -> float:
 
 
 def _provenance(
-    *, cache: str, prompt: WorldPrompt, grammar: str, style_hash: str, duration_ms: int
+    *,
+    cache: str,
+    prompt: WorldPrompt,
+    grammar: str,
+    style_hash: str,
+    duration_ms: int,
+    critic: Mapping[str, Any] | None = None,
+    attempts: int = 1,
+    source: str = "generated",
 ) -> dict[str, Any]:
-    return {
+    """The artifact's own record. ``source`` names the origin; a generated plate carries the
+    critic verdict that admitted it (VQ-004), so approval can refuse a stored failure."""
+    record: dict[str, Any] = {
         "role": "orientation",
+        "source": str(source),
         "provider": "host.image_generate",
         "model": None,
         "prompt_hash": prompt.prompt_hash,
@@ -1169,8 +1275,13 @@ def _provenance(
         "prompt_version": prompt.prompt_version,
         "grammar": grammar,
         "generation_ms": duration_ms,
+        "attempts": int(attempts),
         "textless": True,
     }
+    if critic is not None:
+        record["critic"] = dict(critic)
+        record["approved"] = bool(dict(critic).get("passed"))
+    return record
 
 
 # ── world rows ──────────────────────────────────────────────────────────────
@@ -2384,7 +2495,108 @@ def presentation_motif_problems(
     return ()
 
 
-def _merged_brief(connection: Any, course_id: str, row: Any, patch: Any) -> WorldBrief:
+# ── the curated kit (VQ-004) ────────────────────────────────────────────────
+
+#: The order a curated concept board prefers kit plates: three different rooms of the same
+#: grammar, so choosing a direction is a real choice rather than the same picture thrice.
+CURATED_CONCEPT_ROLES: tuple[str, ...] = ("lesson_scene", "hero", "cover", "section")
+
+
+def _kit_for(brief: WorldBrief) -> tuple[Any, dict[str, Any] | None]:
+    """``(kit, None)`` or ``(None, named_reason)`` for this brief's grammar.
+
+    A stored ``visual_kit_id`` is honoured exactly: a world built on ``field_atlas@2`` must not
+    silently rebuild on another kit version. A stored id that is not on disk is a named refusal,
+    never a substitution.
+    """
+    from . import visual_kits
+
+    grammar = WorldPolicy.select(brief)
+    kit, reason = visual_kits.kit_available(grammar)
+    if kit is None:
+        return None, reason
+    if brief.visual_kit_id and brief.visual_kit_id != kit.kit_id:
+        return None, {
+            "reason": "curated_kit_unavailable",
+            "kit_reason": "kit_id_not_on_disk",
+            "grammar": grammar,
+            "detail": f"the world records {brief.visual_kit_id!r}, but the shelf has {kit.kit_id!r}.",
+        }
+    return kit, None
+
+
+def curated_concept_plates(kit: Any, *, count: int = MAX_CONCEPTS) -> list[Any]:
+    """Up to *count* distinct kit plates, in :data:`CURATED_CONCEPT_ROLES` order.
+
+    Never the same plate twice: three directions that show one picture are one direction.
+    """
+    plates: list[Any] = []
+    seen: set[str] = set()
+    for role in CURATED_CONCEPT_ROLES:
+        plate = kit.resolve(role)
+        if plate is None or plate.asset.asset_id in seen:
+            continue
+        seen.add(plate.asset.asset_id)
+        plates.append(plate)
+        if len(plates) >= count:
+            break
+    return plates
+
+
+def _requested_lesson_scene_keys(brief: WorldBrief, grammar: str) -> tuple[str, ...]:
+    """The lesson-scene keys the brief builder asks for.
+
+    A service grammar never requests one: a workshop plate is orientation for a procedure, and a
+    scene there is the "depicted procedure" the art rules refuse. Every other grammar asks for the
+    first two sections — the plan's ceiling — so a language or humanities course opens a lesson on
+    a place while a technical course does not.
+    """
+    if str(grammar) == "workshop_manual":
+        return ()
+    return tuple(section_id for section_id, _ in brief.sections[:MAX_KIT_LESSON_SCENES] if section_id)
+
+
+def _visual_kit_id_for(brief: WorldBrief) -> str:
+    """The kit id a brief is built on: its own stored id, else the grammar's current kit.
+
+    Pure of the database but not of the shelf: validating a kit hashes its manifest, so callers
+    resolve this **outside** a write transaction.
+    """
+    if brief.visual_kit_id:
+        return brief.visual_kit_id
+    from . import visual_kits
+
+    kit, _ = visual_kits.kit_available(WorldPolicy.select(brief))
+    return kit.kit_id if kit is not None else ""
+
+
+def _stamp_visual_kit(brief: WorldBrief, *, kit_id: str | None = None) -> WorldBrief:
+    """Default ``visual_kit_id`` from the selected grammar and record the scene request.
+
+    *kit_id* is the value the caller already resolved outside its transaction; when it is ``None``
+    this resolves it here (a read-only caller).
+    """
+    grammar = WorldPolicy.select(brief)
+    resolved = brief.visual_kit_id or (kit_id if kit_id is not None else "")
+    if not resolved:
+        resolved = _visual_kit_id_for(brief)
+    keys = brief.lesson_scene_keys or _requested_lesson_scene_keys(brief, grammar)
+    if resolved == brief.visual_kit_id and keys == brief.lesson_scene_keys:
+        return brief
+    merged = brief.as_dict()
+    merged["visual_kit_id"] = resolved
+    merged["lesson_scene_keys"] = list(keys)
+    return WorldBrief.from_mapping(merged)
+
+
+def _merged_brief(
+    connection: Any,
+    course_id: str,
+    row: Any,
+    patch: Any,
+    *,
+    kit_id: str | None = None,
+) -> WorldBrief:
     """Merge presentation overrides over the course-derived brief.
 
     The course row is authoritative for classification (``subject_domain``, ``end_capability``,
@@ -2409,6 +2621,13 @@ def _merged_brief(connection: Any, course_id: str, row: Any, patch: Any) -> Worl
     # world.generate would silently erase anchors the stored plate had already declared.
     if isinstance(stored, Mapping) and stored.get("route_anchors"):
         merged["route_anchors"] = list(stored["route_anchors"])
+    # VQ-004: the world's kit and its lesson-scene request survive a regenerate. They are not
+    # caller-patchable (the frozen `brief_patch` has no field for them); the stored value is the
+    # one this world was built on, and `_stamp_visual_kit` only fills an absent default.
+    if isinstance(stored, Mapping):
+        for internal in INTERNAL_BRIEF_FIELDS:
+            if stored.get(internal):
+                merged[internal] = stored[internal]
     if "motifs" in presentation:
         # Plan §4.4 rule 2: at least two motifs come from the grammar's own vocabulary. A
         # patched set may add subject-specific cues, but it never replaces every native cue.
@@ -2431,7 +2650,7 @@ def _merged_brief(connection: Any, course_id: str, row: Any, patch: Any) -> Worl
                 merged["motifs"],
                 key=lambda item: 0 if _is_native_motif(item, record.name) else 1,
             )
-    return WorldBrief.from_mapping(merged)
+    return _stamp_visual_kit(WorldBrief.from_mapping(merged), kit_id=kit_id)
 
 
 #: The closed key set of one stored route anchor (CP-052). Extra keys are not silently ignored:
@@ -2491,12 +2710,25 @@ def route_anchor_problems(brief: Mapping[str, Any]) -> tuple[str, str] | None:
     return None
 
 
+#: Roles the frozen ``world_asset`` record declares (cb.rpc v26). ``lesson_scene`` is a real
+#: ``world_assets`` row (migration 0013) and a real kit role, but the wire enum is
+#: ``hero|cover|section``: exposing a scene would make every read of a world that has one fail
+#: response validation. The row is stored and its provenance recorded on the artifact; the read
+#: field is the contract revision's to add.
+WIRE_ASSET_ROLES: tuple[str, ...] = ("hero", "cover", "section")
+
+
+def _wire_brief(value: Any) -> dict[str, Any]:
+    """The stored brief minus the internal planning keys the frozen record does not declare."""
+    return strip_internal_brief(value)
+
+
 def _world_view(connection: Any, row: Any) -> dict[str, Any]:
     return {
         "world_id": str(row["id"]),
         "state": str(row["state"]),
         "revision": int(row["revision"]),
-        "brief": _json_load(row["brief_json"], {}),
+        "brief": _wire_brief(_json_load(row["brief_json"], {})),
         "concepts": _json_load(row["concepts_json"], []),
         "selected_concept_id": row["selected_concept_id"],
         "style_hash": row["style_hash"],
@@ -2510,8 +2742,11 @@ def _world_view(connection: Any, row: Any) -> dict[str, Any]:
 
 
 def _asset_views(connection: Any, world_id: str) -> list[dict[str, Any]]:
+    placeholders = ", ".join("?" for _ in WIRE_ASSET_ROLES)
     rows = connection.execute(
-        "SELECT * FROM world_assets WHERE world_id = ? ORDER BY role, section_key", (world_id,)
+        "SELECT * FROM world_assets WHERE world_id = ? AND role IN (" + placeholders + ")"
+        " ORDER BY role, section_key",
+        (world_id, *WIRE_ASSET_ROLES),
     ).fetchall()
     return [
         {
@@ -2556,9 +2791,127 @@ def _set_world_state(
     )
 
 
+#: How many provider calls one plate may cost. One refusal is retried once (plan §4.6); a second
+#: refusal falls back to the curated kit role instead of buying more attempts.
+MAX_PLATE_ATTEMPTS = 2
+
+
+def _curated_unavailable(world_id: str, reason: Mapping[str, Any]) -> None:
+    """Record a *named* unavailable world. Nothing is fabricated and no flat art is written."""
+    with db_transaction() as connection:
+        _set_world_state(
+            connection, world_id, state="unavailable", error_json=_json_dump(dict(reason))
+        )
+
+
+def _curated_reason(
+    kind: str, grammar: str, detail: str, **extra: Any
+) -> dict[str, Any]:
+    reason = {
+        "reason": "curated_kit_unavailable",
+        "stage": str(kind),
+        "grammar": str(grammar),
+        "detail": str(detail),
+    }
+    reason.update({str(key): value for key, value in extra.items()})
+    return reason
+
+
+def _curated_concepts(
+    world_id: str,
+    brief: WorldBrief,
+    grammar: str,
+    boards: Sequence[WorldPrompt],
+    *,
+    refusals: Sequence[Mapping[str, Any]] = (),
+    usage: Sequence[Any] = (),
+) -> Any:
+    """Three curated kit directions for a course whose host has no usable image provider.
+
+    The kit is curated once and approved once, so these boards are not re-critiqued per course.
+    They are three *different* plates of the grammar's own place, each carrying the direction's
+    palette and medium, so choosing a direction is a real choice. When no validated kit exists the
+    world is `unavailable` with a named reason — never flat art.
+    """
+    from . import job_service, visual_kits
+
+    kit, reason = _kit_for(brief)
+    if kit is None:
+        named = reason or _curated_reason("concepts", grammar, "no curated kit on the shelf")
+        _curated_unavailable(world_id, named)
+        raise WorldMediaFailure(
+            f"no image provider and no curated kit for {grammar!r}: {named.get('detail')}"
+        )
+    plates = curated_concept_plates(kit, count=len(boards))
+    if not plates:
+        named = _curated_reason(
+            "concepts", grammar, f"kit {kit.kit_id} carries no plate a concept board can use"
+        )
+        _curated_unavailable(world_id, named)
+        raise WorldMediaFailure(named["detail"])
+
+    store = visual_kits.artifact_store()
+    entries: list[dict[str, Any]] = []
+    artifact_ids: list[str] = []
+    for index, board in enumerate(boards):
+        plate = plates[index % len(plates)]
+        style_hash = _style_hash(board)
+        record = visual_kits.register_asset(
+            store,
+            kit=kit,
+            plate=plate,
+            requested_role="style_board",
+            section_key="",
+            course_id=brief.course_id,
+            prompt_hash=board.prompt_hash,
+            style_hash=style_hash,
+        )
+        artifact_id = str(record["artifact_id"])
+        artifact_ids.append(artifact_id)
+        entries.append(
+            {
+                "style_id": board.style_id,
+                "label": board.style_id.split("--")[-1],
+                "prompt_hash": board.prompt_hash,
+                "style_hash": style_hash,
+                "artifact_id": artifact_id,
+                "palette": [_clip(item, 32) for item in board.palette],
+                "medium": _clip(board.medium, 200),
+                "role": "orientation",
+                "textless": True,
+            }
+        )
+    if not entries:
+        named = _curated_reason("concepts", grammar, "no curated concept board could be built")
+        _curated_unavailable(world_id, named)
+        raise WorldMediaFailure(named["detail"])
+    with db_transaction() as connection:
+        _set_world_state(
+            connection,
+            world_id,
+            state="concepts_ready",
+            concepts_json=_json_dump(entries),
+            error_json="{}",
+        )
+    return job_service.StageResult(
+        artifacts=artifact_ids,
+        usage=list(usage),
+        message=f"{len(entries)} curated concept boards ready ({kit.kit_id})",
+        checkpoint={
+            "state": "concepts_ready",
+            "concepts": entries,
+            "kit_id": kit.kit_id,
+            "source": "curated_kit",
+            # A refused generated board is reported, not silently replaced: the curated directions
+            # are the fallback, and the reason the generated one is missing stays auditable.
+            "refused_generated": [dict(item) for item in refusals],
+        },
+    )
+
+
 def _concept_stage(payload: Mapping[str, Any]) -> Any:  # -> job_service.Stage
     from . import artifacts as artifacts_mod
-    from . import job_service
+    from . import job_service, world_critic
 
     brief = WorldBrief.from_mapping(payload["brief"])
     world_id = str(payload["world_id"])
@@ -2571,20 +2924,17 @@ def _concept_stage(payload: Mapping[str, Any]) -> Any:  # -> job_service.Stage
         if len(boards) > MAX_CONCEPTS:
             raise WorldBudgetExceeded("a concept generation is capped at three boards")
         seam = _media_seam()
-        if seam is None:
-            with db_transaction() as connection:
-                _set_world_state(
-                    connection,
-                    world_id,
-                    state="unavailable",
-                    error_json={"reason": "provider_unavailable"},
-                )
-            raise WorldMediaFailure("image generation is not configured on this host")
+        if seam is None or not world_critic.available():
+            # VQ-004: no provider — or a provider whose plates nobody can certify — is not an
+            # unavailable world. The curated kit answers, and only an absent or invalid kit leaves
+            # the world unavailable, with a named reason. No provider call is spent first.
+            return _curated_concepts(world_id, brief, grammar, boards)
         store = artifacts_mod.ArtifactStore()
         entries: list[dict[str, Any]] = []
         artifact_ids: list[str] = []
         usage: list[Any] = []
         missing: list[str] = []
+        refusals: list[dict[str, Any]] = []
         failure: WorldMediaFailure | None = None
         for board in boards:
             key = cache_key(
@@ -2596,38 +2946,69 @@ def _concept_stage(payload: Mapping[str, Any]) -> Any:  # -> job_service.Stage
             style_hash = _style_hash(board)
             if existing is not None:
                 artifact_id = str(existing["artifact_id"])
-                generation_ms = 0
             else:
-                try:
-                    data, mime, generation_ms = _generate_plate(board)
-                except WorldMediaFailure as exc:
-                    # A refused board is a named missing role, not a fabricated plate. Boards
-                    # that did succeed are kept so a retry reuses them from the cache.
-                    missing.append(f"style_board:{board.style_id.split('--')[-1]}")
-                    failure = failure or exc
-                    continue
-                record = store.save(
-                    course_id=brief.course_id,
-                    kind="visual",
-                    data=data,
-                    mime=mime,
-                    provenance=_provenance(
-                        cache=key,
-                        prompt=board,
-                        grammar=grammar,
-                        style_hash=style_hash,
-                        duration_ms=generation_ms,
-                    ),
-                )
-                artifact_id = str(record["artifact_id"])
-                usage.append(
-                    job_service.UsageRecord(
-                        provider="image_generate",
-                        model=None,
-                        duration_ms=generation_ms,
-                        artifact_count=1,
+                artifact_id = None
+                verdict: Any = None
+                attempts = 0
+                while attempts < MAX_PLATE_ATTEMPTS and artifact_id is None:
+                    attempts += 1
+                    try:
+                        data, mime, generation_ms = _generate_plate(board)
+                    except WorldMediaFailure as exc:
+                        # A refused board is a named missing role, not a fabricated plate. Boards
+                        # that did succeed are kept so a retry reuses them from the cache.
+                        failure = failure or exc
+                        break
+                    usage.append(
+                        job_service.UsageRecord(
+                            provider="image_generate",
+                            model=None,
+                            duration_ms=generation_ms,
+                            artifact_count=1,
+                        )
                     )
-                )
+                    verdict = world_critic.critique(
+                        data,
+                        prompt=board,
+                        brief=brief,
+                        grammar=grammar,
+                        role="style_board",
+                        mime=mime,
+                    )
+                    if verdict.passed:
+                        record = store.save(
+                            course_id=brief.course_id,
+                            kind="visual",
+                            data=data,
+                            mime=mime,
+                            provenance=_provenance(
+                                cache=key,
+                                prompt=board,
+                                grammar=grammar,
+                                style_hash=style_hash,
+                                duration_ms=generation_ms,
+                                critic=verdict.as_provenance(),
+                                attempts=attempts,
+                            ),
+                        )
+                        artifact_id = str(record["artifact_id"])
+                        break
+                    if verdict.unavailable:
+                        # No critic on this host: a second call would only pay twice for a plate
+                        # nobody can certify. The generated path is unavailable for this board.
+                        break
+                if artifact_id is None:
+                    label = board.style_id.split("--")[-1]
+                    missing.append(f"style_board:{label}")
+                    refusals.append(
+                        {
+                            "role": f"style_board:{label}",
+                            "attempts": attempts,
+                            "reasons": list(getattr(verdict, "reasons", ()) or ()),
+                            "unavailable": list(getattr(verdict, "unavailable", ()) or ()),
+                        }
+                    )
+                    continue
             artifact_ids.append(artifact_id)
             entries.append(
                 {
@@ -2643,6 +3024,14 @@ def _concept_stage(payload: Mapping[str, Any]) -> Any:  # -> job_service.Stage
                 }
             )
         if missing:
+            # A partial direction set is not a world: the plan draws three. If the grammar has an
+            # approved kit, it answers instead of a fabricated board; otherwise the world fails
+            # with the exact reason and no plate is invented.
+            kit, _reason = _kit_for(brief)
+            if kit is not None:
+                return _curated_concepts(
+                    world_id, brief, grammar, boards, refusals=refusals, usage=usage
+                )
             with db_transaction() as connection:
                 _set_world_state(
                     connection,
@@ -2650,7 +3039,11 @@ def _concept_stage(payload: Mapping[str, Any]) -> Any:  # -> job_service.Stage
                     state="failed",
                     concepts_json=_json_dump(entries),
                     error_json=_json_dump(
-                        {"reason": "provider_unavailable", "missing_roles": missing}
+                        {
+                            "reason": "provider_unavailable",
+                            "missing_roles": missing,
+                            "refusals": refusals,
+                        }
                     ),
                 )
             raise failure or WorldMediaFailure("no concept board could be produced")
@@ -2681,9 +3074,125 @@ def _style_board_for(brief: WorldBrief, style_id: str) -> WorldPrompt:
     )
 
 
+def _kit_name(prompt: WorldPrompt) -> str:
+    if prompt.role in ("section", "lesson_scene"):
+        return f"{prompt.role}:{prompt.section_id}"
+    return str(prompt.role)
+
+
+def _curated_kit(
+    world_id: str,
+    brief: WorldBrief,
+    grammar: str,
+    style_hash: str,
+    prompts: Sequence[WorldPrompt],
+) -> Any:
+    """Register the curated kit as the world's plates, with no provider call and no new art.
+
+    Hero, display cover and every section are required; a lesson scene is optional and falls back
+    to the section plate. Each row stores the artifact id of a content-addressed copy of the kit
+    file, and the artifact's provenance says which kit role supplied the bytes — a section served
+    by the kit's place plate says so rather than pretending to be a purpose-built section card.
+    """
+    from . import job_service, visual_kits
+
+    kit, reason = _kit_for(brief)
+    if kit is None:
+        named = reason or _curated_reason("kit", grammar, "no curated kit on the shelf")
+        _curated_unavailable(world_id, named)
+        raise WorldMediaFailure(
+            f"no image provider and no curated kit for {grammar!r}: {named.get('detail')}"
+        )
+    store = visual_kits.artifact_store()
+    produced: list[tuple[WorldPrompt, str, str]] = []
+    artifact_ids: list[str] = []
+    missing: list[str] = []
+    role_sources: list[dict[str, str]] = []
+    for prompt in prompts:
+        plate = kit.resolve(
+            prompt.role,
+            section_key=str(prompt.section_id or ""),
+            course_id=brief.course_id,
+        )
+        if plate is None:
+            if prompt.role == "lesson_scene":
+                # Optional: a lesson scene without a plate falls back to the section plate, and a
+                # kit with neither simply ships no scene.
+                continue
+            missing.append(_kit_name(prompt))
+            continue
+        record = visual_kits.register_asset(
+            store,
+            kit=kit,
+            plate=plate,
+            requested_role=prompt.role,
+            section_key=str(prompt.section_id or ""),
+            course_id=brief.course_id,
+            prompt_hash=prompt.prompt_hash,
+            style_hash=style_hash,
+        )
+        artifact_id = str(record["artifact_id"])
+        produced.append((prompt, artifact_id, ""))
+        artifact_ids.append(artifact_id)
+        role_sources.append(
+            {
+                "role": prompt.role,
+                "section_key": str(prompt.section_id or ""),
+                "kit_role": plate.role_source,
+                "kit_asset_id": plate.asset.asset_id,
+            }
+        )
+    if missing:
+        with db_transaction() as connection:
+            _persist_assets(connection, world_id, produced, style_hash)
+            _set_world_state(
+                connection,
+                world_id,
+                state="failed",
+                error_json=_json_dump({"reason": "partial_world", "missing_roles": missing}),
+            )
+        raise WorldPartialFailure(missing)
+    kit_hash = _kit_hash(style_hash, produced)
+    with db_transaction() as connection:
+        _persist_assets(connection, world_id, produced, style_hash)
+        _set_world_state(
+            connection,
+            world_id,
+            state="kit_ready",
+            kit_hash=kit_hash,
+            style_hash=style_hash,
+            error_json="{}",
+        )
+    return job_service.StageResult(
+        artifacts=artifact_ids,
+        usage=[],
+        message=f"world kit ready from the curated kit ({kit.kit_id}, {len(produced)} plates)",
+        checkpoint={
+            "state": "kit_ready",
+            "kit_hash": kit_hash,
+            "assets": len(produced),
+            "kit_id": kit.kit_id,
+            "source": "curated_kit",
+            "role_sources": role_sources,
+        },
+    )
+
+
+def _kit_hash(style_hash: str, produced: Sequence[tuple[WorldPrompt, str, str]]) -> str:
+    """The stage's kit identity, from the planes it actually produced.
+
+    Delegates to :func:`kit_hash_for`, the one identity function, so a generated world and an
+    imported pack cannot disagree about what the same plates hash to.
+    """
+    return kit_hash_for(
+        style_hash,
+        [(prompt.role, prompt.section_id or "", prompt.prompt_hash) for prompt, _, _ in produced],
+    )
+
+
 def _kit_stage(payload: Mapping[str, Any]) -> Any:
     from . import artifacts as artifacts_mod
-    from . import job_service
+    from . import job_service, world_critic
 
     brief = WorldBrief.from_mapping(payload["brief"])
     world_id = str(payload["world_id"])
@@ -2695,31 +3204,31 @@ def _kit_stage(payload: Mapping[str, Any]) -> Any:
     def run(lease: Any) -> Any:
         if job_service.cancel_requested(lease.job_id):
             raise job_service.JobCancelled("cancelled before world kit")
-        if _media_seam() is None:
-            with db_transaction() as connection:
-                _set_world_state(
-                    connection,
-                    world_id,
-                    state="unavailable",
-                    error_json={"reason": "provider_unavailable"},
-                )
-            raise WorldMediaFailure("image generation is not configured on this host")
         prompts = build_kit_prompts(
-            brief, grammar, style_id=style_id, style=style, max_sections=MAX_KIT_SECTIONS
+            brief,
+            grammar,
+            style_id=style_id,
+            style=style,
+            max_sections=MAX_KIT_SECTIONS,
+            lesson_scene_keys=brief.lesson_scene_keys,
         )
-        if len(prompts) > 2 + MAX_KIT_SECTIONS:
+        if len(prompts) > 2 + MAX_KIT_SECTIONS + MAX_KIT_LESSON_SCENES:
             raise WorldBudgetExceeded("the world kit exceeds its declared asset budget")
+        if _media_seam() is None or not world_critic.available():
+            # VQ-004: the curated kit is a complete world, not a degraded one. A host whose plates
+            # no critic can certify does not spend on them either.
+            return _curated_kit(world_id, brief, grammar, style_hash, prompts)
+        kit, kit_reason = _kit_for(brief)
         store = artifacts_mod.ArtifactStore()
         produced: list[tuple[WorldPrompt, str, str]] = []
         artifact_ids: list[str] = []
         usage: list[Any] = []
         missing: list[str] = []
+        refusals: list[dict[str, Any]] = []
+        fallbacks: list[dict[str, str]] = []
+        failure: WorldMediaFailure | None = None
         for prompt in prompts:
-            name = (
-                f"section:{prompt.section_id}"
-                if prompt.role == "section"
-                else str(prompt.role)
-            )
+            name = _kit_name(prompt)
             key = cache_key(
                 brief, grammar, prompt.role, style_id, prompt.section_id,
                 prompt_version=prompt.prompt_version,
@@ -2730,36 +3239,111 @@ def _kit_stage(payload: Mapping[str, Any]) -> Any:
                 produced.append((prompt, str(existing["artifact_id"]), key))
                 artifact_ids.append(str(existing["artifact_id"]))
                 continue
-            try:
-                data, mime, generation_ms = _generate_plate(prompt)
-            except WorldMediaFailure:
-                missing.append(name)
-                continue
-            record = store.save(
-                course_id=brief.course_id,
-                kind="visual",
-                data=data,
-                mime=mime,
-                provenance=_provenance(
-                    cache=key,
+            artifact_id: str | None = None
+            verdict: Any = None
+            attempts = 0
+            while attempts < MAX_PLATE_ATTEMPTS and artifact_id is None:
+                attempts += 1
+                try:
+                    data, mime, generation_ms = _generate_plate(prompt)
+                except WorldMediaFailure as exc:
+                    failure = failure or exc
+                    break
+                usage.append(
+                    job_service.UsageRecord(
+                        provider="image_generate",
+                        model=None,
+                        duration_ms=generation_ms,
+                        artifact_count=1,
+                    )
+                )
+                verdict = world_critic.critique(
+                    data,
                     prompt=prompt,
+                    brief=brief,
                     grammar=grammar,
-                    style_hash=style_hash,
-                    duration_ms=generation_ms,
-                ),
-            )
-            artifact_id = str(record["artifact_id"])
+                    role=prompt.role,
+                    mime=mime,
+                )
+                if verdict.passed:
+                    record = store.save(
+                        course_id=brief.course_id,
+                        kind="visual",
+                        data=data,
+                        mime=mime,
+                        provenance=_provenance(
+                            cache=key,
+                            prompt=prompt,
+                            grammar=grammar,
+                            style_hash=style_hash,
+                            duration_ms=generation_ms,
+                            critic=verdict.as_provenance(),
+                            attempts=attempts,
+                        ),
+                    )
+                    artifact_id = str(record["artifact_id"])
+                    break
+                if verdict.unavailable:
+                    # An uncertified plate is never stored, and a retry cannot certify it.
+                    break
+            if artifact_id is None:
+                refusal = {
+                    "role": name,
+                    "attempts": attempts,
+                    "reasons": list(getattr(verdict, "reasons", ()) or ()),
+                    "unavailable": list(getattr(verdict, "unavailable", ()) or ()),
+                    "replaced_by": None,
+                }
+                refusals.append(refusal)
+                # The curated kit role is the approved fallback (plan §4.6). It is recorded as a
+                # fallback, never passed off as the generated plate it replaced.
+                plate = (
+                    None
+                    if kit is None
+                    else kit.resolve(
+                        prompt.role,
+                        section_key=str(prompt.section_id or ""),
+                        course_id=brief.course_id,
+                    )
+                )
+                if plate is not None:
+                    from . import visual_kits
+
+                    record = visual_kits.register_asset(
+                        store,
+                        kit=kit,
+                        plate=plate,
+                        requested_role=prompt.role,
+                        section_key=str(prompt.section_id or ""),
+                        course_id=brief.course_id,
+                        prompt_hash=prompt.prompt_hash,
+                        style_hash=style_hash,
+                    )
+                    artifact_id = str(record["artifact_id"])
+                    refusal["replaced_by"] = "curated_kit"
+                    fallbacks.append(
+                        {
+                            "role": prompt.role,
+                            "section_key": str(prompt.section_id or ""),
+                            "kit_role": plate.role_source,
+                            "kit_asset_id": plate.asset.asset_id,
+                        }
+                    )
+                elif prompt.role == "lesson_scene":
+                    # Optional plate, no approved fallback: the lesson opens on the section plate.
+                    refusal["replaced_by"] = "section_plate"
+                    continue
+                else:
+                    missing.append(name)
+                    continue
             produced.append((prompt, artifact_id, key))
             artifact_ids.append(artifact_id)
-            usage.append(
-                job_service.UsageRecord(
-                    provider="image_generate",
-                    model=None,
-                    duration_ms=generation_ms,
-                    artifact_count=1,
-                )
-            )
         if missing:
+            detail: dict[str, Any] = {"reason": "partial_world", "missing_roles": missing}
+            if refusals:
+                detail["refusals"] = refusals
+            if kit_reason:
+                detail["curated_kit"] = kit_reason
             with db_transaction() as connection:
                 # The plates that *did* succeed are real and are kept, so a retry reuses them
                 # instead of paying twice. A missing role is named; nothing is fabricated.
@@ -2768,15 +3352,19 @@ def _kit_stage(payload: Mapping[str, Any]) -> Any:
                     connection,
                     world_id,
                     state="failed",
-                    error_json=_json_dump(
-                        {"reason": "partial_world", "missing_roles": missing}
-                    ),
+                    error_json=_json_dump(detail),
                 )
             raise WorldPartialFailure(missing)
-        kit_hash = kit_hash_for(
-            style_hash,
-            [(prompt.role, prompt.section_id or "", prompt.prompt_hash) for prompt, _, _ in produced],
-        )
+        if not produced:
+            named = _curated_reason(
+                "kit",
+                grammar,
+                "no plate could be generated and no curated kit role could replace it",
+                refusals=refusals,
+            )
+            _curated_unavailable(world_id, named)
+            raise failure or WorldMediaFailure(named["detail"])
+        kit_hash = _kit_hash(style_hash, produced)
         with db_transaction() as connection:
             _persist_assets(connection, world_id, produced, style_hash)
             _set_world_state(
@@ -2791,11 +3379,16 @@ def _kit_stage(payload: Mapping[str, Any]) -> Any:
             artifacts=artifact_ids,
             usage=usage,
             message=f"world kit ready ({len(produced)} plates)",
-            checkpoint={"state": "kit_ready", "kit_hash": kit_hash, "assets": len(produced)},
+            checkpoint={
+                "state": "kit_ready",
+                "kit_hash": kit_hash,
+                "assets": len(produced),
+                "curated_fallbacks": fallbacks,
+                "refusals": refusals,
+            },
         )
 
     return job_service.Stage("world_kit", run)
-
 
 def _persist_assets(
     connection: Any,
@@ -2805,7 +3398,10 @@ def _persist_assets(
 ) -> None:
     for prompt, artifact_id, key in produced:
         role = prompt.role
-        section_key = prompt.section_id if role == "section" else ""
+        # VQ-004: a lesson scene is keyed by the lesson/section it belongs to, exactly as the
+        # migration's column comment says; hero and cover stay course-level ('').
+        section_key = prompt.section_id if role in ("section", "lesson_scene") else ""
+        section_key = str(section_key or "")
         connection.execute(
             "INSERT INTO world_assets (id, world_id, role, section_id, section_key,"
             " artifact_id, style_hash, prompt_hash, textless, created_at)"
@@ -3147,6 +3743,21 @@ def world_generate(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
                     field=field,
                 )
             patched_text[field] = value
+    # VQ-004: the world's kit is resolved **outside** the write transaction. Validating a kit
+    # hashes its manifest, and a fenced mutation must not hold that I/O.
+    with db.read() as connection:
+        hint_course = _course_row(connection, course_id)
+        hint_row = _latest_world(connection, course_id)
+        hint_brief = _json_load(hint_row["brief_json"], {}) if hint_row is not None else {}
+    kit_hint = _visual_kit_id_for(
+        WorldBrief.from_mapping(
+            {
+                "subject_domain": str(hint_course["subject_domain"] or "unknown_subject"),
+                "end_capability": str(hint_course["goal"] or ""),
+                "visual_kit_id": str((hint_brief or {}).get("visual_kit_id") or ""),
+            }
+        )
+    )
     with db.transaction() as connection:
         replay = _replay(connection, key, method, payload_hash)
         if replay is not None:
@@ -3156,7 +3767,9 @@ def world_generate(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
         current = _world_revision(row)
         if expected != current:
             raise _stale(current)
-        brief = _merged_brief(connection, course_id, row, payload.get("brief_patch"))
+        brief = _merged_brief(
+            connection, course_id, row, payload.get("brief_patch"), kit_id=kit_hint
+        )
         grammar = WorldPolicy.select(brief)
         WorldPolicy.assert_allowed(brief, grammar)
         # The ownership fence covers caller presentation only (G4): a derived objective title
@@ -3364,7 +3977,13 @@ def world_generate(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
 
 @_handler("world.approve")
 def world_approve(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
-    """Hash-fenced approval: a style choice, then the actual kit. Never a partial world."""
+    """Hash-fenced approval: a style choice, then the actual kit. Never a partial world.
+
+    A final approval also re-reads the curated kit's manifest before the transaction and refuses
+    with ``kit_not_owner_approved`` while that manifest says the art is only awaiting owner review
+    (``built_for_owner_review``). A world with such a kit is previewable but not blessable, and the
+    plates it registered stay honestly ``approved: False``.
+    """
     from .api import RpcError
     from . import db
 
@@ -3381,6 +4000,11 @@ def world_approve(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[in
         raise RpcError.of(
             "VALIDATION_FAILED", "stage must be 'style' or 'final'.", field="stage", stage=stage
         )
+    # The manifest is the authority for kit approval, so it is read **before** the fenced
+    # transaction (file I/O never runs inside one) and re-checked by kit id inside it. A kit the
+    # owner has only marked for review cannot be blessed here, whatever its plates recorded when
+    # they were registered.
+    current_kits = _current_kit_approval(course_id, world_id) if stage == "final" else {}
     with db.transaction() as connection:
         replay = _replay(connection, key, method, payload_hash)
         if replay is not None:
@@ -3437,6 +4061,30 @@ def world_approve(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[in
                     "this world is partial; no approval is possible until the missing roles exist.",
                     missing_roles=missing,
                 )
+            unapproved_kit = _unapproved_kit_plates(connection, world_id, current=current_kits)
+            if unapproved_kit:
+                # VQ-004 follow-up: a kit the owner has only marked for review cannot become
+                # approved product art through a world approval. The world may be previewed; it
+                # may not be blessed. The reason names the kit and its own status.
+                first = unapproved_kit[0]
+                raise _policy_error(
+                    "kit_not_owner_approved",
+                    "this world carries curated plates from a kit the owner has not approved;"
+                    " it can be previewed but not approved.",
+                    kit_id=first["kit_id"],
+                    kit_status=first["kit_status"],
+                    roles=[item["role"] for item in unapproved_kit],
+                )
+            refused = _unapproved_plate_roles(connection, world_id)
+            if refused:
+                # VQ-004: a plate whose stored verdict is a refusal is never approved, whatever
+                # hash the caller read.
+                raise _policy_error(
+                    "plate_not_approved",
+                    "this world carries a plate the quality critic refused; it cannot be approved.",
+                    roles=refused,
+                )
+            _stamp_kit_approval(connection, world_id, current_kits)
             connection.execute(
                 "UPDATE course_worlds SET state = 'approved', approved_hash = ?, approved_at = ?,"
                 " revision = ?, updated_at = ? WHERE id = ?",
@@ -3467,7 +4115,7 @@ def _world_json(row: Any, assets: Sequence[Mapping[str, Any]]) -> dict[str, Any]
         "world_id": str(row["id"]),
         "state": str(row["state"]),
         "revision": int(row["revision"]),
-        "brief": _json_load(row["brief_json"], {}),
+        "brief": _wire_brief(_json_load(row["brief_json"], {})),
         "concepts": _json_load(row["concepts_json"], []),
         "selected_concept_id": row["selected_concept_id"],
         "style_hash": row["style_hash"],
@@ -3478,6 +4126,194 @@ def _world_json(row: Any, assets: Sequence[Mapping[str, Any]]) -> dict[str, Any]
         "updated_at": row["updated_at"],
         "assets": list(assets),
     }
+
+
+def _is_curated_provenance(provenance: Mapping[str, Any]) -> bool:
+    """Whether a stored artifact is curated-kit art, by its own provenance word.
+
+    ``visual_kits.KIT_SOURCES`` is the one vocabulary: ``curated_kit`` for art curated for the kit,
+    ``derived`` for a byte-identical copy of a plate the owner already approved (the Home ground).
+    Anything else — a generated plate, a missing word — is not kit art and is gated elsewhere.
+    """
+    from . import visual_kits
+
+    return visual_kits.is_kit_source(provenance.get("source"))
+
+
+def _curated_kit_ids(connection: Any, world_id: str) -> list[str]:
+    """Kit ids whose plates this world carries, in a stable order. A read, never a re-hash."""
+    rows = connection.execute(
+        "SELECT a.provenance_json AS provenance_json FROM world_assets wa"
+        " JOIN artifacts a ON a.id = wa.artifact_id WHERE wa.world_id = ?"
+        " ORDER BY wa.role, wa.section_key",
+        (world_id,),
+    ).fetchall()
+    seen: list[str] = []
+    for row in rows:
+        provenance = _json_load(row["provenance_json"], {})
+        if not isinstance(provenance, Mapping):
+            continue
+        if not _is_curated_provenance(provenance):
+            continue
+        kit_id = str(provenance.get("kit_id") or "")
+        if kit_id and kit_id not in seen:
+            seen.append(kit_id)
+    return seen
+
+
+def _current_kit_approval(course_id: str, world_id: str) -> dict[str, tuple[bool, str]]:
+    """Each curated kit's **current** manifest approval for the world being approved.
+
+    Runs before the fenced mutation, on a short read connection, because a manifest is a file and
+    no file I/O belongs inside a transaction. A kit whose shelf entry can no longer be re-read is
+    omitted, so the stored provenance stays the record rather than being guessed at.
+    """
+    from . import db, visual_kits
+
+    with db.read() as connection:
+        row = _latest_world(connection, course_id)
+        if row is None or str(row["id"]) != world_id:
+            return {}
+        kit_ids = _curated_kit_ids(connection, world_id)
+    current: dict[str, tuple[bool, str]] = {}
+    for kit_id in kit_ids:
+        resolved = visual_kits.kit_approval(kit_id)
+        if resolved is not None:
+            current[kit_id] = resolved
+    return current
+
+
+def _unapproved_kit_plates(
+    connection: Any, world_id: str, *, current: Mapping[str, tuple[bool, str]] | None = None
+) -> list[dict[str, Any]]:
+    """Curated plate rows whose kit is not owner-approved (VQ-004 follow-up).
+
+    Approval comes from the kit's manifest — the ``current`` reading taken outside the transaction
+    — and only falls back to the plate's stored ``approved`` when that kit cannot be re-read. A kit
+    in a review state (``built_for_owner_review``) is a preview, not approved product art; a world
+    carrying such a plate is refused a final approval with its own named reason rather than being
+    blessed or having the plate silently dropped.
+    """
+    approved_now = current or {}
+    rows = connection.execute(
+        "SELECT wa.role AS role, wa.section_key AS section_key,"
+        " a.provenance_json AS provenance_json"
+        " FROM world_assets wa JOIN artifacts a ON a.id = wa.artifact_id"
+        " WHERE wa.world_id = ? ORDER BY wa.role, wa.section_key",
+        (world_id,),
+    ).fetchall()
+    unapproved: list[dict[str, Any]] = []
+    for row in rows:
+        provenance = _json_load(row["provenance_json"], {})
+        if not isinstance(provenance, Mapping):
+            continue
+        if not _is_curated_provenance(provenance):
+            continue
+        kit_id = str(provenance.get("kit_id") or "")
+        if kit_id in approved_now:
+            owner_approved, kit_status = approved_now[kit_id]
+        else:
+            owner_approved = provenance.get("approved") is not False
+            kit_status = str(provenance.get("kit_status") or "")
+        if owner_approved:
+            continue
+        unapproved.append(
+            {
+                "role": f"{row['role']}:{row['section_key']}",
+                "kit_id": kit_id,
+                "kit_status": kit_status,
+            }
+        )
+    return unapproved
+
+
+def _stamp_kit_approval(
+    connection: Any, world_id: str, current: Mapping[str, tuple[bool, str]]
+) -> int:
+    """Re-state each curated artifact's approval from the manifest read for this approval.
+
+    The artifact row is content-addressed and shared, so a plate registered while its kit awaited
+    review keeps that provenance after the owner approves it. Approving the world is the moment the
+    recorded status is brought up to the manifest the approval was made against, and only the three
+    approval keys are touched. Returns how many rows were restated.
+    """
+    if not current:
+        return 0
+    from . import visual_kits
+
+    rows = connection.execute(
+        "SELECT DISTINCT a.id AS id, a.provenance_json AS provenance_json"
+        " FROM world_assets wa JOIN artifacts a ON a.id = wa.artifact_id"
+        " WHERE wa.world_id = ?",
+        (world_id,),
+    ).fetchall()
+    restated = 0
+    for row in rows:
+        provenance = _json_load(row["provenance_json"], {})
+        if not isinstance(provenance, Mapping):
+            continue
+        if not _is_curated_provenance(provenance):
+            continue
+        observed = current.get(str(provenance.get("kit_id") or ""))
+        if observed is None:
+            continue
+        owner_approved, kit_status = observed
+        approval = (
+            visual_kits.APPROVAL_APPROVED if owner_approved else visual_kits.APPROVAL_OWNER_REVIEW
+        )
+        if (
+            provenance.get("approved") == owner_approved
+            and provenance.get("approval") == approval
+            and provenance.get("kit_status") == kit_status
+        ):
+            continue
+        refreshed = dict(provenance)
+        refreshed.update(
+            {"approved": owner_approved, "approval": approval, "kit_status": kit_status}
+        )
+        connection.execute(
+            "UPDATE artifacts SET provenance_json = ? WHERE id = ?",
+            (_json_dump(refreshed), str(row["id"])),
+        )
+        restated += 1
+    return restated
+
+
+def _unapproved_plate_roles(connection: Any, world_id: str) -> list[str]:
+    """Roles whose stored artifact records a *refused* verdict (VQ-004).
+
+    A plate that failed the critic is never stored, so this is the second half of the same fence:
+    an ``approved = false`` / ``critic.passed = false`` row that reached the table by any route is
+    refused at approval rather than blessed. Provenance with no verdict at all (a world built
+    before the critic existed) is not a known failure and stays approvable. A curated plate from a
+    review-status kit is refused earlier with the named ``kit_not_owner_approved`` reason, because
+    that is a kit-approval defect, not a critic verdict — so a curated row's ``approved`` flag is
+    never read here (a ``critic.passed = false`` on one still refuses it).
+    """
+    rows = connection.execute(
+        "SELECT wa.role AS role, wa.section_key AS section_key,"
+        " a.provenance_json AS provenance_json"
+        " FROM world_assets wa JOIN artifacts a ON a.id = wa.artifact_id"
+        " WHERE wa.world_id = ? ORDER BY wa.role, wa.section_key",
+        (world_id,),
+    ).fetchall()
+    refused: list[str] = []
+    for row in rows:
+        provenance = _json_load(row["provenance_json"], {})
+        if not isinstance(provenance, Mapping):
+            continue
+        critic = provenance.get("critic")
+        verdict = critic.get("passed") if isinstance(critic, Mapping) else None
+        if verdict is False:
+            refused.append(f"{row['role']}:{row['section_key']}")
+            continue
+        if _is_curated_provenance(provenance):
+            # A curated plate's approval is the kit gate's decision, read from the manifest above;
+            # ``approved: False`` on it means "kit still awaiting review", not "critic refused".
+            continue
+        if provenance.get("approved") is False:
+            refused.append(f"{row['role']}:{row['section_key']}")
+    return refused
 
 
 def _missing_kit_roles(
