@@ -28,8 +28,9 @@ gives an explicit verdict:
 
 Measured floors, by text length
 -------------------------------
-Every figure above and below was measured twice on the committed packets: once on the **full fetched
-body** and once on ``content[:6000]`` — the slice ``research.run_research`` actually scores
+Every figure in this section except the stranger control was measured twice on the committed packets:
+once on the **full fetched body** and once on ``content[:6000]`` — the slice
+``research.run_research`` actually scores
 (``ResearchBudget.max_page_chars``, default 6000). Evidence:
 ``audit/relevance-floors/measure.json``, re-derivable with
 ``audit/relevance-floors/measure_relevance_floors.py``. Same verdicts at both lengths on both
@@ -48,8 +49,8 @@ the bound.
     other three are admitted by the relative half, so the headroom this constant relies on is
     *bounded-text* headroom: 0.40146 is only ~0.05 above :data:`RELATIVE_MARGIN`. Measured with the
     real gate, a margin of 0.40 still admits that manufacturer's own through-hole note (line 0.274,
-    score 0.275, kept 6); the smallest margin that refuses it is just above 0.402 (0.41 does:
-    kept 5, dropped 1).
+    score 0.275, kept 6). The flip ratio is ``0.275 / 0.685 = 0.40146``; the probe's ``0.40146``
+    row already refuses it (line 0.275, kept 5, dropped 1), as does 0.41.
 
 * **Fig-tree pass** ("prune a fig tree"; the RHS on-topic page plus the FAO meat page and a forestry
   tree-identification page): best 1.000, forestry 0.276 (one of three goal terms — ``tree``), FAO
@@ -59,7 +60,8 @@ the bound.
   The committed fig-tree packet is a short reconstruction of the three pages — the fetched bodies
   were never committed — so how a long real forestry page would score is unmeasured here.
 
-* **A stranger inside a bounded pass**: appending the FAO meat page to the H-40 pass and scoring
+* **A stranger inside a bounded pass** (*synthetic* — a constructed pass, not a recorded one):
+  appending the FAO meat page from the fig pass to the H-40 pages and scoring
   ``content[:6000]`` gives it 0.092 against a 0.240 relative line, and it is dropped. The gate does
   refuse a stranger at 6000 chars; the recorded soldering pass simply carried none to refuse.
 
@@ -110,8 +112,8 @@ MIN_COVERAGE = 0.5
 #: measured on ``content[:6000]``, the same CU Boulder page is 0.35 against 0.69 (0.52 of the best)
 #: and the manufacturer note is 0.275 against 0.685 — 0.40146 of the best. So 0.35 holds at both
 #: lengths, and the bounded headroom is only ~0.05: patching this constant to 0.40 still admits the
-#: note (line 0.274, score 0.275), and only a margin above 0.402 refuses it (0.41 does). The line
-#: sits at 0.35.
+#: note (line 0.274, score 0.275), and only a margin above the flip ratio 0.40146 refuses it (the
+#: probe's 0.40146 row and 0.41 both do). The line sits at 0.35.
 RELATIVE_MARGIN = 0.35
 
 #: Function words carry no subject. Deliberately a closed, short list: it removes the words that

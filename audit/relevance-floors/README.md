@@ -80,9 +80,10 @@ uses one goal term (forestry: `tree` of `prun`/`fig`/`tree`) or none, not becaus
 * The constant's real headroom is on **bounded** text: st.com is 0.275 against a 0.685 best, i.e.
   0.40146 of the best page — ~0.05 above `RELATIVE_MARGIN`. The 0.40 figure is a *rounded* ratio, not
   a margin: patched to `RELATIVE_MARGIN = 0.40` the real gate puts the line at 0.274 and still admits
-  the manufacturer's own through-hole note (0.275, kept 6 / dropped 0). The smallest margin that
-  refuses it is just above **0.402** (0.41 does: kept 5 / dropped 1). Lowering the constant is not
-  needed by these packets. See the probe table below.
+  the manufacturer's own through-hole note (0.275, kept 6 / dropped 0). The flip ratio is
+  `0.275 / 0.685 = 0.40146`; the probe's **0.40146** row already refuses it (line 0.275, kept 5 /
+  dropped 1), as does 0.41. Lowering the constant is not needed by these packets. See the probe
+  table below.
 * Unmeasured, and unmeasurable from what is committed: how a *long* real forestry-style page would
   score at 6000 (its body was never committed), and per-page term survival for a packet whose pages
   all exceed the bound in a way that removes a goal term — none of these pages lose a term to the cut.
