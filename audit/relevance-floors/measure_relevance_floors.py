@@ -174,6 +174,60 @@ def _production_run(goal: str, pages: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _margin_probe(goal: str, pages: list[dict[str, Any]], margins: tuple[float, ...]) -> dict[str, Any]:
+    """Re-gate the bounded packet at a range of ``RELATIVE_MARGIN`` values.
+
+    The module docstring claims the constant's headroom is small; this records where the tightest
+    admission (st.com, the manufacturer note) actually flips, so the claim is measured rather than
+    inferred from a rounded ratio. The constant is patched only for the duration of the probe.
+    """
+    bounded = [
+        {"title": page.get("title") or "", "url": page.get("url") or "", "text": (page.get("text") or "")[:BOUND]}
+        for page in pages
+    ]
+    base = relevance.gate_pages(goal, bounded)
+    best = base["best_score"]
+    tightest = min(
+        (row for row in base["verdicts"] if row["verdict"] == relevance.ON_TOPIC),
+        key=lambda row: row["score"],
+    )  # type: ignore[arg-type]
+    exact_ratio = tightest["score"] / best if best else 0.0
+
+    saved = relevance.RELATIVE_MARGIN
+    probes: list[dict[str, Any]] = []
+    try:
+        for margin in margins:
+            relevance.RELATIVE_MARGIN = margin
+            gate = relevance.gate_pages(goal, bounded)
+            row = next(
+                item for item in gate["verdicts"] if item["url"] == tightest["url"]
+            )
+            probes.append(
+                {
+                    "relative_margin": margin,
+                    "relative_line": round(margin * best, 6),
+                    "tightest_page_score": row["score"],
+                    "tightest_page_verdict": row["verdict"],
+                    "kept": len(gate["kept"]),
+                    "dropped": len(gate["dropped"]),
+                }
+            )
+    finally:
+        relevance.RELATIVE_MARGIN = saved
+
+    return {
+        "text": f"content[:{BOUND}]",
+        "best_score": best,
+        "tightest_admitted_page": {"url": tightest["url"], "title": tightest["title"], "score": tightest["score"]},
+        "flip_ratio": exact_ratio,
+        "flip_note": (
+            "a page is admitted when score >= RELATIVE_MARGIN * best, so this page is refused by any "
+            "margin strictly above flip_ratio and admitted at or below it"
+        ),
+        "probes": probes,
+    }
+
+
 def main() -> None:
     transcript = json.loads(TRANSCRIPT.read_text(encoding="utf-8"))
     h40_goal = transcript["scenario"]["goal"]
@@ -272,6 +326,11 @@ def main() -> None:
         ),
     }
 
+    # Where the bounded pass's tightest admission actually flips, with the real gate. The docstring
+    # used to round 0.275/0.685 to "0.40" and claim a 0.40 margin would refuse the note; it does not —
+    # 0.40 x 0.685 = 0.274, below the note's 0.275. The constant is patched only inside the probe.
+    margin_probe = _margin_probe(h40_goal, h40_pages, (0.35, 0.40, 0.4014, 0.40146, 0.41))
+
     payload = {
         "what": "coursebook.relevance floors measured on unbounded content and on content[:6000]",
         "why": "production scores content[:max_page_chars] (6000); the module docstring quotes "
@@ -288,6 +347,7 @@ def main() -> None:
             "H-40 plus one off-topic page control": h40_stranger,
         },
         "production_path": production,
+        "relative_margin_probe": margin_probe,
     }
     (HERE / "measure.json").write_text(
         json.dumps(payload, indent=2, sort_keys=False) + "\n", encoding="utf-8"
@@ -312,6 +372,8 @@ def main() -> None:
                 )
     print("=" * 78)
     print(json.dumps(production, indent=2)[:4000])
+    print("=" * 78)
+    print(json.dumps(margin_probe, indent=2))
 
 
 if __name__ == "__main__":

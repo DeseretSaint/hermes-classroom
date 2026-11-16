@@ -43,11 +43,13 @@ the bound.
   - full body: best 1.000 (st.com THD mounting note), CU Boulder soldering resources 0.382
     (0.38 of the best), the other four 0.522–0.889. Nothing dropped.
   - ``content[:6000]``: best 0.685 (Purdue ECE 477 lecture), CU Boulder 0.353 (0.52 of the best),
-    st.com 0.275 (0.40 of the best), the other three 0.453–0.588. Nothing dropped either, and only
-    three of six clear :data:`MIN_COVERAGE` on their own — the other three are admitted by the
-    relative half. The tightest admission is st.com at 0.40 of the best page, ~0.05 above
-    :data:`RELATIVE_MARGIN`; a margin of 0.40 would refuse a manufacturer's own through-hole note,
-    so the headroom this constant relies on is *bounded-text* headroom.
+    st.com 0.275 (0.40146 of the best — the tightest admission), the other three 0.453–0.588.
+    Nothing dropped either, and only three of six clear :data:`MIN_COVERAGE` on their own — the
+    other three are admitted by the relative half, so the headroom this constant relies on is
+    *bounded-text* headroom: 0.40146 is only ~0.05 above :data:`RELATIVE_MARGIN`. Measured with the
+    real gate, a margin of 0.40 still admits that manufacturer's own through-hole note (line 0.274,
+    score 0.275, kept 6); the smallest margin that refuses it is just above 0.402 (0.41 does:
+    kept 5, dropped 1).
 
 * **Fig-tree pass** ("prune a fig tree"; the RHS on-topic page plus the FAO meat page and a forestry
   tree-identification page): best 1.000, forestry 0.276 (one of three goal terms — ``tree``), FAO
@@ -106,8 +108,10 @@ MIN_COVERAGE = 0.5
 #: stranger. Measured on the full fetched bodies, the fig pass put the forestry page at 0.28 of its
 #: best page and the soldering pass put a genuine CU Boulder soldering resource at 0.38 of 1.00;
 #: measured on ``content[:6000]``, the same CU Boulder page is 0.35 against 0.69 (0.52 of the best)
-#: and the manufacturer note is 0.40 of the best — so 0.35 holds at both lengths, and 0.40 would
-#: already refuse that note at 6000 chars. The line sits at 0.35.
+#: and the manufacturer note is 0.275 against 0.685 — 0.40146 of the best. So 0.35 holds at both
+#: lengths, and the bounded headroom is only ~0.05: patching this constant to 0.40 still admits the
+#: note (line 0.274, score 0.275), and only a margin above 0.402 refuses it (0.41 does). The line
+#: sits at 0.35.
 RELATIVE_MARGIN = 0.35
 
 #: Function words carry no subject. Deliberately a closed, short list: it removes the words that

@@ -1353,5 +1353,58 @@
       ],
       "note": null
     }
+  },
+  "relative_margin_probe": {
+    "text": "content[:6000]",
+    "best_score": 0.685,
+    "tightest_admitted_page": {
+      "url": "https://www.st.com/resource/en/technical_note/tn1225-mounting-instructions-for-thd-throughhole-device-packages-stmicroelectronics.pdf",
+      "title": "Mounting instructions for THD (through-hole device) packages - Technical note",
+      "score": 0.275
+    },
+    "flip_ratio": 0.40145985401459855,
+    "flip_note": "a page is admitted when score >= RELATIVE_MARGIN * best, so this page is refused by any margin strictly above flip_ratio and admitted at or below it",
+    "probes": [
+      {
+        "relative_margin": 0.35,
+        "relative_line": 0.23975,
+        "tightest_page_score": 0.275,
+        "tightest_page_verdict": "on_topic",
+        "kept": 6,
+        "dropped": 0
+      },
+      {
+        "relative_margin": 0.4,
+        "relative_line": 0.274,
+        "tightest_page_score": 0.275,
+        "tightest_page_verdict": "on_topic",
+        "kept": 6,
+        "dropped": 0
+      },
+      {
+        "relative_margin": 0.4014,
+        "relative_line": 0.274959,
+        "tightest_page_score": 0.275,
+        "tightest_page_verdict": "on_topic",
+        "kept": 6,
+        "dropped": 0
+      },
+      {
+        "relative_margin": 0.40146,
+        "relative_line": 0.275,
+        "tightest_page_score": 0.275,
+        "tightest_page_verdict": "off_topic",
+        "kept": 5,
+        "dropped": 1
+      },
+      {
+        "relative_margin": 0.41,
+        "relative_line": 0.28085,
+        "tightest_page_score": 0.275,
+        "tightest_page_verdict": "off_topic",
+        "kept": 5,
+        "dropped": 1
+      }
+    ]
   }
 }

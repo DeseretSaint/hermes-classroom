@@ -46,7 +46,7 @@ best 1.000, relative line 0.350, 0 dropped.
 | ifixit "Soldering Simplified" | 0.545 | 0.80 | on_topic, kept (absolute) |
 | instructables | 0.453 | 0.66 | on_topic, kept (relative half) |
 | CU Boulder soldering resources | 0.353 | 0.52 | on_topic, kept (relative half) |
-| st.com THD mounting note | 0.275 | **0.40** | on_topic, kept (relative half) |
+| st.com THD mounting note | 0.275 | **0.40146** | on_topic, kept (relative half) |
 
 best 0.685, relative line 0.240, 0 dropped. Distribution: 3 pages clear `MIN_COVERAGE` on their own,
 3 more sit between the relative line and `MIN_COVERAGE` (0.240–0.500), 0 below both. All 13 goal terms
@@ -77,9 +77,28 @@ uses one goal term (forestry: `tree` of `prun`/`fig`/`tree`) or none, not becaus
   (0.276 vs 0.350) and the injected stranger (0.092 vs 0.240) both fall below both lines at 6000.
 * "Nothing dropped" on the recorded H-40 pass is not inertness — that pass carried six genuine
   pages and no stranger, at either length.
-* The constant's real headroom is on **bounded** text: st.com is admitted at 0.40 of the best page,
-  ~0.05 above `RELATIVE_MARGIN`. Raising the margin to 0.40 would refuse a manufacturer's own
-  through-hole mounting note at 6000 chars. Lowering it is not needed by these packets.
+* The constant's real headroom is on **bounded** text: st.com is 0.275 against a 0.685 best, i.e.
+  0.40146 of the best page — ~0.05 above `RELATIVE_MARGIN`. The 0.40 figure is a *rounded* ratio, not
+  a margin: patched to `RELATIVE_MARGIN = 0.40` the real gate puts the line at 0.274 and still admits
+  the manufacturer's own through-hole note (0.275, kept 6 / dropped 0). The smallest margin that
+  refuses it is just above **0.402** (0.41 does: kept 5 / dropped 1). Lowering the constant is not
+  needed by these packets. See the probe table below.
 * Unmeasured, and unmeasurable from what is committed: how a *long* real forestry-style page would
   score at 6000 (its body was never committed), and per-page term survival for a packet whose pages
   all exceed the bound in a way that removes a goal term — none of these pages lose a term to the cut.
+
+## Margin probe — where the tightest admission flips (real gate, bounded text)
+
+The `relative_margin_probe` block in `measure.json` re-gates the H-40 pages at `content[:6000]` with
+`RELATIVE_MARGIN` patched (the constant itself is untouched outside the probe):
+
+| `RELATIVE_MARGIN` | relative line (`margin × 0.685`) | st.com (0.275) | kept / dropped |
+| --- | --- | --- | --- |
+| 0.35 (shipped) | 0.239750 | on_topic | 6 / 0 |
+| 0.40 | 0.274000 | **on_topic** | 6 / 0 |
+| 0.4014 | 0.274959 | on_topic | 6 / 0 |
+| 0.40146 | 0.275000 | off_topic | 5 / 1 |
+| 0.41 | 0.280850 | off_topic | 5 / 1 |
+
+`flip_ratio = 0.275 / 0.685 = 0.4014598540…`: admission is `score >= margin × best`, so the note is
+admitted at or below that ratio and refused by any margin strictly above it.
