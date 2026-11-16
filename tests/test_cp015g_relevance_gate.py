@@ -101,6 +101,27 @@ def _run(seam=None, *, goal: str = GOAL) -> research.ResearchRun:
     )
 
 
+def _soldering_gate() -> dict:
+    """The recorded H-40 soldering pass, scored on its full fetched bodies."""
+    transcript = json.loads(
+        (
+            Path(__file__).resolve().parent.parent
+            / "audit"
+            / "adversarial"
+            / "harness-e2e"
+            / "transcripts"
+            / "soldering_full.json"
+        ).read_text(encoding="utf-8")
+    )
+    return relevance.gate_pages(
+        transcript["scenario"]["goal"],
+        [
+            {"title": entry["title"], "url": entry["url"], "text": entry["content"]}
+            for entry in transcript["research"]["pages"]
+        ],
+    )
+
+
 class GateArithmeticTest(unittest.TestCase):
     def test_the_goal_is_reduced_to_its_own_content_words(self) -> None:
         self.assertEqual(relevance.goal_terms(GOAL), ["prun", "fig", "tree"])
@@ -136,6 +157,11 @@ class GateArithmeticTest(unittest.TestCase):
         forestry = verdicts["https://forestry.extension.wisc.edu/tree-identification"]
         self.assertEqual(forestry["matched"], ["tree"])
         self.assertIn("below", forestry["reason"])
+        # The sentence carries the page's own ratio, not the floor constant, so a reader can
+        # reproduce the refusal without opening the module.
+        ratio = forestry["score"] / gate["best_score"]
+        self.assertIn(f"{ratio:.2f} of this pass's best page", forestry["reason"])
+        self.assertIn(f"below the {relevance.RELATIVE_MARGIN:.2f} line", forestry["reason"])
         self.assertEqual(verdicts["https://www.fao.org/meat-guidelines"]["matched"], [])
 
     def test_an_unscoreable_goal_admits_every_page_and_says_why(self) -> None:
@@ -162,25 +188,7 @@ class GateArithmeticTest(unittest.TestCase):
         # The H-40 recorded soldering pass: a CU Boulder soldering resource uses six of the goal's
         # thirteen terms and scores 0.38 against a best page at 1.00. An absolute floor alone
         # refused it; the recorded packet then lost a real source.
-        transcript = json.loads(
-            (
-                Path(__file__).resolve().parent.parent
-                / "audit"
-                / "adversarial"
-                / "harness-e2e"
-                / "transcripts"
-                / "soldering_full.json"
-            ).read_text(encoding="utf-8")
-        )
-        goal = transcript["scenario"]["goal"]
-        pages = transcript["research"]["pages"]
-        gate = relevance.gate_pages(
-            goal,
-            [
-                {"title": entry["title"], "url": entry["url"], "text": entry["content"]}
-                for entry in pages
-            ],
-        )
+        gate = _soldering_gate()
         self.assertEqual(gate["dropped"], [], [v["url"] for v in gate["verdicts"]])
         self.assertFalse(gate["floor_tripped"])
         boulder = [
@@ -190,6 +198,34 @@ class GateArithmeticTest(unittest.TestCase):
         self.assertLess(boulder[0]["score"], relevance.MIN_COVERAGE)
         self.assertGreaterEqual(boulder[0]["score"], relevance.RELATIVE_MARGIN * gate["best_score"])
         self.assertEqual(boulder[0]["verdict"], relevance.ON_TOPIC)
+
+    def test_a_relative_admission_prints_the_pages_own_ratio_not_the_margin(self) -> None:
+        # The defect this pins: every relatively-admitted page said it "reaches 0.35 of this pass's
+        # best page" — the constant — whatever it actually reached. Here the CU Boulder page is
+        # 0.382 against a 1.000 best, so its ratio (0.38) and the line (0.35) are different
+        # strings; the sentence must carry the ratio and keep 0.35 only as the line compared to.
+        gate = _soldering_gate()
+        boulder = [
+            item for item in gate["verdicts"] if "physicslabs.colorado.edu" in item["url"]
+        ][0]
+        ratio = boulder["score"] / gate["best_score"]
+        self.assertNotAlmostEqual(ratio, relevance.RELATIVE_MARGIN, places=2)
+        self.assertIn(f"reaches {ratio:.2f} of this pass's best page", boulder["reason"])
+        self.assertIn(f"above the {relevance.RELATIVE_MARGIN:.2f} line", boulder["reason"])
+        self.assertNotIn(
+            f"reaches {relevance.RELATIVE_MARGIN:.2f} of this pass's best page", boulder["reason"]
+        )
+        # Every page the relative half admits tells its own ratio, not a shared constant.
+        relative = [
+            item
+            for item in gate["verdicts"]
+            if item["verdict"] == relevance.ON_TOPIC
+            and item["score"] < relevance.MIN_COVERAGE
+        ]
+        self.assertGreaterEqual(len(relative), 1, "the packet must exercise the relative half")
+        for item in relative:
+            own = item["score"] / gate["best_score"]
+            self.assertIn(f"reaches {own:.2f} of this pass's best page", item["reason"])
 
 
 class ResearchGateTest(unittest.TestCase):
@@ -216,6 +252,14 @@ class ResearchGateTest(unittest.TestCase):
         self.assertEqual(run.relevance["kept"], len(run.sources))
         self.assertEqual(run.relevance["dropped"], len(run.dropped))
         self.assertFalse(run.relevance["floor_tripped"])
+        # The reason text stored in the ledger is non-empty and byte-identical on a re-run: the
+        # verdict copy is deterministic, not a timestamp or a counter.
+        again = _run()
+        self.assertTrue(all(entry["reason"] for entry in run.dropped))
+        self.assertEqual(
+            [entry["reason"] for entry in run.dropped],
+            [entry["reason"] for entry in again.dropped],
+        )
 
     def test_the_dropped_rows_are_carried_in_the_run_dict(self) -> None:
         payload = _run().to_dict()
@@ -314,6 +358,16 @@ class LedgerPersistenceTest(KernelCase):
         self.assertEqual(len(sources_json), len(run.sources))
         self.assertEqual(sorted(entry["url"] for entry in dropped_json), sorted(OFF_TOPIC_PAGES))
         self.assertTrue(all(entry["reason"] and entry["query"] for entry in dropped_json))
+        # The stored copy names the page's own ratio and the line it missed, not a bare constant.
+        self.assertTrue(
+            all("of this pass's best page" in entry["reason"] for entry in dropped_json)
+        )
+        self.assertTrue(
+            all(
+                f"below the {relevance.RELATIVE_MARGIN:.2f} line" in entry["reason"]
+                for entry in dropped_json
+            )
+        )
         ledger_urls = {str(item["url"]) for item in ledger}
         self.assertTrue(ledger_urls)
         self.assertFalse(ledger_urls & set(OFF_TOPIC_PAGES))

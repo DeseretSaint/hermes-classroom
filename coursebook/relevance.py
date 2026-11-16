@@ -218,16 +218,23 @@ def _reason(
         f"uses {len(matched)} of the goal's {len(terms)} content terms"
         f" ({', '.join(matched) or 'none'}); weighted coverage {score:.2f}"
     )
+    # The page's own ratio, not the line it is compared against: a reader must be able to
+    # reproduce the verdict from the sentence. ``best`` is 0 only for a pass with no score (the
+    # gate then keeps every page via ``floor_tripped``), so the guard is defensive, not a case
+    # the shipped copy reaches.
+    ratio = score / best if best > 0 else 0.0
     if verdict == ON_TOPIC and score >= MIN_COVERAGE:
         return f"{use} meets the {MIN_COVERAGE:.2f} floor"
     if verdict == ON_TOPIC:
         return (
             f"{use} is below the {MIN_COVERAGE:.2f} floor but reaches"
-            f" {RELATIVE_MARGIN:.2f} of this pass's best page ({best:.2f}), so it is admitted"
+            f" {ratio:.2f} of this pass's best page ({best:.2f}), above the"
+            f" {RELATIVE_MARGIN:.2f} line, so it is admitted"
         )
     return (
-        f"{use} is below the {MIN_COVERAGE:.2f} floor and below {RELATIVE_MARGIN:.2f} of this"
-        f" pass's best page ({best:.2f})"
+        f"{use} is below the {MIN_COVERAGE:.2f} floor and reaches"
+        f" {ratio:.2f} of this pass's best page ({best:.2f}), below the"
+        f" {RELATIVE_MARGIN:.2f} line"
     )
 
 
