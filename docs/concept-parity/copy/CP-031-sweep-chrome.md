@@ -1,10 +1,24 @@
 # CP-031c — Shared chrome shipped-string sweep
 
-Card: **CP-031c** (`t_0458a135`), re-swept by **CP-031c-R** (`t_54a44039`) at `a11bc0e4` and re-derived by **CP-031d** (`t_d20f3f5e`) at `14fb14f3`. Docs only; no product string changed.
+Card: **CP-031c** (`t_0458a135`), re-swept by **CP-031c-R** (`t_54a44039`) at `a11bc0e4`, re-derived by **CP-031d** (`t_d20f3f5e`) at `14fb14f3`, and re-swept by **CP-031e** (`t_868205f4`) at `a0925957`. Docs only; no product string changed.
 
-**Revision swept:** `origin/master` at **`14fb14f3e8c5306f973bf98ba270140ca98f0ac5`** (00-header.js, 1214 lines, whole file).
-**Rows:** 52 inventory rows; 52 distinct literals. Every row cites the line(s)
-that carry its words in this revision.
+**Revision swept:** `origin/master` at **`a0925957fc43edfb8ce3f7c846c9f49309897c0f`** (00-header.js, 1226 lines, whole file).
+**Rows:** 52 inventory rows — the 51 multi-word literals the lexer extracts from this revision,
+plus the single-token state word `Started`, rowed by hand (CP-001g, `t_4d6d5b56`) because a
+one-word state word is exactly the family member that can vanish between sweeps. Every row cites the
+line(s) that carry its words in this revision.
+
+**CP-031e re-derivation (`t_868205f4`):** between `14fb14f3` and `a0925957` only `00-header.js`
+moved (`ab62cbd7` → `b4b8bd87`); the four other segment blobs are byte-identical, so their rows and
+citations were re-checked rather than rewritten. The move is `525aa8ba`'s health work: a net twelve
+added lines across 1076–1111 introducing the pure `healthStatus(result)` helper and a `failed`
+state. Re-running this repo's lexer at the new revision gives 0 missing rows, 0 miscited rows, 0
+out-of-file citations, and no citation at or above line 1076, so no stored line number moved. The
+helper adds no row to *this* file: its return values (`'ready'`, `'failed'`, `'degraded'`) are
+single tokens the multi-word gate drops, and the rest of the block is comments. The `failed` state's
+learner-visible wording is real, but it ships in `desktop/src/10-primitives.js` (`backendCopy`,
+`MigrationFailedBody`) — a file no CP-031c sweep covers — so it is rowed in `GAP-43` instead of
+being silently attributed here.
 
 **Surface:** the rail, route title, learner vocabulary, create form, settings sheet, tutor path and the
 shell's error sentences.

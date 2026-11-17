@@ -1,8 +1,8 @@
 # CP-031c — Game and Home shipped-string sweep
 
-Card: **CP-031c** (`t_0458a135`), re-swept by **CP-031c-R** (`t_54a44039`) at `a11bc0e4` and re-derived by **CP-031d** (`t_d20f3f5e`) at `14fb14f3`. Docs only; no product string changed.
+Card: **CP-031c** (`t_0458a135`), re-swept by **CP-031c-R** (`t_54a44039`) at `a11bc0e4`, re-derived by **CP-031d** (`t_d20f3f5e`) at `14fb14f3`, and re-swept by **CP-031e** (`t_868205f4`) at `a0925957`. Docs only; no product string changed.
 
-**Revision swept:** `origin/master` at **`14fb14f3e8c5306f973bf98ba270140ca98f0ac5`** (30-home.js, 5215 lines, whole file).
+**Revision swept:** `origin/master` at **`a0925957fc43edfb8ce3f7c846c9f49309897c0f`** (30-home.js, 5215 lines, whole file).
 **Rows:** 216 inventory rows; 216 distinct literals. Every row cites the line(s)
 that carry its words in this revision.
 
