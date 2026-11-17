@@ -8,24 +8,27 @@ Each entry names: what the card body or spec asks for, why no row covers it, the
 the card that needs it. Rows marked **decision** are not mine to word — they need the owner
 (`atlas`) or the deck owner (`CP-001`).
 
-**Inventory revision (CP-031d, card `t_d20f3f5e`, re-deriving CP-031c-R `t_54a44039`):** every
+**Inventory revision (CP-031e, card `t_868205f4`, re-deriving CP-031d `t_d20f3f5e`):** every
 sweep row and every line citation in this file is re-derived from `origin/master` at
-**`14fb14f3e8c5306f973bf98ba270140ca98f0ac5`**. The line numbers below are that revision's. The gate
+**`a0925957fc43edfb8ce3f7c846c9f49309897c0f`**. The line numbers below are that revision's. The gate
 in `tests/test_cp_copy_inventory.py` keys its
 required rows on `(file, exact string)`, so a required row is located in the shipped file at test
 time instead of being trusted to a stored line number; it also re-extracts the literal population
 from the five segment files, so a re-authored file fails the gate instead of quietly rotating the
 citations.
 
-The swept revision is pinned on **content**, not only on a commit id: `00-header.js` `ab62cbd7`,
+The swept revision is pinned on **content**, not only on a commit id: `00-header.js` `b4b8bd87`,
 `30-home.js` `9877b940`, `90-course.js` `a47e7fe2`, `95-studio.js` `77d8b2ec`, `97-world.js`
 `00d46dcf`. `test_the_swept_sha_still_describes_master` compares each of those five blobs at the
 swept sha and at `origin/master`: master moving without touching them is harmless, and master
 moving one of them fails the gate naming the file, so the next author re-sweeps rather than
 rotating citations. CP-031c swept the same five files at `5d2b303e`; CP-031c-R re-derived that
 row set at `a11bc0e4`; CP-031d re-derived it again at `14fb14f3`, where `95-studio.js` had moved
-by exactly one literal (`plan change`, `95-studio.js:4666`) and no row total changed. The two
-literals CP-031c re-worded are listed at the end of `CP-031-sweep-parent-studio.md`.
+by exactly one literal (`plan change`, `95-studio.js:4666`) and no row total changed; CP-031e
+(`t_868205f4`) re-derived it at `a0925957`, where only `00-header.js` had moved — `525aa8ba`'s
+health helper added a net twelve lines and no new multi-word literal, so no row total changed — and
+the `failed`-state wording the same commit shipped in `10-primitives.js` was rowed as `GAP-43`. The
+two literals CP-031c re-worded are listed at the end of `CP-031-sweep-parent-studio.md`.
 
 Proposed ids follow the existing `<surface>.<part>` convention. Caps follow the deck's column.
 A `source` cell is written in the deck's own grammar — `deck`, `field:`, `computed:`, `pack:`,
@@ -422,12 +425,12 @@ source. A stored NULL reads as Textbook (`world.read` response description, `con
 `CP-025a-homework-game.md` and `CP-025b-studio.md` cite the visible strings of the v2 surfaces they
 replace, but a literal-by-literal sweep was outstanding. **CP-031b (`t_adc9bdee`) performed it**;
 **CP-031c (`t_0458a135`) re-derived it whole-file at `5d2b303e`, and CP-031c-R (`t_54a44039`)
-re-swept and re-anchored it at `a11bc0e4`, and CP-031d (`t_d20f3f5e`) re-derived it at
-`14fb14f3`.** The complete inventories are:
+re-swept and re-anchored it at `a11bc0e4`, CP-031d (`t_d20f3f5e`) re-derived it at
+`14fb14f3`, and CP-031e (`t_868205f4`) re-derived it at `a0925957`.** The complete inventories are:
 
 | file | in-scope source | rows |
 |---|---|---|
-| `CP-031-sweep-chrome.md` | `desktop/src/00-header.js` (all 1214 lines; rail, route title, learner vocabulary, create form, settings sheet, tutor path, shell errors) | 52 |
+| `CP-031-sweep-chrome.md` | `desktop/src/00-header.js` (all 1226 lines; rail, route title, learner vocabulary, create form, settings sheet, tutor path, shell errors) | 52 |
 | `CP-031-sweep-homework.md` | `desktop/src/90-course.js` (all 5496 lines; the whole `NotebookView` plus the classroom, textbook, quiz, plan, evidence and export surfaces) | 331 |
 | `CP-031-sweep-game.md` | `desktop/src/30-home.js` (all 5215 lines; Home shelf, the defaults line, `ChildSafeLine`, the Game band, its play layer and the field journal) | 216 |
 | `CP-031-sweep-parent-studio.md` | `desktop/src/95-studio.js` (all 7934 lines; Parent Studio, the plan shape and outline repair, the fine-tune block, the take-home pack and the homework surface hosted in the same file; §3.1 rows the Home twin of `ChildSafeLine` in `30-home.js`) | 647 |
@@ -575,7 +578,7 @@ and export records.
 CP-025a/CP-025b said "no offline copy" and "overflow: no copy". The sweep makes that precise:
 
 - **Offline:** the shell has one sentence per route (`30-home.js:191-193`` rendered at `1191`, `32-desk.js:352`,
-  `98-page.js:632`, `10-primitives.js:273`), and **none of the four surfaces mounts it** —
+  `98-page.js:654-655`, `10-primitives.js:347`), and **none of the four surfaces mounts it** —
   `95-studio.js`, `97-world.js` and the Game block in `30-home.js` never call `useOnline()`.
   A failed read says "could not be read", which misnames the cause. Proposed: `hw.offline.*`,
   `game.offline.*`, `world.offline.*`, `studio.offline.*` — one sentence each, in the shipped
@@ -780,6 +783,69 @@ Not blocking for CP-025a/CP-025b, which do not paint the journal.
 
 ---
 
+### GAP-43 — the failed-migration body and the backend-state chip have no row
+
+`525aa8ba` (card `t_34f65fe5`) split the health pane's `degraded` state from a new `failed` state,
+and the split shipped learner-visible wording in `desktop/src/10-primitives.js` — a file that is
+**not** one of the five files CP-031c sweeps, so no sweep row can be re-pointed at it and no
+inventory in this directory carries these strings.
+
+`backendCopy` (`10-primitives.js:171-175`) is the state chip painted on the route header
+(`98-page.js:529`). `525aa8ba` added the `failed` branch; the other two branches predate it and are
+also unrowed:
+
+| shipped string | line | when it paints |
+|---|---|---|
+| `Database needs repair` | `173` | the backend answered, the store exists and the migration did not complete |
+| `Database not migrated` | `172` | the backend answered with no schema yet (pre-existing) |
+| `Backend off` | `174` | no backend answer (pre-existing) |
+
+`MigrationFailedBody` (`10-primitives.js:255-303`), mounted at `98-page.js:282`, is the full body
+for the same state:
+
+| shipped string | line |
+|---|---|
+| `The course database could not be prepared` | `266` |
+| `The backend is connected, but preparing this profile’s course store failed. … Retrying asks the backend to migrate again.` | `268-271` |
+| `Retry migration` | `275` |
+| `Migration error` | `284` |
+| `Target schema` | `289` |
+| `schema v{…}`, falling back to `unknown` | `290` |
+| `Applied schema v{…}`, falling back to `No migration was applied.` | `291` |
+| `The backend did not report a message.` | `260` |
+
+Proposed rows, so the words have ids before a maker needs them:
+
+| proposed id | text | source | cap |
+|---|---|---|---|
+| `health.chip.degraded` | Database not migrated | deck | 24 |
+| `health.chip.failed` | Database needs repair | deck | 24 |
+| `health.chip.unavailable` | Backend off | deck | 12 |
+| `health.failed.title` | The course database could not be prepared | deck | 48 |
+| `health.failed.body` | The backend is connected, but preparing this profile’s course store failed. … Retrying asks the backend to migrate again. | deck | 300 |
+| `health.failed.retry` | Retry migration | deck | 20 |
+| `health.failed.error_label` | Migration error | deck | 20 |
+| `health.failed.target_label` | Target schema | deck | 16 |
+| `health.failed.target_applied` | Applied schema v{…} | deck | 32 |
+| `health.failed.target_none` | No migration was applied. | deck | 32 |
+| `health.failed.target_unknown` | unknown | deck | 12 |
+| `health.failed.no_message` | The backend did not report a message. | deck | 40 |
+
+These are new rendered facts, not re-wordings: the branch exists so a store whose migration raised
+is never described as "not migrated" (H-114 F11). A maker who builds the health pane without rows
+here has to invent the difference the commit exists to protect, so the words belong in the
+inventory even though the file they live in was never swept.
+
+**Minimum:** CP-001 (or the owner of the shell chrome, alongside `GAP-35`/`GAP-39`) rows the block
+above, and decides whether the chip words stay three (degraded / failed / off) or collapse. Closing
+the sweep gap properly needs a sixth whole-file sweep of `10-primitives.js`; that is a separate
+card, and this entry exists so the missing rows are recorded rather than assumed.
+
+**Status:** open. Not blocking CP-025a/CP-025b, which do not paint this body; it blocks any screen
+that mounts `MigrationFailedBody` or `backendCopy` without inventing their words.
+
+---
+
 ## Amendment order (what unblocks what)
 
 1. `GAP-01`, `GAP-02` — shell. Needed by every screen; do first.
@@ -799,7 +865,9 @@ Not blocking for CP-025a/CP-025b, which do not paint the journal.
    family CP-025b's detail section needs alongside `GAP-28`; `GAP-39` is the shell error sentence
    every surface can paint; `GAP-41` (Home defaults line) and `GAP-42` (Game objective-state words)
    are blocks the sample shelves and this sweep's own notes had wrongly assigned to
-   `CP-022-home.md`, so neither is a CP-025a/CP-025b blocker but both are deck debt.
+   `CP-022-home.md`, so neither is a CP-025a/CP-025b blocker but both are deck debt; `GAP-43` is
+   the failed-migration body and backend-state chip `525aa8ba` shipped in `10-primitives.js`, a file
+   no CP-031c sweep covers.
 7. Body corrections and card-body repairs (`GAP-06`, `GAP-08`–`GAP-10`, `GAP-18`, `GAP-21`,
    `GAP-26`, `GAP-29`) are `hermes kanban edit` work on the card bodies, not deck work.
 
