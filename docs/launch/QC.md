@@ -147,8 +147,9 @@ d46b46d17d0df2a3ccd986d2fe0ccc2ed398b564f31754020928742fa8ee1037  coursebook-lau
 ## Check table — VIDEO-PLAN.md §9.1–§9.5 (the automated rows) against the shipped blob
 
 This table covers the automated rows only. §9 item 6 (muted comprehension) and item 8 (craft read) are
-human reads; item 6 is recorded at n=0 of 3 below, item 7's claim audit is recorded only for the four §1
-claim lines in `POST.md` §4, and item 8 has no recorded read.
+human reads; item 6 is recorded at n=0 of 3 below. Item 7's claim audit exists here only as the nine-row
+frame audit below, which records what each beat shows but does not trace every on-screen string to
+product copy, so no item-7 pass is claimed. Item 8 has no recorded read.
 
 | Check | Required | Measured | Verdict |
 | --- | --- | --- | --- |
