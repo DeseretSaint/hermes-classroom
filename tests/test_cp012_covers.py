@@ -230,9 +230,13 @@ class AcceptanceGateCanFail(unittest.TestCase):
 
     @staticmethod
     def _stage(tmp: Path) -> None:
+        # node_modules is gitignored, machine-local install state (today it holds symlinks into the
+        # host tree). Copying it makes the negative controls depend on whether this checkout ran
+        # `npm install`, and copytree follows a dangling link and dies. Ignore it, and .chromium
+        # too: a live Chromium singleton is machine state, not a fixture.
+        ignored = shutil.ignore_patterns("__pycache__", "node_modules", ".chromium")
         for name in ("scripts", "audit", "assets"):
-            shutil.copytree(ROOT / name, tmp / name,
-                            ignore=shutil.ignore_patterns("__pycache__"))
+            shutil.copytree(ROOT / name, tmp / name, ignore=ignored)
 
     def _run(self, tmp: Path) -> subprocess.CompletedProcess:
         return subprocess.run(("python3", str(tmp / "scripts" / "cp012-cover-accept.py")),
