@@ -16,6 +16,13 @@ tags:
   - evidence
   - desktop
 
+# Coursebook is a workspace, not a tool: installing it has to put the tab in the Desktop's sidebar.
+# A unified package's desktop half is opt-in by default (the agent half is inert until enabled);
+# this asks Hermes Desktop to switch the half ON at install so the plugin's home is visible
+# immediately. A user who switches it off keeps that choice.
+desktop:
+  default_enabled: true
+
 # Declared, and registered by __init__.py. An undeclared registration fails admission.
 provides_tools:
   - coursebook_status
