@@ -152,8 +152,8 @@ invalidates the earlier evidence.
 | 10 | Public repository pushed | DeseretSaint | Measured 2026-11-10: `gh repo view DeseretSaint/hermes-classroom` reports `"visibility": "PUBLIC"` and an anonymous `git ls-remote https://github.com/DeseretSaint/hermes-classroom.git refs/heads/master` resolves `3278bae`. The visibility change itself has no recorded decision and no date in this repository — GitHub exposes no visibility-change timestamp for a user-owned repository — so this row records the measurement, not an approval | [x] |
 | 11 | Catalog entry pins the release commit | Harbor | `plugin-catalog/coursebook.yaml` on the pull-request branch pins the release tree `42fcd0f5` (module `71d940ce`; `docs_url` at the README's `#install-locally` heading, `readme: true` so the catalog renders install steps at that commit). The pull request is `NousResearch/hermes-agent#152920`, opened 2026-11-10, **open, not draft, `mergeable: MERGEABLE`** as of 2026-11-11 14:10 MST (verified through the GitHub API, not from this file), and unmerged: merging it is gated on the owner's sign-off in §0 and on gates 5 and 7. The pin and the `readme` key were changed after the maintainer's earlier approval of `3278bae`, and that delta is stated in a comment on the PR rather than silently carried | [x] |
 | 12 | Catalog PR merged | DeseretSaint | PR URL against `hermes-agent` | [ ] |
-| 13 | Demo recorded and approved | Harbor, DeseretSaint | `docs/launch/coursebook-launch-30s.mp4`, 30.400000 s, 1920x1080 30/1, H.264 High level 4.0, yuv420p, closed 2 s GOP, AAC LC stereo 48 kHz, +faststart, 5,609,771 B, sha256 `d46b46d17d0df2a3e5d...`; six film3 plates at 1344 route width dpr 2 from module `0cb478ec` plus the owner's `home-full` render (composition evidence, D-010). Recorded and measured; owner approval pending | [~] |
-| 14 | X post published | DeseretSaint | post URL, tags @NousResearch; copy, alt text and the 258-character count (241 weighted) are in `docs/launch/POST.md` §1. Nothing has been posted | [ ] |
+| 13 | Demo recorded and approved | Harbor, DeseretSaint | `docs/launch/coursebook-launch-30s.mp4`, 30.400000 s, 912 frames (30/1 CFR), 1920x1080, H.264 High level 4.0, yuv420p, a keyframe every 2.000 s (16, 0.000-30.000 s), AAC LC stereo 48 kHz with a 30.400000 s stream, `moov` before `mdat` (`+faststart`), 5,609,771 B, sha256 `d46b46d17d0df2a3ccd986d2fe0ccc2ed398b564f31754020928742fa8ee1037`; integrated loudness **-16.4 LUFS** (LRA 4.6 LU, true peak -4.4 dBFS), which is **FAIL against `docs/launch/VIDEO-PLAN.md` §9.3's -15.0 to -13.0 window by 1.4 LU** — the owner decides whether to post at -16.4 or spend one audio-only normalise pass (new file, new sha, new measurement, separate card); six film3 plates at 1344 route width dpr 2 from module `0cb478ec` plus the owner's `home-full` render (composition evidence, D-010). Recorded and measured 2026-11-16 (`docs/launch/QC.md`); owner approval of the cut pending | [~] |
+| 14 | X post published | DeseretSaint | post URL, tags @NousResearch; copy, alt text and the 267-character count (250 weighted) are in `docs/launch/POST.md` §1. Nothing has been posted | [ ] |
 | 15 | Contest form submitted | DeseretSaint | confirmation; the answer table for `https://form.typeform.com/to/FwJLvOln` is in `docs/launch/POST.md` §2 | [ ] |
 
 Open gates: 7, 12, 14, 15. Partial: 5, 6, 13. Gate 9 (MIT license) and gate 10 (repository measured
@@ -164,8 +164,10 @@ fixed: H-85's gate failed `7d0f9cf` on a P0 null-runtime crash in the course →
 Library header clipping, and `670de1b` (merged through `494a540`) removes both. What remains is
 CB-QA-09: this host runs one gateway owned by profile `default`, so a window on an isolated home has
 no composer (`docs/REVIEW_CB017-FINAL.md` §3.1), plus the absence of a live drive of this commit.
-Gates 7 and 13 still cannot start until the operator decides which gateway the recording runs
-against.
+Gates 7 and 13 are no longer waiting on a gateway decision: gate 13's film is recorded and measured (row
+13, and `docs/launch/QC.md`), and gate 7's run has been driven on `7831d31d` with three FAIL rows still
+open. What gate 13 waits on is DeseretSaint's approval of the cut and his call on the measured -16.4 LUFS
+FAIL; gate 7 waits on the three defect cards named in its row.
 
 ## 2. Release verification
 
