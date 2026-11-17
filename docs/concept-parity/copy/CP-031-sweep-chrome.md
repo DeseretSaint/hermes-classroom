@@ -173,4 +173,4 @@ extraction.
 
 **Offline and overflow evidence:** this file has no `useOnline()` branch and no truncating list,
 so it authors no offline sentence and no overflow copy. The shell's offline lines live in the route
-files (`32-desk.js:352`, `98-page.js:632`, `10-primitives.js:273`; `GAP-35`).
+files (`32-desk.js:352`, `98-page.js:654-655`, `10-primitives.js:347`; `GAP-35`).

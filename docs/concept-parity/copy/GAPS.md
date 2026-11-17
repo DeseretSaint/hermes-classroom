@@ -578,7 +578,7 @@ and export records.
 CP-025a/CP-025b said "no offline copy" and "overflow: no copy". The sweep makes that precise:
 
 - **Offline:** the shell has one sentence per route (`30-home.js:191-193`` rendered at `1191`, `32-desk.js:352`,
-  `98-page.js:632`, `10-primitives.js:273`), and **none of the four surfaces mounts it** —
+  `98-page.js:654-655`, `10-primitives.js:347`), and **none of the four surfaces mounts it** —
   `95-studio.js`, `97-world.js` and the Game block in `30-home.js` never call `useOnline()`.
   A failed read says "could not be read", which misnames the cause. Proposed: `hw.offline.*`,
   `game.offline.*`, `world.offline.*`, `studio.offline.*` — one sentence each, in the shipped
