@@ -255,13 +255,27 @@ Land the launch-body secret-scope fix in the Hermes host checkout, so a plugin b
 resolves credentials from the launch profile's own `.env`/env instead of raising:
 
 ```
-git -C ~/.hermes/hermes-agent merge --ff-only wt/t_3e8b07ba-ready && hermes gateway restart
+git -C ~/.hermes/hermes-agent merge --ff-only wt/t_3e8b07ba-rebased && hermes gateway restart
+python3 scripts/rig-research-acceptance.py --db <fresh rig home>/plugin-data/coursebook/data.db
 ```
 
-That branch is the two reviewed commits (`73b26e2323` H-68 launch-body scope, `2fb0469993` gating
-`_plugin_launch_body_scope()` on `self.home_path == get_process_hermes_home()` — harbor's remedy)
-rebased onto the checkout's own HEAD `1513f54f69`, so it fast-forwards with no rebase and no conflict;
-its tree over `agent/ hermes_cli/ tests/` is identical to the original pair. After the restart,
-re-run `scripts/rig-research-acceptance.py` on a fresh rig home; it must report
-`research_status: "ok"` with a non-empty ledger and cited objectives.
+That branch is the two reviewed commits (H-68 launch-body scope, then harbor's remedy gating
+`_plugin_launch_body_scope()` on the manager's own home) rebased onto the checkout's current HEAD, so
+it fast-forwards with no rebase and no conflict. `git range-diff` against the original pair reports
+both commits as unchanged (`=`), i.e. the rebase moved history, not content, and
+`tests/hermes_cli/test_plugin_load_launch_secret_scope.py` passes 4/4 on the rebased tree.
+
+The earlier command on this page named `wt/t_3e8b07ba-ready`; that ref is now **two commits behind the
+host checkout's HEAD** and `--ff-only` refuses it. Use the `-rebased` ref. Because the host HEAD moves
+on its own, re-check before running rather than trusting this page:
+
+```
+git -C ~/.hermes/hermes-agent merge-base --is-ancestor HEAD wt/t_3e8b07ba-rebased && echo FF-OK
+```
+
+If that fails, the branch needs one more rebase onto the new HEAD (`git rebase <HEAD>` in a scratch
+worktree, then `git branch -f wt/t_3e8b07ba-rebased`); the two commits need no content changes.
+After the restart, re-run `scripts/rig-research-acceptance.py` on a fresh rig home; it must report
+`research_status: "ok"` with a non-empty ledger and cited objectives. A rig home with no credential of
+its own still has nothing to read — see `docs/diagnostics/perplexity-isolated-2026-11.md` §4.
 

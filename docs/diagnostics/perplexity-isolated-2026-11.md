@@ -183,15 +183,22 @@ credential, and that is a secret-handling decision, not a code change. See secti
 ## 5. The one recommended fix
 
 Land the reviewed launch-body scope for plugin discovery in the host checkout. The fix exists,
-is reviewed, and is not on the running checkout: branch `wt/t_3e8b07ba-ready` adds
-`_plugin_launch_body_scope` (`hermes_cli/plugins_loader.py:194` on that branch) and enters it around
+is reviewed, and is not on the running checkout: branch `wt/t_3e8b07ba-rebased` adds
+`_plugin_launch_body_scope` (`hermes_cli/plugins_loader.py`) and enters it around
 discovery (`hermes_cli/plugins.py:405`), so a `register()`-time worker gets the launch profile's own
-frozen mapping when the process flips to fail-closed. `HEAD` (`1513f54f69`) contains neither symbol.
-The branch is two commits ahead (`73b26e2323` H-68 launch-body scope, `2fb0469993` gating on the
+frozen mapping when the process flips to fail-closed. The checkout's `HEAD` contains neither symbol.
+The branch is two commits on top of today's HEAD (H-68 launch-body scope, then gating on the
 manager's own home) and fast-forwards:
 
 ```
-git -C ~/.hermes/hermes-agent merge --ff-only wt/t_3e8b07ba-ready && hermes gateway restart
+git -C ~/.hermes/hermes-agent merge --ff-only wt/t_3e8b07ba-rebased && hermes gateway restart
+```
+
+Guard first if you are unsure — the host HEAD moves on its own, and the older `wt/t_3e8b07ba-ready`
+ref no longer fast-forwards from it:
+
+```
+git -C ~/.hermes/hermes-agent merge-base --is-ancestor HEAD wt/t_3e8b07ba-rebased && echo FF-OK
 ```
 
 That is an operator command: the gateway being restarted parents the live board session. Verify
