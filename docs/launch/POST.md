@@ -14,8 +14,10 @@ the words are spoken.
 
 Its measured loudness is **-16.4 LUFS**, **1.4 LU under `VIDEO-PLAN.md` §9.3's -15.0 floor**: the posted
 file fails that criterion as it stands. The owner decides whether to accept it or spend one audio-only
-normalise pass, which would make a new file and a new sha (`QC.md` §"Decision"). Every other §9 row
-passes on this blob.
+normalise pass, which would make a new file and a new sha (`QC.md` §"Decision"). Every other automated §9
+row (items 1-5) passes on this blob; item 6, the muted comprehension read, is unmeasured on this cut
+(n=0 of 3, `QC.md` §"Muted comprehension"), item 7's claim audit is recorded only for the four §1 claim
+lines (§4 below), and item 8, the craft read, has no recorded read either.
 
 ## 1. The X post — 267 characters raw
 

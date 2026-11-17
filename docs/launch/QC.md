@@ -144,7 +144,11 @@ $ sha256sum coursebook-launch-30s.mp4
 d46b46d17d0df2a3ccd986d2fe0ccc2ed398b564f31754020928742fa8ee1037  coursebook-launch-30s.mp4
 ```
 
-## Check table — VIDEO-PLAN.md §9 against the shipped blob
+## Check table — VIDEO-PLAN.md §9.1–§9.5 (the automated rows) against the shipped blob
+
+This table covers the automated rows only. §9 item 6 (muted comprehension) and item 8 (craft read) are
+human reads; item 6 is recorded at n=0 of 3 below, item 7's claim audit is recorded only for the four §1
+claim lines in `POST.md` §4, and item 8 has no recorded read.
 
 | Check | Required | Measured | Verdict |
 | --- | --- | --- | --- |
