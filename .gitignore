@@ -16,6 +16,10 @@ audit/visual/**/.chromium/
 # scripts/cp-capture.mjs --fixture puts its throwaway profile inside the output directory
 .chromium-fixture/
 
+# scripts/cb-frame.py writes its module-rendered frames here; docs/TRUNK-RECONCILIATION.md
+# treats them as evidence artefacts, never code.
+.coursebook/
+
 # CP-004 font subsetting venv (private, never committed)
 .venv-cb-assets/
 
