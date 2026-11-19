@@ -337,3 +337,49 @@ Consequences for the card's stated unblock:
 
 No window, no CDP probe, no operator gateway action was taken; the rig backend was stopped and the
 sentinel `.env` and probe plugin removed after the measurement.
+
+## 8. The seam, named statically (2026-11-18 21:20 MST): the plugin host's own base context
+
+§7 could not name which context raised without instrumenting a live backend. Reading the host code
+names it, and it is not the tick's copied context at all: the tick runs inside the **plugin host
+child** (`plugins.isolation: host`, rig `config.yaml`), so its `ctx.dispatch_tool('web_search')` is
+forwarded to the parent as a plugin-host request, and that request has no caller
+(`Channel.request` stamps `origin: _SERVING.get()`, which is unset on a thread the plugin started
+itself). The parent therefore serves it under `PluginHost._base_context`
+(`hermes_cli/plugin_host.py:401` `_context_for_origin`).
+
+`_build_base_context` (`hermes_cli/plugin_host.py:113-127`) builds a **fresh** `contextvars.Context`
+and installs a profile secret scope **only if `is_multiplex_active()` is already true at creation
+time**. `hermes serve` creates the host during plugin discovery and flips multi-profile hosting as
+its last boot step (§1), so the scope is never installed, and every request the host serves
+afterwards raises `UnscopedSecretError` on a credential read. That is why the H-68 launch-body fix
+did not help: it arms the *in-process discovery* context
+(`plugins_loader._plugin_launch_body_scope`), while the read happens in this deliberate fresh one.
+
+It also corrects §7 item 3 and the card's second blocker: the missing key is not a separate
+decision. The scope never bound, so the gateway route's own Nous token read raised first and the
+provider fell back to the direct perplexity path with no local key either — one root cause, not two.
+
+**Candidate fix, on the host repo, published as a branch only** (not merged into the served
+checkout, no restart): `wt/h68b-plugin-host-base-scope` @ `e3185b3287` (one commit off the host's
+current `32be83fee8`). It arms the same launch-body seam in that fresh context, gated on the host
+serving the process's own home; it is inert while single-profile, so env semantics do not move, and
+a context that is neither scoped nor a launch body still raises.
+
+```
+tests/hermes_cli/test_plugin_host_base_context_secret_scope.py   2 passed
+tests/hermes_cli/test_plugin_load_launch_secret_scope.py + test_plugin_host*.py + secret-scope
+  suites (13 files)                                              80 passed, 5 pre-existing failures
+```
+
+Red proof: with the one hunk reverted, the new test raises the production message verbatim
+(`Hermes could not read this profile's H68B_PLUGIN_HOST_PROBE_KEY …`). The 5 failures
+(`test_plugin_host.py::…model_provider_profile_data…`, two in `test_plugin_host_mixed_profiles.py`,
+`test_plugin_host_seeded_credentials.py::…ambient_token`, and
+`test_plugin_host_profiles_launch_dir.py::…launch_directory`) fail identically on the unmodified
+tree in this environment (`PluginHostUnavailable` — the tests spawn a real host child), so they are
+environmental, not this change.
+
+Operator action, one line: `git -C ~/.hermes/hermes-agent merge --ff-only wt/h68b-plugin-host-base-scope
+&& hermes gateway restart`, then re-run `scripts/rig-research-acceptance.py` on a rig home that
+carries its own search credential (§4) or the managed gateway route.
