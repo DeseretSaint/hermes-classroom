@@ -383,3 +383,44 @@ environmental, not this change.
 Operator action, one line: `git -C ~/.hermes/hermes-agent merge --ff-only wt/h68b-plugin-host-base-scope
 && hermes gateway restart`, then re-run `scripts/rig-research-acceptance.py` on a rig home that
 carries its own search credential (§4) or the managed gateway route.
+
+## 9. Measured with h68b (2026-11-19 09:30–09:50 MST): an isolated backend researches, no restart
+
+Setup: host worktree at `e3185b3287` (`wt/h68b-plugin-host-base-scope`, one commit off the served
+checkout's `32be83fee8`), checked out under `~/.hermes/cache/scratch/host-h68b`, backend
+`hermes serve --isolated --host 127.0.0.1 --port 44719` started from that tree with
+`HERMES_HOME=~/.hermes/coursebook-test-t3e8b07ba/home`. Interpreter: the install venv that actually
+carries `httpx`/`websockets`
+(`~/.hermes/installs/4d8bf4040d63cdfa/environments/f562dbb8ef204459ad79fccf91a74a80/venv/bin/python`).
+No gateway restart, no Desktop window, no CDP probe, no operator profile touched.
+
+Result — one `course.create` → one plan job (`job_ec5c1c8942f24a8a9c7ac46d4d71b9d1`) completed:
+
+| row | value |
+|---|---|
+| `gen_research_runs e71bbee5e25bf3f3.status` | **`ok`** (reason: "2 off-topic source(s) dropped") |
+| `sources` for the course | **8** |
+| plan objectives / with `provenance.source_ids` | **5 / 4** (`ea4563fb…`, `fa67b57c…`, both present in `sources`) |
+| `errors.log` "could not read this profile's PERPLEXITY_API_KEY" | **0** (r3: 12) |
+| `errors.log` `NOUS_INFERENCE_BASE_URL unreadable` | **0** |
+
+So the base-context seam named in §8 was the last code seam for a rig: with h68b the plugin host's
+requests resolve the home's own scope instead of raising, and the managed search route answers. The
+validator still returned `reject`, but on content (`goal_capability_disclosure`,
+`alternative_coverage`, `hazard_age_appropriateness`) — `source_support` is gone from the list.
+Research being available does not make content valid; it makes the verdict measurable.
+
+Two traps met on the way, both environmental, neither a product defect:
+
+1. A `python3` without `httpx`/`websockets` (the bare runtime interpreter, and `/usr/bin/python3`)
+   makes `ensure_host_tools()` fail, so the ledger records `Unknown tool: web_search` and the run
+   looks like a host-seam failure. The rig probe must use the install venv above; the tell is
+   `tool_registry_warm: skipped (ModuleNotFoundError: No module named 'websockets')` in the record.
+2. `scripts/rig-research-acceptance.py` read objectives only at the document's top level, while the
+   product stores them under `plan` (`{"plan": {"objectives": …, "units": …}}`). A research-`ok`,
+   four-cited plan therefore reported `objectives: 0` → false `not-ok`. Fixed with a regression test;
+   re-reading the same course now yields `cited_objectives: 4`, `verdict: "ok"`, exit 0.
+
+Operator action, narrowed to what it actually buys: merge h68b into the host checkout and restart
+the gateway to deploy it to the long-lived gateway (default profile + Desktop). A rig does **not**
+need the restart — it is a new process that loads whatever tree it is started from.

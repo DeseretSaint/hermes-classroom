@@ -128,6 +128,28 @@ class RigResearchAcceptanceTests(unittest.TestCase):
         record = self.module.read_rows(self.db, "crs_rig")
         self.assertEqual([c["objective_id"] for c in record["objectives_with_source_ids"]], ["obj_u1"])
 
+    def test_objective_under_the_nested_plan_is_found(self) -> None:
+        """The shape the product actually stores: the plan sits under ``plan``.
+
+        Measured on a live rig (2026-11-19, course ``crs_96afd813…``): research ``ok`` with
+        eight ledger sources and four cited objectives, yet the script reported
+        ``objectives: 0`` because it only read the top level — a false ``not-ok``.
+        """
+        self._seed(document={"plan": {
+            "objectives": [{"objective_id": "obj_p1", "provenance": {"source_ids": ["src_0"]}}],
+            "units": [{"ordinal": 1, "objectives": [
+                {"objective_id": "obj_p2", "provenance": {"source_ids": ["src_1"]}},
+                {"objective_id": "obj_p3", "provenance": {"source_ids": []}},
+            ]}],
+        }})
+        record = self.module.read_rows(self.db, "crs_rig")
+        self.assertEqual(record["objectives"], 3)
+        self.assertEqual(
+            [c["objective_id"] for c in record["objectives_with_source_ids"]],
+            ["obj_p1", "obj_p2"],
+        )
+        self.assertEqual(self.module.verdict_for(record), "ok")
+
     def test_ledger_only_is_not_green(self) -> None:
         self._seed(sources=3, document=None)
         record = self.module.read_rows(self.db, "crs_rig")

@@ -203,11 +203,36 @@ def read_rows(db: Path, course_id: str) -> dict:
 
 
 def _iter_objectives(document: dict):
-    for objective in document.get("objectives") or []:
-        yield objective
-    for unit in document.get("units") or []:
-        for objective in unit.get("objectives") or []:
-            yield objective
+    """Every objective in a stored plan document.
+
+    The product's ``gen_plan_documents.document_json`` nests the plan under ``plan``
+    (``{"plan": {"objectives": [...], "units": [...]}}``), so reading only the top level
+    reported ``objectives: 0`` for a document that carried five cited objectives — a false
+    ``not-ok`` against a rig whose research had actually succeeded (measured 2026-11-19,
+    course ``crs_96afd813…``). Both shapes are read; a document with objectives at both
+    levels is not double-counted by id.
+    """
+    seen: set[str] = set()
+
+    def emit(objective):
+        key = str(objective.get("objective_id") or objective.get("id") or id(objective))
+        if key in seen:
+            return
+        seen.add(key)
+        return objective
+
+    for body in (document, document.get("plan") or {}):
+        if not isinstance(body, dict):
+            continue
+        for objective in body.get("objectives") or []:
+            if isinstance(objective, dict) and (found := emit(objective)) is not None:
+                yield found
+        for unit in body.get("units") or []:
+            if not isinstance(unit, dict):
+                continue
+            for objective in unit.get("objectives") or []:
+                if isinstance(objective, dict) and (found := emit(objective)) is not None:
+                    yield found
 
 
 def _source_ids(objective: dict) -> list[str]:

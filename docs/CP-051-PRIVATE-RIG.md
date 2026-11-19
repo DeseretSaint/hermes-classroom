@@ -292,3 +292,9 @@ unblocks a rig — the rig backend is a new process and already had the fixed co
 the plugin-host child / thread context that never enters `_plugin_launch_body_scope`, and the rig still
 has no credential to read. Do not tell the operator a restart fixes this.
 
+**Superseded by measurement, 2026-11-19:** the remaining seam was `PluginHost._build_base_context`, and
+`wt/h68b-plugin-host-base-scope` (`e3185b3287`, one commit off this checkout) closes it. A backend
+started from that tree researches cleanly — `research_status: ok`, 8 ledger sources, 4 cited
+objectives, zero scope errors, no restart (`docs/diagnostics/perplexity-isolated-2026-11.md` §9).
+The restart is now only what deploys the fix to the operator's long-lived gateway; a rig needs only the
+merged tree.
