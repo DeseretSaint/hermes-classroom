@@ -184,10 +184,18 @@ does not exist yet; `classroom` and `world-studio` are skipped for want of an ap
 Home improved from `display_cover 0/4` to `2/4` plus a real kit hero, which is the only measured
 movement this wave can claim.
 
-Therefore: no parity claim is made for this wave. Two cards carry the remaining gate work, and
-neither blocks a screen card: `t_f8c1e464` (VQ-009, the capture door) and `t_7f3699c5` (VQ-010, the
-2x plate rule). A frame that resolves to the wrong surface, or photographs dark, is not evidence
-even when it looks correct.
+Therefore: no parity claim is made for this wave. A frame that resolves to the wrong surface, or
+photographs dark, is not evidence even when it looks correct.
+
+*Where the two gate requirements went (recorded 2026-11-19).* This paragraph originally named
+`t_f8c1e464` (VQ-009, the capture door) and `t_7f3699c5` (VQ-010, the 2x plate rule) as the cards
+carrying the remaining work. Both were archived at 2026-11-11 21:33 as superseded, so neither is a
+live owner. The capture requirement is now served by `scripts/cb-frame.py`, which is what produces
+frames and stamps `module_sha256` / `installed_module_sha256` / `installed_matches_branch`; the 2x
+rule survives as a test,
+`tests/test_cp010_fox_assets.py::…::test_every_rendered_fox_box_is_served_at_2x`.
+The ruling itself stands unchanged: a frame that resolves to the wrong surface, or photographs dark,
+is not evidence.
 
 ### D-010 — the rig names its course surfaces; a role that names a plate is identity-matched
 
