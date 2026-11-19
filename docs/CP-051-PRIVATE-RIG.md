@@ -284,3 +284,11 @@ After the restart, re-run `scripts/rig-research-acceptance.py` on a fresh rig ho
 `research_status: "ok"` with a non-empty ledger and cited objectives. A rig home with no credential of
 its own still has nothing to read — see `docs/diagnostics/perplexity-isolated-2026-11.md` §4.
 
+**Measured post-merge on 2026-11-18, and this changes the instruction:** the branch is now on the host
+checkout (`32be83fee8`) and a fresh isolated backend started from it **still** raises the same
+`UnscopedSecretError` on the search path (`rig-research-r5-fixed.json`, `-r6-gateway.json`; details in
+`docs/diagnostics/perplexity-isolated-2026-11.md` §7). A gateway restart is therefore **not** what
+unblocks a rig — the rig backend is a new process and already had the fixed code. The remaining seam is
+the plugin-host child / thread context that never enters `_plugin_launch_body_scope`, and the rig still
+has no credential to read. Do not tell the operator a restart fixes this.
+

@@ -285,3 +285,55 @@ def register(ctx):
 
 Run it as a plain process for the working path (no thread, no activation), and under
 `hermes serve --isolated` for the failing path.
+
+## 7. Post-merge measurement (2026-11-18 17:00 MST): the fix lands, the rig read still raises
+
+The reviewed branch was fast-forwarded into the host checkout (`ae2a81ccc0` → `32be83fee8`) and the
+rig was re-measured **without** restarting the operator gateway — the isolated backend is a fresh
+process, so it loads the merged code by construction:
+
+```
+$ git -C ~/.hermes/hermes-agent rev-parse --short HEAD
+32be83fee8
+$ python -m pytest tests/hermes_cli/test_plugin_load_launch_secret_scope.py -q
+4 passed in 0.80s          # provisioned site-packages via PYTHONPATH; pytest from a scratch venv
+```
+
+Rig: `~/.hermes/coursebook-test-t3e8b07ba/home` (plugin reinstalled from `origin/master` `a19a1f9c`,
+`desktop/plugin.js` sha `a7d9037b…0a8b`), backend `hermes serve --isolated --port 44719` started from
+the merged checkout, one `course.create` → one plan job:
+
+| run | rig config | `research_status` | `research_reason` |
+|---|---|---|---|
+| `rig-research-r5-fixed.json` | as found (no `web:` block) | `unavailable` | could not read this profile's `PERPLEXITY_API_KEY` |
+| `rig-research-r6-gateway.json` | `web.backend: firecrawl`, `web.use_gateway: true` | `unavailable` | same message, unchanged |
+
+Both runs are post-merge (`wire_version` 29, jobs `completed`, 0 ledger sources, 0 objectives). The
+backend's own `logs/errors.log` shows the scope is still unbound in the searching context, and not
+only for search:
+
+```
+17:00:16 WARNING plugins.web.perplexity.provider: Perplexity search error: Hermes could not read this profile's PERPLEXITY_API_KEY …
+17:00:16 WARNING hermes_cli.auth: nous: NOUS_INFERENCE_BASE_URL unreadable — no profile secret scope on a multiplexed call …
+```
+
+Consequences for the card's stated unblock:
+
+1. **A `hermes gateway restart` is not the missing step for a rig.** The isolated backend is a new
+   process; it already had the fixed code and still raised. The restart only redeploys the operator's
+   long-lived gateway.
+2. `_plugin_launch_body_scope` is gated on `manager_home == get_process_hermes_home()` **and**
+   `_is_process_home(home)`, and it binds `launch_profile_policy.launch_body()`. In a plain process
+   with `HERMES_HOME` set to this rig home both predicates hold (measured: `is_process_home(rig):
+   True`, `manager home_path: <rig home>`), so the gate itself is not what fails; the raise comes
+   from a context that never entered it — the plugin-host child
+   (`python -m hermes_cli.plugin_host_child`, `HERMES_HOME` = rig home) or a thread copied from a
+   context born outside discovery. That is the remaining host seam, and it is not fixed by the merge.
+3. Even with a bound scope this rig home has **no key to read** (§4): no `PERPLEXITY_API_KEY` exists
+   in `~/.hermes/.env`, any profile `.env`, or the operator's environment. `web.backend: firecrawl` +
+   `use_gateway: true` (the operator's own route) still selects the perplexity provider because
+   firecrawl has no local key either — so the research path needs a credential decision, not only a
+   code fix.
+
+No window, no CDP probe, no operator gateway action was taken; the rig backend was stopped and the
+sentinel `.env` and probe plugin removed after the measurement.
