@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -24,7 +25,7 @@ ORPHAN = "home.course--460--light--200--continue.png"
 
 def run_inventory(*extra: str) -> subprocess.CompletedProcess:
     return subprocess.run(
-        ["python3", str(SCRIPT), *extra], capture_output=True, text=True, timeout=120, cwd=str(ROOT)
+        [sys.executable, str(SCRIPT), *extra], capture_output=True, text=True, timeout=120, cwd=str(ROOT)
     )
 
 
