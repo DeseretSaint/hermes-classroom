@@ -1,0 +1,21 @@
+{
+  "base": "http://127.0.0.1:44719",
+  "wire_version": 29,
+  "created": true,
+  "tool_registry_warm": "ok (0 toolset(s) listed)",
+  "job": {
+    "job_id": "job_ec5c1c8942f24a8a9c7ac46d4d71b9d1",
+    "state": "completed",
+    "error": null
+  },
+  "course_id": "crs_96afd8135557453f8d28e20b1dd137d6",
+  "research_run_id": "e71bbee5e25bf3f3",
+  "research_status": "ok",
+  "research_reason": "2 off-topic source(s) dropped (see the research ledger)",
+  "ledger_sources": 8,
+  "objectives": 0,
+  "objectives_with_source_ids": [],
+  "objective_source_ids": [],
+  "cited_objectives": 0,
+  "verdict": "not-ok"
+}

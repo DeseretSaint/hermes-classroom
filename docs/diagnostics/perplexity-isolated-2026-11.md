@@ -410,6 +410,10 @@ validator still returned `reject`, but on content (`goal_capability_disclosure`,
 `alternative_coverage`, `hazard_age_appropriateness`) — `source_support` is gone from the list.
 Research being available does not make content valid; it makes the verdict measurable.
 
+Records: `docs/diagnostics/evidence/rig-research-r8-h68b.json` (the plan run) and
+`rig-research-r8b-readback.json` (the same course re-read after the objectives fix, `verdict: ok`,
+exit 0).
+
 Two traps met on the way, both environmental, neither a product defect:
 
 1. A `python3` without `httpx`/`websockets` (the bare runtime interpreter, and `/usr/bin/python3`)
