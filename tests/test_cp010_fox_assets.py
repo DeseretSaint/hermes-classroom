@@ -14,6 +14,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -288,7 +289,7 @@ class Pipeline(unittest.TestCase):
                 self.assertTrue(raw.exists(), f"{raw.name} missing; the raw must be kept")
                 out = Path(tempfile.mkdtemp(prefix="cp010-rekey-")) / "master.png"
                 subprocess.run(
-                    ["python3", "scripts/cp010-fox-prep.py", str(raw), str(out), "--master-only"],
+                    [sys.executable, "scripts/cp010-fox-prep.py", str(raw), str(out), "--master-only"],
                     cwd=ROOT, check=True, capture_output=True,
                 )
                 with Image.open(out) as made, Image.open(ROOT / row["asset"]) as shipped:
@@ -690,8 +691,6 @@ class FoxProofPage(unittest.TestCase):
                 self.assertIn('data-cb3-fox="%s"' % pose, page)
 
     def test_a_fresh_render_reproduces_the_committed_page(self):
-        import sys
-
         if _desktop_node_modules() is None:
             raise unittest.SkipTest("react/react-dom are not installed beside the desktop app")
         result = subprocess.run(

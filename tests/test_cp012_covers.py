@@ -239,7 +239,7 @@ class AcceptanceGateCanFail(unittest.TestCase):
             shutil.copytree(ROOT / name, tmp / name, ignore=ignored)
 
     def _run(self, tmp: Path) -> subprocess.CompletedProcess:
-        return subprocess.run(("python3", str(tmp / "scripts" / "cp012-cover-accept.py")),
+        return subprocess.run((sys.executable, str(tmp / "scripts" / "cp012-cover-accept.py")),
                               capture_output=True, text=True, cwd=tmp)
 
     def test_a_plum_patch_on_a_shipped_master_is_rejected(self):
@@ -352,7 +352,7 @@ class Evidence(unittest.TestCase):
 def accept_run() -> subprocess.CompletedProcess:
     """Run the machine acceptance once per process; both guards read its output."""
     return subprocess.run(
-        ("python3", str(ROOT / "scripts" / "cp012-cover-accept.py")),
+        (sys.executable, str(ROOT / "scripts" / "cp012-cover-accept.py")),
         capture_output=True, text=True, cwd=ROOT)
 
 
