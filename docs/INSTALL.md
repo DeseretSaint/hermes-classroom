@@ -3,7 +3,8 @@
 This guide covers the two install paths that exist today: a linked development install from a local
 checkout, and a scripted single-home install that does the same thing plus enable and verification.
 Catalog install is not available yet. Every command below was executed on the CB-014 candidate
-(`97fff42`) in a throwaway `HERMES_HOME`, and the observed result is stated next to it.
+(`97fff42`) in a throwaway `HERMES_HOME`, and the observed result is stated next to it — except
+where a section names a different commit, which carries the measurement for that commit.
 
 Read the status table in `README.md` before installing. The package installs and its backend
 answers. The Desktop page mounts whenever the window reaches a gateway-backed backend, so course
@@ -40,22 +41,82 @@ That is the same command catalog CI runs.
 ### Running the test suite
 
 The suite additionally needs wheels that are not runtime dependencies, so install
-`requirements-dev.txt` into the interpreter Hermes runs (the one `hermes serve` uses; `scripts/test.sh`
-calls it `python3` or `COURSEBOOK_PYTHON`) before running it:
+`requirements-dev.txt` into **the interpreter Hermes runs** — the venv `hermes serve` runs under,
+not whatever `python3` PATH happens to resolve. In a non-interactive shell (cron, a worker,
+`ssh host cmd`) PATH resolves the system interpreter: the wheels land where the gate cannot see
+them and the run fails wholesale on imports it cannot satisfy. Measured on this tree at `9b1e8eb7`,
+the only difference being the interpreter:
 
 ```
-uv pip install --python "$(command -v python3)" -r requirements-dev.txt
-python3 -m unittest discover -s tests -t .
+/usr/bin/python3 -m unittest discover -s tests -t .
+  -> Ran 2364 tests in 590.115s
+     FAILED (failures=5, errors=241, skipped=21)
+     # the errors are "No module named …": referencing (142), jsonschema (65),
+     # PIL (31), hermes_yaml (3), hermes_cli (1), pypdf (1)
+
+COURSEBOOK_PYTHON=<runtime venv>/bin/python3 bash scripts/test.sh
+  -> Ran 5297 tests in 1109.547s
+     OK (skipped=31)
+     desktop/plugin.js: syntax OK
+     All checks passed.
+```
+
+A wrong interpreter therefore shows up as mass import errors and a collection count far below the
+real suite (2,364 against 5,297 is the tell: most of the suite never imported). Re-run the gate with
+the runtime interpreter before filing a product defect, and point `scripts/test.sh` at it with
+`COURSEBOOK_PYTHON=` — without that variable the script runs plain `python3`.
+
+The property that matters is not the path but what one process can import: `hermes_cli`,
+`jsonschema` and `PIL` must import together (and `pdfplumber` for the print proof), and it must be
+the venv the gateway imports from. Find candidates without trusting PATH:
+
+```
+for p in $(which -a python3); do
+  "$p" -c "import hermes_cli, jsonschema, PIL" >/dev/null 2>&1 && echo "candidate: $p"
+done
+```
+
+Run on this machine (2026-11-19) that printed two Hermes envs:
+
+```
+candidate: ~/.hermes/installs/4d8bf4040d63cdfa/environments/f562dbb8ef204459ad79fccf91a74a80/venv/bin/python3
+candidate: ~/.hermes/installs/4d8bf4040d63cdfa/environments/c93827e04fdc42e588e05c394fee906f/venv/bin/python3
+```
+
+More than one env can pass, so identify the one the gateway actually runs before picking:
+
+```
+ps -o args= -p $(pgrep -f 'hermes_cli.main.*gateway run' | head -1)
+```
+
+Here that printed `~/.hermes/tools/python-3.14.9+20261021-linux-x64/bin/python3 -m hermes_cli.main
+--profile default gateway run --quiet` — a source-checkout launcher, not one of the env venvs. The
+venv that process imports from is in its mapped files:
+
+```
+grep -m1 -o '/[^ ]*venv/lib/[^ ]*site-packages' /proc/$(pgrep -f 'hermes_cli.main.*gateway run' | head -1)/maps
+```
+
+which printed the `f562…` site-packages path above, so that venv's `venv/bin/python3` is the
+interpreter to use. When the gateway's command line names a venv directly, match that path against
+the candidates instead. Install the dev wheels into the interpreter you picked, then run the gate:
+
+```
+PYTHON=~/.hermes/installs/4d8bf4040d63cdfa/environments/f562dbb8ef204459ad79fccf91a74a80/venv/bin/python3
+uv pip install --python "$PYTHON" -r requirements-dev.txt
+COURSEBOOK_PYTHON="$PYTHON" bash scripts/test.sh
 ```
 
 A standalone venv cannot be this gate: the suite imports the Hermes agent itself
 (`plugins.plugin_storage`, the dashboard API) and the agent's own dependencies, which only the
 Hermes install carries. `pdfplumber` is the wheel to know about: `coursebook/print_geometry.py`
 measures a printed PDF's glyphs and raises its typed `GeometryUnavailable` when the wheel is absent,
-which is why it is not declared in `plugin.yaml` — a host without it still answers a learner. Without
-it `tests/test_up_print_geometry.py` reports a named skip that quotes the install command, and
-without the declared optional dependencies `tests/test_install_provisioning.py` reports the missing
-module, so a bare interpreter gives a reason rather than twenty-one errors.
+which is why it is not declared in `plugin.yaml` — a host without it still answers a learner. Its
+absence is a **skip, not a failure**: without it the print-geometry cases in
+`tests/test_up_print_geometry.py` report named skips that quote the install command, and the gate
+still ends `OK (skipped=31)`. Without the declared optional dependencies
+`tests/test_install_provisioning.py` reports the missing module, so a bare interpreter gives a
+reason rather than twenty-one errors.
 
 ## 1. Get the source
 
