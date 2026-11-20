@@ -258,8 +258,9 @@ the served `HEAD` `32be83fee8`, fast-forwards). `wt/t_3e8b07ba-rebased-r2` is no
 `HEAD`**, so merging it prints `Already up to date` and lands nothing:
 
 ```
-git -C ~/.hermes/hermes-agent merge-base --is-ancestor HEAD wt/h68b-plugin-host-base-scope && echo FF-OK
-git -C ~/.hermes/hermes-agent merge --ff-only wt/h68b-plugin-host-base-scope && hermes gateway restart
+git -C ~/.hermes/hermes-agent merge-base --is-ancestor HEAD wt/h68b-plugin-host-base-scope \
+  && git -C ~/.hermes/hermes-agent merge --ff-only wt/h68b-plugin-host-base-scope \
+  && hermes gateway restart
 python3 scripts/rig-research-acceptance.py --db <fresh rig home>/plugin-data/coursebook/data.db
 ```
 
@@ -286,7 +287,7 @@ git -C ~/.hermes/hermes-agent merge-base --is-ancestor HEAD wt/h68b-plugin-host-
 If that fails, the branch needs one more rebase onto the new HEAD (cherry-pick the fix commits in
 a scratch worktree, then `git branch -f wt/h68b-plugin-host-base-scope`); expect one adaptation if
 `agent/secret_scope.py` was refactored again.
-After the restart, re-run `scripts/rig-research-acceptance.py` on a fresh rig home; it must report
+After the merge, re-run `scripts/rig-research-acceptance.py` on a fresh rig home; it must report
 `research_status: "ok"` with a non-empty ledger and cited objectives. A rig home with no credential of
 its own still has nothing to read — see `docs/diagnostics/perplexity-isolated-2026-11.md` §4.
 

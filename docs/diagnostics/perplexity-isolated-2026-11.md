@@ -193,16 +193,16 @@ covers the plugin-host base context (§9). `-r2` is the two fix commits on top o
 the `hermes_scope`/`_bound_secrets()` state API:
 
 ```
-git -C ~/.hermes/hermes-agent merge --ff-only wt/h68b-plugin-host-base-scope && hermes gateway restart
+git -C ~/.hermes/hermes-agent merge-base --is-ancestor HEAD wt/h68b-plugin-host-base-scope \
+  && git -C ~/.hermes/hermes-agent merge --ff-only wt/h68b-plugin-host-base-scope \
+  && hermes gateway restart
 ```
 
-Guard first if you are unsure — the host HEAD moves on its own (it has jumped 8,154 commits since the
-originally reviewed base), and the older `wt/t_3e8b07ba-ready` and `wt/t_3e8b07ba-rebased` refs no
-longer fast-forward from it:
-
-```
-git -C ~/.hermes/hermes-agent merge-base --is-ancestor HEAD wt/h68b-plugin-host-base-scope && echo FF-OK
-```
+The first term is the guard, not a formality: the host HEAD moves on its own (it has jumped 8,154
+commits since the originally reviewed base), and the older `wt/t_3e8b07ba-ready` and
+`wt/t_3e8b07ba-rebased` refs no longer fast-forward from it. If `merge-base --is-ancestor` fails, stop:
+the branch needs a rebase onto the new HEAD before the merge can land (the process is in
+`docs/CP-051-PRIVATE-RIG.md` §7.4).
 
 That is an operator command: the gateway being restarted parents the live board session. Verify
 afterwards with `scripts/rig-research-acceptance.py` (exit 0 requires `gen_research_runs.status ==
@@ -381,8 +381,10 @@ Red proof: with the one hunk reverted, the new test raises the production messag
 tree in this environment (`PluginHostUnavailable` — the tests spawn a real host child), so they are
 environmental, not this change.
 
-Operator action, one line: `git -C ~/.hermes/hermes-agent merge --ff-only wt/h68b-plugin-host-base-scope
-&& hermes gateway restart`, then re-run `scripts/rig-research-acceptance.py` on a rig home that
+Operator action, guarded: `git -C ~/.hermes/hermes-agent merge-base --is-ancestor HEAD
+wt/h68b-plugin-host-base-scope && git -C ~/.hermes/hermes-agent merge --ff-only
+wt/h68b-plugin-host-base-scope && hermes gateway restart`, then re-run
+`scripts/rig-research-acceptance.py` on a rig home that
 carries its own search credential (§4) or the managed gateway route.
 
 ## 9. Measured with h68b (2026-11-19 09:30–09:50 MST): an isolated backend researches, no restart
