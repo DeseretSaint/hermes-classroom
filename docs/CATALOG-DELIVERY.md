@@ -34,12 +34,13 @@ own machine, because our desktop plugin is a **symlink** (`~/.hermes/plugins/cou
 
 1. **No entry was reachable.** *Fixed 2026-11-13.* The entry existed only on
    `add-coursebook-catalog-entry` and the pull request was open and unmerged; the published catalog of
-   2026-11-12 (2,094 entries, `generated_at` 09:57Z) did not contain `coursebook`, so
+   2026-11-12 (2,094 entries) did not contain `coursebook`, so
    `hermes plugins install coursebook` answered *"'coursebook' is not in the
    Hermes plugin catalog"* for every user, on every machine (verified in an isolated home). The pull
    request `NousResearch/hermes-agent#152920` has since merged — maintainer `teknium1`, 2026-11-13,
-   merge commit `3359ee03`, pin `14a2dbb6` (v0.2.1) — and the published index at
-   `generated_at 2026-11-20T03:56:42Z` contains that entry.
+   merge commit `3359ee03`, pin `14a2dbb6` (v0.2.1) — and at measurement on 2026-11-20 the published
+   index contained that entry. The index's `generated_at` rotates, so re-run
+   `python3 scripts/catalog-live-check.py` rather than trusting this line.
 2. **The entry could never pass admission.** The pinned commit shipped
    `visual/node_modules/playwright-core/lib/webp_codec.wasm`. The admission gate
    (`scripts/ci/catalog_validate_pinned_entries.py`) refuses unscannable executable payloads

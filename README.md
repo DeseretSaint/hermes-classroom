@@ -88,10 +88,11 @@ it changed.
 The catalog entry `plugin-catalog/coursebook.yaml` merged in
 [`NousResearch/hermes-agent#152920`](https://github.com/NousResearch/hermes-agent/pull/152920) on
 2026-11-13: the maintainer `teknium1` merged it at merge commit `3359ee03`, pinning `14a2dbb6`
-(v0.2.1) with `docs_url` pointing at `## Install locally` below. The published catalog index
-(`generated_at 2026-11-20T03:56:42Z`) contains that entry, so `hermes plugins install coursebook`
-resolves it; cloning from GitHub remains the path this file documents. No release tag exists, and a
-`LICENSE` file records MIT.
+(v0.2.1) with `docs_url` pointing at `## Install locally` below. At measurement on 2026-11-20 the
+published catalog index contained that entry, so `hermes plugins install coursebook` resolves it;
+the index's `generated_at` rotates, so re-run `python3 scripts/catalog-live-check.py` rather than
+trusting this line. Cloning from GitHub remains the path this file documents. No release tag exists,
+and a `LICENSE` file records MIT.
 
 The 30-second launch cut is [`docs/launch/coursebook-launch-30s.mp4`](docs/launch/coursebook-launch-30s.mp4)
 (H.264 High, 1920x1080, 30 fps, AAC stereo), built from captures of the current tree.
@@ -255,12 +256,13 @@ Cloning from GitHub is also a supported install path: the repository is public, 
 
 `hermes plugins install coursebook` — the catalog path — resolves. The entry merged as
 `plugin-catalog/coursebook.yaml` in `NousResearch/hermes-agent#152920` on 2026-11-13 (maintainer
-`teknium1`, merge commit `3359ee03`), pinning `14a2dbb6` (v0.2.1), and the published catalog index
-(`generated_at 2026-11-20T03:56:42Z`) contains it. Before the merge the entry was validated with
-`hermes-agent`'s own catalog validator and its pinned-source gate at the pinned sha, including the
-symlink-confinement check that rejected an earlier pin. Merging the entry was the maintainer's act;
-that is recorded as a measurement in `docs/SUBMISSION.md` gate 12, which stays the authority for
-gate state. Owner: Harbor and DeseretSaint.
+`teknium1`, merge commit `3359ee03`), pinning `14a2dbb6` (v0.2.1); at measurement on 2026-11-20 the
+published catalog index contained it. The index's `generated_at` rotates, so re-run
+`python3 scripts/catalog-live-check.py` rather than trusting this line. Before the merge the entry
+was validated with `hermes-agent`'s own catalog validator and its pinned-source gate at the pinned
+sha, including the symlink-confinement check that rejected an earlier pin. Merging the entry was the
+maintainer's act; that is recorded as a measurement in `docs/SUBMISSION.md` gate 12, which stays the
+authority for gate state. Owner: Harbor and DeseretSaint.
 
 ## First run
 

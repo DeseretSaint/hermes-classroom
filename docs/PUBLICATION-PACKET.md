@@ -31,11 +31,12 @@ stays closed under `docs/SUBMISSION.md` §0.
 
 **Addendum, 2026-11-20 (measured).** The 2026-11-10 snapshot above and the table below are history, not
 current state. The pull request merged on 2026-11-13 — the maintainer `teknium1`, merge commit
-`3359ee03` — pinning `14a2dbb6` (v0.2.1), and the published catalog index
-(`generated_at 2026-11-20T03:56:42Z`) contains `coursebook`. Gate 12 is therefore closed by that
-measurement; `docs/SUBMISSION.md` is the authority for gate state, and it records the merge as the
-maintainer's act with no owner sign-off in this repository. Gates 7, 14 and 15 remain open, and §0 is
-unchanged. No text in this packet has been posted.
+`3359ee03` — pinning `14a2dbb6` (v0.2.1), and at measurement on 2026-11-20 the published catalog
+index contained `coursebook` (its `generated_at` rotates; re-run
+`python3 scripts/catalog-live-check.py` rather than trusting this line). Gate 12 is therefore closed
+by that measurement; `docs/SUBMISSION.md` is the authority for gate state, and it records the merge
+as the maintainer's act with no owner sign-off in this repository. Gates 7, 14 and 15 remain open, and
+§0 is unchanged. No text in this packet has been posted.
 
 | Gate | Status as recorded | Meaning for this packet |
 | --- | --- | --- |
