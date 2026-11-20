@@ -193,9 +193,11 @@ rewritten by this docs-only merge.
 - No live UI run of the harness loop has happened, no demo is recorded, no pack but the Japanese
   fixture has been demonstrated by the demo path, and nothing is published.
 
-A reader may **not** conclude that Coursebook is installable from a catalog, that a live model has
-produced an arbitrary course, that a video exists, that the prepared Japanese pack is evidence for
-other subjects, or that the five P0 findings of `docs/ADVERSARIAL-HARNESS-REVIEW.md` are closed.
+A reader may **not** conclude that a catalog listing is a release — the entry merged on 2026-11-13
+and is in the published index (`generated_at 2026-11-20T03:56:42Z`; row 5 above), but no tag and no
+release exist — nor that a live model has produced an arbitrary course, that a video exists, that
+the prepared Japanese pack is evidence for other subjects, or that the five P0 findings of
+`docs/ADVERSARIAL-HARNESS-REVIEW.md` are closed.
 
 ## 7. H-102 reconciliation — S08/S09 against the tutor-skill instruction (2026-11-07)
 

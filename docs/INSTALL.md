@@ -2,9 +2,14 @@
 
 This guide covers the two install paths that exist today: a linked development install from a local
 checkout, and a scripted single-home install that does the same thing plus enable and verification.
-Catalog install is not available yet. Every command below was executed on the CB-014 candidate
-(`97fff42`) in a throwaway `HERMES_HOME`, and the observed result is stated next to it — except
-where a section names a different commit, which carries the measurement for that commit.
+Catalog install is separate from the paths this guide measures: the catalog entry merged on
+2026-11-13 (PR `NousResearch/hermes-agent#152920`, merged by the maintainer `teknium1`, merge
+commit `3359ee03`) pins `14a2dbb6` (v0.2.1), and the published catalog index (`generated_at
+2026-11-20T03:56:42Z`) contains that entry. A catalog listing is not a release: the release and
+announcement gates in `docs/SUBMISSION.md` §0 remain closed. Every command below was executed on the
+CB-014 candidate (`97fff42`) in a throwaway `HERMES_HOME`, and the observed result is stated next to
+it — except where a section names a different commit, which carries the measurement for that
+commit.
 
 Read the status table in `README.md` before installing. The package installs and its backend
 answers. The Desktop page mounts whenever the window reaches a gateway-backed backend, so course
