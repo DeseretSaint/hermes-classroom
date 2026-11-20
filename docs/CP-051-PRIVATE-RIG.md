@@ -252,14 +252,19 @@ the `tools.show` warm-up described above, because it is required whenever a rig 
 ### 7.4 The operator action that unblocks it
 
 Land the launch-body secret-scope fix in the Hermes host checkout, so a plugin body at discovery
-resolves credentials from the launch profile's own `.env`/env instead of raising:
+resolves credentials from the launch profile's own `.env`/env instead of raising. As re-checked on
+2026-11-19, the ref that carries it is `wt/h68b-plugin-host-base-scope` (`e3185b3287`, one commit off
+the served `HEAD` `32be83fee8`, fast-forwards). `wt/t_3e8b07ba-rebased-r2` is now **equal to that
+`HEAD`**, so merging it prints `Already up to date` and lands nothing:
 
 ```
-git -C ~/.hermes/hermes-agent merge --ff-only wt/t_3e8b07ba-rebased-r2 && hermes gateway restart
+git -C ~/.hermes/hermes-agent merge-base --is-ancestor HEAD wt/h68b-plugin-host-base-scope && echo FF-OK
+git -C ~/.hermes/hermes-agent merge --ff-only wt/h68b-plugin-host-base-scope && hermes gateway restart
 python3 scripts/rig-research-acceptance.py --db <fresh rig home>/plugin-data/coursebook/data.db
 ```
 
-That branch is the two reviewed commits (H-68 launch-body scope, then harbor's remedy gating
+`wt/t_3e8b07ba-rebased-r2` is the earlier form of the same fix: the two reviewed commits (H-68
+launch-body scope, then harbor's remedy gating
 `_plugin_launch_body_scope()` on the manager's own home) rebased onto host `HEAD` `ae2a81ccc0`, plus
 one small adaptation commit: the branch's `secret_scope_available()` still tested the removed
 `_SECRET_SCOPE` contextvar, and upstream now keeps the installed scope in `hermes_scope` state behind
@@ -270,15 +275,16 @@ re-run: dropping the `_plugin_launch_body_scope(...)` call fails 2 of 4).
 
 The earlier commands on this page named `wt/t_3e8b07ba-ready` and then `wt/t_3e8b07ba-rebased`; the
 host checkout has since jumped 8,154 commits (to a `fix/cloud` line), so both are behind its `HEAD`
-and `--ff-only` refuses them. Use the `-r2` ref. Because the host HEAD moves on its own, re-check
-before running rather than trusting this page:
+and `--ff-only` refuses them. `-r2` was the ref to use from 2026-11-18 until it was served as `HEAD`;
+it is contained in `HEAD` now, which is why the command above names `h68b`. Because the host HEAD
+moves on its own, re-check before running rather than trusting this page:
 
 ```
-git -C ~/.hermes/hermes-agent merge-base --is-ancestor HEAD wt/t_3e8b07ba-rebased-r2 && echo FF-OK
+git -C ~/.hermes/hermes-agent merge-base --is-ancestor HEAD wt/h68b-plugin-host-base-scope && echo FF-OK
 ```
 
-If that fails, the branch needs one more rebase onto the new HEAD (cherry-pick the two fix commits in
-a scratch worktree, then `git branch -f wt/t_3e8b07ba-rebased-r2`); expect one adaptation if
+If that fails, the branch needs one more rebase onto the new HEAD (cherry-pick the fix commits in
+a scratch worktree, then `git branch -f wt/h68b-plugin-host-base-scope`); expect one adaptation if
 `agent/secret_scope.py` was refactored again.
 After the restart, re-run `scripts/rig-research-acceptance.py` on a fresh rig home; it must report
 `research_status: "ok"` with a non-empty ledger and cited objectives. A rig home with no credential of
