@@ -18,8 +18,9 @@ controls, 158 full-motion animated nodes). The `42fcd0f5` and `b9f4a19` paragrap
 previous records; where they quote their own numbers they are labelled with the commit they
 describe.
 
-Release tree: **`42fcd0f5`** — the tree this submission's catalog entry pins, measured 2026-11-11 at
-the 14:05 MST freeze. `desktop/plugin.js` there is `71d940ce0398220fe1d25d1ec39b1e4bdfbc2a1c257eb7eb42292c628ac4d4b8`
+Pre-merge release tree: **`42fcd0f5`** — the tree the catalog entry pinned before the merge,
+measured 2026-11-11 at the 14:05 MST freeze. It is history as a pin: the entry that merged on
+2026-11-13 pins `14a2dbb6` (v0.2.1, module `fc1e1bcc…`), and gate 11 records both. `desktop/plugin.js` there is `71d940ce0398220fe1d25d1ec39b1e4bdfbc2a1c257eb7eb42292c628ac4d4b8`
 (`python3 scripts/build_plugin.py --check` reports the match against `desktop/src`), `node --check
 desktop/plugin.js` is clean, and `bash scripts/validate-plugin.sh` reports **4/4 runtime contracts:
 PASS** with `Release gate passed: 4/4 checks`. The full suite measured on the commit below it,
@@ -107,9 +108,11 @@ release tree `b9f4a19` measured `Ran 2747 tests in 410.301s … OK (skipped=1)` 
 **The tree is not shippable today.** The pane crash and library clipping that blocked H-85 are fixed
 here (H-91, merged as `670de1b`), and the suite is green, but the demo gate is still not met, no
 live Desktop window has driven this exact tree, and the operator publication gate
-in §0 is closed. Open gates: 7, 12, 14, 15. Partial: 5, 6, 13. Gate 9 (license) closed on
+in §0 is closed. Open gates: 7, 14, 15. Partial: 5, 6, 13. Gate 9 (license) closed on
 2026-11-10: MIT, `LICENSE` at `0d17824`. Gate 10 (public repository) is met by measurement on
-2026-11-10: the repository is public and an anonymous clone of `master` resolves.
+2026-11-10: the repository is public and an anonymous clone of `master` resolves. Gate 12 (catalog PR
+merged) is closed on 2026-11-13 as a **measurement, not an approval**: the maintainer merged the
+entry, and no owner sign-off for that merge is recorded in this repository.
 
 ## 0. Hard operator gate
 
@@ -128,10 +131,11 @@ branch-only evidence. The earlier harness evidence (`docs/HARNESS-E2E.md`, branc
 7 or 13.
 
 **What changed since that pass, all of it measured:** `LICENSE` exists (MIT, 2026-11-10, gate 9), the
-repository is public and clones anonymously (gate 10, measured 2026-11-10), and the catalog entry is
-submitted as a draft pull request (`NousResearch/hermes-agent#152920`, opened 2026-11-10, unmerged,
-gate 12 still open). Section §0 itself is unchanged: merging that pull request, tagging, announcing
-and submitting the contest form still need DeseretSaint's explicit sign-off.
+repository is public and clones anonymously (gate 10, measured 2026-11-10), and the catalog pull
+request `NousResearch/hermes-agent#152920` merged on 2026-11-13 (maintainer `teknium1`, merge commit
+`3359ee03`), so gate 12 is closed as a measurement rather than an approval. Section §0 itself is
+unchanged: the merge was the maintainer's act and no owner sign-off for it is recorded here, and
+tagging, announcing and submitting the contest form still need DeseretSaint's explicit sign-off.
 
 ## 1. Gates in order
 
@@ -150,14 +154,16 @@ invalidates the earlier evidence.
 | 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `docs/RELEASE-EVIDENCE.md`; `python3 scripts/check-docs-truth.py` (full) passes on `1c663172` plus this docs-only diff after the 2026-11-12 suite re-measurement (`4434 tests`, `OK (skipped=12)` on `170aa650`, the record's measured commit); its doc/contract/pin checks also pass with `--skip-tests` and the `cb.rpc` v28 / 93-method re-assertion, and its doc/contract/pin checks pass against the `b9f4a19` record they describe. The M4 and module fields still describe the frozen `b9f4a19` tree, not the head: re-pinning them to the trunk module is the operator's freeze decision, not a docs edit | [x] |
 | 9 | License present | DeseretSaint | `LICENSE` ships MIT (copyright 2026 DeseretSaint) at `0d17824`, the owner's decision on `t_6f2d2080`; this row, README §License, `CHANGELOG.md` and the catalog `known_issues` were reconciled in the same docs commit | [x] |
 | 10 | Public repository pushed | DeseretSaint | Measured 2026-11-10: `gh repo view DeseretSaint/hermes-classroom` reports `"visibility": "PUBLIC"` and an anonymous `git ls-remote https://github.com/DeseretSaint/hermes-classroom.git refs/heads/master` resolves `3278bae`. The visibility change itself has no recorded decision and no date in this repository — GitHub exposes no visibility-change timestamp for a user-owned repository — so this row records the measurement, not an approval | [x] |
-| 11 | Catalog entry pins the release commit | Harbor | `plugin-catalog/coursebook.yaml` on the pull-request branch pins the release tree `42fcd0f5` (module `71d940ce`; `docs_url` at the README's `#install-locally` heading, `readme: true` so the catalog renders install steps at that commit). The pull request is `NousResearch/hermes-agent#152920`, opened 2026-11-10, **open, not draft, `mergeable: MERGEABLE`** as of 2026-11-11 14:10 MST (verified through the GitHub API, not from this file), and unmerged: merging it is gated on the owner's sign-off in §0 and on gates 5 and 7. The pin and the `readme` key were changed after the maintainer's earlier approval of `3278bae`, and that delta is stated in a comment on the PR rather than silently carried | [x] |
-| 12 | Catalog PR merged | DeseretSaint | PR URL against `hermes-agent` | [ ] |
+| 11 | Catalog entry pins the release commit | Harbor | The **merged** entry (`plugin-catalog/coursebook.yaml` on `hermes-agent` `main`, read through the GitHub contents API on 2026-11-20, not copied from this file) pins `14a2dbb6870e81044dfb644964257fe9ccba992b`: `version: "0.2.1"`, `tier: community`, `category: desktop`, `docs_url` at the README's `#install-locally` heading, `readme: true`. That commit is an ancestor of `origin/master` here, `plugin.yaml` at it declares `version: 0.2.1`, and its `desktop/plugin.js` is the module `fc1e1bcc…`. **Pre-merge pin (history):** the entry pinned `42fcd0f5` (version `0.1.0`, module `71d940ce…`) when `NousResearch/hermes-agent#152920` was opened on 2026-11-10; that pin was superseded before the merge on 2026-11-13. This row is `[x]` because the pin was re-read from the merged branch, not because a validator was re-run here | [x] |
+| 12 | Catalog PR merged | DeseretSaint | **Measured, not approved.** `gh pr view 152920 --repo NousResearch/hermes-agent` on 2026-11-20 reports `state: MERGED`, `mergedAt: 2026-11-13T11:01:25Z`, `mergedBy: teknium1`, merge commit `3359ee03` on `main`, two files changed (`contributors/emails/deseretsaint@gmail.com`, `plugin-catalog/coursebook.yaml`). The merge was performed by the maintainer; **no owner sign-off for it is recorded in this repository**, so this row records what happened and is not an approval. The published index (`generated_at: 2026-11-20T03:56:42Z`) contains `coursebook` 0.2.1 at that pin; the merge moved nothing else — no tag, no release, no announcement | [x] |
 | 13 | Demo recorded and approved | Harbor, DeseretSaint | `docs/launch/coursebook-launch-30s.mp4`, 30.400000 s, 912 frames (30/1 CFR), 1920x1080, H.264 High level 4.0, yuv420p, a keyframe every 2.000 s (16, 0.000-30.000 s), AAC LC stereo 48 kHz with a 30.400000 s stream, `moov` before `mdat` (`+faststart`), 5,609,771 B, sha256 `d46b46d17d0df2a3ccd986d2fe0ccc2ed398b564f31754020928742fa8ee1037`; integrated loudness **-16.4 LUFS** (LRA 4.6 LU, true peak -4.4 dBFS), which is **FAIL against `docs/launch/VIDEO-PLAN.md` §9.3's -15.0 to -13.0 window by 1.4 LU** — the owner decides whether to post at -16.4 or spend one audio-only normalise pass (new file, new sha, new measurement, separate card); six film3 plates at 1344 route width dpr 2 from module `0cb478ec` plus the owner's `home-full` render (composition evidence, D-010). Recorded and measured 2026-11-16 (`docs/launch/QC.md`); owner approval of the cut pending | [~] |
 | 14 | X post published | DeseretSaint | post URL, tags @NousResearch; copy, alt text and the 267-character count (250 weighted) are in `docs/launch/POST.md` §1. Nothing has been posted | [ ] |
 | 15 | Contest form submitted | DeseretSaint | confirmation; the answer table for `https://form.typeform.com/to/FwJLvOln` is in `docs/launch/POST.md` §2 | [ ] |
 
-Open gates: 7, 12, 14, 15. Partial: 5, 6, 13. Gate 9 (MIT license) and gate 10 (repository measured
-public, anonymous clone of `master` resolves) are closed as of 2026-11-10.
+Open gates: 7, 14, 15. Partial: 5, 6, 13. Gate 9 (MIT license) and gate 10 (repository measured
+public, anonymous clone of `master` resolves) are closed as of 2026-11-10; gate 12 (catalog PR
+merged) is closed as of 2026-11-13 by measurement — the maintainer merged it and no owner sign-off
+is recorded in this repository.
 
 Gate 5 moved back from `[ ]` to `[~]` on this tree because the plugin defect underneath it is
 fixed: H-85's gate failed `7d0f9cf` on a P0 null-runtime crash in the course → section path and on
@@ -351,7 +357,7 @@ holds the demo back. No recording happens without DeseretSaint's approval.
 | Auxiliary grader accepts a persuaded pass (CB-QA-11) | The open-response lane cannot distinguish an honest pass from an injected one, so the lane ships disabled | Cinder |
 | Demo gate not met | Sentinel's demo scenarios have not passed on the release commit, and recording needs operator approval | Sentinel, DeseretSaint |
 | ~~License absent~~ (closed 2026-11-10) | MIT `LICENSE` at `0d17824`; redistribution is lawful now, publication stays closed under §0 | DeseretSaint |
-| Public listing not authorised | The source repository is public (gate 10 met by measurement 2026-11-10), but a catalog merge, a tag and an announcement are publication under the operator gate, and none of them is authorised | DeseretSaint |
+| ~~Public listing not authorised~~ (narrowed 2026-11-13) | The source repository is public (gate 10 met by measurement 2026-11-10), and the catalog pull request merged on 2026-11-13 — the maintainer's act, recorded in gate 12 as a measurement with no owner sign-off in this repository. A release tag, an announcement and the contest form are still publication under the operator gate, and none of them is authorised | DeseretSaint |
 | No release tag | Atlas's operator gate forbids publishing a release or tag until DeseretSaint signs off in chat | Atlas, DeseretSaint |
 
 Verified, so they are not blockers: 93/93 `cb.rpc` v29 methods mounted with no
@@ -367,7 +373,7 @@ resolved for the recording.
 | Item | Value |
 | --- | --- |
 | Repository | `https://github.com/DeseretSaint/hermes-classroom` (public; `master` is pushed and clones anonymously) |
-| Release branch | `master` (pushed to `origin/master`; tags, catalog PR and publication remain operator-gated) |
+| Release branch | `master` (pushed to `origin/master`; tags and publication remain operator-gated — the catalog entry merged upstream on 2026-11-13 as the maintainer's act, gate 12) |
 | Record's measured commit | `b9895039` — trunk `2dec360f` plus the docs-truth gate commit (`scripts/check-docs-truth.py` reads `WIRE_CONTRACT_VERSION`, with its tests; no product, contract or Desktop file moves) |
 | Measured on that commit | suite `Ran 5134 tests in 1048.008s … OK (skipped=20)` on `c88787c9` (product blocks measured on `b9895039`, identical bytes), exit 0; `cb.rpc` v29 / 93 declared methods / 93 handlers; `cb.db` v15; `desktop/plugin.js` sha256 `ca575b3a…5b0`; M4 62 frames, 15/15 claims PASS, 2,172 text nodes / 320 AX controls / 158 full-motion animated nodes, summed from the committed audit the module pins |
 | Release candidate commit (previous record) | `b9f4a197e42e4f033298d94608fcb5b63640b094` — frozen master: the H-210-R2 merge over `df052ea` (the live pack round trip that closed gate 4 plus its capture); the diff from `df052ea` is `docs/` and `audit/` only, and `desktop/plugin.js` is still `cd862140…c516` |
@@ -375,14 +381,15 @@ resolved for the recording.
 | Tag | none. Publication gate closed; a tag is forbidden until sign-off |
 | Demo | none. `docs/DEMO.md` is the script; gate 7 unmet |
 | Verification evidence | `docs/RELEASE-EVIDENCE.md`, `docs/CB017-RELEASE-VERIFICATION.md`, `docs/REVIEW_CB017-FINAL.md` (§2, §10), `docs/REVIEW_CB017-row9-ui.json`, `docs/cb017-shots/` |
-| Catalog entry | Submitted as `plugin-catalog/coursebook.yaml` in `NousResearch/hermes-agent#152920` (open, not draft, unmerged), pinned to the release tree `42fcd0f5` with `docs_url` at the README's `#install-locally` heading and `readme: true` |
-| Checklist | sections 1-7 of this file: four gates open (`[ ]`: 7, 12, 14, 15) and three partial (`[~]`: 5, 6, 13) |
+| Catalog entry | Merged as `plugin-catalog/coursebook.yaml` in `NousResearch/hermes-agent#152920` on 2026-11-13 by the maintainer `teknium1` (merge commit `3359ee03`); the merged entry pins `14a2dbb6` (v0.2.1) with `docs_url` at the README's `#install-locally` heading and `readme: true`. The pre-merge pin was `42fcd0f5` (v0.1.0) — history, not the current entry |
+| Checklist | sections 1-7 of this file: three gates open (`[ ]`: 7, 14, 15), three partial (`[~]`: 5, 6, 13), and gate 12 closed by measurement (2026-11-13) |
 
-One gap is recorded rather than hidden: the catalog pins this documents commit, keeping the measured
-code commit `b9f4a19` one below it, because an entry cannot carry its own hash. The numbers above are
-measurements of `b9f4a19`, and the catalog pin was moved to the matching documents commit on the same
-branch. That documents commit `61cdb03` is on `origin/master`, so its `docs_url` and the six
-screenshot URLs resolve; they were fetched for 200 and hash-matched on 2026-11-09, as H-181 requires.
-The catalog pull request was opened as a draft on 2026-11-10 (`NousResearch/hermes-agent#152920`)
-and moves `sha`, `docs_url` and the docs record together; merging it, tagging and announcing stay
-gated by §0 and by gates 5 and 7. The tree at `b9f4a19` is the one the gates ran on.
+The entry's own history is recorded rather than hidden. The catalog pull request
+(`NousResearch/hermes-agent#152920`) was opened as a draft on 2026-11-10 and merged by the maintainer
+`teknium1` on 2026-11-13 at merge commit `3359ee03`; the merged entry pins `14a2dbb6` (v0.2.1,
+module `fc1e1bcc…`), which is an ancestor of `origin/master`, not the measured code commit
+`b9f4a19`. The pre-merge pin was `42fcd0f5` (version `0.1.0`), and earlier pins `61cdb03` and
+`172b61aa` are history too, kept so a reader cannot mistake the record for a still-open pull request.
+The numbers above are measurements of `b9f4a19` and `b9895039`; the tree at `b9f4a19` is the one the
+gate runs measured. A release tag, the announcement and the contest form stay gated by §0 and by
+gates 5, 7 and 13.

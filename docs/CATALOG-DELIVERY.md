@@ -32,17 +32,22 @@ Both defects would have kept the plugin from ever reaching a user, and neither w
 own machine, because our desktop plugin is a **symlink** (`~/.hermes/plugins/coursebook →
 ~/Projects/hermes-classroom`) with no catalog sidecar: we were always looking at the dev checkout.
 
-1. **No entry was reachable.** The entry exists only on `add-coursebook-catalog-entry`, the PR is
-   open and unmerged, and the published catalog (2,094 entries, generated 2026-11-12T09:57Z) does not
-   contain `coursebook`. `hermes plugins install coursebook` answers *"'coursebook' is not in the
-   Hermes plugin catalog"* for every user, on every machine. Verified in an isolated home.
+1. **No entry was reachable.** *Fixed 2026-11-13.* The entry existed only on
+   `add-coursebook-catalog-entry` and the pull request was open and unmerged; the published catalog of
+   2026-11-12 (2,094 entries, `generated_at` 09:57Z) did not contain `coursebook`, so
+   `hermes plugins install coursebook` answered *"'coursebook' is not in the
+   Hermes plugin catalog"* for every user, on every machine (verified in an isolated home). The pull
+   request `NousResearch/hermes-agent#152920` has since merged — maintainer `teknium1`, 2026-11-13,
+   merge commit `3359ee03`, pin `14a2dbb6` (v0.2.1) — and the published index at
+   `generated_at 2026-11-20T03:56:42Z` contains that entry.
 2. **The entry could never pass admission.** The pinned commit shipped
    `visual/node_modules/playwright-core/lib/webp_codec.wasm`. The admission gate
    (`scripts/ci/catalog_validate_pinned_entries.py`) refuses unscannable executable payloads
    (README rule 17), so the PR would have failed CI on the pinned source even after review. 243
    node_modules files were tracked in git although `.gitignore` already listed the directory.
-3. **The branch was 2,881 commits behind `main`.** Refreshed onto current `main`; the PR is now
-   `MERGEABLE` (blocked only on maintainer review, which is the intended human-merged gate).
+3. **The branch was 2,881 commits behind `main`.** Refreshed onto current `main`; the PR then reported
+   `MERGEABLE` (blocked only on maintainer review, the intended human-merged gate) and that review
+   happened: it merged on 2026-11-13.
 
 ## What now runs green
 

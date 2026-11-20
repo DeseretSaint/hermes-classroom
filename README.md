@@ -85,12 +85,13 @@ DeseretSaint/hermes-classroom` reports `"visibility": "PUBLIC"`. GitHub keeps no
 timestamp for a user-owned repository, so this records when the public state was measured, not when
 it changed.
 
-The catalog entry `plugin-catalog/coursebook.yaml` is submitted in
-[`NousResearch/hermes-agent#152920`](https://github.com/NousResearch/hermes-agent/pull/152920),
-pinned to the `master` commit named in that pull request's body and `docs_url` pointing at
-`## Install locally` below. The pull request has not merged, so the catalog `hermes-agent` ships
-does not yet resolve `coursebook`; cloning is the install path that works today. No release tag
-exists, and a `LICENSE` file records MIT.
+The catalog entry `plugin-catalog/coursebook.yaml` merged in
+[`NousResearch/hermes-agent#152920`](https://github.com/NousResearch/hermes-agent/pull/152920) on
+2026-11-13: the maintainer `teknium1` merged it at merge commit `3359ee03`, pinning `14a2dbb6`
+(v0.2.1) with `docs_url` pointing at `## Install locally` below. The published catalog index
+(`generated_at 2026-11-20T03:56:42Z`) contains that entry, so `hermes plugins install coursebook`
+resolves it; cloning from GitHub remains the path this file documents. No release tag exists, and a
+`LICENSE` file records MIT.
 
 The 30-second launch cut is [`docs/launch/coursebook-launch-30s.mp4`](docs/launch/coursebook-launch-30s.mp4)
 (H.264 High, 1920x1080, 30 fps, AAC stereo), built from captures of the current tree.
@@ -168,8 +169,9 @@ describe this tree. The product-line rows are separate, and they use two weaker 
 | M4 visual, contrast and accessibility gate | Rendered: 62 painted frames, 15/15 claims pass, 0 plugin-authored contrast failures over 2,172 text nodes (worst authored 5.93:1), 0 unnamed of 320 accessibility controls, no clipped text or horizontal overflow, at the module this tree ships (`ca575b3a…`). The committed `audit/visual/m4-visual/audit.json` is pinned to that module — `scripts/check-audit-pin.py` passes — and these numbers are its per-frame sums. Two consecutive `m4v-repro-check.py` runs at the older release-tree module `cd862140…` are identical (62/62 screenshots and `audit.json` modulo `generated_at`); that pair has not been re-run at this pin | `audit/visual/m4-visual/audit.json`, `scripts/check-audit-pin.py`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `scripts/m4v-repro-check.py` |
 | 460 px narrow width | Partial: the module itself reflows at 460 px with no horizontal overflow, but the shipped host still gives the route 101 px when the chat rail is docked. The host patch that fixes the grid is neither merged nor installed | `audit/visual/m1-narrow-width/DECISION.md` §Residuals; `audit/visual/m4-visual/*-460-*.png` |
 
-Nothing in the product line changes install status. The catalog entry pins the `master` commit the
-pull request body names and is open awaiting maintainer review, and no release tag exists.
+Nothing in the product line changes install status. The catalog entry merged on 2026-11-13
+(maintainer `teknium1`, merge commit `3359ee03`) pinning `14a2dbb6` (v0.2.1), and it is in the
+published catalog index; no release tag exists.
 
 ### 0.1.0 surface table (release record, post-release changes named)
 
@@ -248,16 +250,17 @@ hermes plugins doctor coursebook
 bash scripts/validate.sh
 ```
 
-Cloning from GitHub is the supported install path: the repository is public, and the clone in
+Cloning from GitHub is also a supported install path: the repository is public, and the clone in
 `## Install locally` above is the path the catalog entry's `docs_url` points at.
 
-`hermes plugins install coursebook` — the catalog path — does not work yet. The entry is submitted as
-`plugin-catalog/coursebook.yaml` in `NousResearch/hermes-agent#152920`, an open pull request awaiting
-maintainer review, and the catalog `hermes-agent` ships does not resolve `coursebook` until that
-merges. The entry pins the `master` commit named in that pull request's body and is validated with
-`hermes-agent`'s own catalog validator and its pinned-source gate at that sha, including the
-symlink-confinement check that rejected an earlier pin. Gate state lives in `docs/SUBMISSION.md`
-and is not repeated here. Owner: Harbor and DeseretSaint.
+`hermes plugins install coursebook` — the catalog path — resolves. The entry merged as
+`plugin-catalog/coursebook.yaml` in `NousResearch/hermes-agent#152920` on 2026-11-13 (maintainer
+`teknium1`, merge commit `3359ee03`), pinning `14a2dbb6` (v0.2.1), and the published catalog index
+(`generated_at 2026-11-20T03:56:42Z`) contains it. Before the merge the entry was validated with
+`hermes-agent`'s own catalog validator and its pinned-source gate at the pinned sha, including the
+symlink-confinement check that rejected an earlier pin. Merging the entry was the maintainer's act;
+that is recorded as a measurement in `docs/SUBMISSION.md` gate 12, which stays the authority for
+gate state. Owner: Harbor and DeseretSaint.
 
 ## First run
 
@@ -367,9 +370,9 @@ The product line adds surfaces with limits of their own; these are not the 0.1.0
 - Accessibility names come from the Chromium accessibility tree, not from a screen reader.
 - A failed audio preview is typed `visual` in the internal `data-cb-media-kind` attribute while its
   visible label and transcript stay correct (`t_acd97416`, low, open).
-- The product line is not demo evidence and not a release: no video exists, the demo gate is NOT
-  MET (`docs/DEMO.md`), the catalog pull request is open and draft and has not merged, and no tag or
-  contest submission was made (`docs/SUBMISSION.md` §0).
+- The product line is not demo evidence and not a release: the demo gate is NOT MET
+  (`docs/DEMO.md`), no release tag exists and no contest submission was made, and the catalog entry
+  that merged on 2026-11-13 is a catalog listing, not a release (`docs/SUBMISSION.md` §0, gate 12).
 
 There is no learning-style diagnosis, no "2 sigma" claim, no guaranteed mastery, no child safety
 or COPPA certification, and no efficacy claim. Educational research motivates the design;
@@ -447,6 +450,8 @@ Desktop runtime loader refuses everything else. It is a single-writer file; see
 MIT. The terms are in `LICENSE` at the repository root, copyright 2026 DeseretSaint. The owner chose
 MIT on 2026-11-10 in board card `t_6f2d2080`; that card's docs follow-through (this section, gate 9
 in `docs/SUBMISSION.md`, `CHANGELOG.md` and the catalog's `known_issues`) lands in the same commit.
-Publication — merging the catalog pull request, tagging, announcing — stays closed under
+Publication — a release tag, the announcement, the contest form — stays closed under
 `docs/SUBMISSION.md` §0: a license makes redistribution lawful and a public repository makes the
-source clonable, and neither authorises announcing the release.
+source clonable, and neither authorises announcing the release. The catalog entry merged on
+2026-11-13 as the maintainer's act; `docs/SUBMISSION.md` gate 12 records that measurement and no
+owner sign-off for it.

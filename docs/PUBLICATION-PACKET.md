@@ -1,8 +1,8 @@
 # Publication packet — gates 12, 14 and 15
 
 **Draft text only.** Nothing in this file has been posted, tagged or submitted. Item 1's text was
-used, revised, for the draft catalog pull request opened on 2026-11-10
-(`NousResearch/hermes-agent#152920`, unmerged); see the addendum below the gate table. Publication
+used, revised, for the catalog pull request opened on 2026-11-10 and merged on 2026-11-13
+(`NousResearch/hermes-agent#152920`); see the addenda below the gate table. Publication
 stays closed under `docs/SUBMISSION.md` §0.
 
 - **Prepared:** 2026-11-09 11:33 MST by the kanban worker on card `t_f9668fe2`
@@ -28,6 +28,14 @@ stays closed under `docs/SUBMISSION.md` §0.
 > `#install-locally` heading). Gate 12 stays open until that pull request merges, and items 1-3 below
 > are still **not sendable** — §0 sign-off, gates 7 and 13 remain open. The license placeholder in
 > item 1 is also resolved: `LICENSE` exists at this branch head.
+
+**Addendum, 2026-11-20 (measured).** The 2026-11-10 snapshot above and the table below are history, not
+current state. The pull request merged on 2026-11-13 — the maintainer `teknium1`, merge commit
+`3359ee03` — pinning `14a2dbb6` (v0.2.1), and the published catalog index
+(`generated_at 2026-11-20T03:56:42Z`) contains `coursebook`. Gate 12 is therefore closed by that
+measurement; `docs/SUBMISSION.md` is the authority for gate state, and it records the merge as the
+maintainer's act with no owner sign-off in this repository. Gates 7, 14 and 15 remain open, and §0 is
+unchanged. No text in this packet has been posted.
 
 | Gate | Status as recorded | Meaning for this packet |
 | --- | --- | --- |
@@ -57,12 +65,13 @@ it.** The three items below are drafts that are all **NOT SENDABLE today**.
 
 ## 1. Catalog PR body — gate 12
 
-**Status: SUPERSEDED — this text was used, revised, for the draft pull request opened 2026-11-10
-(`NousResearch/hermes-agent#152920`, unmerged, pinned to `3278bae`).** Gate 11 is closed: the
-submitted entry pins a commit on `origin/master` and its raw URLs were fetched and hash-matched on
-2026-11-09 for the in-repo copy. **The license line is no longer a placeholder: `LICENSE` (MIT)
-exists at the repository root.** Merging that pull request remains a §0 step and gates 5, 7 and 12
-stay open.
+**Status: SUPERSEDED — this text was used, revised, for the pull request that opened on 2026-11-10 and
+merged on 2026-11-13 (`NousResearch/hermes-agent#152920`, merged by the maintainer `teknium1`, merge
+commit `3359ee03`, pin `14a2dbb6`).** Gate 11 is closed: the merged entry pins a commit on
+`origin/master` and its raw URLs were fetched and hash-matched on 2026-11-09 for the in-repo copy.
+**The license line is no longer a placeholder: `LICENSE` (MIT)
+exists at the repository root.** The merge was the maintainer's act; no owner sign-off for it is
+recorded in this repository, and gates 5, 7, 14 and 15 stay open.
 
 ### Title
 
